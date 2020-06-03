@@ -48,7 +48,7 @@ def get_max_timestep(self, context):
 
 
 def step_update(node, context):
-    step = node.inputs['frame'].default_value
+    step = node.step
     print(node.file_name, node.var_name, step)
     if step != node.frame_loaded:
         if update_image(context, node.file_name, node.var_name, step, node.flip, node.image):

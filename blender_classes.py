@@ -6,7 +6,7 @@ from os.path import isfile, abspath
 from nodeitems_utils import NodeCategory, NodeItem
 
 # Blender Classes
-node_tree_name = "ShaderNodeTree"
+node_tree_name = "GeoNodes"
 create_new_node_tree = node_tree_name != "ShaderNodeTree"
 if create_new_node_tree:
     # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
@@ -72,22 +72,14 @@ class GeoNodes_UI_PT_3dview(bpy.types.Panel):
     bl_region_type = "UI"
 
     def draw(self, context):
-        box_post_opt = self.layout.box()
-        scn = context.scene
-        # box_post_opt.prop(self, "nc_file_path")
-        op = box_post_opt.operator('geonodes.ncload', text="Load NetCDF")
-        # if scn.nc_dictionary:
-        #     box_post_opt.prop(scn, "nc_var_select")
-        # if scn.nc_var_select:
-        #     box_post_opt.prop(scn, "nc_step_select")
-        # if scn.nc_step_select <= get_max_timestep(context):
-        #     op = box_post_opt.operator('geonodes.ncimage', text="Create image")
+        self.layout.operator('geonodes.ncload', text="Load NetCDF")
+
 
 
 class GeoNodes_NT_netcdf(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''A custom node'''
+    '''A netcdf node'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
     bl_idname = 'netCDFNode'
     # Label for nice name display
@@ -113,6 +105,7 @@ class GeoNodes_NT_netcdf(bpy.types.Node):
     )
     update_on_frame_change: bpy.props.BoolProperty(
         name="Update on frame change",
+
         default=False,
     )
 
@@ -124,7 +117,9 @@ class GeoNodes_NT_netcdf(bpy.types.Node):
         default=-1,
     )
 
-    step: bpy.props.IntProperty()
+    step: bpy.props.IntProperty(
+        update=step_update,
+    )
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
