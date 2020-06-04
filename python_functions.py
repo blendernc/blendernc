@@ -9,6 +9,16 @@ from os.path import basename
 
 
 # Definitions
+def normalize_data(data, min_range=None, max_range=None):
+    # Find ranges and normalize in the interval [0,1]
+    if min_range is None:
+        min_range = data.min()
+    if max_range is None:
+        max_range = data.max()
+    var_range = max_range - min_range
+    return (data - min_range) / var_range
+
+
 def get_possible_variables(self, context):
     scene = context.scene
 
@@ -35,7 +45,6 @@ def get_possible_files(self, context):
 
 def get_max_timestep(self, context):
     scene = context.scene
-    # ncfile = scene.nc_file_path
     ncfile = self.file_name
     data_dictionary = scene.nc_dictionary
     if not ncfile or not data_dictionary:
@@ -58,6 +67,7 @@ def step_update(node, context):
 def update_image(context, file_name, var_name, step, flip, image):
     if not image:
         return False
+
     scene = context.scene
 
     # Get data dictionary stored at scene object
@@ -82,22 +92,31 @@ def update_image(context, file_name, var_name, step, flip, image):
     if [img_x, img_y] != [x, y]:
         image.scale(x, y)
     # Get data of the selected step
-    frame_data = var_data[step, :, :]
+    try:
+        # In case data has been pre-loaded
+        step_data = scene.nc_cache[file_name][var_name][step]
+        frame_data = step_data[:, :]
+        frame_data = normalize_data(frame_data)
+        print("Using preloaded data")
+    except KeyError:
+        # In case data has not been pre-loaded
+        frame_data = var_data[step, :, :].values
+        frame_data = normalize_data(frame_data)
+        print("NOT using preloaded data")
     if flip:
         frame_data = np.flip(frame_data, axis=0)
 
-    # Find ranges and normalize in the interval [0,1]
-    dmin, dmax = frame_data.min(), frame_data.max()
-    var_range = dmax - dmin
-    frame_data = (frame_data - dmin) / var_range
-
-    alpha_channel = frame_data.where(np.isfinite(frame_data), 0).where(~np.isfinite(frame_data), 1).values
-    normalized_data = frame_data
+    # frame_data = normalize_data(frame_data)
+    alpha_channel = np.ones(shape=frame_data.shape)
 
     # BW in RGB format for image
-    rgb = np.repeat(normalized_data.values[:, :, np.newaxis], 3, axis=2)
+    rgb = np.repeat(frame_data[:, :, np.newaxis], 3, axis=2)
     rgba = np.concatenate((rgb, alpha_channel[:, :, np.newaxis]), axis=2)
+    rgba = rgba.ravel()
 
-    image.pixels = rgba.ravel()
+    # Using foreach_set function for performance ( requires a 32-bit argument)
+    rgba = np.float32(rgba)
+    image.pixels.foreach_set(rgba)
+
     image.update()
     return True

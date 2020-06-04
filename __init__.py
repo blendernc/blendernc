@@ -14,8 +14,8 @@
 bl_info = {
     "name" : "GeoNodes",
     "author" : "Oriol Tintó Prims",
-    "description" : "Blender Add-On to visualize scientific data",
-    "blender" : (2, 82, 0),
+    "description" : "Blender Add-On to visualize geo-scientific data",
+    "blender" : (2, 83, 0),
     "version" : (0, 0, 1),
     "location" : "View3D",
     "warning" : "Very early version",

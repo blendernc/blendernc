@@ -5,11 +5,16 @@ import nodeitems_utils
 from .blender_classes import *
 
 classes = [
-    GeoNodes_OT_ncload,
+    # Panels
     GeoNodes_UI_PT_3dview,
+    # Nodes
     GeoNodes_NT_netcdf,
+    GeoNodes_NT_preloader,
+    # Operators
+    GeoNodes_OT_ncload,
     GeoNodes_OT_netcdf2img,
-    ]
+    GeoNodes_OT_preloader,
+]
 
 if create_new_node_tree:
     classes.append(GeoNodesNodeTree)
@@ -34,11 +39,10 @@ def update_all_images(scene):
 
     op = bpy.ops.geonodes.nc2img
     for node in nodes:
-        if not node.name.count("netCDF"):
+        if not node.name.count("netCDFinput"):
             continue
         if not node.update_on_frame_change:
             continue
-
 
         step = scene.frame_current
         node.step = step
@@ -55,10 +59,13 @@ def update_all_images(scene):
 
 
 handlers = bpy.app.handlers
+
+
 def registerGeoNodes():
     bpy.types.Scene.update_all_images = update_all_images
 
     bpy.types.Scene.nc_dictionary = defaultdict(None)
+    bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
     handlers.render_pre.append(bpy.types.Scene.update_all_images)
@@ -73,12 +80,12 @@ def registerGeoNodes():
 def unregisterGeoNodes():
     del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
+    del bpy.types.Scene.nc_cache
 
     # Delete from handlers
     handlers.frame_change_pre.remove(update_all_images)
     handlers.render_pre.remove(update_all_images)
     # del bpy.types.Scene.nc_file_path
-
 
     nodeitems_utils.unregister_node_categories(node_tree_name)
 
