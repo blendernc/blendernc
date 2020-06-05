@@ -4,9 +4,9 @@ from collections import defaultdict
 
 import nodeitems_utils
 
-from GeoNodes.geonodes.panels import GeoNodes_UI_PT_3dview
-from GeoNodes.geonodes.operators import GeoNodes_OT_ncload, GeoNodes_OT_netcdf2img, GeoNodes_OT_preloader
-from GeoNodes.geonodes.nodes import GeoNodes_NT_netcdf, GeoNodes_NT_preloader,\
+from . panels import GeoNodes_UI_PT_3dview
+from . operators import GeoNodes_OT_ncload, GeoNodes_OT_netcdf2img, GeoNodes_OT_preloader
+from . nodes import GeoNodes_NT_netcdf, GeoNodes_NT_preloader,\
                                    create_new_node_tree, GeoNodesNodeTree, \
                                    node_tree_name, node_categories
 
