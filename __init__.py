@@ -22,7 +22,7 @@ bl_info = {
     "category" : "Generic"
 }
 
-from GeoNodes.GeoNodes import registerGeoNodes, unregisterGeoNodes
+from GeoNodes.geonodes.GeoNodes import registerGeoNodes, unregisterGeoNodes
 
 
 def register():
