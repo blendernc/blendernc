@@ -120,7 +120,9 @@ class GeoNodes_OT_preloader(bpy.types.Operator):
                 var_dict[frame]
             except KeyError:
                 print("Frame %i loaded!" % frame)
-                var_dict[frame] = var_data[frame, :, :].values[:, :]
+                frame_data = var_data[frame, :, :].values[:, :]
+                normalized_data = normalize_data(frame_data)
+                var_dict[frame] = from_frame_to_pixel_value(normalized_data)
         self.report({'INFO'}, "Frames %i to %i have been loaded!" % (frame_start, frame_end))
         return {'FINISHED'}
 
