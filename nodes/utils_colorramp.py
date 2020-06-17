@@ -4,7 +4,7 @@ import importlib
 NODE_TYPE =  'ShaderNodeValToRGB'
 
 def divide_cmap(n,step):
-    return n*(1/(step-1)),int(n*(256//(step-1)))
+    return (n-1)*(1/(step-1)),int((n-1)*(256//(step-1)))
 
 class ColorRamp(object):
     def __init__(self):
@@ -33,7 +33,7 @@ class ColorRamp(object):
         counter=0
         for key,items in names.items():
             for item in items:
-                cmap_names.append((item+"."+key,item+" - "+key,"",counter))
+                cmap_names.append((item+":"+key,item+" - "+key,"",counter))
                 counter+=1
         return cmap_names
         #[(cmaps[ii],cmaps[ii],"",ii) for ii in range(len(cmaps))]
@@ -55,29 +55,34 @@ class ColorRamp(object):
         cmap_steps = cmap_steps
         s_cmap,maps = selected_cmap
         cmap = importlib.import_module(maps)
+
+        cms = cmap.cm.cmap_d
         
         items = self.node.color_ramp.elements.items()
 
-        if len(items) != cmap_steps:
+        if len(items) != cmap_steps+1:
             # Remove all items descendent to avoid missing points and leave first position.
             [ self.node.color_ramp.elements.remove(element) for item,element in items[::-1][:-1] ]
-            pos,value = divide_cmap(0,cmap_steps)
-            self.node.color_ramp.elements[0].color = getattr(cmap.cm, s_cmap)(value)
-            print(pos,value)
-            for i in range(1,cmap_steps):
+            self.node.color_ramp.elements[0].color=(0,0,0,1)
+            self.node.color_ramp.elements.new(1e-5)
+            pos,value = divide_cmap(1e-5,cmap_steps)
+            self.node.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
                 print(pos,value)
                 self.node.color_ramp.elements.new(pos)
                 #self.node.color_ramp.elements[i].position = pos
-                self.node.color_ramp.elements[i].color = getattr(cmap.cm, s_cmap)(value)
+                self.node.color_ramp.elements[i].color = cms.get(s_cmap)(value)
         else: 
-            pos,value = divide_cmap(0,cmap_steps)
-            self.node.color_ramp.elements[0].color = getattr(cmap.cm, s_cmap)(value)
-            for i in range(1,cmap_steps):
+            self.node.color_ramp.elements[0].color=(0,0,0,1)
+            self.node.color_ramp.elements.new(1e-5)
+            pos,value = divide_cmap(1e-5,cmap_steps)
+            self.node.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
                 print(pos)
                 #self.node.color_ramp.elements[i].position = pos
-                self.node.color_ramp.elements[i].color = getattr(cmap.cm, s_cmap)(value)
+                self.node.color_ramp.elements[i].color = cms.get(s_cmap)(value)
 
     def create_group_node(self,group_name):
         self.group_name = group_name

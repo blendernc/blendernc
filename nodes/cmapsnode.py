@@ -2,7 +2,7 @@ import bpy
 
 from . utils_colorramp import ColorRamp
 
-node_group_name = ".NodeGroup"
+node_group_name = ".Colormaps"
 
 core_colorramp = ColorRamp()
 
@@ -10,11 +10,12 @@ core_colorramp = ColorRamp()
 def update_colorramp(self, context):
     update_operator(self,context)
     cmap_steps = self.n_stops
-    selected_cmap = self.colormaps.split('.')
+    selected_cmap = self.colormaps.split(':')
     if self.fcmap:
         selected_cmap[0] = selected_cmap[0]+'_r'
     else:
-        selected_cmap[0] = selected_cmap[0].split('_')[0]
+        if selected_cmap[0].split('_')[-1] == "_r":
+            selected_cmap[0] = selected_cmap[0].replace("_r", "")
     core_colorramp.update_colormap(selected_cmap,cmap_steps)
 
 # Chosen operator has changed - update the nodes and links
@@ -182,13 +183,11 @@ from nodeitems_utils import NodeItem, register_node_categories, unregister_node_
 from nodeitems_builtins import ShaderNodeCategory
 
 def register():
-    #bpy.utils.register_class(MathsDynamic)
     newcatlist = [ShaderNodeCategory("SH_NEW_CUSTOM", "Blendernc", items=[NodeItem("cmapsNode"),]),]
     register_node_categories("CUSTOM_NODES", newcatlist)
 
 def unregister():
     unregister_node_categories("CUSTOM_NODES")
-    #bpy.utils.unregister_class(MathsDynamic)
 
 # Attempt to unregister our class (in case it's already been registered before) and register it.
 try :

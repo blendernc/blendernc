@@ -11,6 +11,8 @@ from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
                     create_new_node_tree, BlenderNCNodeTree, \
                     node_tree_name, node_categories
 
+from .. nodes.cmapsnode import BLENDERNC_CMAPS_NT_node
+
 classes = [
     # Panels
     BlenderNC_LOAD_OT_On,
@@ -21,6 +23,8 @@ classes = [
     BlenderNC_NT_preloader,
     BlenderNC_NT_resolution,
     BlenderNC_NT_output,
+    # Shader Nodes 
+    BLENDERNC_CMAPS_NT_node,
     # Operators
     BlenderNC_OT_ncload,
     BlenderNC_OT_netcdf2img,

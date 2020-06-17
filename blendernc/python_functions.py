@@ -20,16 +20,18 @@ class Timer:
         print(rep)
 
 # Definitions
-def normalize_data(data, min_range=None, max_range=None):
+def normalize_data(data, max_range=None, min_range=None):
     # Find ranges and normalize in the interval [0,1]
     if min_range is None:
         min_range = np.nanmin(data)
     if max_range is None:
         max_range = np.nanmax(data)
     var_range = max_range - min_range
-    return data #(data - min_range) / var_range
+    print(max_range,min_range)
+    return (data - min_range) / var_range
 
 def get_var(ncdata):
+    # TODO: ADD "Select Variable" option to force user to select variable."
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
     if ncdata[variables[0]].long_name:
@@ -40,13 +42,12 @@ def get_var(ncdata):
 
 def get_possible_variables(self, context):
     scene = context.scene
-
     data_dictionary = scene.nc_dictionary
     node = self
     ncfile = node.file_name
     if not ncfile or not data_dictionary:
         return []
-    ncdata = data_dictionary[ncfile]
+    ncdata = data_dictionary[ncfile]["Dataset"]
     items = get_var(ncdata)
     return items
 
@@ -63,7 +64,13 @@ def update_nodes(self, context):
     node_keys = [key for key in bpy.data.node_groups[-1].nodes.keys() if 'netCDFinput' in key]
     # Change last input node
     bpy.data.node_groups[-1].nodes[node_keys[-1]].var_name = selected_variable
-
+    # Compute max and min values only once.
+    scene = context.scene
+    file_path=self.blendernc_file
+    scene.nc_dictionary[file_path][selected_variable]= {
+        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
+        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())
+                                }
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -71,12 +78,11 @@ def get_max_timestep(self, context):
     data_dictionary = scene.nc_dictionary
     if not ncfile or not data_dictionary:
         return 0
-    ncdata = data_dictionary[ncfile]
+    ncdata = data_dictionary[ncfile]["Dataset"]
     var_name = self.var_name
     var_data = ncdata[var_name]
     t, y, x = var_data.shape
     return t - 1
-
 
 def step_update(node, context):
     step = node.step
@@ -86,14 +92,13 @@ def step_update(node, context):
             node.frame_loaded = step
 
 def from_frame_to_pixel_value(frame):
-        alpha_channel = np.ones(shape=frame.shape)
-        # BW in RGB format for image
-        rgb = np.repeat(frame[:, :, np.newaxis], 3, axis=2)
-        rgba = np.concatenate((rgb, alpha_channel[:, :, np.newaxis]), axis=2)
-        rgba = rgba.ravel()
-        # Using foreach_set function for performance ( requires a 32-bit argument)
-        return np.float32(rgba)
-
+    alpha_channel = np.ones(shape=frame.shape)
+    # BW in RGB format for image
+    rgb = np.repeat(frame[:, :, np.newaxis], 3, axis=2)
+    rgba = np.concatenate((rgb, alpha_channel[:, :, np.newaxis]), axis=2)
+    rgba = rgba.ravel()
+    # Using foreach_set function for performance ( requires a 32-bit argument)
+    return np.float32(rgba)
 
 def get_var_dict(context, file_path, var_name):
     scene = context.scene
@@ -114,20 +119,34 @@ def get_var_data(context, file_path, var_name):
     # Get data dictionary stored at scene object
     data_dictionary = scene.nc_dictionary
     # Get the netcdf of the selected file
-    ncdata = data_dictionary[file_path]
+    ncdata = data_dictionary[file_path]["Dataset"]
     # Get the data of the selected variable
     return ncdata[var_name]
+
+def get_max_min_data(context, file_path, var_name):
+    scene = context.scene
+    # Get data dictionary stored at scene object
+    data_dictionary = scene.nc_dictionary
+    # Get the netcdf of the selected file
+    var_metadata = data_dictionary[file_path][var_name]
+    return var_metadata['max_value'].values,var_metadata['min_value'].values
 
 def load_frame(context, file_path, var_name, frame):
     # Find netcdf file data
     var_data = get_var_data(context, file_path, var_name)
     # Find cache dictionary
     var_dict = get_var_dict(context, file_path, var_name)
+    
+    # Global max and min
+    vmax,vmin = get_max_min_data(context, file_path, var_name)
 
+    # TODO: Improve by using coordinates, 
+    # could generate issues if the first axis isn't time
     # Load data and normalize
-
     frame_data = var_data[frame, :, :].values[:, :]
-    normalized_data = normalize_data(frame_data)
+    # TODO: Test if computing vmax and vmin once improves
+    # the performance. May be really usefull with 3D and 4D dataset.
+    normalized_data = normalize_data(frame_data,vmax,vmin)
 
     # Store in cache
     var_dict[frame] = from_frame_to_pixel_value(normalized_data)
@@ -145,7 +164,7 @@ def update_image(context, file_name, var_name, step, flip, image):
     data_dictionary = scene.nc_dictionary
 
     # Get the netcdf of the selected file
-    ncdata = data_dictionary[file_name]
+    ncdata = data_dictionary[file_name]["Dataset"]
     # Get the data of the selected variable
     var_data = ncdata[var_name]
 
@@ -166,15 +185,22 @@ def update_image(context, file_name, var_name, step, flip, image):
     # Get data of the selected step
     timer.tick()
     try:
+        # TODO:Use time coordinate, not index.
+        # IF timestep is larger, use the last time value
+        if step >= var_data.shape[0]:
+            step = var_data.shape[0]-1
         scene.nc_cache[file_name][var_name][step]
     except KeyError:
+        # TODO:Use time coordinate, not index.
+        if step >= var_data.shape[0]: 
+            step = var_data.shape[0]-1
         load_frame(context, file_name, var_name, step)
         
     # In case data has been pre-loaded
     pixels_value = scene.nc_cache[file_name][var_name][step]
     timer.tick()
 
-
+    # TODO: Test version, make it copatible with 2.8 forwards
     image.pixels.foreach_set(pixels_value)
     timer.tick()
     image.update()
