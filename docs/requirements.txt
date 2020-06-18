@@ -1,4 +1,0 @@
-numpy 
-xarray
-bpy
-xarray
