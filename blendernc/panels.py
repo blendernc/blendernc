@@ -1,4 +1,5 @@
 import bpy
+from . python_functions import step_update
 
 gui_active_panel_fin = None
 
@@ -16,20 +17,11 @@ def update_proxy_file(self, context):
     # except (NameError, ValueError):
     #     bpy.ops.blendernc.file_error()
 
-# Update resolution function of netCDF dataset
-def update_proxy_resolution(self, context):
-    """
-    Update function:
-        -   Dynamically update the resolution of dataset.
-    """
-    pass
-    #bpy.ops.blendernc.netcdf_resolution()
-
 # Scene globals
 bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(name = 'Resolution', 
                                                 min = 1, max = 100, 
                                                 default = 50, step =100,
-                                                update=update_proxy_resolution,
+                                                update=step_update,
                                                 precision=0, options={'ANIMATABLE'})
 
 bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=(''),
@@ -100,7 +92,7 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             # TO DO: Add info?
             box_asts.label(text="INFO", icon='INFO')
         
-        self.layout.label(text="To be implemented.", icon='INFO')
+        self.layout.label(text="WIP.", icon='INFO')
         self.layout.prop(scn, 'blendernc_resolution')
         
 

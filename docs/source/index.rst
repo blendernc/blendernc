@@ -17,7 +17,6 @@ Welcome to blendernc's documentation!
    :caption: Dive in!
 
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Examples

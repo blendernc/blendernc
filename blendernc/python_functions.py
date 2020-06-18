@@ -2,6 +2,9 @@
 # This file contains pure python functions
 #
 # Probably for this reason I should avoid importing bpy here...
+
+## TODO: If netcdf file has been selected already create a copy of the TreeNode
+
 import bpy
 # Other imports
 import numpy as np
@@ -34,7 +37,7 @@ def get_var(ncdata):
     # TODO: ADD "Select Variable" option to force user to select variable."
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
-    if ncdata[variables[0]].long_name:
+    if "long_name" in ncdata[variables[0]].attrs:
         var_names = [(variables[ii], variables[ii], ncdata[variables[ii]].long_name, "DISK_DRIVE", ii) for ii in range(len(variables))]
     else:
         var_names = [(variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii) for ii in range(len(variables))]
@@ -81,6 +84,7 @@ def get_max_timestep(self, context):
     ncdata = data_dictionary[ncfile]["Dataset"]
     var_name = self.var_name
     var_data = ncdata[var_name]
+    
     t, y, x = var_data.shape
     return t - 1
 
@@ -118,10 +122,12 @@ def get_var_data(context, file_path, var_name):
     scene = context.scene
     # Get data dictionary stored at scene object
     data_dictionary = scene.nc_dictionary
+    # Dataset resolution
+    resolution = scene.blendernc_resolution
     # Get the netcdf of the selected file
     ncdata = data_dictionary[file_path]["Dataset"]
     # Get the data of the selected variable
-    return ncdata[var_name]
+    return netcdf_values(ncdata,var_name,resolution)
 
 def get_max_min_data(context, file_path, var_name):
     scene = context.scene
@@ -143,7 +149,11 @@ def load_frame(context, file_path, var_name, frame):
     # TODO: Improve by using coordinates, 
     # could generate issues if the first axis isn't time
     # Load data and normalize
-    frame_data = var_data[frame, :, :].values[:, :]
+    # TODO: Move dataset shape only do it once, perhaps when selecting variable.
+    if len(var_data.shape) == 2:
+        frame_data = var_data[:, :].values[:, :]
+    elif len(var_data.shape) == 3:
+        frame_data = var_data[frame, :, :].values[:, :]
     # TODO: Test if computing vmax and vmin once improves
     # the performance. May be really usefull with 3D and 4D dataset.
     normalized_data = normalize_data(frame_data,vmax,vmin)
@@ -163,14 +173,15 @@ def update_image(context, file_name, var_name, step, flip, image):
     # Get data dictionary stored at scene object
     data_dictionary = scene.nc_dictionary
 
-    # Get the netcdf of the selected file
-    ncdata = data_dictionary[file_name]["Dataset"]
     # Get the data of the selected variable
-    var_data = ncdata[var_name]
+    var_data = get_var_data(context, file_name, var_name)
 
     timer.tick()
     # Get object shape
-    t, y, x = var_data.shape
+    if len(var_data.shape) == 2:
+        y, x = var_data.shape
+    elif len(var_data.shape) ==3:
+        t, y, x = var_data.shape
 
     # Check if the image is an image object or a image name:
     if not isinstance(image, bpy.types.Image):
@@ -189,8 +200,10 @@ def update_image(context, file_name, var_name, step, flip, image):
         # IF timestep is larger, use the last time value
         if step >= var_data.shape[0]:
             step = var_data.shape[0]-1
-        scene.nc_cache[file_name][var_name][step]
-    except KeyError:
+        pixels_cache=scene.nc_cache[file_name][var_name][step]
+        if pixels_cache.size != img_x*img_y:
+            raise ValueError("Size of image doesn't match")
+    except (KeyError, ValueError):
         # TODO:Use time coordinate, not index.
         if step >= var_data.shape[0]: 
             step = var_data.shape[0]-1
@@ -207,3 +220,26 @@ def update_image(context, file_name, var_name, step, flip, image):
     timer.tick()
     timer.report()
     return True
+
+def netcdf_values(dataset,selected_variable,active_resolution):
+    """
+    """
+
+    variable = dataset[selected_variable]
+
+    dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(variable[ii].size,active_resolution))
+            for ii in variable.coords if 'time' not in ii}
+    
+    print(selected_variable,dict_var_shape)
+    variable_res = variable.isel(dict_var_shape)
+    return variable_res
+    
+
+def resolution_steps(size,res):
+    # TODO: Fix squaring as it depends on each coordinate, not the overall dataset.
+    res_interst = res/5 + 80
+    log_scale = np.log10(size)/np.log10((size*res_interst/100)) - 1
+    step = size * log_scale
+    if step ==0:
+        step = 1
+    return int(step)
