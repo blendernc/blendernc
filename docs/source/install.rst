@@ -1,21 +1,8 @@
-=========
-BlenderNC
-=========
+=================
+Install BlenderNC
+=================
 
-**BlenderNC** is a Blender add-on that allows to import netCDF files into 
-Blender. It allows 2D and 3D visualization and generation of scientific data 
-animations. The main development of *BlenderNC* is currently focus in 
-geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework 
-should support the load of any netCDF.
-
-.. image:: ../images/GEBCO_blendernc.png
-  :width: 100%
-  :alt: GEBCO Bathymetry (5400x2700 pixels)
-
-==============
-Install Add-on
-==============
-** BlenderNC works in Blender > 2.83 **
+**BlenderNC works in Blender > 2.83**
 
 BlenderNC requires the following python modules:
 
@@ -32,6 +19,7 @@ following commands depending on your OS:
 
 MAC
 ###
+
 .. code-block:: bash
 
     cd /Applications/Blender_2.8x.app/Contents/Resources/2.83/python/bin/
@@ -40,6 +28,7 @@ MAC
 
 Linux
 #####
+
 .. code-block:: bash
 
     cd /path/to/blender/2.83/python/bin/
@@ -55,12 +44,12 @@ Windows
     python.exe -m ensurepip
     python.exe -m pip install xarray xgcm cmocean matplotlib
 
-
 Blender Compilation
 ###################
 
 To furter configure Blender, you could install it using a `conda` environment 
-by following the official [Blender installation website](https://wiki.blender.org/index.php/Dev:Doc/Building_Blender/) instructions:
+by following the official `Blender installation website 
+<https://wiki.blender.org/index.php/Dev:Doc/Building_Blender/>`_.
 
 Create conda environment:
 
@@ -94,10 +83,3 @@ Then link all the packages from your python environment folder:
 .. code-block:: bash
 
     ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
-
-
-==============
-How to use it!
-==============
-
-

@@ -38,9 +38,10 @@ def get_var(ncdata):
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
     if "long_name" in ncdata[variables[0]].attrs:
-        var_names = [(variables[ii], variables[ii], ncdata[variables[ii]].long_name, "DISK_DRIVE", ii) for ii in range(len(variables))]
+        var_names = [(variables[ii], variables[ii], ncdata[variables[ii]].long_name, "DISK_DRIVE", ii+1) for ii in range(len(variables))]
     else:
-        var_names = [(variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii) for ii in range(len(variables))]
+        var_names = [(variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii+1) for ii in range(len(variables))]
+    var_names.insert(0,('NONE',"Select Variable","Select Variable","DISK_DRIVE",0))
     return var_names
 
 def get_possible_variables(self, context):
@@ -70,10 +71,13 @@ def update_nodes(self, context):
     # Compute max and min values only once.
     scene = context.scene
     file_path=self.blendernc_file
+    if selected_variable == "NONE":
+        return
+    
     scene.nc_dictionary[file_path][selected_variable]= {
         "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
         "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())
-                                }
+                            }
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -91,6 +95,9 @@ def get_max_timestep(self, context):
 def step_update(node, context):
     step = node.step
     print(node.file_name, node.var_name, step)
+    if node.var_name=="NONE":
+        return
+        
     if step != node.frame_loaded:
         if update_image(context, node.file_name, node.var_name, step, node.flip, node.image):
             node.frame_loaded = step

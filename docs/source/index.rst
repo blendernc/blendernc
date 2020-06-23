@@ -3,14 +3,29 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to blendernc's documentation!
+Welcome to BlenderNC's documentation!
 =====================================
+
+=========
+BlenderNC
+=========
+
+**BlenderNC** is a Blender add-on that allows to import netCDF files into 
+Blender. It allows 2D and 3D visualization and generation of scientific data 
+animations. The main development of *BlenderNC* is currently focus in 
+geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework 
+should support the load of any netCDF.
+
+.. image:: ../images/GEBCO_blendernc.png
+  :width: 100%
+  :alt: GEBCO Bathymetry (5400x2700 pixels)
 
 .. toctree::
    :maxdepth: 2
    :caption: Quick Start
 
-   blendernc 
+   install
+   howtouse 
 
 .. toctree::
    :maxdepth: 2

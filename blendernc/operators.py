@@ -39,9 +39,14 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         blendernc_nodes = [keys for keys in bpy.data.node_groups.keys() if ('BlenderNC' in keys or 'NodeTree' in keys)]
         if not blendernc_nodes:
             bpy.data.node_groups.new("BlenderNC","BlenderNC")
+            bpy.data.node_groups['BlenderNC'].use_fake_user = True
         
         if not bpy.data.node_groups[-1].nodes:
             bpy.data.node_groups[-1].nodes.new("netCDFNode")
+
+        
+        #bpy.context.window.screen.areas[4].spaces[0].node_tree = bpy.data.node_groups['BlenderNC']
+
         return {'FINISHED'}
 
 
@@ -113,4 +118,3 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
         image = self.image
         update_image(context, self.file_name, self.var_name, self.step, self.flip, self.image)
         return {'FINISHED'}
-

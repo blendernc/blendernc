@@ -4,20 +4,23 @@ from collections import defaultdict
 
 import nodeitems_utils
 
-from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, BlenderNC_LOAD_OT_Off
+from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
+                     BlenderNC_LOAD_OT_Off, BlenderNC_OT_apply_material
 from . operators import BlenderNC_OT_ncload, BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader
+
 from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
                     BlenderNC_NT_resolution, BlenderNC_NT_output,\
                     create_new_node_tree, BlenderNCNodeTree, \
+                    BlenderNC_NT_select_axis, \
                     node_tree_name, node_categories
 
 from .. nodes.cmapsnode import BLENDERNC_CMAPS_NT_node
 
 classes = [
     # Panels
+    BlenderNC_UI_PT_3dview,
     BlenderNC_LOAD_OT_On,
     BlenderNC_LOAD_OT_Off,
-    BlenderNC_UI_PT_3dview,
     # Nodes
     BlenderNC_NT_netcdf,
     BlenderNC_NT_preloader,
@@ -29,6 +32,8 @@ classes = [
     BlenderNC_OT_ncload,
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
+    BlenderNC_OT_apply_material,
+    BlenderNC_NT_select_axis,
 ]
 
 if create_new_node_tree:
