@@ -20,8 +20,6 @@ if create_new_node_tree:
         # for area in bpy.context.screen.areas:
         #     if area.type == 'SpaceNodeEditor':
         #         space_data = area.spaces.active
-        
-
 
 class BlenderNC_NT_netcdf(bpy.types.Node):
     # === Basics ===

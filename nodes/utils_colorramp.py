@@ -13,17 +13,20 @@ class ColorRamp(object):
     def installed_cmaps(self):
         import importlib   
         cmaps = []
+        import matplotlib
+        matplotlib.use('Agg')
         try:
             import cmocean as cmocean
             cmaps.append('cmocean')
-        except ImportError:
-            raise ImportError("No module named cmocean")
-
+        except ImportError as importerror:
+            raise importerror
+            # TODO: Raise error in UI. 
         try:
             from matplotlib import cm
             cmaps.append('matplotlib')
-        except ImportError:
-            raise ImportError("No module named matplotlib")
+        except ImportError as importerror:
+            raise importerror
+            # TODO: Raise error in UI. 
 
         return cmaps
 
