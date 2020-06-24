@@ -34,7 +34,6 @@ def normalize_data(data, max_range=None, min_range=None):
     return (data - min_range) / var_range
 
 def get_var(ncdata):
-    # TODO: ADD "Select Variable" option to force user to select variable."
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
     if "long_name" in ncdata[variables[0]].attrs:
@@ -65,7 +64,7 @@ def get_possible_files(self, context):
 
 def update_nodes(self, context):
     selected_variable = self.blendernc_netcdf_vars
-    node_keys = [key for key in bpy.data.node_groups[-1].nodes.keys() if 'netCDFinput' in key]
+    node_keys = [key for key in bpy.data.node_groups["BlenderNC"].nodes.keys() if 'netCDFinput' in key]
     # Change last input node
     bpy.data.node_groups[-1].nodes[node_keys[-1]].var_name = selected_variable
     # Compute max and min values only once.
@@ -73,7 +72,10 @@ def update_nodes(self, context):
     file_path=self.blendernc_file
     if selected_variable == "NONE":
         return
+
+    update_dict(file_path,selected_variable,scene)
     
+def update_dict(file_path,selected_variable,scene):
     scene.nc_dictionary[file_path][selected_variable]= {
         "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
         "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())
@@ -93,6 +95,8 @@ def get_max_timestep(self, context):
     return t - 1
 
 def step_update(node, context):
+    if node.var_name not in context.scene.nc_dictionary[node.file_name].keys():
+        update_dict(node.file_name, node.var_name,context.scene)
     step = node.step
     print(node.file_name, node.var_name, step)
     if node.var_name=="NONE":
@@ -250,3 +254,11 @@ def resolution_steps(size,res):
     if step ==0:
         step = 1
     return int(step)
+
+def update_proxy_file(self, context):
+    """
+    Update function:
+        -   Checks if netCDF file exists 
+        -   Extracts variable names using netCDF4 conventions.
+    """
+    bpy.ops.blendernc.ncload(file_path=bpy.context.scene.blendernc_file)

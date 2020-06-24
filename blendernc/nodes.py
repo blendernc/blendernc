@@ -1,34 +1,88 @@
 # Imports
 import bpy
-from nodeitems_utils import NodeCategory, NodeItem
-from . python_functions import get_possible_files, get_possible_variables, step_update
-# Blender Classes
-node_tree_name = "BlenderNC"
-create_new_node_tree = node_tree_name != "ShaderNodeTree"
-if create_new_node_tree:
-    # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
-    class BlenderNCNodeTree(bpy.types.NodeTree):
-        # Description string
-        '''A custom node tree type that will show up in the editor type list'''
-        # Optional identifier string. If not explicitly defined, the python class name is used.
-        bl_idname = node_tree_name
-        # Label for nice name display
-        bl_label = "BlenderNC"
-        # Icon identifier
-        bl_icon = 'WORLD'
+from nodeitems_utils import  NodeItem
+from . python_functions import get_possible_files, get_possible_variables, step_update, update_proxy_file
+from . events import CurrentEvents, BlenderEventsTypes
+from . node_tree import updateNode, BlenderNCNodeCategory
 
-        # for area in bpy.context.screen.areas:
-        #     if area.type == 'SpaceNodeEditor':
-        #         space_data = area.spaces.active
+########################################################
+########################################################
+########################################################
+
+class BlenderNC_NT_path(bpy.types.Node):
+    # === Basics ===
+    # Description string
+    '''Select axis '''
+    # Optional identifier string. If not explicitly defined, the python class name is used.
+    bl_idname = 'netCDFPath'
+    # Label for nice name display
+    bl_label = "netCDF Path"
+    # Icon identifier
+    bl_icon = 'FOLDER_REDIRECT'
+    blb_type = "NETCDF"
+
+    # TODO: Fix updateNode, currently it doesn't update the nodetree, and therefore
+    # the user has to reconnect the node.
+    blendernc_file: bpy.props.StringProperty(
+                    name="",
+                    description="Folder with assets blend files",
+                    default="",
+                    maxlen=1024,
+                    update=updateNode,
+                    subtype='FILE_PATH')    
+
+    # === Optional Functions ===
+    # Initialization function, called when a new node is created.
+    # This is the most common place to create the sockets for a node, as shown below.
+    # NOTE: this is not the same as the standard __init__ function in Python, which is
+    #       a purely internal Python method and unknown to the node system!
+    def init(self, context):
+        self.outputs.new('bNCstringSocket',"Path")
+        self.color = (0.4,0.8,0.4)
+        self.use_custom_color = True
+
+    # Copy function to initialize a copied node from an existing one.
+    def copy(self, node):
+        print("Copying from node ", node)
+
+    # Free function to clean up on removal.
+    def free(self):
+        print("Removing node ", self, ", Goodbye!")
+
+    # Additional buttons displayed on the node.
+    def draw_buttons(self, context, layout):
+        scene = context.scene
+        layout.prop(self, "blendernc_file")
+
+    # Detail buttons in the sidebar.
+    # If this function is not defined, the draw_buttons function is used instead
+    def draw_buttons_ext(self, context, layout):
+        pass
+
+    # Optional: custom label
+    # Explicit user label overrides this, but here we can define a label dynamically
+    def draw_label(self):
+        return "netCDF Path"
+
+    def update_value(self, context):
+        self.update()
+
+    def update(self):
+        if self.outputs[0].is_linked and self.blendernc_file:
+            self.outputs[0].text=self.blendernc_file
+
+########################################################
+########################################################
+########################################################
 
 class BlenderNC_NT_netcdf(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''A netcdf node'''
+    '''Node to initiate dataset'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
     bl_idname = 'netCDFNode'
     # Label for nice name display
-    bl_label = "netCDFinput"
+    bl_label = "netCDF input"
     # Icon identifier
     bl_icon = 'UGLYPACKAGE'
     bl_type = "NETCDF"
@@ -48,23 +102,6 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         name="flip",
         update=step_update,
     )
-    update_on_frame_change: bpy.props.BoolProperty(
-        name="Update on frame change",
-
-        default=False,
-    )
-
-    image: bpy.props.PointerProperty(
-        type=bpy.types.Image,
-        name=""
-    )
-    frame_loaded: bpy.props.IntProperty(
-        default=-1,
-    )
-
-    step: bpy.props.IntProperty(
-        update=step_update,
-    )
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -72,10 +109,12 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.outputs.new('NodeSocketString',"Dataset")
+        self.inputs.new('bNCstringSocket',"Path")
+        self.outputs.new('bNCnetcdfSocket',"Dataset")
         self.frame_loaded = -1
         self.color = (0.4,0.8,0.4)
         self.use_custom_color = True
+        
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -98,23 +137,6 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         if self.var_name:
             layout.prop(self, "flip")
 
-            layout.template_ID(self, "image", new="image.new", open="image.open")
-
-        if self.image:
-            layout.prop(self, "update_on_frame_change")
-            op = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            op.file_name = self.file_name
-            op.var_name = self.var_name
-            op.step = self.step
-            op.flip = self.flip
-            op.image = self.image.name
-
-        # Hide unused sockets
-        if not self.update_on_frame_change:
-            layout.prop(self, "step")
-        else:
-            layout.label(text="%i" % scene.frame_current)
-
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -129,7 +151,17 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         self.update()
 
     def update(self):
-        pass
+        if (self.inputs[0].is_linked and self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'):
+            bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
+        elif self.inputs[0].is_linked:
+            self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
+        else: 
+            # TODO Raise issue to user
+            pass
+        
+        if self.output[0].is_linked:
+            pass
+        
 
 
 class BlenderNC_NT_preloader(bpy.types.Node):
@@ -139,7 +171,7 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     # Optional identifier string. If not explicitly defined, the python class name is used.
     bl_idname = 'netCDFPreloadNode'
     # Label for nice name display
-    bl_label = "Preload netCDF"
+    bl_label = "Load netCDF"
     # Icon identifier
     bl_icon = 'SOUND'
     blb_type = "NETCDF"
@@ -211,7 +243,7 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF preload"
+        return "Load netCDF"
 
     def update_value(self, context):
         self.update()
@@ -244,8 +276,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('NodeSocketString',"Dataset")
-        self.outputs.new('NodeSocketString',"Dataset")
+        self.inputs.new('bNCnetcdfSocket',"Dataset")
+        self.outputs.new('bNCnetcdfSocket',"Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -270,7 +302,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF preload"
+        return "Resolution"
 
     def update_value(self, context):
         self.update()
@@ -291,13 +323,30 @@ class BlenderNC_NT_output(bpy.types.Node):
     bl_icon = 'RENDER_RESULT'
     blb_type = "NETCDF"
 
+    update_on_frame_change: bpy.props.BoolProperty(
+        name="Update on frame change",
+
+        default=False,
+    )
+
+    image: bpy.props.PointerProperty(
+        type=bpy.types.Image,
+        name=""
+    )
+    frame_loaded: bpy.props.IntProperty(
+        default=-1,
+    )
+
+    step: bpy.props.IntProperty(
+        update=step_update,
+    )
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('NodeSocketString',"Dataset")
+        self.inputs.new('bNCnetcdfSocket',"Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -311,7 +360,22 @@ class BlenderNC_NT_output(bpy.types.Node):
     def draw_buttons(self, context, layout):
         scene = context.scene
 
-        layout.prop(self, "resolution")
+        layout.template_ID(self, "image", new="image.new", open="image.open")
+
+        if self.image:
+            layout.prop(self, "update_on_frame_change")
+            op = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
+            op.file_name = self.file_name
+            op.var_name = self.var_name
+            op.step = self.step
+            op.flip = self.flip
+            op.image = self.image.name
+
+        # Hide unused sockets
+        if not self.update_on_frame_change:
+            layout.prop(self, "step")
+        else:
+            layout.label(text="%i" % scene.frame_current)
   
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -321,7 +385,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF preload"
+        return "Image Output"
 
     def update_value(self, context):
         self.update()
@@ -374,7 +438,7 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF preload"
+        return "Select Axis"
 
     def update_value(self, context):
         self.update()
@@ -384,22 +448,13 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
 
 
 
-class BlenderNCNodeCategory(NodeCategory):
-    @classmethod
-    def poll(cls, context):
-        # TODO: Select default node by using the node_tree_name
-        return context.space_data.tree_type == node_tree_name
-
-
-
-
 # all categories in a list
 node_categories = [
     # identifier, label, items list
     BlenderNCNodeCategory('netCDF', "netCDF", items=[
         # our basic node
         NodeItem("netCDFNode"),
-        NodeItem("netCDFPreloadNode"),
+        NodeItem("netCDFPath"),
     ]),
     BlenderNCNodeCategory('Grid', "Grid", items=[
         # our basic node
@@ -412,6 +467,7 @@ node_categories = [
     BlenderNCNodeCategory('Output', "Output", items=[
         # our basic node
         NodeItem("netCDFOutput"),
+        NodeItem("netCDFPreloadNode"),
     ])
 
     

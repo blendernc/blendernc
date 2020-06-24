@@ -1,16 +1,8 @@
 import bpy
-from . python_functions import step_update
+from . python_functions import step_update, update_proxy_file
 
 gui_active_panel_fin = None
 gui_active_materials = None
-
-def update_proxy_file(self, context):
-    """
-    Update function:
-        -   Checks if netCDF file exists 
-        -   Extracts variable names using netCDF4 conventions.
-    """
-    bpy.ops.blendernc.ncload(file_path=bpy.context.scene.blendernc_file)
 
 class BlenderNC_LOAD_OT_On(bpy.types.Operator):
     bl_label = 'Load netCDF'

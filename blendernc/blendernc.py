@@ -6,13 +6,18 @@ import nodeitems_utils
 
 from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
                      BlenderNC_LOAD_OT_Off, BlenderNC_OT_apply_material
-from . operators import BlenderNC_OT_ncload, BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader
+
+from . operators import BlenderNC_OT_ncload, BlenderNC_OT_netcdf2img, \
+                        BlenderNC_OT_preloader
 
 from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
                     BlenderNC_NT_resolution, BlenderNC_NT_output,\
-                    create_new_node_tree, BlenderNCNodeTree, \
-                    BlenderNC_NT_select_axis, \
-                    node_tree_name, node_categories
+                    BlenderNC_NT_select_axis, BlenderNC_NT_path, node_categories
+        
+from . node_tree import create_new_node_tree, BlenderNCNodeTree,\
+                        node_tree_name
+
+from . sockets import bNCnetcdfSocket,bNCstringSocket
 
 from .. nodes.cmapsnode import BLENDERNC_CMAPS_NT_node
 
@@ -26,6 +31,7 @@ classes = [
     BlenderNC_NT_preloader,
     BlenderNC_NT_resolution,
     BlenderNC_NT_output,
+    BlenderNC_NT_path,
     # Shader Nodes 
     BLENDERNC_CMAPS_NT_node,
     # Operators
@@ -34,6 +40,9 @@ classes = [
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
     BlenderNC_NT_select_axis,
+    # Sockets
+    bNCnetcdfSocket,
+    bNCstringSocket,
 ]
 
 if create_new_node_tree:
