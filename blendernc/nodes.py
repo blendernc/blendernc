@@ -90,12 +90,12 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     bl_icon = 'UGLYPACKAGE'
     bl_type = "NETCDF"
 
-    file_name: bpy.props.EnumProperty(
+    blendernc_file: bpy.props.EnumProperty(
         items=get_possible_files,
         name="",
     )
 
-    var_name: bpy.props.EnumProperty(
+    blendernc_netcdf_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="",
         update=dict_update,
@@ -114,7 +114,6 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCstringSocket',"Path")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
-        self.frame_loaded = -1
         self.color = (0.4,0.8,0.4)
         self.use_custom_color = True
         
@@ -132,11 +131,11 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         scene = context.scene
 
         if scene.nc_dictionary:
-            layout.prop(self, "file_name")
+            layout.prop(self, "blendernc_file")
         else:
             layout.label(text="No netcdf loaded")
-        if self.file_name:
-            layout.prop(self, "var_name")
+        if self.blendernc_file:
+            layout.prop(self, "blendernc_netcdf_vars")
 
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -167,9 +166,9 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
             # TODO Raise issue to user
             pass
         
-        if self.outputs[0].is_linked and self.var_name:
-            self.outputs[0].dataset=self.file_name
-            self.outputs[0].var = self.var_name
+        if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
+            self.outputs[0].dataset=self.blendernc_file
+            self.outputs[0].var = self.blendernc_netcdf_vars
         else: 
             # TODO Raise issue to user
             pass
@@ -193,8 +192,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
                                                 update=res_update,
                                                 precision=0, options={'ANIMATABLE'})
 
-    var_name: bpy.props.StringProperty()
-    file_name: bpy.props.StringProperty()
+    blendernc_netcdf_vars: bpy.props.StringProperty()
+    blendernc_file: bpy.props.StringProperty()
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -235,9 +234,9 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     def update(self):
         if (self.inputs[0].is_linked) and self.inputs[0].links[0].from_socket.var !='NONE':
-            self.var_name = self.inputs[0].links[0].from_socket.var 
-            self.file_name = self.inputs[0].links[0].from_socket.dataset
-            bpy.context.scene.nc_dictionary[self.file_name][self.var_name]['resolution'] = self.blendernc_resolution
+            self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
+            self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+            bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
             #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
         elif self.inputs[0].is_linked:
             # TODO Raise issue to select variable
@@ -246,9 +245,9 @@ class BlenderNC_NT_resolution(bpy.types.Node):
             # TODO Raise issue to user
             pass
             
-        if self.outputs[0].is_linked and self.var_name:
-            self.outputs[0].dataset=self.file_name
-            self.outputs[0].var = self.var_name
+        if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
+            self.outputs[0].dataset=self.blendernc_file
+            self.outputs[0].var = self.blendernc_netcdf_vars
         else: 
             # TODO Raise issue to user
             pass
@@ -327,6 +326,7 @@ class BlenderNC_NT_output(bpy.types.Node):
         type=bpy.types.Image,
         name=""
     )
+
     frame_loaded: bpy.props.IntProperty(
         default=-1,
     )
@@ -335,14 +335,15 @@ class BlenderNC_NT_output(bpy.types.Node):
         update=step_update,
     )
 
-    var_name: bpy.props.StringProperty()
-    file_name: bpy.props.StringProperty()
+    blendernc_netcdf_vars: bpy.props.StringProperty()
+    blendernc_file: bpy.props.StringProperty()
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
+        self.frame_loaded = -1
         self.inputs.new('bNCnetcdfSocket',"Dataset")
         self.color = (0.8,0.4,0.4)
         self.use_custom_color = True
@@ -364,8 +365,8 @@ class BlenderNC_NT_output(bpy.types.Node):
         if self.image:
             layout.prop(self, "update_on_frame_change")
             op = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            op.file_name = self.file_name
-            op.var_name = self.var_name
+            op.file_name = self.blendernc_file
+            op.var_name = self.blendernc_netcdf_vars
             op.step = self.step
             op.image = self.image.name
 
@@ -390,8 +391,8 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     def update(self):
         if (self.inputs[0].is_linked) and self.inputs[0].links[0].from_socket.var !='NONE':
-            self.var_name = self.inputs[0].links[0].from_socket.var 
-            self.file_name = self.inputs[0].links[0].from_socket.dataset
+            self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
+            self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===

@@ -1,5 +1,5 @@
 import bpy
-from . python_functions import step_update, update_proxy_file, res_update
+from . python_functions import step_update, res_update, update_file_vars, update_animation
 
 gui_active_panel_fin = None
 gui_active_materials = None
@@ -29,19 +29,6 @@ class BlenderNC_LOAD_OT_Off(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class BlenderNC_OT_apply_material(bpy.types.Operator):
-    bl_label = 'Load netCDF'
-    bl_idname = 'blendernc.apply_material'
-    bl_description = 'Apply texture to material for simple cases'
-    bl_context = 'objectmode'
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    def execute(self, context):
-        global gui_active_materials
-        gui_active_materials = "Blendernc"
-        return {'FINISHED'}
-
-
 def select_only_meshes(self, object):
     return object.type == 'MESH'
 
@@ -60,13 +47,19 @@ bpy.types.Scene.blendernc_file = bpy.props.StringProperty(
     description="Folder with assets blend files",
     default="",
     maxlen=1024,
-    update=update_proxy_file,
+    update=update_file_vars,
     subtype='FILE_PATH')
 
 bpy.types.Scene.blendernc_meshes = bpy.props.PointerProperty(
         name="Select a mesh",
         type=bpy.types.Object,
         poll=select_only_meshes
+    )
+    
+bpy.types.Scene.blendernc_animate = bpy.props.BoolProperty(
+        default=False,
+        name="Animate netCDF",
+        update=update_animation
     )
 
 class BlenderNC_UI_PT_3dview(bpy.types.Panel):
@@ -97,7 +90,8 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             box_asts.prop(scn, 'blendernc_file')
             # Select variables menu
             box_asts.label(text="Select variable:", icon='WORLD_DATA')
-            box_asts.prop(scn, 'blendernc_netcdf_vars')
+            box_asts.prop(scn, 'blendernc_netcdf_vars')   
+            box_asts.prop(scn, 'blendernc_animate')
             box_asts.prop(scn, 'blendernc_resolution')
             # TO DO: Add info?
             # box_asts.label(text="INFO", icon='INFO')

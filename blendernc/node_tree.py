@@ -26,7 +26,6 @@ class BlenderNCCustomTreeNode:
     pass
 
 
-
 def updateNode(self, context):
     """
     When a node has changed state and need to call a partial update.

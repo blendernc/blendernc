@@ -47,7 +47,7 @@ def get_possible_variables(self, context):
     scene = context.scene
     data_dictionary = scene.nc_dictionary
     node = self
-    ncfile = node.file_name
+    ncfile = node.blendernc_file
     if not ncfile or not data_dictionary:
         return []
     ncdata = data_dictionary[ncfile]["Dataset"]
@@ -83,11 +83,11 @@ def update_dict(file_path,selected_variable,scene):
         }
 
 def res_update(node, context):
-    if len(context.scene.nc_dictionary)==0:
+    if len(context.scene.nc_dictionary)==0 or node.blendernc_file=='':
         pass
     else:
-        if node.var_name in context.scene.nc_dictionary[node.file_name].keys():
-            context.scene.nc_dictionary[node.file_name][node.var_name]['resolution'] = node.blendernc_resolution
+        if node.blendernc_netcdf_vars in bpy.context.scene.nc_dictionary[node.blendernc_file].keys():
+            context.scene.nc_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['resolution'] = node.blendernc_resolution
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -103,18 +103,19 @@ def get_max_timestep(self, context):
     return t - 1
 
 def dict_update(node, context):
-    if node.var_name not in context.scene.nc_dictionary[node.file_name].keys():
-        update_dict(node.file_name, node.var_name,context.scene)
+    if node.blendernc_netcdf_vars not in context.scene.nc_dictionary[node.blendernc_file].keys():
+        update_dict(node.blendernc_file, node.blendernc_netcdf_vars,context.scene)
 
 def step_update(node, context):
-    dic_update(node,context)
+    dict_update(node,context)
     step = node.step
-    print(node.file_name, node.var_name, step)
-    if node.var_name=="NONE":
+    print(node.blendernc_file, node.blendernc_netcdf_vars, step)
+    if node.blendernc_netcdf_vars=="NONE":
         return
         
     if step != node.frame_loaded:
-        if update_image(context, node.file_name, node.var_name, step, node.flip, node.image):
+        if update_image(context, node.blendernc_netcdf_vars, node.blendernc_file, 
+                        step, node.flip, node.image):
             node.frame_loaded = step
 
 def from_frame_to_pixel_value(frame):
@@ -273,3 +274,19 @@ def update_proxy_file(self, context):
         -   Extracts variable names using netCDF4 conventions.
     """
     bpy.ops.blendernc.ncload(file_path=bpy.context.scene.blendernc_file)
+
+
+def update_file_vars(self, context):
+    """
+    Update function:
+        -   Checks if netCDF file exists 
+        -   Extracts variable names using netCDF4 conventions.
+    """
+    bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
+
+def update_animation(self,context):
+    try:
+        bpy.data.node_groups['BlenderNC'].nodes['Output'].update_on_frame_change=self.blendernc_animate
+    except KeyError:
+        pass
+    
