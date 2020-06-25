@@ -5,8 +5,55 @@ from os.path import abspath, isfile
 
 from . python_functions import load_frame, update_image, get_var, update_nodes, update_proxy_file
 
+
 class BlenderNC_OT_ncload(bpy.types.Operator):
     bl_idname = "blendernc.ncload"
+    bl_label = "Load netcdf file"
+    bl_description = "Loads netcdf file"
+    bl_options = {"REGISTER", "UNDO"}
+
+    file_path: bpy.props.StringProperty(
+        name="File path",
+        description="Path to the netCDF file that will be loaded.",
+        subtype="FILE_PATH",
+        # default="",
+    )
+
+    def execute(self, context):
+        if not self.file_path:
+            self.report({'INFO'}, "Select a file!")
+            return {'FINISHED'}
+        file_path = abspath(self.file_path)
+
+        if not isfile(file_path):
+            self.report({'ERROR'}, "It seems that this is not a file!")
+            return {'CANCELLED'}
+        scene = context.scene
+        # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
+        # Useful for large datasets. Implement node with chunks if file is huge.
+        scene.nc_dictionary[file_path] = {"Dataset":xarray.open_dataset(file_path, decode_times=False)}
+        self.report({'INFO'}, "File: %s loaded!" % file_path)
+        var_names = get_var(scene.nc_dictionary[file_path]["Dataset"])
+        bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
+                                                                name="",update=update_nodes)
+        # Create new node in BlenderNC node
+        blendernc_nodes = [keys for keys in bpy.data.node_groups.keys() if ('BlenderNC' in keys or 'NodeTree' in keys)]
+        if not blendernc_nodes:
+            bpy.data.node_groups.new("BlenderNC","BlenderNC")
+            bpy.data.node_groups['BlenderNC'].use_fake_user = True
+        
+        if not bpy.data.node_groups[-1].nodes:
+            bpy.data.node_groups[-1].nodes.new("netCDFNode")
+
+        
+        #bpy.context.window.screen.areas[4].spaces[0].node_tree = bpy.data.node_groups['BlenderNC']
+
+        return {'FINISHED'}
+
+
+
+class BlenderNC_OT_ncload_Sui(bpy.types.Operator):
+    bl_idname = "blendernc.ncload_sui"
     bl_label = "Load netcdf file"
     bl_description = "Loads netcdf file"
     bl_options = {"REGISTER", "UNDO"}

@@ -2,7 +2,7 @@
 import bpy
 from nodeitems_utils import  NodeItem
 from . python_functions import (get_possible_files, get_possible_variables, 
-                                step_update, update_proxy_file, res_update,
+                                step_update, res_update,
                                 dict_update)
 
 from . events import CurrentEvents, BlenderEventsTypes

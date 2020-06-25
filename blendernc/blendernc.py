@@ -7,7 +7,7 @@ import nodeitems_utils
 from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
                      BlenderNC_LOAD_OT_Off
 
-from . operators import BlenderNC_OT_ncload, BlenderNC_OT_var, \
+from . operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
                         BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
                         BlenderNC_OT_apply_material
                         
@@ -38,6 +38,7 @@ classes = [
     BLENDERNC_CMAPS_NT_node,
     # Operators
     BlenderNC_OT_ncload,
+    BlenderNC_OT_ncload_Sui,
     BlenderNC_OT_var,
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
