@@ -78,8 +78,16 @@ def update_nodes(self, context):
 def update_dict(file_path,selected_variable,scene):
     scene.nc_dictionary[file_path][selected_variable]= {
         "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
-        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())
-                            }
+        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()),
+        "resolution":scene.blendernc_resolution
+        }
+
+def res_update(node, context):
+    if len(context.scene.nc_dictionary)==0:
+        pass
+    else:
+        if node.var_name in context.scene.nc_dictionary[node.file_name].keys():
+            context.scene.nc_dictionary[node.file_name][node.var_name]['resolution'] = node.blendernc_resolution
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -94,9 +102,12 @@ def get_max_timestep(self, context):
     t, y, x = var_data.shape
     return t - 1
 
-def step_update(node, context):
+def dict_update(node, context):
     if node.var_name not in context.scene.nc_dictionary[node.file_name].keys():
         update_dict(node.file_name, node.var_name,context.scene)
+
+def step_update(node, context):
+    dic_update(node,context)
     step = node.step
     print(node.file_name, node.var_name, step)
     if node.var_name=="NONE":
@@ -134,7 +145,7 @@ def get_var_data(context, file_path, var_name):
     # Get data dictionary stored at scene object
     data_dictionary = scene.nc_dictionary
     # Dataset resolution
-    resolution = scene.blendernc_resolution
+    resolution =  data_dictionary[file_path][var_name]['resolution']
     # Get the netcdf of the selected file
     ncdata = data_dictionary[file_path]["Dataset"]
     # Get the data of the selected variable

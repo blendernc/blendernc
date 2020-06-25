@@ -234,6 +234,7 @@ class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
     bl_label = "netCDF Socket"
 
     dataset: StringProperty()
+    var: StringProperty()
 
     def draw(self, context, layout, node, text):
         layout.label(text=text)

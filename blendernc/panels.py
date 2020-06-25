@@ -1,5 +1,5 @@
 import bpy
-from . python_functions import step_update, update_proxy_file
+from . python_functions import step_update, update_proxy_file, res_update
 
 gui_active_panel_fin = None
 gui_active_materials = None
@@ -49,7 +49,7 @@ def select_only_meshes(self, object):
 bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(name = 'Resolution', 
                                                 min = 1, max = 100, 
                                                 default = 50, step =100,
-                                                update=step_update,
+                                                update=res_update,
                                                 precision=0, options={'ANIMATABLE'})
 
 bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=(''),
