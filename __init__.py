@@ -12,8 +12,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "GeoNodes",
-    "author" : "Oriol Tintó Prims",
+    "name" : "BlenderNC",
+    "author" : "Oriol Tintó Prims & Josué Martínez-Moreno",
     "description" : "Blender Add-On to visualize geo-scientific data",
     "blender" : (2, 83, 0),
     "version" : (0, 0, 1),
@@ -22,11 +22,11 @@ bl_info = {
     "category" : "Generic"
 }
 
-from . geonodes.GeoNodes import registerGeoNodes, unregisterGeoNodes
+from . blendernc.blendernc import registerBlenderNC, unregisterBlenderNC
 
 
 def register():
-    registerGeoNodes()
+    registerBlenderNC()
 
 def unregister():
-    unregisterGeoNodes()
+    unregisterBlenderNC()

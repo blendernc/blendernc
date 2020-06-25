@@ -1,0 +1,8 @@
+name: trackeddy-docs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - sphinx=1.8.2
+  - sphinx-gallery=0.2.0
+  - sphinx_rtd_theme=0.4.2
