@@ -208,7 +208,9 @@ def update_image(context, file_name, var_name, step, flip, image):
         if step >= var_data.shape[0]:
             step = var_data.shape[0]-1
         pixels_cache=scene.nc_cache[file_name][var_name][step]
-        if pixels_cache.size != img_x*img_y:
+        # If the size of the cache data does not match the size of the image multiplied by the 4 channels (RGBA)
+        # we need to reload the data.
+        if pixels_cache.size != 4 * img_x*img_y:
             raise ValueError("Size of image doesn't match")
     except (KeyError, ValueError):
         # TODO:Use time coordinate, not index.
