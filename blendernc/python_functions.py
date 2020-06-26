@@ -114,8 +114,8 @@ def step_update(node, context):
         return
         
     if step != node.frame_loaded:
-        if update_image(context, node.blendernc_netcdf_vars, node.blendernc_file, 
-                        step, node.flip, node.image):
+        if update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
+                        step, node.image):
             node.frame_loaded = step
 
 def from_frame_to_pixel_value(frame):
@@ -185,7 +185,7 @@ def load_frame(context, file_path, var_name, frame):
     var_dict[frame] = from_frame_to_pixel_value(normalized_data)
 
 
-def update_image(context, file_name, var_name, step, flip, image):
+def update_image(context, file_name, var_name, step, image):
     if not image:
         return False
 

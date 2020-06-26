@@ -189,7 +189,7 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
 
     def execute(self, context):
         image = self.image
-        update_image(context, self.file_name, self.var_name, self.step, self.flip, self.image)
+        update_image(context, self.file_name, self.var_name, self.step, self.image)
         return {'FINISHED'}
 
 class BlenderNC_OT_apply_material(bpy.types.Operator):
