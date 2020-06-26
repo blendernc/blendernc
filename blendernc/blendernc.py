@@ -5,14 +5,21 @@ from collections import defaultdict
 import nodeitems_utils
 
 from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
-                     BlenderNC_LOAD_OT_Off, BlenderNC_OT_apply_material
-from . operators import BlenderNC_OT_ncload, BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader
+                     BlenderNC_LOAD_OT_Off
+
+from . operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
+                        BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
+                        BlenderNC_OT_apply_material
+                        
 
 from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
                     BlenderNC_NT_resolution, BlenderNC_NT_output,\
-                    create_new_node_tree, BlenderNCNodeTree, \
-                    BlenderNC_NT_select_axis, \
-                    node_tree_name, node_categories
+                    BlenderNC_NT_select_axis, BlenderNC_NT_path, node_categories
+        
+from . node_tree import create_new_node_tree, BlenderNCNodeTree,\
+                        node_tree_name
+
+from . sockets import bNCnetcdfSocket,bNCstringSocket
 
 from .. nodes.cmapsnode import BLENDERNC_CMAPS_NT_node
 
@@ -26,14 +33,20 @@ classes = [
     BlenderNC_NT_preloader,
     BlenderNC_NT_resolution,
     BlenderNC_NT_output,
+    BlenderNC_NT_path,
     # Shader Nodes 
     BLENDERNC_CMAPS_NT_node,
     # Operators
     BlenderNC_OT_ncload,
+    BlenderNC_OT_ncload_Sui,
+    BlenderNC_OT_var,
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
     BlenderNC_NT_select_axis,
+    # Sockets
+    bNCnetcdfSocket,
+    bNCstringSocket,
 ]
 
 if create_new_node_tree:
@@ -47,7 +60,7 @@ def update_all_images(scene):
 
     nodes = []
     if create_new_node_tree:
-        node_trees = bpy.data.node_groups
+        node_trees = [ii for ii in bpy.data.node_groups if ii.bl_idname == "BlenderNC"]
     else:
         materials = bpy.data.materials
         node_trees = [material.node_tree for material in materials]
@@ -59,7 +72,7 @@ def update_all_images(scene):
 
     op = bpy.ops.BlenderNC.nc2img
     for node in nodes:
-        if not node.name.count("netCDFinput"):
+        if not node.name.count("Output"):
             continue
         if not node.update_on_frame_change:
             continue
@@ -69,11 +82,11 @@ def update_all_images(scene):
         print(step, node.frame_loaded)
         if step == node.frame_loaded:
             continue
-        file_name = node.file_name
-        var_name = node.var_name
-        flip = node.flip
+        file_name = node.blendernc_file
+        var_name = node.blendernc_netcdf_vars
+        #flip = node.flip
         image = node.image.name
-        op(file_name=file_name, var_name=var_name, step=step, flip=flip, image=image)
+        op(file_name=file_name, var_name=var_name, step=step, image=image)
         node.frame_loaded = step
         print("Var %s from file %s has been updated!" % (var_name, file_name))
 
