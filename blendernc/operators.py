@@ -1,10 +1,12 @@
 # Imports
 import bpy
-import xarray
+
 from os.path import abspath, isfile
 
-from . python_functions import load_frame, update_image, get_var, update_nodes, update_proxy_file
+from . python_functions import (load_frame, update_image, get_var, update_nodes, 
+                    update_proxy_file, BlenderncEngine)
 
+bNCEngine = BlenderncEngine()
 
 class BlenderNC_OT_ncload(bpy.types.Operator):
     bl_idname = "blendernc.ncload"
@@ -31,7 +33,7 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         scene = context.scene
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
-        scene.nc_dictionary[file_path] = {"Dataset":xarray.open_dataset(file_path, decode_times=False)}
+        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
         self.report({'INFO'}, "File: %s loaded!" % file_path)
         var_names = get_var(scene.nc_dictionary[file_path]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
@@ -114,7 +116,7 @@ class BlenderNC_OT_var(bpy.types.Operator):
         scene = context.scene
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
-        scene.nc_dictionary[file_path] = {"Dataset":xarray.open_dataset(file_path, decode_times=False)}
+        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
         self.report({'INFO'}, "File: %s loaded!" % file_path)
         var_names = get_var(scene.nc_dictionary[file_path]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
@@ -158,7 +160,7 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
             self.report({'ERROR'}, "It seems that this is not a file!")
             return {'CANCELLED'}
         scene = context.scene
-        scene.nc_dictionary[file_path] = {"Dataset":xarray.open_dataset(file_path, decode_times=False)} 
+        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
 
         var_name = self.var_name
         if not var_name:

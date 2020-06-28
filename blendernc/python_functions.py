@@ -12,6 +12,8 @@ from os.path import basename
 
 from .msg_errors import huge_image
 
+
+
 import time
 class Timer:
     def __init__(self):
@@ -309,4 +311,63 @@ def update_animation(self,context):
         bpy.data.node_groups['BlenderNC'].nodes['Output'].update_on_frame_change=self.blendernc_animate
     except KeyError:
         pass
+
+# xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
+import xarray
+import os
+
+class BlenderncEngine():
+    """"
+    """
+    def __init__(self):
+        pass
+
+    def check_files_netcdf(self,file_path):
+        """
+        Check that file exists.
+        """
+        #file_folder = os.path.dirname(file_path)
+        if "*" in file_path:
+            self.file_path = glob.glob(file_path)
+            self.check_netcdf()
+        elif os.path.isfile(file_path):
+            self.file_path = [file_path]
+            self.check_netcdf()
+        else:
+            raise NameError("File doesn't exist:",file_path)
+
+        return {'Dataset' : self.dataset}
+            
+    def check_netcdf(self):
+        """
+        Check if file is a netcdf and contain at least one variable.
+        """
+        if len(self.file_path) == 1:
+            extension = self.file_path[0].split('.')[-1]
+            if extension == ".nc":
+                self.load_netcd()
+            else:
+                try:
+                    self.load_netcdf()
+                except:
+                    raise ValueError("File isn't a netCDF:",self.file_path)
+        else:
+            extension = self.file_path[0].split('.')[-1]
+            if extension == ".nc":
+                self.load_netcd()
+            else:
+                try:
+                    self.load_netcdf()
+                except:
+                    raise ValueError("Files aren't netCDFs:",self.file_path)
+
+    def load_netcdf(self):
+        """
+        Load netcdf using xarray.
+        """
+        self.dataset = xarray.open_mfdataset(self.file_path,decode_times=False,combine='by_coords')
+
+    
+
+
     
