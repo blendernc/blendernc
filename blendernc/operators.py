@@ -44,10 +44,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         
         if not bpy.data.node_groups[-1].nodes:
             bpy.data.node_groups[-1].nodes.new("netCDFNode")
-
-        
-        #bpy.context.window.screen.areas[4].spaces[0].node_tree = bpy.data.node_groups['BlenderNC']
-
         return {'FINISHED'}
 
 
@@ -73,24 +69,28 @@ class BlenderNC_OT_ncload_Sui(bpy.types.Operator):
             bpy.data.node_groups['BlenderNC'].use_fake_user = True
         
         if not bpy.data.node_groups[-1].nodes:
+            ####################
             path = bpy.data.node_groups[-1].nodes.new("netCDFPath")
             path.blendernc_file = scene.blendernc_file
             netcdf = bpy.data.node_groups[-1].nodes.new("netCDFNode")
             netcdf.blendernc_netcdf_vars = scene.blendernc_netcdf_vars
+            #LINK
+            bpy.data.node_groups[-1].links.new(netcdf.inputs[0], path.outputs[0])
+            ####################
             resol = bpy.data.node_groups[-1].nodes.new("netCDFResolution")
             resol.blendernc_resolution = scene.blendernc_resolution
+            #LINK 
+            bpy.data.node_groups[-1].links.new(resol.inputs[0], netcdf.outputs[0])
+            ####################
             output = bpy.data.node_groups[-1].nodes.new("netCDFOutput")
+            #LINK
+            bpy.data.node_groups[-1].links.new(output.inputs[0], resol.outputs[0])
             bpy.ops.image.new(name="BlenderNC_default", width=1024, height=1024, 
                               color=(0.0, 0.0, 0.0, 1.0), alpha=True, 
                               generated_type='BLANK', float=True)
             output.image = bpy.data.images.get('BlenderNC_default')
             
-            bpy.data.node_groups[-1].links.new(netcdf.inputs[0], path.outputs[0])
-            bpy.data.node_groups[-1].links.new(resol.inputs[0], netcdf.outputs[0])
-            bpy.data.node_groups[-1].links.new(output.inputs[0], resol.outputs[0])
-
-        #bpy.context.window.screen.areas[4].spaces[0].node_tree = bpy.data.node_groups['BlenderNC']
-
+            
         return {'FINISHED'}
 
 
@@ -120,8 +120,6 @@ class BlenderNC_OT_var(bpy.types.Operator):
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
                                                                 name="",update=update_proxy_file)
         return {'FINISHED'}
-
-
 
 class BlenderNC_OT_preloader(bpy.types.Operator):
     bl_idname = "blendernc.preloader"
@@ -188,7 +186,6 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
     image: bpy.props.StringProperty()
 
     def execute(self, context):
-        image = self.image
         update_image(context, self.file_name, self.var_name, self.step, self.image)
         return {'FINISHED'}
 

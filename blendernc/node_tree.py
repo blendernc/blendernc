@@ -31,8 +31,7 @@ def updateNode(self, context):
     When a node has changed state and need to call a partial update.
     For example a user exposed bpy.prop
     """
-    CurrentEvents.new_event(BlenderEventsTypes.node_property_update, self)
-    self.process_node(context)
+    self.update()
 
 class BlenderNCNodeCategory(NodeCategory):
     @classmethod
