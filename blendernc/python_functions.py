@@ -10,6 +10,8 @@ import bpy
 import numpy as np
 from os.path import basename
 
+from .msg_errors import huge_image
+
 import time
 class Timer:
     def __init__(self):
@@ -83,11 +85,24 @@ def update_dict(file_path,selected_variable,scene):
         }
 
 def res_update(node, context):
+    # Update dictionary
     if len(context.scene.nc_dictionary)==0 or node.blendernc_file=='':
         pass
     else:
         if node.blendernc_netcdf_vars in bpy.context.scene.nc_dictionary[node.blendernc_file].keys():
             context.scene.nc_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['resolution'] = node.blendernc_resolution
+    
+    # Update node tree and image, else write into the Blender NC nodes (used in simple UI)
+    if node.name!='Scene':
+        node.update()
+        if node.outputs[0].is_linked:
+            if node.outputs[0].links[0].to_node.bl_idname == 'netCDFOutput':
+                image = node.outputs[0].links[0].to_node.image
+                update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
+                        context.scene.frame_current, image)
+    else:
+        bpy.data.node_groups['BlenderNC'].nodes['Resolution'].blendernc_resolution = node.blendernc_resolution
+        #bpy.data.node_groups[]
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -163,11 +178,12 @@ def get_max_min_data(context, file_path, var_name):
 def load_frame(context, file_path, var_name, frame):
     # Find netcdf file data
     var_data = get_var_data(context, file_path, var_name)
+
     # Find cache dictionary
     var_dict = get_var_dict(context, file_path, var_name)
     
     # Global max and min
-    vmax,vmin = get_max_min_data(context, file_path, var_name)
+    vmax, vmin = get_max_min_data(context, file_path, var_name)
 
     # TODO: Improve by using coordinates, 
     # could generate issues if the first axis isn't time
@@ -205,6 +221,10 @@ def update_image(context, file_name, var_name, step, image):
         y, x = var_data.shape
     elif len(var_data.shape) ==3:
         t, y, x = var_data.shape
+    
+    if y > 5120 or x > 5120:
+        bpy.context.window_manager.popup_menu(huge_image, title="Error", icon='ERROR')
+        return
 
     # Check if the image is an image object or a image name:
     if not isinstance(image, bpy.types.Image):

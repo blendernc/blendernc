@@ -5,8 +5,9 @@ from . python_functions import (get_possible_files, get_possible_variables,
                                 step_update, res_update,
                                 dict_update)
 
-from . events import CurrentEvents, BlenderEventsTypes
 from . node_tree import updateNode, BlenderNCNodeCategory
+
+from .msg_errors import unselected_nc_file,unselected_nc_var
 
 ########################################################
 ########################################################
@@ -81,7 +82,7 @@ class BlenderNC_NT_path(bpy.types.Node):
 class BlenderNC_NT_netcdf(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''Node to initiate dataset'''
+    '''Node to initiate netCDF dataset using xarray'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
     bl_idname = 'netCDFNode'
     # Label for nice name display
@@ -151,9 +152,11 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         self.update()
 
     def update(self):
-        file_path=self.inputs[0].links[0].from_socket.text
-        if (self.inputs[0].is_linked) and file_path:
-            if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath' and file_path not in bpy.context.scene.nc_dictionary.keys()):
+        if (self.inputs[0].is_linked):
+            file_path=self.inputs[0].links[0].from_socket.text
+            if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath' 
+                and file_path not in bpy.context.scene.nc_dictionary.keys() 
+                and file_path):
                 bpy.ops.blendernc.ncload(file_path = file_path)
                 # Update 
                 while not bpy.context.scene.nc_dictionary:
@@ -162,15 +165,15 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
                 pass
             else:
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
+                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
         else: 
-            # TODO Raise issue to user
             pass
         
-        if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
-            self.outputs[0].dataset=self.blendernc_file
-            self.outputs[0].var = self.blendernc_netcdf_vars
+        if self.outputs.items() and self.blendernc_netcdf_vars:
+            if self.outputs[0].is_linked:
+                self.outputs[0].dataset=self.blendernc_file
+                self.outputs[0].var = self.blendernc_netcdf_vars
         else: 
-            # TODO Raise issue to user
             pass
 
 
@@ -233,21 +236,25 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         self.update()
 
     def update(self):
-        if (self.inputs[0].is_linked) and self.inputs[0].links[0].from_socket.var !='NONE':
-            self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-            self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
-            bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
-            #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
-        elif self.inputs[0].is_linked:
-            # TODO Raise issue to select variable
-            self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-        else: 
-            # TODO Raise issue to user
+        if bool(self.inputs[0].is_linked and self.inputs[0].links):
+            if (self.inputs[0].links[0].from_socket.var != 'NONE' 
+                and self.inputs[0].links[0].from_socket.var != ''):
+                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
+                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+                bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
+                #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
+            elif (self.inputs[0].links[0].from_socket.var == 'NONE'):
+                bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
+                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
+            else: 
+                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
+        else:
             pass
             
-        if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
-            self.outputs[0].dataset=self.blendernc_file
-            self.outputs[0].var = self.blendernc_netcdf_vars
+        if self.outputs.items() and self.blendernc_netcdf_vars:
+            if self.outputs[0].is_linked:
+                self.outputs[0].dataset=self.blendernc_file
+                self.outputs[0].var = self.blendernc_netcdf_vars
         else: 
             # TODO Raise issue to user
             pass
@@ -318,21 +325,22 @@ class BlenderNC_NT_output(bpy.types.Node):
     blb_type = "NETCDF"
 
     update_on_frame_change: bpy.props.BoolProperty(
-        name="Update on frame change",
-        default=False,
+        name = "Update on frame change",
+        default = False,
     )
 
     image: bpy.props.PointerProperty(
-        type=bpy.types.Image,
-        name=""
+        type = bpy.types.Image,
+        name = "",
+        update = step_update,
     )
 
     frame_loaded: bpy.props.IntProperty(
-        default=-1,
+        default = -1,
     )
 
     step: bpy.props.IntProperty(
-        update=step_update,
+        update = step_update,
     )
 
     blendernc_netcdf_vars: bpy.props.StringProperty()
@@ -390,9 +398,10 @@ class BlenderNC_NT_output(bpy.types.Node):
         self.update()
 
     def update(self):
-        if (self.inputs[0].is_linked) and self.inputs[0].links[0].from_socket.var !='NONE':
-            self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-            self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+        if bool(self.inputs[0].is_linked and self.inputs[0].links):
+            if self.inputs[0].links[0].from_socket.var != 'NONE':
+                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
+                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
@@ -407,24 +416,24 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     blb_type = "NETCDF"
 
     file_name: bpy.props.EnumProperty(
-        items=get_possible_files,
-        name="",
+        items = get_possible_files,
+        name = "",
     )
 
     var_name: bpy.props.EnumProperty(
-        items=get_possible_variables,
-        name="",
-        update=step_update,
+        items = get_possible_variables,
+        name = "",
+        update = step_update,
     )
 
     frame_start: bpy.props.IntProperty(
-        default=1,
-        name="Start",
+        default = 1,
+        name = "Start",
     )
 
     frame_end: bpy.props.IntProperty(
-        default=250,
-        name="End",
+        default = 250,
+        name = "End",
     )
 
     # === Optional Functions ===
