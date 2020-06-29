@@ -5,8 +5,6 @@ from . python_functions import (get_possible_files, get_possible_variables,
                                 step_update, res_update,
                                 dict_update)
 
-from . operators import ImportnetCDFCollection
-
 from . node_tree import updateNode, BlenderNCNodeCategory
 
 from .msg_errors import unselected_nc_file,unselected_nc_var
@@ -33,16 +31,7 @@ class BlenderNC_NT_path(bpy.types.Node):
     blendernc_file: bpy.props.StringProperty(name="",
                     description="Folder with assets blend files",
                     default="",
-                    maxlen=1024,
-                    update=updateNode)
-    #                 subtype='FILE_PATH')    
-
-    # blendernc_file = bpy.props.CollectionProperty(type=ImportnetCDFCollection)
-
-    # blendernc_file : bpy.props.CollectionProperty(
-    #         name="File Path",
-    #         type=bpy.types.OperatorFileListElement,
-    #         )
+                    maxlen=1024)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.

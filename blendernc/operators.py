@@ -265,8 +265,7 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
 
         #for i, f in enumerate(self.files, 1):
         print("File: %s" % (path))
-        # look for a better way to do the following line:
-        context.selected_nodes[0].blendernc_file=path
+        context.scene.blendernc_file=path
         return {'FINISHED'}
 
 def findCommonName(filenames):
@@ -285,6 +284,5 @@ def findCommonName(filenames):
                 pass
             else:
                 raise ValueError("Filenames don't match")
-            print("a[%d] and b[%d] match for %d elements" % block, cfname)
         fcounter+=1
     return cfname

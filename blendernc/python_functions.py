@@ -12,8 +12,6 @@ from os.path import basename
 
 from .msg_errors import huge_image
 
-
-
 import time
 class Timer:
     def __init__(self):
@@ -304,7 +302,14 @@ def update_file_vars(self, context):
         -   Checks if netCDF file exists 
         -   Extracts variable names using netCDF4 conventions.
     """
-    bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
+    #TODO Improve passing the variable to the nodes.
+    if self.name!='Scene':
+        try:
+            bpy.data.node_groups[-1].nodes["netCDF Path"].blendernc_file = bpy.context.scene.blendernc_file
+        except:
+            pass
+    else:
+        bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 
 def update_animation(self,context):
     try:
