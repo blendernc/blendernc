@@ -10,6 +10,8 @@ import bpy
 import numpy as np
 from os.path import basename
 
+from .msg_errors import huge_image
+
 import time
 class Timer:
     def __init__(self):
@@ -34,7 +36,6 @@ def normalize_data(data, max_range=None, min_range=None):
     return (data - min_range) / var_range
 
 def get_var(ncdata):
-    # TODO: ADD "Select Variable" option to force user to select variable."
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
     if "long_name" in ncdata[variables[0]].attrs:
@@ -48,7 +49,7 @@ def get_possible_variables(self, context):
     scene = context.scene
     data_dictionary = scene.nc_dictionary
     node = self
-    ncfile = node.file_name
+    ncfile = node.blendernc_file
     if not ncfile or not data_dictionary:
         return []
     ncdata = data_dictionary[ncfile]["Dataset"]
@@ -65,7 +66,7 @@ def get_possible_files(self, context):
 
 def update_nodes(self, context):
     selected_variable = self.blendernc_netcdf_vars
-    node_keys = [key for key in bpy.data.node_groups[-1].nodes.keys() if 'netCDFinput' in key]
+    node_keys = [key for key in bpy.data.node_groups["BlenderNC"].nodes.keys() if 'netCDFinput' in key]
     # Change last input node
     bpy.data.node_groups[-1].nodes[node_keys[-1]].var_name = selected_variable
     # Compute max and min values only once.
@@ -73,11 +74,35 @@ def update_nodes(self, context):
     file_path=self.blendernc_file
     if selected_variable == "NONE":
         return
+
+    update_dict(file_path,selected_variable,scene)
     
+def update_dict(file_path,selected_variable,scene):
     scene.nc_dictionary[file_path][selected_variable]= {
         "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
-        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())
-                            }
+        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()),
+        "resolution":scene.blendernc_resolution
+        }
+
+def res_update(node, context):
+    # Update dictionary
+    if len(context.scene.nc_dictionary)==0 or node.blendernc_file=='':
+        pass
+    else:
+        if node.blendernc_netcdf_vars in bpy.context.scene.nc_dictionary[node.blendernc_file].keys():
+            context.scene.nc_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['resolution'] = node.blendernc_resolution
+    
+    # Update node tree and image, else write into the Blender NC nodes (used in simple UI)
+    if node.name!='Scene':
+        node.update()
+        if node.outputs[0].is_linked:
+            if node.outputs[0].links[0].to_node.bl_idname == 'netCDFOutput':
+                image = node.outputs[0].links[0].to_node.image
+                update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
+                        context.scene.frame_current, image)
+    else:
+        bpy.data.node_groups['BlenderNC'].nodes['Resolution'].blendernc_resolution = node.blendernc_resolution
+        #bpy.data.node_groups[]
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -92,14 +117,20 @@ def get_max_timestep(self, context):
     t, y, x = var_data.shape
     return t - 1
 
+def dict_update(node, context):
+    if node.blendernc_netcdf_vars not in context.scene.nc_dictionary[node.blendernc_file].keys():
+        update_dict(node.blendernc_file, node.blendernc_netcdf_vars,context.scene)
+
 def step_update(node, context):
+    dict_update(node,context)
     step = node.step
-    print(node.file_name, node.var_name, step)
-    if node.var_name=="NONE":
+    print(node.blendernc_file, node.blendernc_netcdf_vars, step)
+    if node.blendernc_netcdf_vars=="NONE":
         return
         
     if step != node.frame_loaded:
-        if update_image(context, node.file_name, node.var_name, step, node.flip, node.image):
+        if update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
+                        step, node.image):
             node.frame_loaded = step
 
 def from_frame_to_pixel_value(frame):
@@ -130,7 +161,7 @@ def get_var_data(context, file_path, var_name):
     # Get data dictionary stored at scene object
     data_dictionary = scene.nc_dictionary
     # Dataset resolution
-    resolution = scene.blendernc_resolution
+    resolution =  data_dictionary[file_path][var_name]['resolution']
     # Get the netcdf of the selected file
     ncdata = data_dictionary[file_path]["Dataset"]
     # Get the data of the selected variable
@@ -147,11 +178,12 @@ def get_max_min_data(context, file_path, var_name):
 def load_frame(context, file_path, var_name, frame):
     # Find netcdf file data
     var_data = get_var_data(context, file_path, var_name)
+
     # Find cache dictionary
     var_dict = get_var_dict(context, file_path, var_name)
     
     # Global max and min
-    vmax,vmin = get_max_min_data(context, file_path, var_name)
+    vmax, vmin = get_max_min_data(context, file_path, var_name)
 
     # TODO: Improve by using coordinates, 
     # could generate issues if the first axis isn't time
@@ -169,7 +201,7 @@ def load_frame(context, file_path, var_name, frame):
     var_dict[frame] = from_frame_to_pixel_value(normalized_data)
 
 
-def update_image(context, file_name, var_name, step, flip, image):
+def update_image(context, file_name, var_name, step, image):
     if not image:
         return False
 
@@ -189,6 +221,10 @@ def update_image(context, file_name, var_name, step, flip, image):
         y, x = var_data.shape
     elif len(var_data.shape) ==3:
         t, y, x = var_data.shape
+    
+    if y > 5120 or x > 5120:
+        bpy.context.window_manager.popup_menu(huge_image, title="Error", icon='ERROR')
+        return
 
     # Check if the image is an image object or a image name:
     if not isinstance(image, bpy.types.Image):
@@ -252,3 +288,27 @@ def resolution_steps(size,res):
     if step ==0:
         step = 1
     return int(step)
+
+def update_proxy_file(self, context):
+    """
+    Update function:
+        -   Checks if netCDF file exists 
+        -   Extracts variable names using netCDF4 conventions.
+    """
+    bpy.ops.blendernc.ncload_sui(file_path=bpy.context.scene.blendernc_file)
+
+
+def update_file_vars(self, context):
+    """
+    Update function:
+        -   Checks if netCDF file exists 
+        -   Extracts variable names using netCDF4 conventions.
+    """
+    bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
+
+def update_animation(self,context):
+    try:
+        bpy.data.node_groups['BlenderNC'].nodes['Output'].update_on_frame_change=self.blendernc_animate
+    except KeyError:
+        pass
+    

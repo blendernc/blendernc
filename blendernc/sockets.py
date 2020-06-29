@@ -5,10 +5,16 @@ import bpy
 from bpy.props import StringProperty, BoolProperty, FloatVectorProperty, IntProperty, FloatProperty
 from bpy.types import NodeTree, NodeSocket
 
+from . socketdata import (
+    bNCGetSocketInfo, bNCGetSocket, bNCSetSocket, bNCForgetSocket,
+    bNCNoDataError, sentinel)
+
 socket_colors = {
     "bNCnetcdfSocket": (0.6, 1.0, 0.6, 1.0),
     "bNCpercentSocket": (0.8, 0.8, 0.8, 0.3),
 }
+
+
 
 # Node Sockets modifyed from: 
 # https://github.com/nortikin/sverchok/blob/master/core/sockets.py
@@ -218,29 +224,60 @@ class bNCSocketDefault:
             policy = self.node.get_implicit_conversions(self.name, implicit_conversions)
             self.node.debug(f"Trying to convert data for input socket {self.name} by {policy}")
             return policy.convert(self, source_data)
+    
+    def unlink(self,link):
+        return self.id_data.links.remove(link)
 
-
-class bNCnetcdfSocket(NodeSocket, SvSocketCommon):
+    
+class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
     bl_idname = "bNCnetcdfSocket"
     bl_label = "netCDF Socket"
 
-    text: StringProperty(update=process_from_socket)
+    dataset: StringProperty()
+    var: StringProperty()
 
     def draw(self, context, layout, node, text):
-        if self.is_linked and not self.is_output:
-            layout.label(text=text)
-        if not self.is_linked and not self.is_output:
-            layout.prop(self, 'text')
+        layout.label(text=text)
 
     def draw_color(self, context, node):
         return (0.68,  0.85,  0.90, 1)
 
-    def sv_get(self, default=sentinel, deepcopy=True, implicit_conversions=None):
+    def bnc_get(self, default=sentinel, deepcopy=True, implicit_conversions=None):
         if self.is_linked and not self.is_output:
-            return self.convert_data(SvGetSocket(self, deepcopy), implicit_conversions)
+            return self.convert_data(bNCGetSocket(self, deepcopy), implicit_conversions)
         elif self.text:
             return [self.text]
         elif default is sentinel:
-            raise SvNoDataError(self)
+            raise bNCNoDataError(self)
         else:
             return default
+
+class bNCstringSocket(NodeSocket, bNCSocketDefault):
+    bl_idname = "bNCstringSocket"
+    bl_label = "String Socket"
+
+    text: StringProperty()
+
+    def draw(self, context, layout, node, text):
+        layout.label(text=text)
+
+    def draw_color(self, context, node):
+        return (0.68,  0.85,  0.90, 1)
+
+    def bnc_get(self, default=sentinel, deepcopy=True, implicit_conversions=None):
+        if self.is_linked and not self.is_output:
+            return self.convert_data(bNCGetSocket(self, deepcopy), implicit_conversions)
+        elif self.text:
+            return [self.text]
+        elif default is sentinel:
+            raise bNCNoDataError(self)
+        else:
+            return default
+
+
+# classes = [
+#     bNCnetcdfSocket
+# ]
+
+# register, unregister = bpy.utils.register_classes_factory(classes)
+
