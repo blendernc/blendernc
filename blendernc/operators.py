@@ -47,8 +47,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
             bpy.data.node_groups[-1].nodes.new("netCDFNode")
         return {'FINISHED'}
 
-
-
 class BlenderNC_OT_ncload_Sui(bpy.types.Operator):
     bl_idname = "blendernc.ncload_sui"
     bl_label = "Load netcdf file"

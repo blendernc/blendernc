@@ -303,11 +303,9 @@ def update_file_vars(self, context):
         -   Extracts variable names using netCDF4 conventions.
     """
     #TODO Improve passing the variable to the nodes.
-    if self.name!='Scene':
-        try:
-            bpy.data.node_groups[-1].nodes["netCDF Path"].blendernc_file = bpy.context.scene.blendernc_file
-        except:
-            pass
+    blendernc_nodes = [ node_group for node_group in bpy.data.node_groups if node_group.bl_idname == 'BlenderNC']
+    if blendernc_nodes:
+        blendernc_nodes[-1].nodes["netCDF Path"].blendernc_file = bpy.context.scene.blendernc_file
     else:
         bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 
