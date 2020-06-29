@@ -1,10 +1,12 @@
 # Imports
 import bpy
 
-from os.path import abspath, isfile
+from os.path import abspath, isfile, join
 
 from . python_functions import (load_frame, update_image, get_var, update_nodes, 
                     update_proxy_file, BlenderncEngine)
+
+from bpy_extras.io_utils import ImportHelper
 
 bNCEngine = BlenderncEngine()
 
@@ -27,9 +29,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
             return {'FINISHED'}
         file_path = abspath(self.file_path)
 
-        if not isfile(file_path):
-            self.report({'ERROR'}, "It seems that this is not a file!")
-            return {'CANCELLED'}
         scene = context.scene
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
@@ -109,10 +108,7 @@ class BlenderNC_OT_var(bpy.types.Operator):
             self.report({'INFO'}, "Select a file!")
             return {'FINISHED'}
         file_path = abspath(self.file_path)
-
-        if not isfile(file_path):
-            self.report({'ERROR'}, "It seems that this is not a file!")
-            return {'CANCELLED'}
+        
         scene = context.scene
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
@@ -156,9 +152,6 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
             return {'FINISHED'}
         file_path = abspath(self.file_name)
 
-        if not isfile(file_path):
-            self.report({'ERROR'}, "It seems that this is not a file!")
-            return {'CANCELLED'}
         scene = context.scene
         scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
 
@@ -230,3 +223,68 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             act_obj.active_material = bpy.data.materials.get('BlenderNC_default')
 
         return {'FINISHED'}
+
+import os
+
+class ImportnetCDFCollection(bpy.types.PropertyGroup):
+    name : bpy.props.StringProperty(
+            name="File Path",
+            description="Filepath used for importing the file",
+            maxlen=1024,
+            subtype='FILE_PATH',
+            )
+
+
+class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
+    """
+    
+    """
+    bl_idname = "blendernc.import_mfnetcdf"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Load Netcdf"
+
+    # ImportHelper mixin class uses this
+    filename_ext : ".nc"
+
+    filter_glob : bpy.props.StringProperty(
+            default="*.nc",
+            options={'HIDDEN'},
+            )
+            
+    files : bpy.props.CollectionProperty(type=ImportnetCDFCollection)
+
+    def execute(self, context):
+        split_path = self.properties.filepath.split('/')[0:-1]
+        fdir = ('/'.join(str(dir) for dir in split_path))
+
+        if len(self.files) == 1:
+            path = join(fdir,self.files[0].name)
+        else:
+            list_files = [join(fdir,f.name) for f in self.files]
+            common_name = findCommonName([f.name for f in self.files])
+            path = join(fdir,common_name)
+
+        #for i, f in enumerate(self.files, 1):
+        print("File: %s" % (path))
+        # look for a better way to do the following line:
+        context.selected_nodes[0].blendernc_file=path
+        return {'FINISHED'}
+
+def findCommonName(filenames):
+    import difflib
+    cfname = ''
+    fcounter=0
+    while (not cfname or len(filenames) == fcounter):
+        S = difflib.SequenceMatcher(None,filenames[fcounter], filenames[fcounter+1])
+
+        for block in S.get_matching_blocks():
+            if block.a == block.b and block.size!=0:
+                if len(cfname)!=0 and len(cfname)!= block.a:
+                    cfname = cfname+'*'
+                cfname = cfname+filenames[fcounter][block.a:block.a+block.size]
+            elif block.size==0:
+                pass
+            else:
+                raise ValueError("Filenames don't match")
+            print("a[%d] and b[%d] match for %d elements" % block, cfname)
+        fcounter+=1
+    return cfname

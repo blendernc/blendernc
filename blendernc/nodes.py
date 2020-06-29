@@ -5,6 +5,8 @@ from . python_functions import (get_possible_files, get_possible_variables,
                                 step_update, res_update,
                                 dict_update)
 
+from . operators import ImportnetCDFCollection
+
 from . node_tree import updateNode, BlenderNCNodeCategory
 
 from .msg_errors import unselected_nc_file,unselected_nc_var
@@ -27,13 +29,20 @@ class BlenderNC_NT_path(bpy.types.Node):
 
     # TODO: Fix updateNode, currently it doesn't update the nodetree, and therefore
     # the user has to reconnect the node.
-    blendernc_file: bpy.props.StringProperty(
-                    name="",
+    
+    blendernc_file: bpy.props.StringProperty(name="",
                     description="Folder with assets blend files",
                     default="",
                     maxlen=1024,
-                    update=updateNode,
-                    subtype='FILE_PATH')    
+                    update=updateNode)
+    #                 subtype='FILE_PATH')    
+
+    # blendernc_file = bpy.props.CollectionProperty(type=ImportnetCDFCollection)
+
+    # blendernc_file : bpy.props.CollectionProperty(
+    #         name="File Path",
+    #         type=bpy.types.OperatorFileListElement,
+    #         )
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -55,8 +64,15 @@ class BlenderNC_NT_path(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
+
         scene = context.scene
-        layout.prop(self, "blendernc_file")
+        
+        row = layout.row(align=True)
+        split = row.split(factor=0.85,align=True)
+
+        split.prop(self, 'blendernc_file')
+        split.operator('blendernc.import_mfnetcdf', text='', icon='FILEBROWSER')
+        
 
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead

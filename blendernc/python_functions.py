@@ -81,8 +81,8 @@ def update_nodes(self, context):
     
 def update_dict(file_path,selected_variable,scene):
     scene.nc_dictionary[file_path][selected_variable]= {
-        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
-        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()),
+        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max().compute(),
+        "min_value":(scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())).compute(),
         "resolution":scene.blendernc_resolution
         }
 
@@ -315,6 +315,7 @@ def update_animation(self,context):
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
 import os
+import glob
 
 class BlenderncEngine():
     """"
@@ -365,7 +366,7 @@ class BlenderncEngine():
         """
         Load netcdf using xarray.
         """
-        self.dataset = xarray.open_mfdataset(self.file_path,decode_times=False,combine='by_coords')
+        self.dataset = xarray.open_mfdataset(self.file_path,combine='by_coords')
 
     
 
