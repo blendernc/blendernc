@@ -305,8 +305,8 @@ def update_file_vars(self, context):
     #TODO Improve passing the variable to the nodes.
     blendernc_nodes = [ node_group for node_group in bpy.data.node_groups if node_group.bl_idname == 'BlenderNC']
     if blendernc_nodes:
-        if [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDF Path" ]:
-            blendernc_nodes[-1].nodes["netCDF Path"].blendnernc_file = bpy.context.scene.blendernc_file
+        if [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDFPath" ]:
+            context.active_node.blendernc_file = bpy.context.scene.blendernc_file
     else:
         bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 

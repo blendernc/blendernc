@@ -3,7 +3,7 @@ import bpy
 
 from blendernc.blendernc.python_functions import res_update
 
-from blendernc.blendernc.msg_errors import unselected_nc_var
+from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
 class BlenderNC_NT_resolution(bpy.types.Node):
     # === Basics ===
