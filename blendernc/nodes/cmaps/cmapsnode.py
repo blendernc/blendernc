@@ -2,7 +2,7 @@ import bpy
 
 from . utils_colorramp import ColorRamp
 
-node_group_name = "Colormaps"
+node_group_name = ".Colormaps"
 
 core_colorramp = ColorRamp()
 
@@ -17,7 +17,10 @@ def update_colorramp(self, context):
         if selected_cmap[0].split('_')[-1] == "_r":
             selected_cmap[0] = selected_cmap[0].replace("_r", "")
     
-    colorramp = self.node_tree.nodes[self._get_name('Color_Ramp')].color_ramp
+    if len(self.node_tree.nodes[:]) == 3:
+        colorramp = self.node_tree.nodes['Color_Ramp.000'].color_ramp
+    else:
+        colorramp = self.node_tree.nodes[self._get_name('Color_Ramp')].color_ramp
     core_colorramp.update_colormap(colorramp,selected_cmap,cmap_steps)
 
 # Chosen operator has changed - update the nodes and links
@@ -159,23 +162,18 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     def update(self):
         pass
-        # color_output=self.outputs
-        # self.__nodeinterface_setup__()
-        # self.__nodetree_setup__()
-
-        # cmap_steps = self.n_stops
-        # selecteAd_cmap = self.colormaps.split('.')
-        # core_colorramp.update_colormap(selected_cmap,cmap_steps)
     
     def _node_identifier(self):
         return self.name.split('.')[-1]
     
     def _get_name(self,name):
         n_split = self.name.split('.')
-        if len(n_split) == 1:
-            n_id=".000"
-        else:
-            n_id='.'+n_split[-1]
+        n_id=".000"
+        # See line 105 of utils_colorramp.py
+        # if len(n_split) == 1:
+        #     n_id=".000"
+        # else:
+        #     n_id='.'+n_split[-1]
         return name+n_id
 
 

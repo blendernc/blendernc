@@ -59,6 +59,8 @@ class ColorRamp(object):
         #self.get_valid_evaluate_function(node.name)
         self.color_ramp=color_ramp
 
+        print(selected_cmap,cmap_steps)
+
         cmap_steps = cmap_steps
         s_cmap,maps = selected_cmap
         cmap = importlib.import_module(maps)
@@ -76,19 +78,23 @@ class ColorRamp(object):
             self.color_ramp.elements[1].color = cms.get(s_cmap)(value)
             for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
-                print(pos,value)
                 self.color_ramp.elements.new(pos)
-                #self.color_ramp.elements[i].position = pos
+                #
+                self.color_ramp.elements[i].position = pos
                 self.color_ramp.elements[i].color = cms.get(s_cmap)(value)
         else: 
             self.color_ramp.elements[0].color=(0,0,0,1)
+            #
+            self.color_ramp.elements[0].position = 0
             self.color_ramp.elements.new(1e-5)
             pos,value = divide_cmap(1e-5,cmap_steps)
             self.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            #
+            self.color_ramp.elements[1].position = pos
             for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
-                print(pos)
-                #self.color_ramp.elements[i].position = pos
+                #
+                self.color_ramp.elements[i].position = pos
                 self.color_ramp.elements[i].color = cms.get(s_cmap)(value)
 
     def create_group_node(self,group_name):
@@ -96,10 +102,13 @@ class ColorRamp(object):
         self.node_groups = bpy.data.node_groups
         # make sure the node-group is present
         group = self.node_groups.get(self.group_name)
-        if not group:
-            group = self.node_groups.new(self.group_name, 'ShaderNodeTree')
-
-        group.use_fake_user = True
+        # Uncoment to create nodes only when duplicating the node. 
+        # This was commented as it created issues with multiple colormap nodes
+        # sharing the same node output.
+        #if not group:
+        group = self.node_groups.new(self.group_name, 'ShaderNodeTree')
+        #group.use_fake_user = True
+        self.group_name = group.name
         return group
 
     def create_colorramp(self,node_name):        
