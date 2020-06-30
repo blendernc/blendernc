@@ -316,6 +316,19 @@ def update_animation(self,context):
     except KeyError:
         pass
 
+def rotatelon_update(self,context):
+    scene = context.scene
+    data_dictionary = scene.nc_dictionary
+    if not self.blendernc_file:
+        return
+    else:
+        dataset = data_dictionary[self.blendernc_file]['Dataset']
+        lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
+        if len(lon_coords) == 1:
+            data_dictionary[self.blendernc_file]['Dataset'] = dataset.roll({lon_coords[0]: int(self.blendernc_rotation)})
+        else:
+            raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
 import os

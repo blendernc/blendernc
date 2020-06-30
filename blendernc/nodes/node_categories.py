@@ -12,6 +12,7 @@ node_categories = [
     BlenderNCNodeCategory('Grid', "Grid", items=[
         # our basic node
         NodeItem("netCDFResolution"),
+        NodeItem("netCDFrotatelon"),
     ]),
     BlenderNCNodeCategory('Selection', "Selection", items=[
         # our basic node
