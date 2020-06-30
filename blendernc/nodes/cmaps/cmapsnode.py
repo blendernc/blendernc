@@ -2,7 +2,7 @@ import bpy
 
 from . utils_colorramp import ColorRamp
 
-node_group_name = ".Colormaps"
+node_group_name = "Colormaps"
 
 core_colorramp = ColorRamp()
 
@@ -16,7 +16,9 @@ def update_colorramp(self, context):
     else:
         if selected_cmap[0].split('_')[-1] == "_r":
             selected_cmap[0] = selected_cmap[0].replace("_r", "")
-    core_colorramp.update_colormap(selected_cmap,cmap_steps)
+    
+    colorramp = self.node_tree.nodes[self._get_name('Color_Ramp')].color_ramp
+    core_colorramp.update_colormap(colorramp,selected_cmap,cmap_steps)
 
 # Chosen operator has changed - update the nodes and links
 def update_operator(self, context):
@@ -56,14 +58,16 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     # Manage the internal nodes to perform the chained operation - clear all the nodes and build from scratch each time.
     def __nodetree_setup__(self):
         # Remove all links and all nodes that aren  't Group Input or Group Output
-        #self.node_tree.links.clear()
-        #pass
-        input_node = self.node_tree.nodes[self._get_name('Group Input')]
-
-        ## ADD math here:
-        cmap = self.node_tree.nodes[self._get_color_ramp_node_name()]
-
-        output_node = self.node_tree.nodes[self._get_name('Group Output')]
+        if len(self.node_tree.nodes[:]) == 3:
+            input_node = self.node_tree.nodes['Group Input.000']
+            ## TODO: ADD math here to control max and min values
+            cmap = self.node_tree.nodes['Color_Ramp.000']
+            output_node = self.node_tree.nodes['Group Output.000']
+        else:
+            input_node = self.node_tree.nodes[self._get_name('Group Input')]
+            ## TODO: ADD math here to control max and min values
+            cmap = self.node_tree.nodes[self._get_name('Color_Ramp')]
+            output_node = self.node_tree.nodes[self._get_name('Group Output')]
 
         # Links:
         self.node_tree.links.new(input_node.outputs[0],cmap.inputs[0])
@@ -107,10 +111,14 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         # Create node tree
         self.node_tree = core_colorramp.create_group_node(node_group_name)
         # Create group input and output
-        self.node_tree.nodes.new('NodeGroupInput')
-        self.node_tree.nodes.new('NodeGroupOutput')
+        input = self.node_tree.nodes.new('NodeGroupInput')
+        input.bl_label = self._get_name('Group Input')
+        input.name = self._get_name('Group Input')
+        output = self.node_tree.nodes.new('NodeGroupOutput')
+        output.bl_label = self._get_name('Group Output')
+        output.name = self._get_name('Group Output')
         # Create Colormap
-        core_colorramp.create_colorramp(self._get_color_ramp_node_name())
+        core_colorramp.create_colorramp(self._get_name('Color_Ramp'))
         # Set width of node
         self.width = 250
         # Update node
@@ -123,7 +131,10 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         layout.prop(self, "n_stops")
         layout.prop(self, "fcmap")
 
-        tnode = self.node_tree.nodes[self._get_color_ramp_node_name()]
+        if len(self.node_tree.nodes[:]) == 3:
+            tnode = self.node_tree.nodes['Color_Ramp.000']
+        else:
+            tnode = self.node_tree.nodes[self._get_name('Color_Ramp')]
         layout.template_color_ramp(tnode, "color_ramp", expand=True)
 
         row=layout.row()
@@ -155,14 +166,6 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         # cmap_steps = self.n_stops
         # selecteAd_cmap = self.colormaps.split('.')
         # core_colorramp.update_colormap(selected_cmap,cmap_steps)
-
-    def _get_color_ramp_node_name(self):
-        n_split = self.name.split('.')
-        if len(n_split) == 1:
-            n_id="000"
-        else:
-            n_id=n_split[-1]
-        return 'Color_Ramp'+"."+n_id 
     
     def _node_identifier(self):
         return self.name.split('.')[-1]
@@ -170,12 +173,10 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     def _get_name(self,name):
         n_split = self.name.split('.')
         if len(n_split) == 1:
-            n_id=""
+            n_id=".000"
         else:
-            n_id="."+n_split[-1]
+            n_id='.'+n_split[-1]
         return name+n_id
-
-
 
 
 from nodeitems_utils import NodeItem, register_node_categories, unregister_node_categories
