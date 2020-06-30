@@ -1,7 +1,7 @@
 # Imports
 import bpy
 from nodeitems_utils import NodeCategory
-from . python_functions import get_possible_files, get_possible_variables, step_update, update_proxy_file
+from blendernc.blendernc.python_functions import get_possible_files, get_possible_variables, step_update, update_proxy_file
 
 # Blender Classes
 node_tree_name = "BlenderNC"

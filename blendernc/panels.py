@@ -47,8 +47,7 @@ bpy.types.Scene.blendernc_file = bpy.props.StringProperty(
     description="Folder with assets blend files",
     default="",
     maxlen=1024,
-    update=update_file_vars,
-    subtype='FILE_PATH')
+    update=update_file_vars)
 
 bpy.types.Scene.blendernc_meshes = bpy.props.PointerProperty(
         name="Select a mesh",
@@ -87,7 +86,12 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
 
             # Open blender file selection
             box_asts.label(text="netCDF File", icon='OUTLINER_OB_GROUP_INSTANCE')
-            box_asts.prop(scn, 'blendernc_file')
+            # box_asts.prop(scn, 'blendernc_file')
+            row = box_asts.row(align=True)
+            split = row.split(factor=0.85,align=True)
+
+            split.prop(scn, 'blendernc_file')
+            split.operator('blendernc.import_mfnetcdf', text='', icon='FILEBROWSER')
             # Select variables menu
             box_asts.label(text="Select variable:", icon='WORLD_DATA')
             box_asts.prop(scn, 'blendernc_netcdf_vars')   
