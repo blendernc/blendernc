@@ -79,8 +79,8 @@ def update_nodes(self, context):
     
 def update_dict(file_path,selected_variable,scene):
     scene.nc_dictionary[file_path][selected_variable]= {
-        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max(),
-        "min_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()),
+        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max().compute(),
+        "min_value":(scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())).compute(),
         "resolution":scene.blendernc_resolution
         }
 
@@ -304,11 +304,90 @@ def update_file_vars(self, context):
         -   Checks if netCDF file exists 
         -   Extracts variable names using netCDF4 conventions.
     """
-    bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
+    #TODO Improve passing the variable to the nodes.
+    blendernc_nodes = [ node_group for node_group in bpy.data.node_groups if node_group.bl_idname == 'BlenderNC']
+    if blendernc_nodes:
+        if [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDFPath" ]:
+            context.active_node.blendernc_file = bpy.context.scene.blendernc_file
+    else:
+        bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 
 def update_animation(self,context):
     try:
         bpy.data.node_groups['BlenderNC'].nodes['Output'].update_on_frame_change=self.blendernc_animate
     except KeyError:
         pass
+
+def rotatelon_update(self,context):
+    scene = context.scene
+    data_dictionary = scene.nc_dictionary
+    if not self.blendernc_file:
+        return
+    else:
+        dataset = data_dictionary[self.blendernc_file]['Dataset']
+        lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
+        if len(lon_coords) == 1:
+            data_dictionary[self.blendernc_file]['Dataset'] = dataset.roll({lon_coords[0]: int(self.blendernc_rotation)})
+        else:
+            raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+
+# xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
+import xarray
+import os
+import glob
+
+class BlenderncEngine():
+    """"
+    """
+    def __init__(self):
+        pass
+
+    def check_files_netcdf(self,file_path):
+        """
+        Check that file exists.
+        """
+        #file_folder = os.path.dirname(file_path)
+        if "*" in file_path:
+            self.file_path = glob.glob(file_path)
+            self.check_netcdf()
+        elif os.path.isfile(file_path):
+            self.file_path = [file_path]
+            self.check_netcdf()
+        else:
+            raise NameError("File doesn't exist:",file_path)
+
+        return {'Dataset' : self.dataset}
+            
+    def check_netcdf(self):
+        """
+        Check if file is a netcdf and contain at least one variable.
+        """
+        if len(self.file_path) == 1:
+            extension = self.file_path[0].split('.')[-1]
+            if extension == ".nc":
+                self.load_netcd()
+            else:
+                try:
+                    self.load_netcdf()
+                except:
+                    raise ValueError("File isn't a netCDF:",self.file_path)
+        else:
+            extension = self.file_path[0].split('.')[-1]
+            if extension == ".nc":
+                self.load_netcd()
+            else:
+                try:
+                    self.load_netcdf()
+                except:
+                    raise ValueError("Files aren't netCDFs:",self.file_path)
+
+    def load_netcdf(self):
+        """
+        Load netcdf using xarray.
+        """
+        self.dataset = xarray.open_mfdataset(self.file_path,combine='by_coords')
+
+    
+
+
     
