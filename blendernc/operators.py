@@ -262,6 +262,16 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
             
     files : bpy.props.CollectionProperty(type=ImportnetCDFCollection)
 
+    node_group: bpy.props.StringProperty(
+        name="node_group",
+        description="Node calling operator"
+    )
+
+    node: bpy.props.StringProperty(
+        name="node",
+        description="Node calling operator"
+    )
+
     def execute(self, context):
         split_path = self.properties.filepath.split('/')[0:-1]
         fdir = ('/'.join(str(dir) for dir in split_path))
@@ -272,10 +282,8 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
             list_files = [join(fdir,f.name) for f in self.files]
             common_name = findCommonName([f.name for f in self.files])
             path = join(fdir,common_name)
-
-        #for i, f in enumerate(self.files, 1):
-        print("File: %s" % (path))
-        context.scene.blendernc_file=path
+        
+        bpy.data.node_groups.get(self.node_group).nodes.get(self.node).blendernc_file=path
         return {'FINISHED'}
 
 def findCommonName(filenames):
