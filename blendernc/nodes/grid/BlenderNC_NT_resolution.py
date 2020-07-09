@@ -23,7 +23,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
                                                 update=res_update,
                                                 precision=0, options={'ANIMATABLE'})
 
-    blendernc_netcdf_vars: bpy.props.StringProperty()
+    blendernc_import_node: bpy.props.StringProperty()
     blendernc_file: bpy.props.StringProperty()
 
     # === Optional Functions ===
@@ -65,9 +65,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     def update(self):
         if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if (self.inputs[0].links[0].from_socket.var != 'NONE' 
-                and self.inputs[0].links[0].from_socket.var != ''):
-                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
+            if (self.inputs[0].links[0].from_socket.input_load_node):
+                self.blendernc_import_node = self.inputs[0].links[0].from_socket.input_load_node 
                 self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
                 bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
                 #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
@@ -80,9 +79,9 @@ class BlenderNC_NT_resolution(bpy.types.Node):
             pass
             
         if self.outputs.items() and self.blendernc_netcdf_vars:
-            if self.outputs[0].is_linked:
-                self.outputs[0].dataset=self.blendernc_file
-                self.outputs[0].var = self.blendernc_netcdf_vars
+            if self.outputs[0].is_linked and self.inputs[0].is_linked:
+                self.outputs[0].dataset = self.blendernc_file
+                self.outputs[0].input_load_node = self.blendernc_import_node
         else: 
             # TODO Raise issue to user
             pass

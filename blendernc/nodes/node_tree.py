@@ -26,13 +26,6 @@ class BlenderNCCustomTreeNode:
     pass
 
 
-def updateNode(self, context):
-    """
-    When a node has changed state and need to call a partial update.
-    For example a user exposed bpy.prop
-    """
-    self.update()
-
 class BlenderNCNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):

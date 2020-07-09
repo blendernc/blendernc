@@ -3,7 +3,7 @@ import bpy
 
 from os.path import abspath, isfile, join
 
-from . python_functions import (load_frame, update_image, get_var, update_nodes, 
+from . python_functions import (load_frame, update_image, get_node, get_var, update_nodes, 
                     update_proxy_file, BlenderncEngine)
 
 from bpy_extras.io_utils import ImportHelper
@@ -23,18 +23,29 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # default="",
     )
 
+    node_group: bpy.props.StringProperty(
+        name="node",
+        description="Node calling operator"
+    )
+
+    node: bpy.props.StringProperty(
+        name="node",
+        description="Node calling operator"
+    )
+
     def execute(self, context):
         if not self.file_path:
             self.report({'INFO'}, "Select a file!")
             return {'FINISHED'}
         file_path = abspath(self.file_path)
 
-        scene = context.scene
+        node = get_node(self.node_group,self.node)
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
+        
+        node.blendernc_dict[self.node] = {file_path : bNCEngine.check_files_netcdf(file_path)}
         self.report({'INFO'}, "File: %s loaded!" % file_path)
-        var_names = get_var(scene.nc_dictionary[file_path]["Dataset"])
+        var_names = get_var(node.blendernc_dict[self.node][file_path]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
                                                                 name="",update=update_nodes)
         # Create new node in BlenderNC node
@@ -45,6 +56,7 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         
         if not bpy.data.node_groups[-1].nodes:
             bpy.data.node_groups[-1].nodes.new("netCDFNode")
+
         return {'FINISHED'}
 
 class BlenderNC_OT_ncload_Sui(bpy.types.Operator):

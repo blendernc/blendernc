@@ -35,6 +35,12 @@ def normalize_data(data, max_range=None, min_range=None):
     print(max_range,min_range)
     return (data - min_range) / var_range
 
+def get_dims(ncdata,var):
+    dimensions = list(ncdata[var].coords.dims)
+    dim_names = [(dimensions[ii], dimensions[ii], dimensions[ii], "DISK_DRIVE", ii+1) for ii in range(len(dimensions))]
+    dim_names.insert(0,('NONE',"Select Dim","Select Dim","DISK_DRIVE",0))
+    return dim_names
+
 def get_var(ncdata):
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
@@ -45,44 +51,60 @@ def get_var(ncdata):
     var_names.insert(0,('NONE',"Select Variable","Select Variable","DISK_DRIVE",0))
     return var_names
 
-def get_possible_variables(self, context):
+def get_possible_variables(node, context):
     scene = context.scene
-    data_dictionary = scene.nc_dictionary
-    node = self
     ncfile = node.blendernc_file
-    if not ncfile or not data_dictionary:
+    if not ncfile or node.name not in node.blendernc_dict.keys():
         return []
+    data_dictionary = node.blendernc_dict[node.name]
     ncdata = data_dictionary[ncfile]["Dataset"]
     items = get_var(ncdata)
     return items
 
-def get_possible_files(self, context):
+def get_possible_dims(node, context):
     scene = context.scene
-    data_dictionary = scene.nc_dictionary
-    if not data_dictionary:
+    ncfile = node.blendernc_file
+    if not ncfile or node.name not in node.blendernc_dict.keys():
         return []
+    data_dictionary = node.blendernc_dict[node.name]
+    ncdata = data_dictionary[ncfile]["Dataset"]
+    items = get_dims(ncdata,node.blendernc_netcdf_vars)
+    return items
+
+def get_possible_files(node, context):
+    scene = context.scene
+    if not node.name in node.blendernc_dict.keys():
+        return []
+    data_dictionary = node.blendernc_dict[node.name]
     items = [(f, basename(f), basename(f), ii) for ii, f in enumerate(data_dictionary.keys())]
     return items
 
-def update_nodes(self, context):
-    selected_variable = self.blendernc_netcdf_vars
+def update_nodes(node, context):
+    selected_variable = node.blendernc_netcdf_vars
     node_keys = [key for key in bpy.data.node_groups["BlenderNC"].nodes.keys() if 'netCDFinput' in key]
     # Change last input node
     bpy.data.node_groups[-1].nodes[node_keys[-1]].var_name = selected_variable
     # Compute max and min values only once.
     scene = context.scene
-    file_path=self.blendernc_file
+    file_path=node.blendernc_file
     if selected_variable == "NONE":
         return
-
-    update_dict(file_path,selected_variable,scene)
+    update_dict(file_path,selected_variable,node)
     
-def update_dict(file_path,selected_variable,scene):
-    scene.nc_dictionary[file_path][selected_variable]= {
-        "max_value":scene.nc_dictionary[file_path]["Dataset"][selected_variable].max().compute(),
-        "min_value":(scene.nc_dictionary[file_path]["Dataset"][selected_variable].min()-abs(1e-5*scene.nc_dictionary[file_path]["Dataset"][selected_variable].min())).compute(),
-        "resolution":scene.blendernc_resolution
+def update_dict(file_path,selected_variable,node):
+    dataset = node.blendernc_dict[node.name][file_path]["Dataset"]
+    node.blendernc_dict[node.name][file_path]['selected_var']= {
+        "max_value" : dataset[selected_variable].max().compute(),
+        "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute(),
+        "resolution" : 50,
         }
+
+def update_dataset_modifiers(file_path,selected_variable,modifier):
+    if modifier.type == 'one time':
+        scene.nc_dictionary[file_path][selected_variable]['one_time_modifiers'] = ''
+    else:
+        scene.nc_dictionary[file_path][selected_variable]['iterative_modifiers'] = ''
+
 
 def res_update(node, context):
     # Update dictionary
@@ -118,8 +140,8 @@ def get_max_timestep(self, context):
     return t - 1
 
 def dict_update(node, context):
-    if node.blendernc_netcdf_vars not in context.scene.nc_dictionary[node.blendernc_file].keys():
-        update_dict(node.blendernc_file, node.blendernc_netcdf_vars,context.scene)
+    if node.blendernc_netcdf_vars not in node.blendernc_dict[node.name].keys():
+        update_dict(node.blendernc_file, node.blendernc_netcdf_vars,node)
 
 def step_update(node, context):
     dict_update(node,context)
@@ -141,6 +163,10 @@ def from_frame_to_pixel_value(frame):
     rgba = rgba.ravel()
     # Using foreach_set function for performance ( requires a 32-bit argument)
     return np.float32(rgba)
+
+def get_node(node_group,node):
+    node_group = bpy.data.node_groups.get(node_group)
+    return node_group.nodes.get(node)
 
 def get_var_dict(context, file_path, var_name):
     scene = context.scene
@@ -307,8 +333,11 @@ def update_file_vars(self, context):
     #TODO Improve passing the variable to the nodes.
     blendernc_nodes = [ node_group for node_group in bpy.data.node_groups if node_group.bl_idname == 'BlenderNC']
     if blendernc_nodes:
-        if [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDFPath" ]:
+        input_nodes = [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDFPath" ] 
+        if context.active_node.bl_idname == "netCDFPath":
             context.active_node.blendernc_file = bpy.context.scene.blendernc_file
+        elif input_nodes:
+            input_nodes[-1].blendernc_file = bpy.context.scene.blendernc_file
     else:
         bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 
@@ -318,18 +347,48 @@ def update_animation(self,context):
     except KeyError:
         pass
 
-def rotatelon_update(self,context):
+# Function type to modify tmp_dataset. Future implementation will use exec(strings).
+def tmp_dataset_update(node,context):
     scene = context.scene
     data_dictionary = scene.nc_dictionary
-    if not self.blendernc_file:
+    if not node.blendernc_file:
         return
     else:
-        dataset = data_dictionary[self.blendernc_file]['Dataset']
-        lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
-        if len(lon_coords) == 1:
-            data_dictionary[self.blendernc_file]['Dataset'] = dataset.roll({lon_coords[0]: int(self.blendernc_rotation)})
-        else:
-            raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+        # following lines modify a temporal dataset, a potential issue may raise 
+        # when using same dataset for multiple purposes.
+        #### CONTINUE HERE!!!
+        dataset = data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray']
+        if not dataset:
+            dataset = data_dictionary[node.blendernc_file]['Dataset'][node.blendernc_netcdf_vars]._to_temp_dataset()
+        data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = get_computation(node,dataset)
+
+        ### Do something different depending on the node type.
+
+# Fuction to return laisy dataset with the computation appended.
+def get_computation(node,dataset):
+    if node.bl_idname == 'netCDFdims':
+        if node.blendernc_dims in dataset.dims:
+            return dataset.isel({node.blendernc_dims:0}).drop('time').squeeze()
+        else: 
+            return dataset.drop_dims(node.blendernc_dims).squeeze()
+    elif node.bl_idname == '':
+        pass
+    else:
+        raise ValueError("Unknown node")
+
+ 
+def rotatelon_update():
+    pass
+        #### Roll
+        # lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
+        # if len(lon_coords) == 1:
+        #     if not data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray']:
+        #         tmp_dataset = data_dictionary[node.blendernc_file]['Dataset'][node.blendernc_netcdf_vars]._to_temp_dataset()
+        #         data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = tmp_dataset.roll({lon_coords[0]: int(node.blendernc_rotation)})
+        #     else: 
+        #         data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'].roll({lon_coords[0]: int(node.blendernc_rotation)})
+        # else:
+        #     raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
 
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
@@ -387,7 +446,23 @@ class BlenderncEngine():
         """
         self.dataset = xarray.open_mfdataset(self.file_path,combine='by_coords')
 
-    
+
+class dataset_modifiers():
+    def __init__(self):
+        self.type = None
+        self.computation = None
+
+    def update_type(self, ctype, computation):
+        self.type = ctype
+        self.computation = computation
+
+    def get_core_func(self):
+        return json_functions[self.type]
 
 
-    
+json_functions={'roll': xarray.core.rolling.DataArrayRolling}
+
+
+from xarray.core.dataset import Dataset
+
+

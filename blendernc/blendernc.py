@@ -24,7 +24,7 @@ from blendernc.blendernc.nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_ne
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
-from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_dims import BlenderNC_NT_select_dims
+from blendernc.blendernc.nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 
 from blendernc.blendernc.nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
 from blendernc.blendernc.nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
@@ -50,7 +50,7 @@ classes = [
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
     BlenderNC_NT_select_axis,
-    BlenderNC_NT_select_dims,
+    BlenderNC_NT_drop_dims,
     BlenderNC_NT_transpose,
     BlenderNC_NT_derivatives,
     BlenderNC_NT_preloader,
@@ -120,7 +120,7 @@ handlers = bpy.app.handlers
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
 
-    bpy.types.Scene.nc_dictionary = defaultdict(None)
+    #bpy.types.Scene.nc_dictionary = defaultdict(None)
     bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
@@ -134,7 +134,7 @@ def registerBlenderNC():
 
 
 def unregisterBlenderNC():
-    del bpy.types.Scene.nc_dictionary
+    #del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
     del bpy.types.Scene.nc_cache
 

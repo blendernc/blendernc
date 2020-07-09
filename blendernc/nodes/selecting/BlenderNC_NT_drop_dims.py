@@ -1,26 +1,24 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import tmp_dataset_update
+from blendernc.blendernc.python_functions import (get_possible_dims,
+                                tmp_dataset_update)
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
-
-class BlenderNC_NT_rotatelon(bpy.types.Node):
+class BlenderNC_NT_drop_dims(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''NetCDF loading resolution '''
+    '''Select axis '''
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFrotatelon'
+    bl_idname = 'netCDFdims'
     # Label for nice name display
-    bl_label = "Rotate Longitude"
+    bl_label = "Drop Dimension"
     # Icon identifier
     bl_icon = 'MESH_GRID'
     blb_type = "NETCDF"
 
-    blendernc_rotation: bpy.props.FloatProperty(name = 'Degrees to rotate', 
-                                                default = 0, step = 1,
-                                                update=tmp_dataset_update,
-                                                precision=0, options={'ANIMATABLE'})
+    blendernc_dims: bpy.props.EnumProperty(items=get_possible_dims,
+        name="",
+        update=tmp_dataset_update)
 
     blendernc_netcdf_vars: bpy.props.StringProperty()
     blendernc_file: bpy.props.StringProperty()
@@ -33,8 +31,6 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCnetcdfSocket',"Dataset")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
-        self.color = (0.4,0.4,0.8)
-        self.use_custom_color = True
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -47,8 +43,9 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         scene = context.scene
-        layout.prop(self, "blendernc_rotation")
-
+        #layout.label(text="INFO: Work in progress", icon='INFO')
+        layout.prop(self, "blendernc_dims")
+        
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -57,7 +54,7 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "Rotate Longitude"
+        return "Drop Dimension"
 
     def update_value(self, context):
         self.update()
@@ -68,6 +65,9 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
                 and self.inputs[0].links[0].from_socket.var != ''):
                 self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
                 self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+                
+                #bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
+                
             elif (self.inputs[0].links[0].from_socket.var == 'NONE'):
                 bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
