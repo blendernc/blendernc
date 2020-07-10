@@ -403,7 +403,6 @@ class BlenderncEngine():
         """
         self.dataset = xarray.open_mfdataset(self.file_path,combine='by_coords')
 
-
 class dataset_modifiers():
     def __init__(self):
         self.type = None
