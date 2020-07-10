@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import (get_possible_files, get_possible_variables,
+from blendernc.blendernc.python_functions import (get_new_identifier, get_possible_files, get_possible_variables,
                                 dict_update)
 
 from blendernc.blendernc.msg_errors import unselected_nc_file
@@ -21,7 +21,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     bl_type = "NETCDF"
 
     # Note that this dictionary is in shared memory.
-    blendernc_dict = defaultdict(None)
+    blendernc_dict = defaultdict()
 
     blendernc_file: bpy.props.StringProperty()
     
@@ -31,6 +31,8 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         update=dict_update,
     )
 
+    unique_identifier: bpy.props.StringProperty()
+
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
@@ -39,6 +41,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCstringSocket',"Path")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
+        self.unique_identifier = get_new_identifier(self)
         self.color = (0.4,0.8,0.4)
         self.use_custom_color = True
         
@@ -49,17 +52,16 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        self.blendernc_dict.pop(self.name)
+        self.blendernc_dict.pop(self.unique_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        if self.name in self.blendernc_dict.keys():
-            layout.label(text = "Loaded netcdf:")
-            layout.label(text = self.blendernc_file.split("/")[-1])
+        if self.unique_identifier in self.blendernc_dict.keys():
+            layout.label(text = "netCDF loaded!")
             layout.prop(self, "blendernc_netcdf_vars")
         else:
-            layout.label(text="No netcdf loaded!")
+            layout.label(text="No netCDF loaded!")
             
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -69,31 +71,36 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF input"
+        if self.unique_identifier not in self.blendernc_dict.keys():
+            return "netCDF input"
+        else:
+            return self.blendernc_file.split("/")[-1]
 
     def update_value(self, context):
         self.update()
 
     def update(self):
-        #print(self.name, (self.inputs[0].is_linked and self.inputs[0].links))
+        #print(self.unique_identifier, (self.inputs[0].is_linked and self.inputs[0].links))
         if (self.inputs[0].is_linked and self.inputs[0].links):
             self.blendernc_file=self.inputs[0].links[0].from_socket.text
             if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'
-                and self.blendernc_file and self.name not in self.blendernc_dict.keys()):
+                and self.blendernc_file and self.unique_identifier not in self.blendernc_dict.keys()):
                 bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
+            # Define blendernc_file in case the netCDF input has priority on update.
             elif (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'  and 
-                  self.blendernc_file in self.blendernc_dict[self.name].keys()):
-                pass
+                  not self.blendernc_file):
+                self.blendernc_file=self.inputs[0].links[0].from_node.blendernc_file
+                bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
             else:
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
         else:
-            if self.blendernc_file and self.name in self.blendernc_dict.keys() :
-                self.blendernc_dict.pop(self.name)
+            if self.blendernc_file and self.unique_identifier in self.blendernc_dict.keys() :
+                self.blendernc_dict.pop(self.unique_identifier)
         
         if self.outputs.items():
-            if self.outputs[0].is_linked and self.blendernc_file:
-                self.outputs[0].dataset=self.blendernc_file
-                self.outputs[0].input_load_node=self.name
+            if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
+                self.outputs[0].dataset=self.blendernc_dict.copy()
+                self.outputs[0].unique_identifier=self.unique_identifier
         else: 
             pass

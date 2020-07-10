@@ -43,9 +43,10 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
         
-        node.blendernc_dict[self.node] = {file_path : bNCEngine.check_files_netcdf(file_path)}
+        unique_identifier = node.unique_identifier
+        node.blendernc_dict[unique_identifier] = {file_path : bNCEngine.check_files_netcdf(file_path)}
         self.report({'INFO'}, "File: %s loaded!" % file_path)
-        var_names = get_var(node.blendernc_dict[self.node][file_path]["Dataset"])
+        var_names = get_var(node.blendernc_dict[unique_identifier][file_path]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
                                                                 name="",update=update_nodes)
         # Create new node in BlenderNC node

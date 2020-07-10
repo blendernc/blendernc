@@ -52,30 +52,36 @@ def get_var(ncdata):
     return var_names
 
 def get_possible_variables(node, context):
-    scene = context.scene
     ncfile = node.blendernc_file
-    if not ncfile or node.name not in node.blendernc_dict.keys():
+    unique_identifier = node.unique_identifier 
+    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
         return []
-    data_dictionary = node.blendernc_dict[node.name]
+    data_dictionary = node.blendernc_dict[unique_identifier]
     ncdata = data_dictionary[ncfile]["Dataset"]
     items = get_var(ncdata)
     return items
 
+def get_new_identifier(node):
+    if len(node.name.split('.')) == 1:
+        return '{0:03}'.format(0)
+    else:
+        return '{0:03}'.format(int(node.name.split('.')[-1]))
+
 def get_possible_dims(node, context):
-    scene = context.scene
     ncfile = node.blendernc_file
-    if not ncfile or node.name not in node.blendernc_dict.keys():
+    unique_identifier = node.unique_identifier
+    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
         return []
-    data_dictionary = node.blendernc_dict[node.name]
+    data_dictionary = node.blendernc_dict[unique_identifier]
     ncdata = data_dictionary[ncfile]["Dataset"]
     items = get_dims(ncdata,node.blendernc_netcdf_vars)
     return items
 
 def get_possible_files(node, context):
-    scene = context.scene
-    if not node.name in node.blendernc_dict.keys():
+    unique_identifier = node.unique_identifier
+    if not unique_identifier in node.blendernc_dict.keys():
         return []
-    data_dictionary = node.blendernc_dict[node.name]
+    data_dictionary = node.blendernc_dict[unique_identifier]
     items = [(f, basename(f), basename(f), ii) for ii, f in enumerate(data_dictionary.keys())]
     return items
 
@@ -92,19 +98,13 @@ def update_nodes(node, context):
     update_dict(file_path,selected_variable,node)
     
 def update_dict(file_path,selected_variable,node):
-    dataset = node.blendernc_dict[node.name][file_path]["Dataset"]
-    node.blendernc_dict[node.name][file_path]['selected_var']= {
-        "max_value" : dataset[selected_variable].max().compute(),
-        "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute(),
+    unique_identifier = node.unique_identifier
+    dataset = node.blendernc_dict[unique_identifier][file_path]["Dataset"]
+    node.blendernc_dict[unique_identifier][file_path]['selected_var']= {
+        "max_value" : dataset[selected_variable].max().compute().values,
+        "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values,
         "resolution" : 50,
         }
-
-def update_dataset_modifiers(file_path,selected_variable,modifier):
-    if modifier.type == 'one time':
-        scene.nc_dictionary[file_path][selected_variable]['one_time_modifiers'] = ''
-    else:
-        scene.nc_dictionary[file_path][selected_variable]['iterative_modifiers'] = ''
-
 
 def res_update(node, context):
     # Update dictionary
@@ -140,7 +140,7 @@ def get_max_timestep(self, context):
     return t - 1
 
 def dict_update(node, context):
-    if node.blendernc_netcdf_vars not in node.blendernc_dict[node.name].keys():
+    if node.blendernc_netcdf_vars not in node.blendernc_dict[node.unique_identifier].keys():
         update_dict(node.blendernc_file, node.blendernc_netcdf_vars,node)
 
 def step_update(node, context):

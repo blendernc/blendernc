@@ -18,6 +18,8 @@ class BlenderNC_NT_path(bpy.types.Node):
                     default="",
                     maxlen=1024)
 
+    use_dask: bpy.props.BoolProperty(name="", description="Use dask", default=False)
+
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
@@ -48,6 +50,12 @@ class BlenderNC_NT_path(bpy.types.Node):
         operator = split.operator('blendernc.import_mfnetcdf', text='', icon='FILEBROWSER')
         operator.node = self.name
         operator.node_group = self.rna_type.id_data.name
+
+        # TODO: Implement dask
+        # row = layout.row(align=True)
+        # split = row.split(factor=0.85,align=True)
+        # split.label(text = "Use dask:")
+        # split.prop(self, "use_dask")
         
 
     # Detail buttons in the sidebar.

@@ -9,11 +9,12 @@ from . socketdata import (
     bNCGetSocketInfo, bNCGetSocket, bNCSetSocket, bNCForgetSocket,
     bNCNoDataError, sentinel)
 
+from collections import defaultdict
+
 socket_colors = {
     "bNCnetcdfSocket": (0.6, 1.0, 0.6, 1.0),
     "bNCpercentSocket": (0.8, 0.8, 0.8, 0.3),
 }
-
 
 
 # Node Sockets modifyed from: 
@@ -233,8 +234,8 @@ class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
     bl_idname = "bNCnetcdfSocket"
     bl_label = "netCDF Socket"
 
-    dataset: StringProperty()
-    input_load_node: StringProperty()
+    dataset: defaultdict()
+    unique_identifier: StringProperty()
 
     def draw(self, context, layout, node, text):
         layout.label(text=text)

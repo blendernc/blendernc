@@ -5,6 +5,8 @@ from blendernc.blendernc.python_functions import res_update
 
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
+from collections import defaultdict
+
 class BlenderNC_NT_resolution(bpy.types.Node):
     # === Basics ===
     # Description string
@@ -23,8 +25,10 @@ class BlenderNC_NT_resolution(bpy.types.Node):
                                                 update=res_update,
                                                 precision=0, options={'ANIMATABLE'})
 
-    blendernc_import_node: bpy.props.StringProperty()
+    blendernc_dataset_identifier: bpy.props.StringProperty()
     blendernc_file: bpy.props.StringProperty()
+
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -65,10 +69,10 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     def update(self):
         if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if (self.inputs[0].links[0].from_socket.input_load_node):
-                self.blendernc_import_node = self.inputs[0].links[0].from_socket.input_load_node 
-                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
-                bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
+            if (self.inputs[0].links[0].from_socket.dataset):
+                self.dataset = self.inputs[0].links[0].from_socket.dataset 
+                self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
+                self.dataset[self.blendernc_dataset_identifier][self.blendernc_file]['selected_var']['resolution'] = self.blendernc_resolution
                 #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
             elif (self.inputs[0].links[0].from_socket.var == 'NONE'):
                 bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
@@ -78,7 +82,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         else:
             pass
             
-        if self.outputs.items() and self.blendernc_netcdf_vars:
+        if self.outputs.items():
             if self.outputs[0].is_linked and self.inputs[0].is_linked:
                 self.outputs[0].dataset = self.blendernc_file
                 self.outputs[0].input_load_node = self.blendernc_import_node
