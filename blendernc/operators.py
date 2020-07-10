@@ -43,10 +43,10 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
         # Useful for large datasets. Implement node with chunks if file is huge.
         
-        unique_identifier = node.unique_identifier
-        node.blendernc_dict[unique_identifier] = {file_path : bNCEngine.check_files_netcdf(file_path)}
-        self.report({'INFO'}, "File: %s loaded!" % file_path)
-        var_names = get_var(node.blendernc_dict[unique_identifier][file_path]["Dataset"])
+        unique_identifier = node.blendernc_dataset_identifier
+        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_netcdf(file_path)
+        self.report({'INFO'}, "Lazy load of %s!" % file_path)
+        var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
                                                                 name="",update=update_nodes)
         # Create new node in BlenderNC node
@@ -74,35 +74,30 @@ class BlenderNC_OT_ncload_Sui(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        # Create new node in BlenderNC node for beginner mode.
-        blendernc_nodes = [ bpy.data.node_groups[keys] for keys in bpy.data.node_groups.keys() if ('BlenderNC' in keys or 'NodeTree' in keys)]
-        if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC","BlenderNC")
-            bpy.data.node_groups['BlenderNC'].use_fake_user = True
-        
-        if not bpy.data.node_groups[-1].nodes:
+        netcdf = bpy.data.node_groups.get("BlenderNC").nodes.get("netCDF input")
+        node_group = bpy.data.node_groups.get("BlenderNC")
+        if not node_group.nodes.get("Resolution"):
             ####################
-            path = bpy.data.node_groups[-1].nodes.new("netCDFPath")
-            path.blendernc_file = scene.blendernc_file
-            netcdf = bpy.data.node_groups[-1].nodes.new("netCDFNode")
-            netcdf.blendernc_netcdf_vars = scene.blendernc_netcdf_vars
-            #LINK
-            bpy.data.node_groups[-1].links.new(netcdf.inputs[0], path.outputs[0])
-            ####################
-            resol = bpy.data.node_groups[-1].nodes.new("netCDFResolution")
-            resol.blendernc_resolution = scene.blendernc_resolution
-            #LINK 
-            bpy.data.node_groups[-1].links.new(resol.inputs[0], netcdf.outputs[0])
-            ####################
-            output = bpy.data.node_groups[-1].nodes.new("netCDFOutput")
-            #LINK
-            bpy.data.node_groups[-1].links.new(output.inputs[0], resol.outputs[0])
-            bpy.ops.image.new(name="BlenderNC_default", width=1024, height=1024, 
-                              color=(0.0, 0.0, 0.0, 1.0), alpha=True, 
-                              generated_type='BLANK', float=True)
-            output.image = bpy.data.images.get('BlenderNC_default')
+            resol = node_group.nodes.new("netCDFResolution")
+            resol.location[0]=30
+            output = node_group.nodes.new("netCDFOutput")
+            output.location[0]=190
+        else: 
+            resol = node_group.nodes.get("Resolution")
+            output = node_group.nodes.get("Output")
+        #LINK 
+        node_group.links.new(resol.inputs[0], netcdf.outputs[0])
+
+        resol.blendernc_resolution = scene.blendernc_resolution
             
-            
+        #LINK
+        node_group.links.new(output.inputs[0], resol.outputs[0])
+        bpy.ops.image.new(name="BlenderNC_default", width=1024, height=1024, 
+                            color=(0.0, 0.0, 0.0, 1.0), alpha=True, 
+                            generated_type='BLANK', float=True)
+        output.image = bpy.data.images.get('BlenderNC_default')
+        output.update_on_frame_change = scene.blendernc_animate
+        output.update()
         return {'FINISHED'}
 
 
@@ -118,16 +113,27 @@ class BlenderNC_OT_var(bpy.types.Operator):
         if not self.file_path:
             self.report({'INFO'}, "Select a file!")
             return {'FINISHED'}
-        file_path = abspath(self.file_path)
+
+        blendernc_nodes = [ bpy.data.node_groups[keys] for keys in bpy.data.node_groups.keys() if (bpy.data.node_groups[keys].bl_label == 'BlenderNC' and keys == 'BlenderNC')]
+        if not blendernc_nodes:
+            bpy.data.node_groups.new("BlenderNC","BlenderNC")
+            bpy.data.node_groups["BlenderNC"].use_fake_user = True
         
-        scene = context.scene
-        # TODO: allow xarray.open_mfdataset if wildcard "*" use in name. 
-        # Useful for large datasets. Implement node with chunks if file is huge.
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
-        self.report({'INFO'}, "File: %s loaded!" % file_path)
-        var_names = get_var(scene.nc_dictionary[file_path]["Dataset"])
-        bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=var_names,
-                                                                name="",update=update_proxy_file)
+        node_group = bpy.data.node_groups.get("BlenderNC")
+        if not node_group.nodes:
+            path = node_group.nodes.new("netCDFPath")
+            path.location[0]=-300
+            netcdf = node_group.nodes.new("netCDFNode")
+            netcdf.location[0]=-130
+        else:
+            path = node_group.nodes.get('netCDF Path')
+            netcdf = node_group.nodes.get("netCDF input")
+        path.blendernc_file = self.file_path
+        #LINK nodes
+        if not node_group.links:
+            node_group.links.new(netcdf.inputs[0], path.outputs[0])
+        
+        netcdf.update()
         return {'FINISHED'}
 
 class BlenderNC_OT_preloader(bpy.types.Operator):
@@ -185,14 +191,14 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
     bl_idname = "blendernc.nc2img"
     bl_label = "From netcdf to image"
     bl_description = "Updates an image with netcdf data"
-    file_name: bpy.props.StringProperty()
-    var_name: bpy.props.StringProperty()
+    node: bpy.props.StringProperty()
+    node_group: bpy.props.StringProperty()
     step: bpy.props.IntProperty()
     flip: bpy.props.BoolProperty()
     image: bpy.props.StringProperty()
 
     def execute(self, context):
-        update_image(context, self.file_name, self.var_name, self.step, self.image)
+        update_image(context, self.node, self.node_group, self.step, self.image)
         return {'FINISHED'}
 
 class BlenderNC_OT_apply_material(bpy.types.Operator):
@@ -284,7 +290,11 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
             common_name = findCommonName([f.name for f in self.files])
             path = join(fdir,common_name)
         
-        bpy.data.node_groups.get(self.node_group).nodes.get(self.node).blendernc_file=path
+        if self.node_group != '' and self.node != '':
+            bpy.data.node_groups.get(self.node_group).nodes.get(self.node).blendernc_file=path
+        else:
+            context.scene.blendernc_file = path
+        
         return {'FINISHED'}
 
 def findCommonName(filenames):

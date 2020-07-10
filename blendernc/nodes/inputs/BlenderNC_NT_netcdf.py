@@ -31,7 +31,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         update=dict_update,
     )
 
-    unique_identifier: bpy.props.StringProperty()
+    blendernc_dataset_identifier: bpy.props.StringProperty()
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -41,7 +41,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCstringSocket',"Path")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
-        self.unique_identifier = get_new_identifier(self)
+        self.blendernc_dataset_identifier = get_new_identifier(self)
         self.color = (0.4,0.8,0.4)
         self.use_custom_color = True
         
@@ -57,7 +57,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        if self.unique_identifier in self.blendernc_dict.keys():
+        if self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             layout.label(text = "netCDF loaded!")
             layout.prop(self, "blendernc_netcdf_vars")
         else:
@@ -71,36 +71,36 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        if self.unique_identifier not in self.blendernc_dict.keys():
+        if self.blendernc_dataset_identifier not in self.blendernc_dict.keys():
             return "netCDF input"
         else:
             return self.blendernc_file.split("/")[-1]
 
-    def update_value(self, context):
-        self.update()
-
     def update(self):
         #print(self.unique_identifier, (self.inputs[0].is_linked and self.inputs[0].links))
-        if (self.inputs[0].is_linked and self.inputs[0].links):
+        if self.inputs[0].is_linked and self.inputs[0].links:
             self.blendernc_file=self.inputs[0].links[0].from_socket.text
             if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'
-                and self.blendernc_file and self.unique_identifier not in self.blendernc_dict.keys()):
+                and self.blendernc_file and self.blendernc_dataset_identifier not in self.blendernc_dict.keys()):
                 bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
             # Define blendernc_file in case the netCDF input has priority on update.
             elif (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'  and 
                   not self.blendernc_file):
                 self.blendernc_file=self.inputs[0].links[0].from_node.blendernc_file
                 bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
+            elif (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'  and self.blendernc_file) :
+                pass
             else:
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
         else:
-            if self.blendernc_file and self.unique_identifier in self.blendernc_dict.keys() :
-                self.blendernc_dict.pop(self.unique_identifier)
+            if self.blendernc_file and self.blendernc_dataset_identifier in self.blendernc_dict.keys() :
+                self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         
         if self.outputs.items():
             if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
-                self.outputs[0].dataset=self.blendernc_dict.copy()
-                self.outputs[0].unique_identifier=self.unique_identifier
+                # Copy only unique identifier to next node.
+                self.outputs[0].dataset[self.blendernc_dataset_identifier] = self.blendernc_dict[self.blendernc_dataset_identifier].copy()
+                self.outputs[0].unique_identifier=self.blendernc_dataset_identifier
         else: 
             pass

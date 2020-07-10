@@ -1,9 +1,9 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import tmp_dataset_update
-
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+
+from collections import defaultdict
 
 class BlenderNC_NT_rotatelon(bpy.types.Node):
     # === Basics ===
@@ -19,7 +19,6 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
 
     blendernc_rotation: bpy.props.FloatProperty(name = 'Degrees to rotate', 
                                                 default = 0, step = 1,
-                                                update=tmp_dataset_update,
                                                 precision=0, options={'ANIMATABLE'})
 
     blendernc_netcdf_vars: bpy.props.StringProperty()

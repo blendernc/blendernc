@@ -1,7 +1,11 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import step_update
+from blendernc.blendernc.python_functions import  update_image
+
+from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+
+from collections import defaultdict
 
 class BlenderNC_NT_output(bpy.types.Node):
     # === Basics ===
@@ -23,19 +27,18 @@ class BlenderNC_NT_output(bpy.types.Node):
     image: bpy.props.PointerProperty(
         type = bpy.types.Image,
         name = "",
-        update = step_update,
     )
 
     frame_loaded: bpy.props.IntProperty(
         default = -1,
     )
 
-    step: bpy.props.IntProperty(
-        update = step_update,
-    )
+    step: bpy.props.IntProperty()
 
-    blendernc_netcdf_vars: bpy.props.StringProperty()
-    blendernc_file: bpy.props.StringProperty()
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
+
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
@@ -53,6 +56,7 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
+        self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
@@ -60,20 +64,22 @@ class BlenderNC_NT_output(bpy.types.Node):
         scene = context.scene
 
         layout.template_ID(self, "image", new="image.new", open="image.open")
+        # Generated image supported by bpy to display, but perhaps show a preview of field?
+        # layout.template_ID_preview(self, "image", new="image.new", open="image.open",rows=2, cols=3)
 
-        if self.image:
+        if self.image and self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             layout.prop(self, "update_on_frame_change")
-            op = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            op.file_name = self.blendernc_file
-            op.var_name = self.blendernc_netcdf_vars
-            op.step = self.step
-            op.image = self.image.name
+            operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
+            operator.node = self.name
+            operator.node_group = self.rna_type.id_data.name
+            operator.step = self.step
+            operator.image = self.image.name
 
-        # Hide unused sockets
-        if not self.update_on_frame_change:
-            layout.prop(self, "step")
-        else:
-            layout.label(text="%i" % scene.frame_current)
+            # Hide unused sockets
+            if not self.update_on_frame_change:
+                layout.prop(self, "step")
+            else:
+                layout.label(text="%i" % scene.frame_current)
   
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -85,11 +91,26 @@ class BlenderNC_NT_output(bpy.types.Node):
     def draw_label(self):
         return "Image Output"
 
-    def update_value(self, context):
-        self.update()
-
     def update(self):
-        if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if self.inputs[0].links[0].from_socket.var != 'NONE':
-                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+        if self.inputs[0].is_linked and self.inputs[0].links:
+            self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
+            nc_dict = self.inputs[0].links[0].from_socket.dataset
+            if self.blendernc_dataset_identifier == '' or len(nc_dict.keys()):
+                self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.blendernc_dataset_identifier
+                nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
+            
+            # Check that nc_dict contains at least an unique identifier
+            if self.blendernc_dataset_identifier in nc_dict.keys():
+                self.blendernc_dict[self.blendernc_dataset_identifier] = nc_dict[self.blendernc_dataset_identifier].copy()
+                # Check if user has selected a variable
+                if 'selected_var' not in self.blendernc_dict[self.blendernc_dataset_identifier].keys():
+                    bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
+                    self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
+                    return
+                update_image(bpy.context, self.name, self.rna_type.id_data.name, bpy.context.scene.frame_current, self.image.name)
+            else: 
+                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
+                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
+        else:
+            if self.blendernc_dataset_identifier in self.blendernc_dict.keys() :
+                self.blendernc_dict.pop(self.blendernc_dataset_identifier)

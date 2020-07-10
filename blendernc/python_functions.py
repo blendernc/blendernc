@@ -15,14 +15,41 @@ from .msg_errors import huge_image
 import time
 class Timer:
     def __init__(self):
-        self.timestamps = []
-    def tick(self):
-        self.timestamps.append(time.clock())
-    def report(self):
-        rep = ""
-        for i in range(len(self.timestamps)-1):
-            rep += "%.1e " % ( self.timestamps[i+1]-self.timestamps[i])
-        print(rep)
+        self.timestamps = {}
+        self.nolabel = []
+        self.tmp = []
+    def tick(self,label=''):
+        if label == '':
+            self.nolabel.append(time.clock())
+            self.timestamps[label] = self.nolabel
+        else:
+            self.tmp.append(time.clock())
+            self.timestamps[label] = self.tmp
+            if len(self.timestamps[label]) == 2:
+                self.tmp = []
+
+    def report(self,total = False):
+        titles = ""
+        times = ""
+        for key,item in self.timestamps.items():
+            if key != '':
+                titles += "| {0} |".format(key)  
+                time_elapsed_s = "{0:.2e}".format(item[1]-item[0])
+                spaceL = ' '*(len(key) - len(time_elapsed_s))
+                times += "| {0}{1} |".format(spaceL,time_elapsed_s )
+        print('-'*len(titles)) 
+        print(titles)
+        print(times)
+        if total:
+            times = np.array([item for key,item in self.timestamps.items()]).ravel()
+            print('-'*len(titles))
+            total_text = '| Total = ' 
+            total_t = '{0:.2e} seconds |'.format(max(times)-min(times))
+            print('{0}{1}{2}'.format(total_text,' '*(len(titles)-len(total_text)-len(total_t)),total_t))
+            FPS_text = '| FPS = '
+            FPS = '{0:.2g} |'.format(1/(max(times)-min(times)))
+            print('{0}{1}{2}'.format(FPS_text,' '*(len(titles)-len(FPS_text)-len(FPS)),FPS))
+            print('-'*len(titles))
 
 # Definitions
 def normalize_data(data, max_range=None, min_range=None):
@@ -53,11 +80,11 @@ def get_var(ncdata):
 
 def get_possible_variables(node, context):
     ncfile = node.blendernc_file
-    unique_identifier = node.unique_identifier 
+    unique_identifier = node.blendernc_dataset_identifier 
     if not ncfile or unique_identifier not in node.blendernc_dict.keys():
         return []
     data_dictionary = node.blendernc_dict[unique_identifier]
-    ncdata = data_dictionary[ncfile]["Dataset"]
+    ncdata = data_dictionary["Dataset"]
     items = get_var(ncdata)
     return items
 
@@ -68,63 +95,48 @@ def get_new_identifier(node):
         return '{0:03}'.format(int(node.name.split('.')[-1]))
 
 def get_possible_dims(node, context):
-    ncfile = node.blendernc_file
-    unique_identifier = node.unique_identifier
-    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
+    unique_identifier = node.blendernc_dataset_identifier
+    if unique_identifier not in node.blendernc_dict.keys():
         return []
     data_dictionary = node.blendernc_dict[unique_identifier]
-    ncdata = data_dictionary[ncfile]["Dataset"]
-    items = get_dims(ncdata,node.blendernc_netcdf_vars)
+    ncdata = data_dictionary["Dataset"]
+    var_name = data_dictionary["selected_var"]['selected_var_name']
+    items = get_dims(ncdata,var_name)
     return items
 
 def get_possible_files(node, context):
-    unique_identifier = node.unique_identifier
+    unique_identifier = node.blendernc_dataset_identifier
     if not unique_identifier in node.blendernc_dict.keys():
         return []
     data_dictionary = node.blendernc_dict[unique_identifier]
     items = [(f, basename(f), basename(f), ii) for ii, f in enumerate(data_dictionary.keys())]
     return items
 
-def update_nodes(node, context):
-    selected_variable = node.blendernc_netcdf_vars
-    node_keys = [key for key in bpy.data.node_groups["BlenderNC"].nodes.keys() if 'netCDFinput' in key]
-    # Change last input node
-    bpy.data.node_groups[-1].nodes[node_keys[-1]].var_name = selected_variable
-    # Compute max and min values only once.
-    scene = context.scene
-    file_path=node.blendernc_file
+def update_value(self, context):
+    self.update()
+    self.rna_type.id_data.interface_update(context)
+    
+def update_nodes(scene, context):
+    selected_variable = scene.blendernc_netcdf_vars
+    bpy.data.node_groups.get('BlenderNC').nodes.get('netCDF input').blendernc_netcdf_vars = selected_variable
+    update_proxy_file(scene, context)
+
+def update_dict(selected_variable,node):
     if selected_variable == "NONE":
         return
-    update_dict(file_path,selected_variable,node)
-    
-def update_dict(file_path,selected_variable,node):
-    unique_identifier = node.unique_identifier
-    dataset = node.blendernc_dict[unique_identifier][file_path]["Dataset"]
-    node.blendernc_dict[unique_identifier][file_path]['selected_var']= {
+    unique_identifier = node.blendernc_dataset_identifier
+    dataset = node.blendernc_dict[unique_identifier]["Dataset"]
+    node.blendernc_dict[unique_identifier]["Dataset"] = dataset[selected_variable].to_dataset()
+    node.blendernc_dict[unique_identifier]['selected_var']= {
         "max_value" : dataset[selected_variable].max().compute().values,
         "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values,
-        "resolution" : 50,
+        "selected_var_name" : selected_variable,
+        "resolution":50
         }
 
-def res_update(node, context):
-    # Update dictionary
-    if len(context.scene.nc_dictionary)==0 or node.blendernc_file=='':
-        pass
-    else:
-        if node.blendernc_netcdf_vars in bpy.context.scene.nc_dictionary[node.blendernc_file].keys():
-            context.scene.nc_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['resolution'] = node.blendernc_resolution
-    
-    # Update node tree and image, else write into the Blender NC nodes (used in simple UI)
-    if node.name!='Scene':
-        node.update()
-        if node.outputs[0].is_linked:
-            if node.outputs[0].links[0].to_node.bl_idname == 'netCDFOutput':
-                image = node.outputs[0].links[0].to_node.image
-                update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
-                        context.scene.frame_current, image)
-    else:
-        bpy.data.node_groups['BlenderNC'].nodes['Resolution'].blendernc_resolution = node.blendernc_resolution
-        #bpy.data.node_groups[]
+def update_res(scene,context):
+    bpy.data.node_groups.get('BlenderNC').nodes.get('Resolution').blendernc_resolution = scene.blendernc_resolution
+
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -132,7 +144,7 @@ def get_max_timestep(self, context):
     data_dictionary = scene.nc_dictionary
     if not ncfile or not data_dictionary:
         return 0
-    ncdata = data_dictionary[ncfile]["Dataset"]
+    ncdata = data_dictionary["Dataset"]
     var_name = self.var_name
     var_data = ncdata[var_name]
     
@@ -140,20 +152,8 @@ def get_max_timestep(self, context):
     return t - 1
 
 def dict_update(node, context):
-    if node.blendernc_netcdf_vars not in node.blendernc_dict[node.unique_identifier].keys():
-        update_dict(node.blendernc_file, node.blendernc_netcdf_vars,node)
-
-def step_update(node, context):
-    dict_update(node,context)
-    step = node.step
-    print(node.blendernc_file, node.blendernc_netcdf_vars, step)
-    if node.blendernc_netcdf_vars=="NONE":
-        return
-        
-    if step != node.frame_loaded:
-        if update_image(context, node.blendernc_file, node.blendernc_netcdf_vars, 
-                        step, node.image):
-            node.frame_loaded = step
+    if 'selected_var' not in node.blendernc_dict[node.blendernc_dataset_identifier].keys():
+        update_dict(node.blendernc_netcdf_vars,node)
 
 def from_frame_to_pixel_value(frame):
     alpha_channel = np.ones(shape=frame.shape)
@@ -168,48 +168,52 @@ def get_node(node_group,node):
     node_group = bpy.data.node_groups.get(node_group)
     return node_group.nodes.get(node)
 
-def get_var_dict(context, file_path, var_name):
+def get_var_dict(context, node, node_tree):
     scene = context.scene
     try:
-        scene.nc_cache[file_path]
+        scene.nc_cache[node_tree]
     except KeyError:
-        scene.nc_cache[file_path] = {}
+        scene.nc_cache[node_tree] = {}
 
     # Check if dictionary entry for the variable exists
     try:
-        scene.nc_cache[file_path][var_name]
+        scene.nc_cache[node_tree][node]
     except KeyError:
-        scene.nc_cache[file_path][var_name] = {}
-    return scene.nc_cache[file_path][var_name]
+        scene.nc_cache[node_tree][node] = {}
+    return scene.nc_cache[node_tree][node]
 
-def get_var_data(context, file_path, var_name):
-    scene = context.scene
+def get_var_data(context, node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
-    data_dictionary = scene.nc_dictionary
-    # Dataset resolution
-    resolution =  data_dictionary[file_path][var_name]['resolution']
+    data_dictionary = node.blendernc_dict
+    unique_identifier = node.blendernc_dataset_identifier
     # Get the netcdf of the selected file
-    ncdata = data_dictionary[file_path]["Dataset"]
+    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    # Get var name
+    var_name = data_dictionary[unique_identifier]["selected_var"]['selected_var_name']
     # Get the data of the selected variable
-    return netcdf_values(ncdata,var_name,resolution)
+    return ncdata[var_name]
 
-def get_max_min_data(context, file_path, var_name):
-    scene = context.scene
+def get_max_min_data(context, node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
-    data_dictionary = scene.nc_dictionary
+    data_dictionary = node.blendernc_dict
+    unique_identifier = node.blendernc_dataset_identifier
     # Get the netcdf of the selected file
-    var_metadata = data_dictionary[file_path][var_name]
-    return var_metadata['max_value'].values,var_metadata['min_value'].values
+    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    # Get the metadata of the selected variable
+    var_metadata = data_dictionary[unique_identifier]["selected_var"]
+    return var_metadata['max_value'],var_metadata['min_value']
 
-def load_frame(context, file_path, var_name, frame):
+def load_frame(context, node, node_tree, frame):
     # Find netcdf file data
-    var_data = get_var_data(context, file_path, var_name)
+    var_data = get_var_data(context, node, node_tree)
 
     # Find cache dictionary
-    var_dict = get_var_dict(context, file_path, var_name)
+    var_dict = get_var_dict(context, node, node_tree)
     
     # Global max and min
-    vmax, vmin = get_max_min_data(context, file_path, var_name)
+    vmax, vmin = get_max_min_data(context, node, node_tree)
 
     # TODO: Improve by using coordinates, 
     # could generate issues if the first axis isn't time
@@ -227,21 +231,19 @@ def load_frame(context, file_path, var_name, frame):
     var_dict[frame] = from_frame_to_pixel_value(normalized_data)
 
 
-def update_image(context, file_name, var_name, step, image):
+def update_image(context, node, node_tree, step, image):
     if not image:
         return False
 
     scene = context.scene
     timer = Timer()
 
-    timer.tick()
-    # Get data dictionary stored at scene object
-    data_dictionary = scene.nc_dictionary
+    timer.tick('Variable load')
 
     # Get the data of the selected variable
-    var_data = get_var_data(context, file_name, var_name)
+    var_data = get_var_data(context, node, node_tree)
 
-    timer.tick()
+    timer.tick('Variable load')
     # Get object shape
     if len(var_data.shape) == 2:
         y, x = var_data.shape
@@ -256,20 +258,22 @@ def update_image(context, file_name, var_name, step, image):
     if not isinstance(image, bpy.types.Image):
         images = bpy.data.images
         image = images[image]
-    timer.tick()
+    timer.tick('Image dimensions')
     # Ensure that the image and the data have the same size.
-    img_x, img_y = image.size
-    img_x, img_y = int(img_x), int(img_y)
+    img_x, img_y = list(image.size)
+
     if [img_x, img_y] != [x, y]:
         image.scale(x, y)
+        img_x, img_y = list(image.size)
+    timer.tick('Image dimensions')
     # Get data of the selected step
-    timer.tick()
+    timer.tick('Load Frame')
     try:
         # TODO:Use time coordinate, not index.
         # IF timestep is larger, use the last time value
         if step >= var_data.shape[0]:
             step = var_data.shape[0]-1
-        pixels_cache=scene.nc_cache[file_name][var_name][step]
+        pixels_cache=scene.nc_cache[node_tree][node][step]
         # If the size of the cache data does not match the size of the image multiplied by the 4 channels (RGBA)
         # we need to reload the data.
         if pixels_cache.size != 4 * img_x*img_y:
@@ -278,31 +282,30 @@ def update_image(context, file_name, var_name, step, image):
         # TODO:Use time coordinate, not index.
         if step >= var_data.shape[0]: 
             step = var_data.shape[0]-1
-        load_frame(context, file_name, var_name, step)
+        load_frame(context, node, node_tree, step)
+    timer.tick('Load Frame')
         
     # In case data has been pre-loaded
-    pixels_value = scene.nc_cache[file_name][var_name][step]
-    timer.tick()
-
+    pixels_value = scene.nc_cache[node_tree][node][step]
+    timer.tick('Assign to pixel')
     # TODO: Test version, make it copatible with 2.8 forwards
     image.pixels.foreach_set(pixels_value)
-    timer.tick()
+    timer.tick('Assign to pixel')
+    timer.tick('Update Image')
     image.update()
-    timer.tick()
-    timer.report()
+    timer.tick('Update Image')
+    timer.report(total=True)
     return True
 
 def netcdf_values(dataset,selected_variable,active_resolution):
     """
     """
-
     variable = dataset[selected_variable]
 
     dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(variable[ii].size,active_resolution))
             for ii in variable.coords if 'time' not in ii}
     
-    print(selected_variable,dict_var_shape)
-    variable_res = variable.isel(dict_var_shape)
+    variable_res = variable.isel(dict_var_shape).to_dataset()
     return variable_res
     
 
@@ -311,7 +314,7 @@ def resolution_steps(size,res):
     res_interst = res/5 + 80
     log_scale = np.log10(size)/np.log10((size*res_interst/100)) - 1
     step = size * log_scale
-    if step ==0:
+    if step < 1:
         step = 1
     return int(step)
 
@@ -324,22 +327,13 @@ def update_proxy_file(self, context):
     bpy.ops.blendernc.ncload_sui(file_path=bpy.context.scene.blendernc_file)
 
 
-def update_file_vars(self, context):
+def update_file_vars(node, context):
     """
     Update function:
         -   Checks if netCDF file exists 
         -   Extracts variable names using netCDF4 conventions.
     """
-    #TODO Improve passing the variable to the nodes.
-    blendernc_nodes = [ node_group for node_group in bpy.data.node_groups if node_group.bl_idname == 'BlenderNC']
-    if blendernc_nodes:
-        input_nodes = [ node for node in blendernc_nodes[-1].nodes if node.bl_idname == "netCDFPath" ] 
-        if context.active_node.bl_idname == "netCDFPath":
-            context.active_node.blendernc_file = bpy.context.scene.blendernc_file
-        elif input_nodes:
-            input_nodes[-1].blendernc_file = bpy.context.scene.blendernc_file
-    else:
-        bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
+    bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 
 def update_animation(self,context):
     try:
@@ -347,48 +341,11 @@ def update_animation(self,context):
     except KeyError:
         pass
 
-# Function type to modify tmp_dataset. Future implementation will use exec(strings).
-def tmp_dataset_update(node,context):
-    scene = context.scene
-    data_dictionary = scene.nc_dictionary
-    if not node.blendernc_file:
-        return
-    else:
-        # following lines modify a temporal dataset, a potential issue may raise 
-        # when using same dataset for multiple purposes.
-        #### CONTINUE HERE!!!
-        dataset = data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray']
-        if not dataset:
-            dataset = data_dictionary[node.blendernc_file]['Dataset'][node.blendernc_netcdf_vars]._to_temp_dataset()
-        data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = get_computation(node,dataset)
+def get_lost_dim(node):
+    new_dims = list(node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'].coords.dims)
+    old_dims = list(node.inputs[0].links[0].from_node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'].coords.dims)
 
-        ### Do something different depending on the node type.
-
-# Fuction to return laisy dataset with the computation appended.
-def get_computation(node,dataset):
-    if node.bl_idname == 'netCDFdims':
-        if node.blendernc_dims in dataset.dims:
-            return dataset.isel({node.blendernc_dims:0}).drop('time').squeeze()
-        else: 
-            return dataset.drop_dims(node.blendernc_dims).squeeze()
-    elif node.bl_idname == '':
-        pass
-    else:
-        raise ValueError("Unknown node")
-
- 
-def rotatelon_update():
-    pass
-        #### Roll
-        # lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
-        # if len(lon_coords) == 1:
-        #     if not data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray']:
-        #         tmp_dataset = data_dictionary[node.blendernc_file]['Dataset'][node.blendernc_netcdf_vars]._to_temp_dataset()
-        #         data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = tmp_dataset.roll({lon_coords[0]: int(node.blendernc_rotation)})
-        #     else: 
-        #         data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'] = data_dictionary[node.blendernc_file][node.blendernc_netcdf_vars]['tmp_dataarray'].roll({lon_coords[0]: int(node.blendernc_rotation)})
-        # else:
-        #     raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+    return [ii for ii in (old_dims + new_dims) if (old_dims + new_dims).count(ii) ==1][0]
 
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
