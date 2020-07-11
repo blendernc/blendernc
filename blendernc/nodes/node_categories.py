@@ -4,6 +4,10 @@ from nodeitems_utils import  NodeItem
 # all categories in a list
 node_categories = [
     # identifier, label, items list
+    BlenderNCNodeCategory('Shortcuts', "Shortcuts", items=[
+        # Create shortcuts,
+        NodeItem("netCDFbasincnodes"),
+    ]),
     BlenderNCNodeCategory('netCDF', "netCDF", items=[
         # netCDF Input nodes.
         NodeItem("netCDFNode"),

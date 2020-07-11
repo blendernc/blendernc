@@ -5,6 +5,8 @@ from blendernc.blendernc.python_functions import  update_image,update_value
 
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
+from blendernc.blendernc.image import dataset_2_image_preview
+
 from collections import defaultdict
 
 class BlenderNC_NT_output(bpy.types.Node):
@@ -57,16 +59,22 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        self.blendernc_dict.pop(self.blendernc_dataset_identifier)
+        if self.blendernc_dataset_identifier!='':
+            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         scene = context.scene
 
-        layout.template_ID(self, "image", new="image.new", open="image.open")
+        #layout.template_ID(self, "image", new="image.new", open="image.open")
         # Generated image supported by bpy to display, but perhaps show a preview of field?
-        # layout.template_ID_preview(self, "image", new="image.new", open="image.open",rows=2, cols=3)
+        layout.template_ID_preview(self, "image", new="image.new", open="image.open",rows=2, cols=3)
+        if self.image:
+            if self.image.is_float and (not self.image.preview.is_image_custom and
+                self.blendernc_dataset_identifier in self.blendernc_dict.keys()):
+                image_preview = dataset_2_image_preview(self)
+                self.image.preview.image_pixels_float[0:] = image_preview
 
         if self.image and self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             layout.prop(self, "update_on_frame_change")
@@ -75,6 +83,15 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.node_group = self.rna_type.id_data.name
             operator.step = self.step
             operator.image = self.image.name
+
+            
+                
+            # Update image preview witn 8 byte image.
+            #if self.image.preview.image_pixels_float
+            #    self.image.preview.image_pixels_float
+            
+            #rand = [np.random.rand() for i in range(256*256)]
+            #D.node_groups['NodeTree'].nodes['Output'].image.preview.image_pixels_float =  rand
 
             # Hide unused sockets
             if not self.update_on_frame_change:
@@ -102,14 +119,12 @@ class BlenderNC_NT_output(bpy.types.Node):
             self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
             nc_dict = self.inputs[0].links[0].from_socket.dataset
             
-
             if self.blendernc_dataset_identifier == '' or len(nc_dict.keys()):
                 self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.blendernc_dataset_identifier
                 nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
             
             # Check that nc_dict contains at least an unique identifier
             if self.blendernc_dataset_identifier in nc_dict.keys():
-                print('File:', nc_dict[self.blendernc_dataset_identifier]['selected_var']['path']) 
                 self.blendernc_dict[self.blendernc_dataset_identifier] = nc_dict[self.blendernc_dataset_identifier].copy()
                 # Check if user has selected a variable
                 if 'selected_var' not in self.blendernc_dict[self.blendernc_dataset_identifier].keys():

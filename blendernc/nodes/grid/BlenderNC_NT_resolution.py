@@ -46,7 +46,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        self.blendernc_dict.pop(self.blendernc_dataset_identifier)
+        if self.blendernc_dataset_identifier!='':
+            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.

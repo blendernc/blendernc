@@ -12,6 +12,8 @@ from os.path import basename
 
 from .msg_errors import huge_image
 
+from . image import normalize_data, from_data_to_pixel_value
+
 import time
 class Timer:
     def __init__(self):
@@ -50,16 +52,6 @@ class Timer:
             FPS = '{0:.2g} |'.format(1/(max(times)-min(times)))
             print('{0}{1}{2}'.format(FPS_text,' '*(len(titles)-len(FPS_text)-len(FPS)),FPS))
             print('-'*len(titles))
-
-# Definitions
-def normalize_data(data, max_range=None, min_range=None):
-    # Find ranges and normalize in the interval [0,1]
-    if min_range is None:
-        min_range = np.nanmin(data)
-    if max_range is None:
-        max_range = np.nanmax(data)
-    var_range = max_range - min_range
-    return (data - min_range) / var_range
 
 def get_dims(ncdata,var):
     dimensions = list(ncdata[var].coords.dims)
@@ -161,15 +153,6 @@ def dict_update(node, context):
     if 'selected_var' not in node.blendernc_dict[node.blendernc_dataset_identifier].keys():
         update_dict(node.blendernc_netcdf_vars,node)
 
-def from_frame_to_pixel_value(frame):
-    alpha_channel = np.ones(shape=frame.shape)
-    # BW in RGB format for image
-    rgb = np.repeat(frame[:, :, np.newaxis], 3, axis=2)
-    rgba = np.concatenate((rgb, alpha_channel[:, :, np.newaxis]), axis=2)
-    rgba = rgba.ravel()
-    # Using foreach_set function for performance ( requires a 32-bit argument)
-    return np.float32(rgba)
-
 def get_node(node_group,node):
     node_group = bpy.data.node_groups.get(node_group)
     return node_group.nodes.get(node)
@@ -234,7 +217,7 @@ def load_frame(context, node, node_tree, frame):
     normalized_data = normalize_data(frame_data,vmax,vmin)
 
     # Store in cache
-    var_dict[frame] = from_frame_to_pixel_value(normalized_data)
+    var_dict[frame] =  from_data_to_pixel_value(normalized_data)
 
 
 def update_image(context, node, node_tree, step, image):
@@ -307,8 +290,9 @@ def netcdf_values(dataset,selected_variable,active_resolution):
     """
     """
     variable = dataset[selected_variable]
+    max_shape = max(variable.shape)
 
-    dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(variable[ii].size,active_resolution))
+    dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
             for ii in variable.coords if 'time' not in ii}
     
     variable_res = variable.isel(dict_var_shape).to_dataset()
@@ -316,10 +300,13 @@ def netcdf_values(dataset,selected_variable,active_resolution):
     
 
 def resolution_steps(size,res):
-    # TODO: Fix squaring as it depends on each coordinate, not the overall dataset.
-    res_interst = res/5 + 80
-    log_scale = np.log10(size)/np.log10((size*res_interst/100)) - 1
-    step = size * log_scale
+    # TODO extend the range of values.
+    steps = np.linspace(1,size/10,100)
+    step = steps[int(100-res)]
+    # 1 = 100
+    # size//10 = 1
+    #step = size//(size*((res/100) + 0.1)/2)
+
     if step < 1:
         step = 1
     return int(step)

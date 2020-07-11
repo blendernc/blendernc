@@ -32,6 +32,8 @@ from blendernc.blendernc.nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT
 
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
+
+from blendernc.blendernc.nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
         
 from blendernc.blendernc.nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
                         node_tree_name
@@ -57,6 +59,8 @@ classes = [
     BlenderNC_NT_derivatives,
     BlenderNC_NT_preloader,
     BlenderNC_NT_output,
+    # Nodes shortcuts
+    BlenderNC_NT_basic_nodes,
     # Shader Nodes 
     BLENDERNC_CMAPS_NT_node,
     # Operators: files
@@ -102,7 +106,7 @@ def update_all_images(scene):
 
         step = scene.frame_current
         node.step = step
-        
+
         if step == node.frame_loaded:
             continue
         node_name = node.name
