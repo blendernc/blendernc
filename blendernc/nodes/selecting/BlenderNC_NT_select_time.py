@@ -1,16 +1,16 @@
 # Imports
 import bpy
 
-class BlenderNC_NT_select_dims(bpy.types.Node):
+class BlenderNC_NT_select_time(bpy.types.Node):
     # === Basics ===
     # Description string
     '''Select axis '''
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFdims'
+    bl_idname = 'netCDFtime'
     # Label for nice name display
-    bl_label = "Select Dims"
+    bl_label = "Select Time"
     # Icon identifier
-    bl_icon = 'MESH_GRID'
+    bl_icon = 'TIME'
     blb_type = "NETCDF"
 
     axis: bpy.props.EnumProperty(items=(''),name="")
@@ -21,8 +21,8 @@ class BlenderNC_NT_select_dims(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('NodeSocketString',"Dataset")
-        self.outputs.new('NodeSocketString',"Dataset")
+        self.inputs.new('bNCnetcdfSocket',"Dataset")
+        self.outputs.new('bNCnetcdfSocket',"Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -46,10 +46,7 @@ class BlenderNC_NT_select_dims(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "Select Dims"
-
-    def update_value(self, context):
-        self.update()
+        return "Select Time"
 
     def update(self):
         pass

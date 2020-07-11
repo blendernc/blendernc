@@ -1,7 +1,6 @@
 # Imports
 import bpy
 from nodeitems_utils import NodeCategory
-from blendernc.blendernc.python_functions import get_possible_files, get_possible_variables, step_update, update_proxy_file
 
 # Blender Classes
 node_tree_name = "BlenderNC"
@@ -25,13 +24,6 @@ if create_new_node_tree:
 class BlenderNCCustomTreeNode:
     pass
 
-
-def updateNode(self, context):
-    """
-    When a node has changed state and need to call a partial update.
-    For example a user exposed bpy.prop
-    """
-    self.update()
 
 class BlenderNCNodeCategory(NodeCategory):
     @classmethod

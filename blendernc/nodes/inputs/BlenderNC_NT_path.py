@@ -1,6 +1,8 @@
 # Imports
 import bpy
 
+from blendernc.blendernc.python_functions import update_value_and_node_tree
+
 class BlenderNC_NT_path(bpy.types.Node):
     # === Basics ===
     # Description string
@@ -16,7 +18,10 @@ class BlenderNC_NT_path(bpy.types.Node):
     blendernc_file: bpy.props.StringProperty(name="",
                     description="Folder with assets blend files",
                     default="",
-                    maxlen=1024)
+                    maxlen=1024,
+                    update = update_value_and_node_tree)
+
+    use_dask: bpy.props.BoolProperty(name="", description="Use dask", default=False)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -45,7 +50,15 @@ class BlenderNC_NT_path(bpy.types.Node):
         split = row.split(factor=0.85,align=True)
 
         split.prop(self, 'blendernc_file')
-        split.operator('blendernc.import_mfnetcdf', text='', icon='FILEBROWSER')
+        operator = split.operator('blendernc.import_mfnetcdf', text='', icon='FILEBROWSER')
+        operator.node = self.name
+        operator.node_group = self.rna_type.id_data.name
+
+        # TODO: Implement dask
+        # row = layout.row(align=True)
+        # split = row.split(factor=0.85,align=True)
+        # split.label(text = "Use dask:")
+        # split.prop(self, "use_dask")
         
 
     # Detail buttons in the sidebar.

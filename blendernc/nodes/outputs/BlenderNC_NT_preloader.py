@@ -1,8 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import (get_possible_files, get_possible_variables, 
-                                step_update)
+from blendernc.blendernc.python_functions import (get_possible_files, get_possible_variables)
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
@@ -24,7 +23,6 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     var_name: bpy.props.EnumProperty(
         items = get_possible_variables,
         name = "",
-        update = step_update,
     )
 
     frame_start: bpy.props.IntProperty(

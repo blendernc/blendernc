@@ -4,28 +4,37 @@ from nodeitems_utils import  NodeItem
 # all categories in a list
 node_categories = [
     # identifier, label, items list
+    BlenderNCNodeCategory('Shortcuts', "Shortcuts", items=[
+        # Create shortcuts,
+        NodeItem("netCDFbasincnodes"),
+    ]),
     BlenderNCNodeCategory('netCDF', "netCDF", items=[
-        # our basic node
+        # netCDF Input nodes.
         NodeItem("netCDFNode"),
         NodeItem("netCDFPath"),
     ]),
     BlenderNCNodeCategory('Grid', "Grid", items=[
-        # our basic node
+        # Grid operations
         NodeItem("netCDFResolution"),
+        NodeItem("netCDFrotatelon"),
     ]),
     BlenderNCNodeCategory('Selection', "Selection", items=[
-        # our basic node
+        # Slice and data selection
         NodeItem("netCDFaxis"),
+        NodeItem("netCDFtime"),
+    ]),
+    BlenderNCNodeCategory('Dimensions', "Dimensions", items=[
+        # Dimension operations.
         NodeItem("netCDFdims"),
     ]),
     BlenderNCNodeCategory('Math', "Math", items=[
-        # our basic node
+        # Math Nodes.
         NodeItem("netCDFtranspose"),
         NodeItem("netCDFderivative"),
     ]),
     BlenderNCNodeCategory('Output', "Output", items=[
-        # our basic node
+        # Output Nodes, generate textures and openVDB objects
         NodeItem("netCDFOutput"),
-        NodeItem("netCDFPreloadNode"),
+        # NodeItem("netCDFPreloadNode"),
     ])
 ]

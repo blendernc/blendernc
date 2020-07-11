@@ -1,5 +1,5 @@
 import bpy
-from . python_functions import step_update, res_update, update_file_vars, update_animation
+from . python_functions import update_file_vars, update_res, update_animation, get_possible_variables
 
 gui_active_panel_fin = None
 gui_active_materials = None
@@ -36,10 +36,10 @@ def select_only_meshes(self, object):
 bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(name = 'Resolution', 
                                                 min = 1, max = 100, 
                                                 default = 50, step =100,
-                                                update=res_update,
+                                                update = update_res,
                                                 precision=0, options={'ANIMATABLE'})
 
-bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=(''),
+bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(items=[('NONE',"Select Variable","Select Variable","DISK_DRIVE",0)],
                                                                 name="")
 
 bpy.types.Scene.blendernc_file = bpy.props.StringProperty(

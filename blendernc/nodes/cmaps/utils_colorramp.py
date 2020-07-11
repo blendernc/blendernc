@@ -52,50 +52,63 @@ class ColorRamp(object):
                 names['matplotlib']=[ii for ii in cmap.cm.cmap_d.keys() if '_r' not in ii ]
         return names
 
-    def update_colormap(self,selected_cmap,cmap_steps):
+    def update_colormap(self,color_ramp,selected_cmap,cmap_steps):
         #self.node.color_ramp.elements[1].color[0:3]=getattr(cmap.cm, selected_cmap)(int(0))[0:3]
         #self.node.color_ramp.elements[0].color[0:3]=getattr(cmap.cm, selected_cmap)(int(256))[0:3]
+        
+        #self.get_valid_evaluate_function(node.name)
+        self.color_ramp=color_ramp
+
+        print(selected_cmap,cmap_steps)
+
         cmap_steps = cmap_steps
         s_cmap,maps = selected_cmap
         cmap = importlib.import_module(maps)
 
         cms = cmap.cm.cmap_d
         
-        items = self.node.color_ramp.elements.items()
+        items = self.color_ramp.elements.items()
 
         if len(items) != cmap_steps+1:
             # Remove all items descendent to avoid missing points and leave first position.
-            [ self.node.color_ramp.elements.remove(element) for item,element in items[::-1][:-1] ]
-            self.node.color_ramp.elements[0].color=(0,0,0,1)
-            self.node.color_ramp.elements.new(1e-5)
+            [ self.color_ramp.elements.remove(element) for item,element in items[::-1][:-1] ]
+            self.color_ramp.elements[0].color=(0,0,0,1)
+            self.color_ramp.elements.new(1e-5)
             pos,value = divide_cmap(1e-5,cmap_steps)
-            self.node.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            self.color_ramp.elements[1].color = cms.get(s_cmap)(value)
             for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
-                print(pos,value)
-                self.node.color_ramp.elements.new(pos)
-                #self.node.color_ramp.elements[i].position = pos
-                self.node.color_ramp.elements[i].color = cms.get(s_cmap)(value)
+                self.color_ramp.elements.new(pos)
+                #
+                self.color_ramp.elements[i].position = pos
+                self.color_ramp.elements[i].color = cms.get(s_cmap)(value)
         else: 
-            self.node.color_ramp.elements[0].color=(0,0,0,1)
-            self.node.color_ramp.elements.new(1e-5)
+            self.color_ramp.elements[0].color=(0,0,0,1)
+            #
+            self.color_ramp.elements[0].position = 0
+            self.color_ramp.elements.new(1e-5)
             pos,value = divide_cmap(1e-5,cmap_steps)
-            self.node.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            self.color_ramp.elements[1].color = cms.get(s_cmap)(value)
+            #
+            self.color_ramp.elements[1].position = pos
             for i in range(2,cmap_steps+1):
                 pos,value = divide_cmap(i,cmap_steps)
-                print(pos)
-                #self.node.color_ramp.elements[i].position = pos
-                self.node.color_ramp.elements[i].color = cms.get(s_cmap)(value)
+                #
+                self.color_ramp.elements[i].position = pos
+                self.color_ramp.elements[i].color = cms.get(s_cmap)(value)
 
     def create_group_node(self,group_name):
         self.group_name = group_name
         self.node_groups = bpy.data.node_groups
         # make sure the node-group is present
         group = self.node_groups.get(self.group_name)
-        if not group:
-            group = self.node_groups.new(self.group_name, 'ShaderNodeTree')
-
-        group.use_fake_user = True
+        # Uncoment to create nodes only when duplicating the node. 
+        # This was commented as it created issues with multiple colormap nodes
+        # sharing the same node output.
+        #if not group:
+        group = self.node_groups.new(self.group_name, 'ShaderNodeTree')
+        #group.use_fake_user = True
+        self.group_name = group.name
         return group
 
     def create_colorramp(self,node_name):        
