@@ -211,8 +211,10 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
     def execute(self, context):
         act_obj = context.active_object
         sel_obj = context.scene.blendernc_meshes 
+        if not sel_obj:
+            sel_obj = act_obj
 
-        blendernc_materials = [material for material in bpy.data.materials if 'BlenderNC_default' in material.keys()]
+        blendernc_materials = [material for material in bpy.data.materials if 'BlenderNC_default' in material.name]
         if len(blendernc_materials)!=0:    
             blendernc_material = blendernc_materials[-1]
         else:
@@ -221,23 +223,42 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             blendernc_material.name = "BlenderNC_default"
 
         if len(blendernc_material.node_tree.nodes.keys())==2:
+            texcoord = blendernc_material.node_tree.nodes.new('ShaderNodeTexCoord')
+            texcoord.location = (-760,250)
             imagetex = blendernc_material.node_tree.nodes.new('ShaderNodeTexImage')
+            imagetex.location = (-580,250)
+            imagetex.interpolation = 'Smart'
             cmap = blendernc_material.node_tree.nodes.new('cmapsNode')
+            cmap.location = (-290,250)
             bump = blendernc_material.node_tree.nodes.new('ShaderNodeBump')
-            P_BSDF = blendernc_material.node_tree.nodes.get('Principled BSDF')
-            output = blendernc_material.node_tree.nodes.get('Material Output')
+            bump.location = (-290,-50)
             
-            blendernc_material.node_tree.links.new(cmap.inputs[0],imagetex.outputs[0])
-            blendernc_material.node_tree.links.new(bump.inputs[2],imagetex.outputs[0])
-            blendernc_material.node_tree.links.new(P_BSDF.inputs[0],cmap.outputs[0])
-            blendernc_material.node_tree.links.new(P_BSDF.inputs[19],bump.outputs[0])
+        else:
+            texcoord =  blendernc_material.node_tree.nodes.get('Texture Coordinate')
+            imagetex = blendernc_material.node_tree.nodes.get('Image Texture')
+            cmap = blendernc_material.node_tree.nodes.get('Colormap')
+            bump = blendernc_material.node_tree.nodes.get('Bump')
+
+        P_BSDF = blendernc_material.node_tree.nodes.get('Principled BSDF')
+        output = blendernc_material.node_tree.nodes.get('Image Texture')
+        
+        if act_obj.name == "Icosphere" or sel_obj.name == "Icosphere":
+            texcoord_link = texcoord.outputs.get('Generated')
+            imagetex.projection = 'SPHERE'
+        else:
+            texcoord_link = texcoord.outputs.get('UV')
+            imagetex.projection = 'FLAT'
+
+        blendernc_material.node_tree.links.new(imagetex.inputs[0],texcoord_link)
+        blendernc_material.node_tree.links.new(cmap.inputs[0],imagetex.outputs[0])
+        blendernc_material.node_tree.links.new(bump.inputs[2],imagetex.outputs[0])
+        blendernc_material.node_tree.links.new(P_BSDF.inputs[0],cmap.outputs[0])
+        blendernc_material.node_tree.links.new(P_BSDF.inputs[19],bump.outputs[0])
 
         imagetex.image = bpy.data.images.get('BlenderNC_default')
 
-        if sel_obj:
+        if sel_obj or act_obj.type == 'MESH':
             sel_obj.active_material = bpy.data.materials.get('BlenderNC_default')
-        elif act_obj.type == 'MESH':
-            act_obj.active_material = bpy.data.materials.get('BlenderNC_default')
 
         return {'FINISHED'}
 
