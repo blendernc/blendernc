@@ -107,9 +107,9 @@ class BlenderNC_NT_output(bpy.types.Node):
                 self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.blendernc_dataset_identifier
                 nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
             
-            print('File:', nc_dict[self.blendernc_dataset_identifier]['selected_var']['path']) 
             # Check that nc_dict contains at least an unique identifier
             if self.blendernc_dataset_identifier in nc_dict.keys():
+                print('File:', nc_dict[self.blendernc_dataset_identifier]['selected_var']['path']) 
                 self.blendernc_dict[self.blendernc_dataset_identifier] = nc_dict[self.blendernc_dataset_identifier].copy()
                 # Check if user has selected a variable
                 if 'selected_var' not in self.blendernc_dict[self.blendernc_dataset_identifier].keys():

@@ -350,8 +350,12 @@ def update_animation(self,context):
 def get_lost_dim(node):
     new_dims = list(node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'].coords.dims)
     old_dims = list(node.inputs[0].links[0].from_node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'].coords.dims)
-
-    return [ii for ii in (old_dims + new_dims) if (old_dims + new_dims).count(ii) ==1][0]
+    dropped_dim = [ii for ii in (old_dims + new_dims) if (old_dims + new_dims).count(ii) ==1]
+    if dropped_dim:
+        return dropped_dim[0]
+    else:
+        return node.blendernc_dims
+    
 
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
