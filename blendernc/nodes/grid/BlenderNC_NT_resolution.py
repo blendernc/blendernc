@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import netcdf_values, update_value
+from blendernc.blendernc.python_functions import netcdf_values, update_value_and_node_tree
 
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
@@ -22,7 +22,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     blendernc_resolution: bpy.props.FloatProperty(name = 'Resolution', 
                                                 min = 1, max = 100, 
                                                 default = 50, step =100,
-                                                update=update_value,
+                                                update=update_value_and_node_tree,
                                                 precision=0, options={'ANIMATABLE'})
 
     # Dataset requirements

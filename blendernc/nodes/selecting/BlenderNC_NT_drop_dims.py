@@ -89,9 +89,6 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
                         dataset = dataset.isel({self.blendernc_dims:0}).drop(self.blendernc_dims).squeeze()
                     else: 
                         dataset = dataset.drop_dims(self.blendernc_dims).squeeze()
-                    self.blendernc_dims = self.blendernc_dims
-                else:
-                    bpy.context.window_manager.popup_menu(unselected_nc_dim, title="Error", icon='ERROR')
 
                 self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = dataset
                 self.blendernc_dims == 'NONE'

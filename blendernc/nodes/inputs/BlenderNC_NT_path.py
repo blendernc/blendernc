@@ -1,6 +1,8 @@
 # Imports
 import bpy
 
+from blendernc.blendernc.python_functions import update_value_and_node_tree
+
 class BlenderNC_NT_path(bpy.types.Node):
     # === Basics ===
     # Description string
@@ -16,7 +18,8 @@ class BlenderNC_NT_path(bpy.types.Node):
     blendernc_file: bpy.props.StringProperty(name="",
                     description="Folder with assets blend files",
                     default="",
-                    maxlen=1024)
+                    maxlen=1024,
+                    update = update_value_and_node_tree)
 
     use_dask: bpy.props.BoolProperty(name="", description="Use dask", default=False)
 

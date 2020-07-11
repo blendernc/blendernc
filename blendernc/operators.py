@@ -275,10 +275,10 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
 
 class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
     """
-    
     """
     bl_idname = "blendernc.import_mfnetcdf"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Load Netcdf"
+    bl_label = "Load netCDF"
+    bl_description = "Import netCDF with xarray"
 
     # ImportHelper mixin class uses this
     filename_ext : ".nc"

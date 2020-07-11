@@ -102,7 +102,7 @@ def update_all_images(scene):
 
         step = scene.frame_current
         node.step = step
-        print(step, node.frame_loaded)
+        
         if step == node.frame_loaded:
             continue
         node_name = node.name

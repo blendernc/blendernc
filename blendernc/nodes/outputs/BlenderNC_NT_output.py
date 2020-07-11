@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import  update_image
+from blendernc.blendernc.python_functions import  update_image,update_value
 
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
@@ -27,6 +27,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     image: bpy.props.PointerProperty(
         type = bpy.types.Image,
         name = "",
+        update=update_value,
     )
 
     frame_loaded: bpy.props.IntProperty(
@@ -92,13 +93,21 @@ class BlenderNC_NT_output(bpy.types.Node):
         return "Image Output"
 
     def update(self):
+        node_tree = self.rna_type.id_data.name
         if self.inputs[0].is_linked and self.inputs[0].links:
+            # Delete cache if a different dataset is loaded.
+            if self.blendernc_dataset_identifier !='' and self.blendernc_dataset_identifier != self.inputs[0].links[0].from_node.blendernc_dataset_identifier:
+                bpy.context.scene.nc_cache[node_tree].pop(self.name)
+
             self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
             nc_dict = self.inputs[0].links[0].from_socket.dataset
+            
+
             if self.blendernc_dataset_identifier == '' or len(nc_dict.keys()):
                 self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.blendernc_dataset_identifier
                 nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
             
+            print('File:', nc_dict[self.blendernc_dataset_identifier]['selected_var']['path']) 
             # Check that nc_dict contains at least an unique identifier
             if self.blendernc_dataset_identifier in nc_dict.keys():
                 self.blendernc_dict[self.blendernc_dataset_identifier] = nc_dict[self.blendernc_dataset_identifier].copy()
@@ -107,7 +116,8 @@ class BlenderNC_NT_output(bpy.types.Node):
                     bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
                     self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
                     return
-                update_image(bpy.context, self.name, self.rna_type.id_data.name, bpy.context.scene.frame_current, self.image.name)
+                if self.image:
+                    update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
             else: 
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])

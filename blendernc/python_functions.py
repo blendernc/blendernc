@@ -59,13 +59,12 @@ def normalize_data(data, max_range=None, min_range=None):
     if max_range is None:
         max_range = np.nanmax(data)
     var_range = max_range - min_range
-    print(max_range,min_range)
     return (data - min_range) / var_range
 
 def get_dims(ncdata,var):
     dimensions = list(ncdata[var].coords.dims)
-    dim_names = [(dimensions[ii], dimensions[ii], dimensions[ii], "DISK_DRIVE", ii+1) for ii in range(len(dimensions))]
-    dim_names.insert(0,('NONE',"Select Dim","Select Dim","DISK_DRIVE",0))
+    dim_names = [(dimensions[ii], dimensions[ii], dimensions[ii], "EMPTY_DATA", ii+1) for ii in range(len(dimensions))]
+    dim_names.insert(0,('NONE',"Select Dim","Select Dim","EMPTY_DATA",0))
     return dim_names
 
 def get_var(ncdata):
@@ -97,7 +96,7 @@ def get_new_identifier(node):
 def get_possible_dims(node, context):
     unique_identifier = node.blendernc_dataset_identifier
     if unique_identifier not in node.blendernc_dict.keys():
-        return []
+        return [('NONE',"Select Dim","Select Dim","EMPTY_DATA",0)]
     data_dictionary = node.blendernc_dict[unique_identifier]
     ncdata = data_dictionary["Dataset"]
     var_name = data_dictionary["selected_var"]['selected_var_name']
@@ -114,6 +113,12 @@ def get_possible_files(node, context):
 
 def update_value(self, context):
     self.update()
+
+def update_value_and_node_tree(self, context):
+    self.update()
+    update_node_tree(self,context)
+
+def update_node_tree(self,context):
     self.rna_type.id_data.interface_update(context)
     
 def update_nodes(scene, context):
@@ -131,7 +136,8 @@ def update_dict(selected_variable,node):
         "max_value" : dataset[selected_variable].max().compute().values,
         "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values,
         "selected_var_name" : selected_variable,
-        "resolution":50
+        "resolution":50,
+        "path": node.blendernc_file,
         }
 
 def update_res(scene,context):
