@@ -21,6 +21,7 @@ from . nodes.node_categories import node_categories
 
 from blendernc.blendernc.nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
 from blendernc.blendernc.nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
+from blendernc.blendernc.nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
@@ -50,6 +51,7 @@ classes = [
     # Nodes
     BlenderNC_NT_path,
     BlenderNC_NT_netcdf,
+    BlenderNC_NT_range,
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
     BlenderNC_NT_select_axis,

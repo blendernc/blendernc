@@ -10,8 +10,9 @@ node_categories = [
     ]),
     BlenderNCNodeCategory('netCDF', "netCDF", items=[
         # netCDF Input nodes.
-        NodeItem("netCDFNode"),
         NodeItem("netCDFPath"),
+        NodeItem("netCDFNode"),
+        NodeItem("netCDFRange"),
     ]),
     BlenderNCNodeCategory('Grid', "Grid", items=[
         # Grid operations

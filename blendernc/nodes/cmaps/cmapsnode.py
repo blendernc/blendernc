@@ -90,18 +90,6 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         max=16,
         update=update_colorramp,
     )
-    
-    vmin: bpy.props.FloatProperty(
-         default=0,
-         name="vmin",
-         update=update_colorramp,
-    )
-
-    vmax: bpy.props.FloatProperty(
-        default=1,
-        name="vmax",
-        update=update_colorramp,
-    )
 
     fcmap: bpy.props.BoolProperty(
         default=False,
@@ -139,10 +127,6 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         else:
             tnode = self.node_tree.nodes[self._get_name('Color_Ramp')]
         layout.template_color_ramp(tnode, "color_ramp", expand=True)
-
-        row=layout.row()
-        row.prop(self, "vmin")
-        row.prop(self, "vmax")
 
     # Copy
     def copy(self, node):

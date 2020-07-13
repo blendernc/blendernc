@@ -125,12 +125,36 @@ def update_dict(selected_variable,node):
     dataset = node.blendernc_dict[unique_identifier]["Dataset"]
     node.blendernc_dict[unique_identifier]["Dataset"] = dataset[selected_variable].to_dataset()
     node.blendernc_dict[unique_identifier]['selected_var']= {
-        "max_value" : dataset[selected_variable].max().compute().values,
-        "min_value" :(dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values,
+        "max_value" : None,
+        "min_value" : None,
         "selected_var_name" : selected_variable,
         "resolution":50,
         "path": node.blendernc_file,
         }
+
+def update_range(node,context):
+    unique_identifier = node.blendernc_dataset_identifier
+    dataset = node.blendernc_dict[unique_identifier]["Dataset"]
+    selected_variable = node.blendernc_dict[unique_identifier]['selected_var']['selected_var_name']
+    try:
+        node.blendernc_dict[unique_identifier]['selected_var']["max_value"] = node.blendernc_dataset_max
+        node.blendernc_dict[unique_identifier]['selected_var']["min_value"] = node.blendernc_dataset_min 
+        
+        if node.outputs[0].is_linked:
+            NodeTree = node.rna_type.id_data.name
+            output_name = node.outputs[0].links[0].to_node.name
+            frame = bpy.context.scene.frame_current
+            refresh_cache(NodeTree, output_name,frame)
+        update_value_and_node_tree(node,context)
+    except:
+        if node.blendernc_dict[unique_identifier]['selected_var']["max_value"]:
+            pass
+        else:
+            node.blendernc_dict[unique_identifier]['selected_var']["max_value"] = dataset[selected_variable].max().compute().values
+            node.blendernc_dict[unique_identifier]['selected_var']["min_value"] = (dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values
+
+def refresh_cache(NodeTree, Output, frame):
+    bpy.context.scene.nc_cache[NodeTree][Output].pop(frame)
 
 def update_res(scene,context):
     bpy.data.node_groups.get('BlenderNC').nodes.get('Resolution').blendernc_resolution = scene.blendernc_resolution
@@ -209,7 +233,12 @@ def get_max_min_data(context, node, node_tree):
     ncdata = data_dictionary[unique_identifier]["Dataset"]
     # Get the metadata of the selected variable
     var_metadata = data_dictionary[unique_identifier]["selected_var"]
-    return var_metadata['max_value'],var_metadata['min_value']
+    if var_metadata['max_value']!=None and var_metadata['min_value']!=None:
+        return var_metadata['max_value'],var_metadata['min_value']
+    else:
+        update_range(node,context)
+        return var_metadata['max_value'],var_metadata['min_value']
+
 
 def load_frame(context, node, node_tree, frame):
     # Find netcdf file data
