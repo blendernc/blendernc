@@ -183,6 +183,23 @@ def get_var_data(context, node, node_tree):
     # Get the data of the selected variable
     return ncdata[var_name]
 
+def get_time(context, node, node_tree,step):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    data_dictionary = node.blendernc_dict
+    unique_identifier = node.blendernc_dataset_identifier
+    # Get the netcdf of the selected file
+    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    # Get the data of the selected variable
+    if 'time' in ncdata.coords.keys():
+        time = ncdata['time']
+        if step > len(time):
+            return time[-1].values
+        else:
+            return time[step].values
+    else:
+        return ''
+
 def get_max_min_data(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
@@ -284,8 +301,40 @@ def update_image(context, node, node_tree, step, image):
     image.update()
     timer.tick('Update Image')
     timer.report(total=True)
+    update_datetime_text(context, node, node_tree, step)
     return True
 
+def update_datetime_text(context,node, node_tree, step, decode=False):
+    time = get_time(context, node, node_tree, step)
+    #TODO allow user to define format.
+    
+    if 'Camera' in bpy.data.objects.keys() and time:
+        Camera = bpy.data.objects.get('Camera')
+        size = 0.03
+        coords = (-0.35,0.17,-1)
+        if not Camera.children:
+            bpy.ops.object.text_add(radius=size)
+            text=bpy.context.object
+            text.name="BlenderNC_time"
+            text.parent = Camera
+            text.location = coords
+            mat = bpy.data.materials.get("BlenderNC_info")
+            if mat is None:
+            # create material
+                mat = bpy.data.materials.new(name="BlenderNC_info")   
+                mat.use_nodes = True
+                emission = mat.node_tree.nodes['Principled BSDF'].inputs.get('Emission')
+                emission.default_value = (1,1,1,1)
+            try: 
+            # Add material
+                text.data.materials.append(mat)        
+            except:
+                pass
+        else:
+            childrens = Camera.children
+            text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
+        text.data.body = str(time)[:10]
+        
 def netcdf_values(dataset,selected_variable,active_resolution):
     """
     """
@@ -301,7 +350,9 @@ def netcdf_values(dataset,selected_variable,active_resolution):
 
 def resolution_steps(size,res):
     # TODO extend the range of values.
-    steps = np.linspace(1,size/10,100)
+    scaling = 10**int(np.log10(size))
+
+    steps = np.logspace(1,size/scaling,100) - 10
     step = steps[int(100-res)]
     # 1 = 100
     # size//10 = 1

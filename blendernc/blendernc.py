@@ -102,7 +102,7 @@ def update_all_images(scene):
         if not node.name.count("Output"):
             continue
         if not node.update_on_frame_change:
-             continue
+            continue
 
         step = scene.frame_current
         node.step = step
