@@ -63,8 +63,6 @@ class ColorRamp(object):
         #self.get_valid_evaluate_function(node.name)
         self.color_ramp=color_ramp
 
-        print(selected_cmap,cmap_steps)
-
         cmap_steps = cmap_steps
         s_cmap,maps = selected_cmap
         cmap = importlib.import_module(maps)

@@ -331,8 +331,6 @@ def update_image(context, node, node_tree, step, image):
     timer.tick('Update Image')
     timer.report(total=True)
     update_datetime_text(context, node, node_tree, step)
-    if image.users >=3:
-        update_colormap_interface(context, node, node_tree)
     return True
 
 def update_datetime_text(context,node, node_tree, step, decode=False):
@@ -350,13 +348,7 @@ def update_datetime_text(context,node, node_tree, step, decode=False):
             text.name="BlenderNC_time"
             text.parent = Camera
             text.location = coords
-            mat = bpy.data.materials.get("BlenderNC_info")
-            if mat is None:
-            # create material
-                mat = bpy.data.materials.new(name="BlenderNC_info")   
-                mat.use_nodes = True
-                emission = mat.node_tree.nodes['Principled BSDF'].inputs.get('Emission')
-                emission.default_value = (1,1,1,1)
+            mat = ui_material()
             try: 
             # Add material
                 text.data.materials.append(mat)        
@@ -367,6 +359,16 @@ def update_datetime_text(context,node, node_tree, step, decode=False):
             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
         text.data.body = str(time)[:10]
         text.select_set(False)
+
+def ui_material():
+    mat = bpy.data.materials.get("BlenderNC_info")
+    if mat is None:
+    # create material
+        mat = bpy.data.materials.new(name="BlenderNC_info")   
+        mat.use_nodes = True
+        emission = mat.node_tree.nodes['Principled BSDF'].inputs.get('Emission')
+        emission.default_value = (1,1,1,1)
+    return mat
 
 def update_colormap_interface(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
@@ -384,7 +386,7 @@ def update_colormap_interface(context, node, node_tree):
     colormap = [get_colormaps_of_materials(node) for node in material_users]
 
     width = 0.007
-    height = 0.1
+    height = 0.12
     if 'Camera' in bpy.data.objects.keys():
         Camera = bpy.data.objects.get('Camera')
         children_name  = [children.name for children in  Camera.children]
@@ -392,40 +394,101 @@ def update_colormap_interface(context, node, node_tree):
             bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
             cbar_plane=bpy.context.object
             cbar_plane.name = 'cbar_{0}'.format(node.name) 
-            cbar_plane.scale =  (width,height,0)
+            cbar_plane.dimensions =  (width,height,0)
             cbar_plane.location = (0.15,0,-0.5)
             cbar_plane.parent = Camera
             splines = add_splines(colormap[-1].n_stops,cbar_plane,width,height)
         else:
-            childrens = Camera.children
-            cbar_plane = [child for child in childrens if child.name=='cbar_{0}'.format(node) ][-1]
-            splines = [child for child in childrens if child.name=='text_cbar_{0}'.format(node) ]
-            
+            c_childrens = Camera.children
+            cbar_plane = [child for child in c_childrens if child.name=='cbar_{0}'.format(node.name) ][-1]
+            splines = [child for child in cbar_plane.children if 'text_cbar_{0}'.format(node.name) in child.name]
         
-        labels = np.arange(min_val,max_val,(max_val-min_val)/colormap[-1].n_stops)
+        # Update splines
+        step = (max_val-min_val)/(len(splines)-1)
+        labels = np.arange(min_val,max_val+step,step)
         for s_index in range(len(splines)):
-            splines[s_index].data.body = str(labels[s_index])
-        #update_cbar_material()
+            splines[s_index].data.body = str(np.round(labels[s_index],2))
+        
+        c_material = colorbar_material(context, node, node_tree, colormap[-1])
+        if c_material:
+            cbar_plane.data.materials.append(c_material)        
     # Get data dictionary stored at scene object
-
-
-    
 
 def add_splines(n,cbar_plane,width=0.1,height=1):
     size = 1
     splines = []
-    locs = np.arange(0,1,1/n)
-    for ii in range(n):
+    step = 2/n
+    locs = np.round(np.arange(-1,1+step,step),2)
+    y_rescale = 0.12
+    for ii in range(n+1):
         bpy.ops.object.text_add(radius=size)
         spline = bpy.context.object
+        spline.data.align_y = 'CENTER'
         spline.parent = cbar_plane
-        spline.location = (width, (height*locs[ii])-height, 0)
+        spline.location = (1.4, locs[ii], 0)
+        spline.lock_location = (True, True, True)
+        spline.scale = (1.7,y_rescale,1.2)
         spline.name = 'text_{0}'.format(cbar_plane.name) 
+        mat = ui_material()
+        try: 
+            spline.data.materials.append(mat)        
+        except:
+            pass
         splines.append(spline)
         
     return splines
 
+def colorbar_material(context, node, node_tree,colormap):
+    materials = bpy.data.materials
+    blendernc_materials = [material for material in bpy.data.materials if ''+node.name in material.name]
 
+    if len(blendernc_materials)!=0:    
+        blendernc_material = blendernc_materials[-1]
+        cmap = blendernc_material.node_tree.nodes.get('Colormap')
+        if cmap.colormaps == colormap.colormaps:
+            return
+    else:
+        bpy.ops.material.new()
+        blendernc_material = bpy.data.materials[-1]
+        blendernc_material.name = ''+node.name
+
+    if len(blendernc_material.node_tree.nodes.keys())==2:
+        texcoord = blendernc_material.node_tree.nodes.new('ShaderNodeTexCoord')
+        texcoord.location = (-760,250)
+        mapping = blendernc_material.node_tree.nodes.new('ShaderNodeMapping')
+        mapping.location = (-580,250)
+        cmap = blendernc_material.node_tree.nodes.new('cmapsNode')
+        cmap.location = (-290,250)
+        emi = blendernc_material.node_tree.nodes.new('ShaderNodeEmission')
+        emi.location = (-290,-50)
+        P_BSDF = blendernc_material.node_tree.nodes.get('Principled BSDF')
+        blendernc_material.node_tree.nodes.remove(P_BSDF)
+
+    else:
+        texcoord =  blendernc_material.node_tree.nodes.get('Texture Coordinate')
+        mapping = blendernc_material.node_tree.nodes.get('Mapping')
+        cmap = blendernc_material.node_tree.nodes.get('Colormap')
+        emi = blendernc_material.node_tree.nodes.get('Emission')
+
+    output = blendernc_material.node_tree.nodes.get('Material Output')
+
+    #Lins
+    blendernc_material.node_tree.links.new(mapping.inputs[0],texcoord.outputs[0])
+    blendernc_material.node_tree.links.new(cmap.inputs[0],mapping.outputs[0])
+    blendernc_material.node_tree.links.new(emi.inputs[0],cmap.outputs[0])
+    blendernc_material.node_tree.links.new(output.inputs[0],emi.outputs[0])
+
+    #Assign values:
+    mapping.inputs['Location'].default_value=(0,-0.6,0)
+    mapping.inputs['Rotation'].default_value=(0,np.pi/4,0)
+    mapping.inputs['Scale'].default_value=(1,2.8,1)
+
+    cmap.n_stops  = colormap.n_stops
+    cmap.fcmap = colormap.fcmap
+    cmap.colormaps = colormap.colormaps
+    cmap.fv_color = colormap.fv_color
+
+    return blendernc_material
 
 def get_colormaps_of_materials(node):
     '''
@@ -449,9 +512,6 @@ def get_colormaps_of_materials(node):
 
     if counter == 10:
         raise ValueError('Colormap not found after 10 tree node interations')
-    return colormap_node
-            
-
     return colormap_node
 
 def get_all_nodes_using_image(image_name):

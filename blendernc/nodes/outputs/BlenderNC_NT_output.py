@@ -96,9 +96,11 @@ class BlenderNC_NT_output(bpy.types.Node):
             # Hide unused sockets
             if not self.update_on_frame_change:
                 layout.prop(self, "step")
-            else:
-                layout.label(text="%i" % scene.frame_current)
-  
+            
+            operator = layout.operator("blendernc.colorbar", icon='GROUP_VCOL')
+            operator.node = self.name
+            operator.node_group = self.rna_type.id_data.name
+            operator.image = self.image.name
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -133,6 +135,8 @@ class BlenderNC_NT_output(bpy.types.Node):
                     return
                 if self.image:
                     update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
+                    if self.image.users >=3 :
+                        update_colormap_interface(bpy.context, self.name, node_tree)
                     
             else: 
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')

@@ -4,7 +4,7 @@ import bpy
 from os.path import abspath, isfile, join
 
 from . python_functions import (load_frame, update_image, get_node, get_var, update_nodes, 
-                    update_proxy_file, BlenderncEngine)
+                    update_proxy_file, BlenderncEngine, update_colormap_interface)
 
 from bpy_extras.io_utils import ImportHelper
 
@@ -221,6 +221,22 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
         update_image(context, self.node, self.node_group, self.step, self.image)
         return {'FINISHED'}
 
+class BlenderNC_OT_colorbar(bpy.types.Operator):
+    bl_idname = "blendernc.colorbar"
+    bl_label = "Create/Update colobar"
+    bl_description = "Create or updates colorbar"
+    node: bpy.props.StringProperty()
+    node_group: bpy.props.StringProperty()
+    image: bpy.props.StringProperty()
+
+    def execute(self, context):
+        if bpy.data.images[self.image].users >=3 :
+            update_colormap_interface(context, self.node, self.node_group)
+        else: 
+            self.report({'ERROR'}, "Assigned material to object!")
+        return {'FINISHED'}
+
+
 class BlenderNC_OT_apply_material(bpy.types.Operator):
     bl_label = 'Load netCDF'
     bl_idname = 'blendernc.apply_material'
@@ -263,7 +279,6 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             bump = blendernc_material.node_tree.nodes.get('Bump')
 
         P_BSDF = blendernc_material.node_tree.nodes.get('Principled BSDF')
-        output = blendernc_material.node_tree.nodes.get('Image Texture')
         
         if act_obj.name == "Icosphere" or sel_obj.name == "Icosphere":
             texcoord_link = texcoord.outputs.get('Generated')
