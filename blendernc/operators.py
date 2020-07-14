@@ -136,6 +136,26 @@ class BlenderNC_OT_var(bpy.types.Operator):
         netcdf.update()
         return {'FINISHED'}
 
+
+class BlenderNC_OT_compute_range(bpy.types.Operator):
+    bl_idname = "blendernc.compute_range"
+    bl_label = "Compute vmin & vmax"
+    bl_description = "Compute vmax and vmin of netcdf selected variable"
+    bl_options = {"REGISTER", "UNDO"}
+
+    node: bpy.props.StringProperty()
+    node_group: bpy.props.StringProperty()
+
+    def execute(self, context):
+        node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
+        unique_identifier = node.blendernc_dataset_identifier
+        dataset = node.blendernc_dict[unique_identifier]["Dataset"]
+        selected_variable = node.blendernc_dict[unique_identifier]['selected_var']['selected_var_name']
+
+        node.blendernc_dataset_min= (dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values
+        node.blendernc_dataset_max= dataset[selected_variable].max().compute().values
+        return {'FINISHED'}
+
 class BlenderNC_OT_preloader(bpy.types.Operator):
     bl_idname = "blendernc.preloader"
     bl_label = "Preload a range of variable steps into memory"
@@ -209,10 +229,13 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        act_obj = context.active_object
+        act_obj = context.active_object if context.active_object.select_get() == True else None
         sel_obj = context.scene.blendernc_meshes 
-        if not sel_obj:
+        # Check if an object is selected or picked.
+        if not sel_obj and act_obj:
             sel_obj = act_obj
+        else: 
+            return {'FINISHED'}
 
         blendernc_materials = [material for material in bpy.data.materials if 'BlenderNC_default' in material.name]
         if len(blendernc_materials)!=0:    

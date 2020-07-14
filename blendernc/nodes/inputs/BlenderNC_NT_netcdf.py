@@ -78,7 +78,6 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
             return self.blendernc_file.split("/")[-1]
 
     def update(self):
-        #print(self.unique_identifier, (self.inputs[0].is_linked and self.inputs[0].links))
         if self.inputs[0].is_linked and self.inputs[0].links:
             self.blendernc_file=self.inputs[0].links[0].from_socket.text
             if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'

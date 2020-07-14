@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import  update_image,update_value
+from blendernc.blendernc.python_functions import  update_image, update_value, update_colormap_interface
 
 from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
@@ -133,6 +133,7 @@ class BlenderNC_NT_output(bpy.types.Node):
                     return
                 if self.image:
                     update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
+                    
             else: 
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])

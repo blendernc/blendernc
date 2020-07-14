@@ -331,6 +331,8 @@ def update_image(context, node, node_tree, step, image):
     timer.tick('Update Image')
     timer.report(total=True)
     update_datetime_text(context, node, node_tree, step)
+    if image.users >=3:
+        update_colormap_interface(context, node, node_tree)
     return True
 
 def update_datetime_text(context,node, node_tree, step, decode=False):
@@ -341,7 +343,8 @@ def update_datetime_text(context,node, node_tree, step, decode=False):
         Camera = bpy.data.objects.get('Camera')
         size = 0.03
         coords = (-0.35,0.17,-1)
-        if not Camera.children:
+        children_name  = [children.name for children in  Camera.children]
+        if "BlenderNC_time" not in children_name:
             bpy.ops.object.text_add(radius=size)
             text=bpy.context.object
             text.name="BlenderNC_time"
@@ -363,6 +366,108 @@ def update_datetime_text(context,node, node_tree, step, decode=False):
             childrens = Camera.children
             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
         text.data.body = str(time)[:10]
+        text.select_set(False)
+
+def update_colormap_interface(context, node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    data_dictionary = node.blendernc_dict
+    unique_identifier = node.blendernc_dataset_identifier
+    # Get var range
+    max_val = data_dictionary[unique_identifier]["selected_var"]["max_value"]
+    min_val = data_dictionary[unique_identifier]["selected_var"]["min_value"]
+
+    #Find all nodes using the selected image in the node.
+    all_nodes = get_all_nodes_using_image(node.image.name)
+    #Find only materials using image.
+    material_users = [ items for nodes, items in all_nodes.items() if items.rna_type.id_data.name == 'Shader Nodetree']
+    #support for multiple materials. This will generate multiple colorbars.
+    colormap = [get_colormaps_of_materials(node) for node in material_users]
+
+    width = 0.007
+    height = 0.1
+    if 'Camera' in bpy.data.objects.keys():
+        Camera = bpy.data.objects.get('Camera')
+        children_name  = [children.name for children in  Camera.children]
+        if 'cbar_{0}'.format(node.name) not in children_name:
+            bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
+            cbar_plane=bpy.context.object
+            cbar_plane.name = 'cbar_{0}'.format(node.name) 
+            cbar_plane.scale =  (width,height,0)
+            cbar_plane.location = (0.15,0,-0.5)
+            cbar_plane.parent = Camera
+            splines = add_splines(colormap[-1].n_stops,cbar_plane,width,height)
+        else:
+            childrens = Camera.children
+            cbar_plane = [child for child in childrens if child.name=='cbar_{0}'.format(node) ][-1]
+            splines = [child for child in childrens if child.name=='text_cbar_{0}'.format(node) ]
+            
+        
+        labels = np.arange(min_val,max_val,(max_val-min_val)/colormap[-1].n_stops)
+        for s_index in range(len(splines)):
+            splines[s_index].data.body = str(labels[s_index])
+        #update_cbar_material()
+    # Get data dictionary stored at scene object
+
+
+    
+
+def add_splines(n,cbar_plane,width=0.1,height=1):
+    size = 1
+    splines = []
+    locs = np.arange(0,1,1/n)
+    for ii in range(n):
+        bpy.ops.object.text_add(radius=size)
+        spline = bpy.context.object
+        spline.parent = cbar_plane
+        spline.location = (width, (height*locs[ii])-height, 0)
+        spline.name = 'text_{0}'.format(cbar_plane.name) 
+        splines.append(spline)
+        
+    return splines
+
+
+
+def get_colormaps_of_materials(node):
+    '''
+    Function to find materials using the BlenderNC output node image.
+    '''
+    unfind = True
+    counter = 0
+    links = node.outputs.get('Color').links
+    while unfind:
+        for link in links:
+            if link.to_node.bl_idname == 'cmapsNode':
+                colormap_node = link.to_node
+                unfind=False
+                break
+            elif counter == 10:
+                unfind= False
+            else:
+                counter+=1
+
+        links = [llink for llink in link.to_node.outputs.get('Color').links for link in links] 
+
+    if counter == 10:
+        raise ValueError('Colormap not found after 10 tree node interations')
+    return colormap_node
+            
+
+    return colormap_node
+
+def get_all_nodes_using_image(image_name):
+    users = {}
+    for node_group in bpy.data.node_groups:
+        for node in node_group.nodes:
+            if node.bl_idname == 'netCDFOutput':
+                users[node_group.name] = node
+
+    for material in bpy.data.materials:
+        if not material.grease_pencil:
+            for node in material.node_tree.nodes:
+                if node.bl_idname == 'ShaderNodeTexImage':
+                    users[material.name] = node
+
+    return users
         
 def netcdf_values(dataset,selected_variable,active_resolution):
     """

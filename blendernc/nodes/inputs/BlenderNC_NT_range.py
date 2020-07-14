@@ -55,10 +55,13 @@ class BlenderNC_NT_range(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        layout.label(text="Select dataset range:")
+        layout.label(text="Select:")
         layout.prop(self, "blendernc_dataset_min")
         layout.prop(self, "blendernc_dataset_max")
-        #operator = layout.operator("blendernc.compute_range", icon="DRIVER_DISTANCE")
+        layout.label(text="or")
+        operator = layout.operator("blendernc.compute_range", icon="DRIVER_DISTANCE")
+        operator.node = self.name
+        operator.node_group = self.rna_type.id_data.name
         
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
