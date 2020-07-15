@@ -100,6 +100,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         if self.outputs.items():
             if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
                 # Copy only unique identifier to next node.
+                # TODO remove passing other dataset_identifiers.
                 self.outputs[0].dataset[self.blendernc_dataset_identifier] = self.blendernc_dict[self.blendernc_dataset_identifier].copy()
                 self.outputs[0].unique_identifier=self.blendernc_dataset_identifier
         else: 

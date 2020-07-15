@@ -269,9 +269,13 @@ def load_frame(context, node, node_tree, frame):
 def update_image(context, node, node_tree, step, image):
     if not image:
         return False
+    # Leave next line here, if move to the end it will crash blender. 
+    # TODO: Text why this line crashes, up to this point, it seems quite random.
+    update_datetime_text(context, node, node_tree, step)
 
     scene = context.scene
     timer = Timer()
+
 
     timer.tick('Variable load')
 
@@ -330,7 +334,6 @@ def update_image(context, node, node_tree, step, image):
     image.update()
     timer.tick('Update Image')
     timer.report(total=True)
-    update_datetime_text(context, node, node_tree, step)
     return True
 
 def update_datetime_text(context,node, node_tree, step, decode=False):
@@ -548,9 +551,6 @@ def resolution_steps(size,res):
 
     steps = np.logspace(1,size/scaling,100) - 10
     step = steps[int(100-res)]
-    # 1 = 100
-    # size//10 = 1
-    #step = size//(size*((res/100) + 0.1)/2)
 
     if step < 1:
         step = 1
@@ -587,6 +587,17 @@ def get_lost_dim(node):
         return dropped_dim[0]
     else:
         return node.blendernc_dims
+
+def rotate_longitude(node,context):
+    # TODO Clear cache, otherwise the transform wont be applied.
+    dataset = node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset']
+    lon_coords = [coord for coord in dataset.coords if ('lon' in coord or 'xt' in coord or 'xu' in coord )]
+    if len(lon_coords) == 1:
+        node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'] = dataset.roll({lon_coords[0]: int(node.blendernc_rotation)},roll_coords=True)
+    else:
+        raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+    
+
     
 
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)

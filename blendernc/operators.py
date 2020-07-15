@@ -230,7 +230,7 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
     image: bpy.props.StringProperty()
 
     def execute(self, context):
-        if bpy.data.images[self.image].users >=3 :
+        if bpy.data.images[self.image].users >=2 :
             update_colormap_interface(context, self.node, self.node_group)
         else: 
             self.report({'ERROR'}, "Assigned material to object!")
