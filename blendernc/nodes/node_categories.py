@@ -21,8 +21,8 @@ node_categories = [
     ]),
     BlenderNCNodeCategory('Selection', "Selection", items=[
         # Slice and data selection
-        NodeItem("netCDFaxis"),
-        NodeItem("netCDFtime"),
+        #NodeItem("netCDFaxis"),
+        #NodeItem("netCDFtime"),
     ]),
     BlenderNCNodeCategory('Dimensions', "Dimensions", items=[
         # Dimension operations.
@@ -30,8 +30,9 @@ node_categories = [
     ]),
     BlenderNCNodeCategory('Math', "Math", items=[
         # Math Nodes.
-        NodeItem("netCDFtranspose"),
-        NodeItem("netCDFderivative"),
+        NodeItem("netCDFmath"),
+        #NodeItem("netCDFtranspose"),
+        #NodeItem("netCDFderivative"),
     ]),
     BlenderNCNodeCategory('Output', "Output", items=[
         # Output Nodes, generate textures and openVDB objects

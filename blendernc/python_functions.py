@@ -156,9 +156,9 @@ def update_range(node,context):
 def purge_cache(NodeTree, Output):
     # TODO: Test number of total loaded frames for 
     # multiple nodetrees and node outputs. 
-    # 600 frames at 1440*720 use ~ 8GB of ram. 
-    # Perhaps make this value dynamic to support computer with more or less ram.
-    # 
+    # 600 frames at 1440*720 use ~ 10GB of ram. 
+    # Make this value dynamic to support computer with more or less ram.
+    # Perhaps compress and uncompress data? 
     if len(bpy.context.scene.nc_cache[NodeTree][Output]) > 600:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][Output].keys())
         bpy.context.scene.nc_cache[NodeTree][Output].pop(frames_loaded[0])

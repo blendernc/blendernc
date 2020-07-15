@@ -1,31 +1,38 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import get_possible_dims, get_lost_dim
-
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file, unselected_nc_dim
+from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
 from collections import defaultdict
 
-class BlenderNC_NT_drop_dims(bpy.types.Node):
+operation_items = [
+    ("Multiply", "Multiply", "", 1),
+#    ("Add", "Add", "", 2),
+#    ("Divide", "Divide", "", 3),
+#    ("Logarithm", "Log", "", 4),
+]
+
+class BlenderNC_NT_math(bpy.types.Node):
     # === Basics ===
     # Description string
     '''Select axis '''
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFdims'
+    bl_idname = 'netCDFmath'
     # Label for nice name display
-    bl_label = "Drop Dimension"
+    bl_label = "Math"
     # Icon identifier
-    bl_icon = 'MESH_GRID'
+    bl_icon = 'FCURVE_SNAPSHOT'
     blb_type = "NETCDF"
 
-    blendernc_dims: bpy.props.EnumProperty(items=get_possible_dims,
-        name="")
+    blendernc_operation: bpy.props.EnumProperty(items=operation_items,
+        name="Select operation")
 
+    value: bpy.props.FloatProperty(name="",default=0)
+    
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
     blendernc_dict = defaultdict(None)
-    
+
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
@@ -33,6 +40,7 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
         self.inputs.new('bNCnetcdfSocket',"Dataset")
+        self.inputs.new('NodeSocketFloat',"Float")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
 
     # Copy function to initialize a copied node from an existing one.
@@ -47,11 +55,8 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        if self.blendernc_dims == 'NONE' or self.blendernc_dims == '':
-            layout.prop(self, "blendernc_dims")
-        else:
-            layout.label(text = "Dropped Dim: {0}".format(get_lost_dim(self)))
-        
+        layout.prop(self, "blendernc_operation")
+            
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -60,7 +65,7 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "Drop Dimension"
+        return "Math"
 
     def update(self):
         if self.inputs[0].is_linked and self.inputs[0].links:
@@ -78,20 +83,16 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
                     bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
                     self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
                     return
-
                 dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
                 var_name = self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['selected_var_name']
                 
-                # Drop dimensions
-                if self.blendernc_dims != 'NONE':
-                    # Store name of dropped dimension.
-                    if self.blendernc_dims in dataset.dims:
-                        dataset = dataset.isel({self.blendernc_dims:0}).drop(self.blendernc_dims).squeeze()
-                    else: 
-                        dataset = dataset.drop_dims(self.blendernc_dims).squeeze()
+                if self.blendernc_operation == 'Multiply':
+                    dataset = dataset*self.inputs.get('Float').default_value
+                else: 
+                    pass
 
                 self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = dataset
-                self.blendernc_dims == 'NONE'
+
             else: 
                 bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
@@ -103,6 +104,3 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
             if self.outputs[0].is_linked and self.inputs[0].is_linked:
                 self.outputs[0].dataset[self.blendernc_dataset_identifier] = self.blendernc_dict[self.blendernc_dataset_identifier].copy()
                 self.outputs[0].unique_identifier = self.blendernc_dataset_identifier
-
-
-                

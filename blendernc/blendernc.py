@@ -30,6 +30,7 @@ from blendernc.blendernc.nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC
 
 from blendernc.blendernc.nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
 from blendernc.blendernc.nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
+from blendernc.blendernc.nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
@@ -57,6 +58,7 @@ classes = [
     BlenderNC_NT_select_axis,
     BlenderNC_NT_select_time,
     BlenderNC_NT_drop_dims,
+    BlenderNC_NT_math,
     BlenderNC_NT_transpose,
     BlenderNC_NT_derivatives,
     BlenderNC_NT_preloader,
