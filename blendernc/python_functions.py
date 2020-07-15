@@ -153,6 +153,16 @@ def update_range(node,context):
             node.blendernc_dict[unique_identifier]['selected_var']["max_value"] = dataset[selected_variable].max().compute().values
             node.blendernc_dict[unique_identifier]['selected_var']["min_value"] = (dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values
 
+def purge_cache(NodeTree, Output):
+    # TODO: Test number of total loaded frames for 
+    # multiple nodetrees and node outputs. 
+    # 600 frames at 1440*720 use ~ 8GB of ram. 
+    # Perhaps make this value dynamic to support computer with more or less ram.
+    # 
+    if len(bpy.context.scene.nc_cache[NodeTree][Output]) > 600:
+        frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][Output].keys())
+        bpy.context.scene.nc_cache[NodeTree][Output].pop(frames_loaded[0])
+
 def refresh_cache(NodeTree, Output, frame):
     bpy.context.scene.nc_cache[NodeTree][Output].pop(frame)
 
@@ -334,6 +344,7 @@ def update_image(context, node, node_tree, step, image):
     image.update()
     timer.tick('Update Image')
     timer.report(total=True)
+    purge_cache(node_tree, node)
     return True
 
 def update_datetime_text(context,node, node_tree, step, decode=False):
