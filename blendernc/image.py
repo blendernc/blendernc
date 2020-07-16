@@ -1,4 +1,4 @@
-import PIL.Image as Image
+#import PIL.Image as Image
 import os
 import numpy as np
 
@@ -20,9 +20,12 @@ def dataset_2_image_preview(node):
             data_image[lminbound:uminbound,lmaxbound:umaxbound]=data[:,:128]
 
         image = array_to_image(data_image, image_float=False)
-    else:
-        i = Image.open(os.path.abspath('./icons/no_image_icon.png')).convert('RGBA')
-        image = (np.array(i,dtype=np.float16)[::-1,::-1,:]/255).ravel()
+    # Commented: This only adds an icon in only a few cases, paricularly when 
+    # reloading data in developing mode, therefore, it is comented to reduce 
+    # dependency requirements.
+    # else:
+    #     i = Image.open(os.path.abspath('./icons/no_image_icon.png')).convert('RGBA')
+    #     image = (np.array(i,dtype=np.float16)[::-1,::-1,:]/255).ravel()
     return image
 
 def image_data(node):

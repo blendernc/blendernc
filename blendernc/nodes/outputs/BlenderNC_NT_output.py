@@ -84,15 +84,6 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.step = self.step
             operator.image = self.image.name
 
-            
-                
-            # Update image preview witn 8 byte image.
-            #if self.image.preview.image_pixels_float
-            #    self.image.preview.image_pixels_float
-            
-            #rand = [np.random.rand() for i in range(256*256)]
-            #D.node_groups['NodeTree'].nodes['Output'].image.preview.image_pixels_float =  rand
-
             # Hide unused sockets
             if not self.update_on_frame_change:
                 layout.prop(self, "step")

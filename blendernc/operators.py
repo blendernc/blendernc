@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from os.path import abspath, isfile, join
+from os.path import abspath, isfile, join, dirname
 
 from . python_functions import (load_frame, update_image, get_node, get_var, update_nodes, 
                     update_proxy_file, BlenderncEngine, update_colormap_interface)
@@ -339,8 +339,7 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
-        split_path = self.properties.filepath.split('/')[0:-1]
-        fdir = ('/'.join(str(dir) for dir in split_path))
+        fdir = dirname(self.properties.filepath)
 
         if len(self.files) == 1:
             path = join(fdir,self.files[0].name)

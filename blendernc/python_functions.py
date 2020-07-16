@@ -156,10 +156,10 @@ def update_range(node,context):
 def purge_cache(NodeTree, Output):
     # TODO: Test number of total loaded frames for 
     # multiple nodetrees and node outputs. 
-    # 600 frames at 1440*720 use ~ 10GB of ram. 
+    # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][Output]) > 600:
+    if len(bpy.context.scene.nc_cache[NodeTree][Output]) > 300:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][Output].keys())
         bpy.context.scene.nc_cache[NodeTree][Output].pop(frames_loaded[0])
 
@@ -281,14 +281,15 @@ def update_image(context, node, node_tree, step, image):
         return False
     # Leave next line here, if move to the end it will crash blender. 
     # TODO: Text why this line crashes, up to this point, it seems quite random.
-    update_datetime_text(context, node, node_tree, step)
-
-    scene = context.scene
     timer = Timer()
 
+    # timer.tick('Update time')
+    # update_datetime_text(context, node, node_tree, step)
+    # timer.tick('Update time')
 
+    scene = context.scene
+    
     timer.tick('Variable load')
-
     # Get the data of the selected variable
     var_data = get_var_data(context, node, node_tree)
 
@@ -347,32 +348,32 @@ def update_image(context, node, node_tree, step, image):
     purge_cache(node_tree, node)
     return True
 
-def update_datetime_text(context,node, node_tree, step, decode=False):
-    time = get_time(context, node, node_tree, step)
-    #TODO allow user to define format.
+# def update_datetime_text(context,node, node_tree, step, decode=False):
+#     time = get_time(context, node, node_tree, step)
+#     #TODO allow user to define format.
     
-    if 'Camera' in bpy.data.objects.keys() and time:
-        Camera = bpy.data.objects.get('Camera')
-        size = 0.03
-        coords = (-0.35,0.17,-1)
-        children_name  = [children.name for children in  Camera.children]
-        if "BlenderNC_time" not in children_name:
-            bpy.ops.object.text_add(radius=size)
-            text=bpy.context.object
-            text.name="BlenderNC_time"
-            text.parent = Camera
-            text.location = coords
-            mat = ui_material()
-            try: 
-            # Add material
-                text.data.materials.append(mat)        
-            except:
-                pass
-        else:
-            childrens = Camera.children
-            text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
-        text.data.body = str(time)[:10]
-        text.select_set(False)
+#     if 'Camera' in bpy.data.objects.keys() and time:
+#         Camera = bpy.data.objects.get('Camera')
+#         size = 0.03
+#         coords = (-0.35,0.17,-1)
+#         children_name  = [children.name for children in  Camera.children]
+#         if "BlenderNC_time" not in children_name:
+#             bpy.ops.object.text_add(radius=size)
+#             text=bpy.context.object
+#             text.name="BlenderNC_time"
+#             text.parent = Camera
+#             text.location = coords
+#             mat = ui_material()
+#             try: 
+#             # Add material
+#                 text.data.materials.append(mat)        
+#             except:
+#                 pass
+#         else:
+#             childrens = Camera.children
+#             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
+#         # text.data.body = str(time)[:10]
+#         # text.select_set(False)
 
 def ui_material():
     mat = bpy.data.materials.get("BlenderNC_info")
@@ -649,7 +650,7 @@ class BlenderncEngine():
             else:
                 try:
                     self.load_netcdf()
-                except:
+                except RuntimeError:
                     raise ValueError("File isn't a netCDF:",self.file_path)
         else:
             extension = self.file_path[0].split('.')[-1]
@@ -658,7 +659,7 @@ class BlenderncEngine():
             else:
                 try:
                     self.load_netcdf()
-                except:
+                except RuntimeError:
                     raise ValueError("Files aren't netCDFs:",self.file_path)
 
     def load_netcdf(self):

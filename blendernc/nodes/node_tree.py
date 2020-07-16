@@ -5,6 +5,8 @@ from nodeitems_utils import NodeCategory
 # Blender Classes
 node_tree_name = "BlenderNC"
 create_new_node_tree = node_tree_name != "ShaderNodeTree"
+
+
 if create_new_node_tree:
     # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
     class BlenderNCNodeTree(bpy.types.NodeTree):

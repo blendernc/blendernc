@@ -44,6 +44,8 @@ from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket
 
 from blendernc.blendernc.nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
 
+from . handlers import update_time, update_all_images
+
 classes = [
     # Panels
     BlenderNC_UI_PT_3dview,
@@ -86,54 +88,21 @@ classes = [
 
 if create_new_node_tree:
     classes.append(BlenderNCNodeTree)
-from bpy.app.handlers import persistent
-
-
-@persistent
-def update_all_images(scene):
-    nodes = []
-    if create_new_node_tree:
-        node_trees = [ii for ii in bpy.data.node_groups if ii.bl_idname == "BlenderNC"]
-    else:
-        materials = bpy.data.materials
-        node_trees = [material.node_tree for material in materials]
-
-    # Find all nodes
-    for nt in node_trees:
-        for node in nt.nodes:
-            nodes.append(node)
-
-    operator = bpy.ops.BlenderNC.nc2img
-    for node in nodes:
-        if not node.name.count("Output"):
-            continue
-        if not node.update_on_frame_change:
-            continue
-
-        step = scene.frame_current
-        node.step = step
-
-        if step == node.frame_loaded:
-            continue
-        node_name = node.name
-        node_group = node.rna_type.id_data.name
-        #flip = node.flip
-        image = node.image.name
-        operator(node=node_name, node_group=node_group, step=step, image=image)
-        node.frame_loaded = step
-
 
 handlers = bpy.app.handlers
 
 
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
+    bpy.types.Scene.update_time = update_time
 
     #bpy.types.Scene.nc_dictionary = defaultdict(None)
     bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
+    handlers.frame_change_pre.append(bpy.types.Scene.update_time)
     handlers.render_pre.append(bpy.types.Scene.update_all_images)
+    handlers.render_pre.append(bpy.types.Scene.update_time)
 
     # Register node categories
     nodeitems_utils.register_node_categories(node_tree_name, node_categories)
@@ -145,11 +114,14 @@ def registerBlenderNC():
 def unregisterBlenderNC():
     #del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
+    del bpy.types.Scene.update_time
     del bpy.types.Scene.nc_cache
 
     # Delete from handlers
     handlers.frame_change_pre.remove(update_all_images)
+    handlers.frame_change_pre.remove(update_time)
     handlers.render_pre.remove(update_all_images)
+    handlers.render_pre.remove(update_time)
     # del bpy.types.Scene.nc_file_path
 
     nodeitems_utils.unregister_node_categories(node_tree_name)
