@@ -106,5 +106,5 @@ class BlenderNC_NT_output(bpy.types.Node):
         node_tree = self.rna_type.id_data.name
         if self.image:
             update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
-            if self.image.users >=2 :
+            if self.image.users >=3 :
                 update_colormap_interface(bpy.context, self.name, node_tree)
