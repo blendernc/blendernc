@@ -87,10 +87,15 @@ def get_possible_dims(node, context):
     if node.inputs:
         if node.inputs[0].is_linked and node.inputs[0].links:
             unique_identifier = node.blendernc_dataset_identifier
-            data_dictionary = node.inputs[0].links[0].from_node.blendernc_dict[unique_identifier]
-            ncdata = data_dictionary["Dataset"]
-            var_name = data_dictionary["selected_var"]['selected_var_name']
-            items = get_dims(ncdata,var_name)
+            parent_node = node.inputs[0].links[0].from_node
+            blendernc_dict = parent_node.blendernc_dict
+            if not blendernc_dict:
+                return []
+            else:
+                data_dictionary = node.inputs[0].links[0].from_node.blendernc_dict[unique_identifier]
+                ncdata = data_dictionary["Dataset"]
+                var_name = data_dictionary["selected_var"]['selected_var_name']
+                items = get_dims(ncdata,var_name)
             return items
         else:
             return []
@@ -176,7 +181,8 @@ def purge_cache(NodeTree, identifier):
 
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.nc_cache:
-        bpy.context.scene.nc_cache[NodeTree][identifier].pop(frame)
+        if frame in list(bpy.context.scene.nc_cache[NodeTree][identifier].keys()):
+            bpy.context.scene.nc_cache[NodeTree][identifier].pop(frame)
 
 def del_cache(NodeTree, identifier):
     if bpy.context.scene.nc_cache:
@@ -645,6 +651,10 @@ def rotate_longitude(node,context):
         node.blendernc_dict[node.blendernc_dataset_identifier]['Dataset'] = dataset.roll({lon_coords[0]: int(node.blendernc_rotation)},roll_coords=True)
     else:
         raise ValueError("Multiple lon axis are not supported. The default axis names are anything containing 'lon','xt' and 'yt'.")
+    NodeTree = node.rna_type.id_data.name
+    frame = bpy.context.scene.frame_current
+    identifier = node.blendernc_dataset_identifier
+    refresh_cache(NodeTree, identifier, frame)
     
 
     

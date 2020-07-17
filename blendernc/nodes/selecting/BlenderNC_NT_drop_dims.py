@@ -65,13 +65,15 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     def draw_label(self):
         return "Drop Dimension"
 
-
+    @NodesDecorators.node_connections
     def update(self):
+        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
+        dataset = blendernc_dict['Dataset']
         # Drop dimensions
         if self.blendernc_dims != '':
-            # Store name of dropped dimension.
             if self.blendernc_dims in dataset.dims:
                 dataset = dataset.isel({self.blendernc_dims:0}).drop(self.blendernc_dims).squeeze()
             else: 
                 dataset = dataset.drop_dims(self.blendernc_dims).squeeze()
         
+        blendernc_dict['Dataset'] = dataset

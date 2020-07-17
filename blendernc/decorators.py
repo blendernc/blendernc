@@ -41,6 +41,9 @@ class NodesDecorators(object):
                 # Dummy update.
                 return cls.dummy_update(node)
 
+        #TODO add support to purge, delete or refresh 
+        # cache based on type of node. Instead of having them all 
+        # over the place.
         return wrapper_update
 
     ## Example of dummy decorator.
