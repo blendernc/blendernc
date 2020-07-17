@@ -10,7 +10,7 @@ import bpy
 import numpy as np
 from os.path import basename
 
-from .msg_errors import huge_image
+from .msg_errors import huge_image, drop_dim
 
 from . image import normalize_data, from_data_to_pixel_value
 
@@ -56,7 +56,6 @@ class Timer:
 def get_dims(ncdata,var):
     dimensions = list(ncdata[var].coords.dims)
     dim_names = [(dimensions[ii], dimensions[ii], dimensions[ii], "EMPTY_DATA", ii+1) for ii in range(len(dimensions))]
-    dim_names.insert(0,('NONE',"Select Dim","Select Dim","EMPTY_DATA",0))
     return dim_names
 
 def get_var(ncdata):
@@ -66,7 +65,6 @@ def get_var(ncdata):
         var_names = [(variables[ii], variables[ii], ncdata[variables[ii]].long_name, "DISK_DRIVE", ii+1) for ii in range(len(variables))]
     else:
         var_names = [(variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii+1) for ii in range(len(variables))]
-    var_names.insert(0,('NONE',"Select Variable","Select Variable","DISK_DRIVE",0))
     return var_names
 
 def get_possible_variables(node, context):
@@ -86,14 +84,18 @@ def get_new_identifier(node):
         return '{0:03}'.format(int(node.name.split('.')[-1]))
 
 def get_possible_dims(node, context):
-    unique_identifier = node.blendernc_dataset_identifier
-    if unique_identifier not in node.blendernc_dict.keys():
-        return [('NONE',"Select Dim","Select Dim","EMPTY_DATA",0)]
-    data_dictionary = node.blendernc_dict[unique_identifier]
-    ncdata = data_dictionary["Dataset"]
-    var_name = data_dictionary["selected_var"]['selected_var_name']
-    items = get_dims(ncdata,var_name)
-    return items
+    if node.inputs:
+        if node.inputs[0].is_linked and node.inputs[0].links:
+            unique_identifier = node.blendernc_dataset_identifier
+            data_dictionary = node.inputs[0].links[0].from_node.blendernc_dict[unique_identifier]
+            ncdata = data_dictionary["Dataset"]
+            var_name = data_dictionary["selected_var"]['selected_var_name']
+            items = get_dims(ncdata,var_name)
+            return items
+        else:
+            return []
+    else:
+        return []
 
 def get_possible_files(node, context):
     unique_identifier = node.blendernc_dataset_identifier
@@ -119,11 +121,7 @@ def update_nodes(scene, context):
     update_proxy_file(scene, context)
 
 def update_dict(selected_variable,node):
-    if selected_variable == "NONE":
-        return
     unique_identifier = node.blendernc_dataset_identifier
-    dataset = node.blendernc_dict[unique_identifier]["Dataset"]
-    node.blendernc_dict[unique_identifier]["Dataset"] = dataset[selected_variable].to_dataset()
     node.blendernc_dict[unique_identifier]['selected_var']= {
         "max_value" : None,
         "min_value" : None,
@@ -142,33 +140,56 @@ def update_range(node,context):
         
         if node.outputs[0].is_linked:
             NodeTree = node.rna_type.id_data.name
-            output_name = node.outputs[0].links[0].to_node.name
             frame = bpy.context.scene.frame_current
-            refresh_cache(NodeTree, output_name,frame)
+            refresh_cache(NodeTree, unique_identifier,frame)
         update_value_and_node_tree(node,context)
     except:
         if node.blendernc_dict[unique_identifier]['selected_var']["max_value"]:
             pass
         else:
-            node.blendernc_dict[unique_identifier]['selected_var']["max_value"] = dataset[selected_variable].max().compute().values
-            node.blendernc_dict[unique_identifier]['selected_var']["min_value"] = (dataset[selected_variable].min()-abs(1e-5*dataset[selected_variable].min())).compute().values
+            values = dataarray_random_sampling(dataset[selected_variable],100)
+            node.blendernc_dict[unique_identifier]['selected_var']["max_value"] = max(values)
+            node.blendernc_dict[unique_identifier]['selected_var']["min_value"] = min(values)
 
-def purge_cache(NodeTree, Output):
+def dataarray_random_sampling(dataarray,n):
+    values=np.zeros(n)*np.nan
+    dataarray_coords = [coord for coord in dataarray.coords]
+    counter=0
+    while not np.isfinite(values).all():
+        coord_dict = {dataarray_coords[ii]:np.random.randint(0,
+                                len(dataarray[dataarray_coords[ii]])) 
+                                for ii in range(len(dataarray_coords))}
+        values[counter] = dataarray.isel(coord_dict).values
+        if np.isfinite(values[counter]):
+            counter+=1
+    return values
+
+def purge_cache(NodeTree, identifier):
     # TODO: Test number of total loaded frames for 
     # multiple nodetrees and node outputs. 
     # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][Output]) > 300:
-        frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][Output].keys())
-        bpy.context.scene.nc_cache[NodeTree][Output].pop(frames_loaded[0])
+    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 300:
+        frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
+        bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
 
-def refresh_cache(NodeTree, Output, frame):
-    bpy.context.scene.nc_cache[NodeTree][Output].pop(frame)
+def refresh_cache(NodeTree, identifier, frame):
+    if bpy.context.scene.nc_cache:
+        bpy.context.scene.nc_cache[NodeTree][identifier].pop(frame)
+
+def del_cache(NodeTree, identifier):
+    if bpy.context.scene.nc_cache:
+        bpy.context.scene.nc_cache[NodeTree].pop(identifier)
+        # keys = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
+        # for key in keys:
+        #     bpy.context.scene.nc_cache[NodeTree][identifier].pop(key)
 
 def update_res(scene,context):
+    """
+    Simple UI function to update BlenderNC node tree.
+    """
     bpy.data.node_groups.get('BlenderNC').nodes.get('Resolution').blendernc_resolution = scene.blendernc_resolution
-
 
 def get_max_timestep(self, context):
     scene = context.scene
@@ -184,8 +205,19 @@ def get_max_timestep(self, context):
     return t - 1
 
 def dict_update(node, context):
-    if 'selected_var' not in node.blendernc_dict[node.blendernc_dataset_identifier].keys():
+    dataset_dict= node.blendernc_dict[node.blendernc_dataset_identifier]
+    selected_var = dataset_dict['selected_var']['selected_var_name'] if 'selected_var' in dataset_dict.keys() else ''
+    # Update if user selected a new variable.
+    if selected_var and selected_var != node.blendernc_netcdf_vars:
+        #Update dict
         update_dict(node.blendernc_netcdf_vars,node)
+        node_tree = node.rna_type.id_data.name
+        unique_identifier = node.blendernc_dataset_identifier
+        del_cache(node_tree, unique_identifier)
+        update_value_and_node_tree(node, context)
+    else: 
+        update_dict(node.blendernc_netcdf_vars,node)
+        update_value(node, context)
 
 def get_node(node_group,node):
     node_group = bpy.data.node_groups.get(node_group)
@@ -193,6 +225,8 @@ def get_node(node_group,node):
 
 def get_var_dict(context, node, node_tree):
     scene = context.scene
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    unique_identifier = node.blendernc_dataset_identifier
     try:
         scene.nc_cache[node_tree]
     except KeyError:
@@ -200,10 +234,10 @@ def get_var_dict(context, node, node_tree):
 
     # Check if dictionary entry for the variable exists
     try:
-        scene.nc_cache[node_tree][node]
+        scene.nc_cache[node_tree][unique_identifier]
     except KeyError:
-        scene.nc_cache[node_tree][node] = {}
-    return scene.nc_cache[node_tree][node]
+        scene.nc_cache[node_tree][unique_identifier] = {}
+    return scene.nc_cache[node_tree][unique_identifier]
 
 def get_var_data(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
@@ -284,21 +318,23 @@ def update_image(context, node, node_tree, step, image):
     timer = Timer()
 
     # timer.tick('Update time')
-    # update_datetime_text(context, node, node_tree, step)
+    update_datetime_text(context, node, node_tree, step)
     # timer.tick('Update time')
-
+    node_ = bpy.data.node_groups[node_tree].nodes[node]
+    unique_identifier = node_.blendernc_dataset_identifier
     scene = context.scene
     
     timer.tick('Variable load')
     # Get the data of the selected variable
     var_data = get_var_data(context, node, node_tree)
-
     timer.tick('Variable load')
     # Get object shape
     if len(var_data.shape) == 2:
         y, x = var_data.shape
     elif len(var_data.shape) ==3:
         t, y, x = var_data.shape
+    else:
+        bpy.context.window_manager.popup_menu(drop_dim, title="Error", icon='ERROR')
     
     if y > 5120 or x > 5120:
         bpy.context.window_manager.popup_menu(huge_image, title="Error", icon='ERROR')
@@ -323,7 +359,7 @@ def update_image(context, node, node_tree, step, image):
         # IF timestep is larger, use the last time value
         if step >= var_data.shape[0]:
             step = var_data.shape[0]-1
-        pixels_cache=scene.nc_cache[node_tree][node][step]
+        pixels_cache=scene.nc_cache[node_tree][unique_identifier][step]
         # If the size of the cache data does not match the size of the image multiplied by the 4 channels (RGBA)
         # we need to reload the data.
         if pixels_cache.size != 4 * img_x*img_y:
@@ -336,7 +372,7 @@ def update_image(context, node, node_tree, step, image):
     timer.tick('Load Frame')
         
     # In case data has been pre-loaded
-    pixels_value = scene.nc_cache[node_tree][node][step]
+    pixels_value = scene.nc_cache[node_tree][unique_identifier][step]
     timer.tick('Assign to pixel')
     # TODO: Test version, make it copatible with 2.8 forwards
     image.pixels.foreach_set(pixels_value)
@@ -345,35 +381,36 @@ def update_image(context, node, node_tree, step, image):
     image.update()
     timer.tick('Update Image')
     timer.report(total=True)
-    purge_cache(node_tree, node)
+    purge_cache(node_tree, unique_identifier)
     return True
 
-# def update_datetime_text(context,node, node_tree, step, decode=False):
-#     time = get_time(context, node, node_tree, step)
-#     #TODO allow user to define format.
+def update_datetime_text(context,node, node_tree, step, decode=False):
+    time = get_time(context, node, node_tree, step)
+    #TODO allow user to define format.
     
-#     if 'Camera' in bpy.data.objects.keys() and time:
-#         Camera = bpy.data.objects.get('Camera')
-#         size = 0.03
-#         coords = (-0.35,0.17,-1)
-#         children_name  = [children.name for children in  Camera.children]
-#         if "BlenderNC_time" not in children_name:
-#             bpy.ops.object.text_add(radius=size)
-#             text=bpy.context.object
-#             text.name="BlenderNC_time"
-#             text.parent = Camera
-#             text.location = coords
-#             mat = ui_material()
-#             try: 
-#             # Add material
-#                 text.data.materials.append(mat)        
-#             except:
-#                 pass
-#         else:
-#             childrens = Camera.children
-#             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
-#         # text.data.body = str(time)[:10]
-#         # text.select_set(False)
+    if 'Camera' in bpy.data.objects.keys() and time:
+        Camera = bpy.data.objects.get('Camera')
+        size = 0.03
+        coords = (-0.35,0.17,-1)
+        children_name  = [children.name for children in  Camera.children]
+        if "BlenderNC_time" not in children_name:
+            bpy.ops.object.text_add(radius=size)
+            text=bpy.context.object
+            text.name="BlenderNC_time"
+            text.parent = Camera
+            text.location = coords
+            mat = ui_material()
+            try: 
+            # Add material
+                text.data.materials.append(mat)        
+            except:
+                pass
+        else:
+            childrens = Camera.children
+            text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
+        text.data.body = str(time)[:10]
+        if text.select_get():
+            text.select_set(False)
 
 def ui_material():
     mat = bpy.data.materials.get("BlenderNC_info")

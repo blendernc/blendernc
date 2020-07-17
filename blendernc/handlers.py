@@ -36,30 +36,31 @@ def update_all_images(scene):
         operator(node=node_name, node_group=node_group, step=step, image=image)
         node.frame_loaded = step
 
-@persistent
-def update_time(scene):
-    pass
-    # time = bpy.context.scene.frame_current
-    # #TODO allow user to define format.
+# TODO Implement update_time as a handler
+# @persistent
+# def update_time(scene):
+#     time = bpy.context.scene.frame_current
+#     #TODO allow user to define format.
 
-    # if 'Camera' in bpy.data.objects.keys() and time:
-    #     Camera = bpy.data.objects.get('Camera')
-    #     size = 0.03
-    #     coords = (-0.35,0.17,-1)
-    #     children_name  = [children.name for children in  Camera.children]
-    #     if "BlenderNC_time" not in children_name:
-    #         font_curve = bpy.ops.object.text_add(radius=size)
-    #         text=bpy.context.object
-    #         text.name="BlenderNC_time"
-    #         text.parent = Camera
-    #         text.location = coords  
-    #         try: 
-    #         # Add material
-    #             text.data.materials.append(mat)        
-    #         except:
-    #             pass
-    #     else:
-    #         childrens = Camera.children
-    #         text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
-    #     text.data.body = str(time)
-    #     text.select_set(False) 
+#     if 'Camera' in bpy.data.objects.keys() and time:
+#         Camera = bpy.data.objects.get('Camera')
+#         size = 0.03
+#         coords = (-0.35,0.17,-1)
+#         children_name  = [children.name for children in  Camera.children]
+#         if "BlenderNC_time" not in children_name:
+#             font_curve = bpy.ops.object.text_add(radius=size)
+#             text=bpy.context.object
+#             text.name="BlenderNC_time"
+#             text.parent = Camera
+#             text.location = coords  
+#             try: 
+#             # Add material
+#                 text.data.materials.append(mat)        
+#             except:
+#                 pass
+#         else:
+#             childrens = Camera.children
+#             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
+#         text.data.body = str(time)
+#         if text.select_get():
+#             text.select_set(False) 

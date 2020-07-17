@@ -4,7 +4,7 @@ import bpy
 from blendernc.blendernc.python_functions import (get_new_identifier, get_possible_files, get_possible_variables,
                                 dict_update)
 
-from blendernc.blendernc.msg_errors import unselected_nc_file
+from blendernc.blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
@@ -20,17 +20,16 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     bl_icon = 'UGLYPACKAGE'
     bl_type = "NETCDF"
 
-    # Note that this dictionary is in shared memory.
-    blendernc_dict = defaultdict()
-
     blendernc_file: bpy.props.StringProperty()
     
     blendernc_netcdf_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
-        name="",
+        name="Select Variable",
         update=dict_update,
     )
 
+    # Note that this dictionary is in shared memory.
+    blendernc_dict = defaultdict()
     blendernc_dataset_identifier: bpy.props.StringProperty()
 
     # === Optional Functions ===
@@ -48,6 +47,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
+        #self.blendernc_dataset_identifier = get_new_identifier(self)
         print("Copying from node ", node)
 
     # Free function to clean up on removal.
@@ -58,11 +58,8 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        if self.blendernc_dataset_identifier in self.blendernc_dict.keys():
-            layout.label(text = "netCDF loaded!")
-            layout.prop(self, "blendernc_netcdf_vars")
-        else:
-            layout.label(text="No netCDF loaded!")
+        layout.label(text = "Select Variable:")
+        layout.prop(self, "blendernc_netcdf_vars",text='')
             
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -77,31 +74,15 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         else:
             return self.blendernc_file.split("/")[-1]
 
-    def update(self):
-        if self.inputs[0].is_linked and self.inputs[0].links:
-            self.blendernc_file=self.inputs[0].links[0].from_socket.text
-            if (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'
-                and self.blendernc_file and self.blendernc_dataset_identifier not in self.blendernc_dict.keys()):
-                bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
-            # Define blendernc_file in case the netCDF input has priority on update.
-            elif (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'  and 
-                  not self.blendernc_file):
-                self.blendernc_file=self.inputs[0].links[0].from_node.blendernc_file
-                bpy.ops.blendernc.ncload(file_path = self.blendernc_file, node_group = self.rna_type.id_data.name, node = self.name)
-            elif (self.inputs[0].links[0].from_node.bl_idname == 'netCDFPath'  and self.blendernc_file) :
-                pass
-            else:
-                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
-        else:
-            if self.blendernc_file and self.blendernc_dataset_identifier in self.blendernc_dict.keys() :
-                self.blendernc_dict.pop(self.blendernc_dataset_identifier)
-        
-        if self.outputs.items():
-            if self.outputs[0].is_linked and self.blendernc_netcdf_vars:
-                # Copy only unique identifier to next node.
-                # TODO remove passing other dataset_identifiers.
-                self.outputs[0].dataset[self.blendernc_dataset_identifier] = self.blendernc_dict[self.blendernc_dataset_identifier].copy()
-                self.outputs[0].unique_identifier=self.blendernc_dataset_identifier
-        else: 
-            pass
+    @NodesDecorators.node_connections
+    def update(self):                    
+        identifier = self.blendernc_dataset_identifier
+        blendernc_dict = self.blendernc_dict[identifier]
+        updated_dataset = blendernc_dict['Dataset'][self.blendernc_netcdf_vars].to_dataset()
+
+        # Note, only this node will have access to the socket. 
+        # All the following nodes will pass directly to the next node.
+        self.outputs[0].dataset[identifier] = blendernc_dict.copy()
+        self.outputs[0].dataset[identifier]['Dataset'] = updated_dataset.copy()
+        self.outputs[0].unique_identifier=identifier
+        # Check decorators before modifying anything here.

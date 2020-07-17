@@ -3,7 +3,7 @@ import bpy
 
 from blendernc.blendernc.python_functions import  update_image, update_value, update_colormap_interface
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+from blendernc.blendernc.decorators import NodesDecorators
 
 from blendernc.blendernc.image import dataset_2_image_preview
 
@@ -36,7 +36,9 @@ class BlenderNC_NT_output(bpy.types.Node):
         default = -1,
     )
 
-    step: bpy.props.IntProperty()
+    step: bpy.props.IntProperty(
+        default = 1,
+    )
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
@@ -65,9 +67,6 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
-
-        #layout.template_ID(self, "image", new="image.new", open="image.open")
         # Generated image supported by bpy to display, but perhaps show a preview of field?
         layout.template_ID_preview(self, "image", new="image.new", open="image.open",rows=2, cols=3)
         if self.image:
@@ -102,36 +101,10 @@ class BlenderNC_NT_output(bpy.types.Node):
     def draw_label(self):
         return "Image Output"
 
+    @NodesDecorators.node_connections
     def update(self):
         node_tree = self.rna_type.id_data.name
-        if self.inputs[0].is_linked and self.inputs[0].links:
-            # Delete cache if a different dataset is loaded.
-            if self.blendernc_dataset_identifier !='' and self.blendernc_dataset_identifier != self.inputs[0].links[0].from_node.blendernc_dataset_identifier:
-                bpy.context.scene.nc_cache[node_tree].pop(self.name)
-
-            self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
-            nc_dict = self.inputs[0].links[0].from_socket.dataset
-            
-            if self.blendernc_dataset_identifier == '' or len(nc_dict.keys()):
-                self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.blendernc_dataset_identifier
-                nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
-            
-            # Check that nc_dict contains at least an unique identifier
-            if self.blendernc_dataset_identifier in nc_dict.keys():
-                self.blendernc_dict[self.blendernc_dataset_identifier] = nc_dict[self.blendernc_dataset_identifier].copy()
-                # Check if user has selected a variable
-                if 'selected_var' not in self.blendernc_dict[self.blendernc_dataset_identifier].keys():
-                    bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
-                    self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-                    return
-                if self.image:
-                    update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
-                    if self.image.users >=3 :
-                        update_colormap_interface(bpy.context, self.name, node_tree)
-                    
-            else: 
-                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
-                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-        else:
-            if self.blendernc_dataset_identifier in self.blendernc_dict.keys() :
-                self.blendernc_dict.pop(self.blendernc_dataset_identifier)
+        if self.image:
+            update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
+            if self.image.users >=2 :
+                update_colormap_interface(bpy.context, self.name, node_tree)

@@ -58,8 +58,8 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
     def update(self):
         if self.inputs[0].is_linked and self.inputs[0].links:
             self.blendernc_dataset_identifier = self.inputs[0].links[0].from_socket.unique_identifier
-            nc_dict = self.inputs[0].links[0].from_socket.dataset
-            if self.blendernc_dataset_identifier == '' or len(nc_dict.keys()):
+            nc_dict = self.inputs[0].links[0].from_socket.dataset.copy()
+            if self.blendernc_dataset_identifier == '' or not len(nc_dict.keys()):
                 self.blendernc_dataset_identifier = self.inputs[0].links[0].from_node.unique_identifier
                 nc_dict = self.inputs[0].links[0].from_node.blendernc_dict.copy()
             

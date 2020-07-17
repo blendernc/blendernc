@@ -43,9 +43,6 @@ class BlenderNC_NT_path(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-
-        scene = context.scene
-        
         row = layout.row(align=True)
         split = row.split(factor=0.85,align=True)
 
@@ -70,9 +67,6 @@ class BlenderNC_NT_path(bpy.types.Node):
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
         return "netCDF Path"
-
-    def update_value(self, context):
-        self.update()
 
     def update(self):
         if self.outputs[0].is_linked and self.blendernc_file:

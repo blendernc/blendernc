@@ -5,10 +5,6 @@ import bpy
 from bpy.props import StringProperty, BoolProperty, FloatVectorProperty, IntProperty, FloatProperty
 from bpy.types import NodeTree, NodeSocket
 
-from . socketdata import (
-    bNCGetSocketInfo, bNCGetSocket, bNCSetSocket, bNCForgetSocket,
-    bNCNoDataError, sentinel)
-
 from collections import defaultdict
 
 socket_colors = {
@@ -34,14 +30,15 @@ class bNCnetcdfSocket(NodeSocket,bNCSocketDefault):
 
     dataset =  defaultdict()
     unique_identifier: StringProperty()
-
+    
     def draw(self, context, layout, node, text):
         layout.label(text=text)
 
     def draw_color(self, context, node):
-        return (0.68,  0.85,  0.90, 1)
+        return (0.38,  0.85,  0.90, 1)
 
-    
+
+
 
 
 class bNCstringSocket(NodeSocket,bNCSocketDefault):
