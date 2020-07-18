@@ -40,7 +40,7 @@ from blendernc.blendernc.nodes.shortcuts.BlenderNC_NT_basic_nodes import Blender
 from blendernc.blendernc.nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
                         node_tree_name
 
-from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket
+from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket, bNCfloatSocket
 
 from blendernc.blendernc.nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
 
@@ -84,6 +84,7 @@ classes = [
     # Sockets
     bNCnetcdfSocket,
     bNCstringSocket,
+    bNCfloatSocket,
 ]
 
 if create_new_node_tree:

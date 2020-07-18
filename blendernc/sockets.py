@@ -38,9 +38,6 @@ class bNCnetcdfSocket(NodeSocket,bNCSocketDefault):
         return (0.38,  0.85,  0.90, 1)
 
 
-
-
-
 class bNCstringSocket(NodeSocket,bNCSocketDefault):
     bl_idname = "bNCstringSocket"
     bl_label = "String Socket"
@@ -49,6 +46,22 @@ class bNCstringSocket(NodeSocket,bNCSocketDefault):
 
     def draw(self, context, layout, node, text):
         layout.label(text=text)
+
+    def draw_color(self, context, node):
+        return (0.68,  0.85,  0.90, 1)
+    
+    def unlink(self,link):
+        return self.id_data.links.remove(link)
+
+class bNCfloatSocket(NodeSocket,bNCSocketDefault):
+    bl_idname = "bNCfloatSocket"
+    bl_label = "Float Socket"
+
+    Float: FloatProperty(default = 1)
+
+    def draw(self, context, layout, node, text):
+        # layout.label(text=text)
+        layout.prop(self, "Float")
 
     def draw_color(self, context, node):
         return (0.68,  0.85,  0.90, 1)
