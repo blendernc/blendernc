@@ -51,16 +51,21 @@ netCDF by clicking the :green:`folder icon`.
   :width: 30%
   :alt: BlenderNC panel
 
-Finally, select an object and apply the material by clicking 
+Select an object and apply the material by clicking 
 :orange:`Apply Material`.
 
 .. image:: ../images/apply_material_panel.png
   :width: 30%
   :alt: BlenderNC panel
 
+To animate the netCDF in time click over "**Animate netCDF**". Press **space** 
+in your keyboard to visualize animation.
 
 .. note:: The material will be applied to the selected object.
+
+The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To acces it,
 
 
 PRO mode!
 #########
+
