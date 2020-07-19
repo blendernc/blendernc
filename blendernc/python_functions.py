@@ -390,8 +390,16 @@ def update_image(context, node, node_tree, step, image):
     purge_cache(node_tree, unique_identifier)
     return True
 
-def update_datetime_text(context,node, node_tree, step, decode=False):
-    time = get_time(context, node, node_tree, step)
+def update_datetime_text(context,node, node_tree, step, time_text='',decode=False):
+    """
+    Update text object with time.
+
+    If text is provided, step is ignored. 
+    """
+    if not time_text:
+        time = str(get_time(context, node, node_tree, step))[:10]
+    else: 
+        time = time_text
     #TODO allow user to define format.
     
     if 'Camera' in bpy.data.objects.keys() and time:
@@ -414,7 +422,7 @@ def update_datetime_text(context,node, node_tree, step, decode=False):
         else:
             childrens = Camera.children
             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
-        text.data.body = str(time)[:10]
+        text.data.body = time
         if text.select_get():
             text.select_set(False)
 

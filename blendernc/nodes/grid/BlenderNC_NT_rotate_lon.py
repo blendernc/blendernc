@@ -52,7 +52,6 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
         layout.prop(self, "blendernc_rotation")
 
     # Detail buttons in the sidebar.

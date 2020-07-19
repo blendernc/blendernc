@@ -22,7 +22,7 @@ node_categories = [
     BlenderNCNodeCategory('Selection', "Selection", items=[
         # Slice and data selection
         #NodeItem("netCDFaxis"),
-        #NodeItem("netCDFtime"),
+        NodeItem("netCDFtime"),
     ]),
     BlenderNCNodeCategory('Dimensions', "Dimensions", items=[
         # Dimension operations.

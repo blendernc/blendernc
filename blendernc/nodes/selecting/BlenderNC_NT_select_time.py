@@ -1,6 +1,13 @@
 # Imports
 import bpy
 
+from blendernc.blendernc.decorators import NodesDecorators
+
+from collections import defaultdict
+
+from blendernc.blendernc.core.dates import * 
+from blendernc.blendernc.python_functions import update_datetime_text
+
 class BlenderNC_NT_select_time(bpy.types.Node):
     # === Basics ===
     # Description string
@@ -13,7 +20,38 @@ class BlenderNC_NT_select_time(bpy.types.Node):
     bl_icon = 'TIME'
     blb_type = "NETCDF"
 
-    axis: bpy.props.EnumProperty(items=(''),name="")
+    step: bpy.props.EnumProperty(
+        items=get_item_time,
+        name="Time",
+        update=update_date,
+    )
+
+    selected_time: bpy.props.StringProperty(name="")
+
+    year: bpy.props.EnumProperty(
+        items=get_item_year,
+        name="Year",
+        update=update_date,
+    )
+    month: bpy.props.EnumProperty(
+        items=get_item_month,
+        name="Month",
+        update=update_date,
+    )
+    day: bpy.props.EnumProperty(
+        items=get_item_days,
+        name="Day",
+        update=update_date,
+    )
+    hour: bpy.props.EnumProperty(
+        items=[],
+        name="Hour",
+        update=update_date,
+    )
+
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -23,6 +61,7 @@ class BlenderNC_NT_select_time(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCnetcdfSocket',"Dataset")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
+        self.width=160
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -30,13 +69,43 @@ class BlenderNC_NT_select_time(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
+        if self.blendernc_dataset_identifier!='':
+            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
-        layout.label(text="INFO: Work in progress", icon='INFO')
-        #layout.prop(self, "axis")
+        if self.blendernc_dict:
+            dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
+            coords = list(dataset.coords)
+            if len(coords)>=3:
+                # Dataset is 3D.
+                if 'time' in coords:
+                    dataset_time = dataset['time']
+                    if 'datetime64' in str(dataset_time.dtype):
+
+                        layout.label(text = "Date Format:")
+                        row = layout.row(align=True)
+
+                        #split = row.split(factor=0.25,align=True)
+                        #split.prop(self, 'hour',text='')
+                        split = row.split(factor=0.30,align=True)
+                        split.prop(self, 'day',text='')
+                        split = split.split(factor=0.40,align=True)
+                        split.prop(self, 'month',text='')
+                        split.prop(self, 'year',text='')
+
+                    else:
+                        layout.prop(self, "step",text='')
+                else:
+                    pass
+                    #self.report({'ERROR'}, "Dataset coords are ({0}, {1}), only 'time' coordinate name is supported." .format(coords[0], coords[1]))
+            else:
+                pass
+                #self.report({'ERROR'}, "Dataset coords are 2D ({0}, {1})" .format(coords[0], coords[1]))
+                
+
+            
         
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -48,5 +117,19 @@ class BlenderNC_NT_select_time(bpy.types.Node):
     def draw_label(self):
         return "Select Time"
 
+    @NodesDecorators.node_connections
     def update(self):
-        pass
+        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
+        dataset = blendernc_dict['Dataset']
+        node_tree = self.rna_type.id_data.name
+        if self.day and self.month and self.year and self.selected_time:
+            dataset = dataset.sel(time = self.selected_time)
+            update_datetime_text(bpy.context,self.name, node_tree, 0, self.selected_time)
+        elif self.selected_time == self.step:
+            dataset = dataset.sel(time = int(self.selected_time))
+            update_datetime_text(bpy.context,self.name, node_tree, 0, self.selected_time)
+        else:
+            # TODO Add extra conditions to avoid issues if reusing a 
+            # node for multiple datasets.
+            pass
+
