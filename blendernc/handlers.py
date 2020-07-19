@@ -24,17 +24,17 @@ def update_all_images(scene):
         if not node.update_on_frame_change:
             continue
 
-        step = scene.frame_current
-        node.step = step
+        frame = scene.frame_current
+        node.frame = frame
 
-        if step == node.frame_loaded:
+        if frame == node.frame_loaded:
             continue
         node_name = node.name
         node_group = node.rna_type.id_data.name
         #flip = node.flip
         image = node.image.name
-        operator(node=node_name, node_group=node_group, step=step, image=image)
-        node.frame_loaded = step
+        operator(node=node_name, node_group=node_group, frame=frame, image=image)
+        node.frame_loaded = frame
 
 # TODO Implement update_time as a handler
 # @persistent

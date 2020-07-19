@@ -6,7 +6,7 @@ from blendernc.blendernc.decorators import NodesDecorators
 from collections import defaultdict
 
 from blendernc.blendernc.core.dates import * 
-from blendernc.blendernc.python_functions import update_datetime_text
+from blendernc.blendernc.python_functions import update_datetime_text, update_value_and_node_tree
 
 class BlenderNC_NT_select_time(bpy.types.Node):
     # === Basics ===
@@ -75,8 +75,8 @@ class BlenderNC_NT_select_time(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        if self.blendernc_dict:
-            dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
+         if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dataset_identifier:
+            dataset = self.inputs[0].links[0].from_node.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
             coords = list(dataset.coords)
             if len(coords)>=3:
                 # Dataset is 3D.
@@ -123,10 +123,10 @@ class BlenderNC_NT_select_time(bpy.types.Node):
         dataset = blendernc_dict['Dataset']
         node_tree = self.rna_type.id_data.name
         if self.day and self.month and self.year and self.selected_time:
-            dataset = dataset.sel(time = self.selected_time)
+            blendernc_dict['Dataset'] = dataset.sel(time = self.selected_time).drop('time')
             update_datetime_text(bpy.context,self.name, node_tree, 0, self.selected_time)
-        elif self.selected_time == self.step:
-            dataset = dataset.sel(time = int(self.selected_time))
+        elif self.selected_time and self.selected_time == self.step:
+            blendernc_dict['Dataset'] = dataset.sel(time = int(self.selected_time)).drop('time')
             update_datetime_text(bpy.context,self.name, node_tree, 0, self.selected_time)
         else:
             # TODO Add extra conditions to avoid issues if reusing a 

@@ -1,15 +1,18 @@
+import bpy
 import numpy as np
 from calendar import monthrange
 
-from blendernc.blendernc.python_functions import update_value_and_node_tree
+from blendernc.blendernc.python_functions import update_value_and_node_tree, refresh_cache
 
 def get_items_datetimes(self,context):
-    # BlenderNC dictionary
-    blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
-    # BlenderNC dataset
-    dataset = blendernc_dict['Dataset']
-    # BlenderNC times
-    datetimes = dataset['time']
+    if self.inputs[0].is_linked and self.inputs[0].links:
+        # BlenderNC dictionary
+        blendernc_dict = self.inputs[0].links[0].from_node.blendernc_dict[self.blendernc_dataset_identifier].copy()
+        # BlenderNC dataset
+        dataset = blendernc_dict['Dataset']
+        # BlenderNC times
+        datetimes = dataset['time']
+
     return datetimes.values
 
 def get_item_time(self,context):
@@ -82,13 +85,20 @@ def get_item_year(self, context):
     return [(str(year),str(year),str(year)) for year in dataset_years]
 
 def update_date(self,context):
+    NodeTree = self.rna_type.id_data.name
+    frame = bpy.context.scene.frame_current
+    identifier = self.blendernc_dataset_identifier
     if self.day and self.month and self.year:
         self.selected_time = return_date(self.day, self.month, self.year)
+        refresh_cache(NodeTree, identifier, context.scene.frame_current)
         update_value_and_node_tree(self, context)
+        
     elif self.step:
         self.selected_time = self.step
+        refresh_cache(NodeTree, identifier, context.scene.frame_current)
         update_value_and_node_tree(self, context)
-
+        
+        
 def return_date(day,month,year,hour=''):
     return "%d-%02d-%02d" % (int(year),int(month),int(day))  #"{2}-{1:02s}-{0:02s}".format(day,month,year)
 

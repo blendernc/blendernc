@@ -36,7 +36,7 @@ class BlenderNC_NT_output(bpy.types.Node):
         default = -1,
     )
 
-    step: bpy.props.IntProperty(
+    frame: bpy.props.IntProperty(
         default = 1,
     )
 
@@ -77,15 +77,11 @@ class BlenderNC_NT_output(bpy.types.Node):
 
         if self.image and self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             layout.prop(self, "update_on_frame_change")
-            operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            operator.node = self.name
-            operator.node_group = self.rna_type.id_data.name
-            operator.step = self.step
-            operator.image = self.image.name
-
-            # Hide unused sockets
-            if not self.update_on_frame_change:
-                layout.prop(self, "step")
+            # operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
+            # operator.node = self.name
+            # operator.node_group = self.rna_type.id_data.name
+            # operator.frame = self.frame
+            # operator.image = self.image.name
             
             operator = layout.operator("blendernc.colorbar", icon='GROUP_VCOL')
             operator.node = self.name

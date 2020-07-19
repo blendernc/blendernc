@@ -75,7 +75,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
             return self.blendernc_file.split("/")[-1]
 
     @NodesDecorators.node_connections
-    def update(self):                    
+    def update(self):
         identifier = self.blendernc_dataset_identifier
         blendernc_dict = self.blendernc_dict[identifier]
         updated_dataset = blendernc_dict['Dataset'][self.blendernc_netcdf_vars].to_dataset()

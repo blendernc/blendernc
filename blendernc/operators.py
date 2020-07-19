@@ -213,12 +213,12 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
     bl_description = "Updates an image with netcdf data"
     node: bpy.props.StringProperty()
     node_group: bpy.props.StringProperty()
-    step: bpy.props.IntProperty()
+    frame: bpy.props.IntProperty()
     flip: bpy.props.BoolProperty()
     image: bpy.props.StringProperty()
 
     def execute(self, context):
-        update_image(context, self.node, self.node_group, self.step, self.image)
+        update_image(context, self.node, self.node_group, self.frame, self.image)
         return {'FINISHED'}
 
 class BlenderNC_OT_colorbar(bpy.types.Operator):

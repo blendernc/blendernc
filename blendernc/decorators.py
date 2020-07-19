@@ -153,8 +153,14 @@ class NodesDecorators(object):
 
     @classmethod
     def select_var_dataset(cls,node):
-        if node.blendernc_netcdf_vars != '' :
-            return True
+        if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
+            node.blendernc_file = node.inputs[0].links[0].from_socket.text
+            bpy.ops.blendernc.ncload(file_path = node.blendernc_file, 
+                                        node_group = node.rna_type.id_data.name, 
+                                        node = node.name)
+            return False
+        elif node.blendernc_netcdf_vars != '' :
+            return True            
         else:
             bpy.ops.blendernc.ncload(file_path = node.blendernc_file, 
                                         node_group = node.rna_type.id_data.name, 
@@ -164,9 +170,8 @@ class NodesDecorators(object):
     @staticmethod
     def get_blendernc_file(node):
         #TODO disconnect if not connected to proper node.
-        node.blendernc_file=node.inputs[0].links[0].from_socket.text
-        if not node.blendernc_file:
-            node.blendernc_file=node.inputs[0].links[0].from_node.blendernc_file
+        if not node.inputs[0].links[0].from_socket.text:
+            node.blendernc_file = node.inputs[0].links[0].from_node.blendernc_file
         
     @staticmethod
     def output_connections(node):

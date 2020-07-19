@@ -257,7 +257,7 @@ def get_var_data(context, node, node_tree):
     # Get the data of the selected variable
     return ncdata[var_name]
 
-def get_time(context, node, node_tree,step):
+def get_time(context, node, node_tree,frame):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
     data_dictionary = node.blendernc_dict
@@ -267,10 +267,10 @@ def get_time(context, node, node_tree,step):
     # Get the data of the selected variable
     if 'time' in ncdata.coords.keys():
         time = ncdata['time']
-        if step > len(time):
+        if frame > time.size:
             return time[-1].values
         else:
-            return time[step].values
+            return time[frame].values
     else:
         return ''
 
@@ -316,7 +316,7 @@ def load_frame(context, node, node_tree, frame):
     var_dict[frame] =  from_data_to_pixel_value(normalized_data)
 
 
-def update_image(context, node, node_tree, step, image):
+def update_image(context, node, node_tree, frame, image):
     if not image:
         return False
     # Leave next line here, if move to the end it will crash blender. 
@@ -324,7 +324,7 @@ def update_image(context, node, node_tree, step, image):
     timer = Timer()
 
     # timer.tick('Update time')
-    update_datetime_text(context, node, node_tree, step)
+    update_datetime_text(context, node, node_tree, frame)
     # timer.tick('Update time')
     node_ = bpy.data.node_groups[node_tree].nodes[node]
     unique_identifier = node_.blendernc_dataset_identifier
@@ -333,6 +333,7 @@ def update_image(context, node, node_tree, step, image):
     timer.tick('Variable load')
     # Get the data of the selected variable
     var_data = get_var_data(context, node, node_tree)
+    
     timer.tick('Variable load')
     # Get object shape
     if len(var_data.shape) == 2:
@@ -363,22 +364,22 @@ def update_image(context, node, node_tree, step, image):
     try:
         # TODO:Use time coordinate, not index.
         # IF timestep is larger, use the last time value
-        if step >= var_data.shape[0]:
-            step = var_data.shape[0]-1
-        pixels_cache=scene.nc_cache[node_tree][unique_identifier][step]
+        if frame >= var_data.shape[0]:
+            frame = var_data.shape[0]-1
+        pixels_cache=scene.nc_cache[node_tree][unique_identifier][frame]
         # If the size of the cache data does not match the size of the image multiplied by the 4 channels (RGBA)
         # we need to reload the data.
         if pixels_cache.size != 4 * img_x*img_y:
             raise ValueError("Size of image doesn't match")
     except (KeyError, ValueError):
         # TODO:Use time coordinate, not index.
-        if step >= var_data.shape[0]: 
-            step = var_data.shape[0]-1
-        load_frame(context, node, node_tree, step)
+        if frame >= var_data.shape[0]: 
+            frame = var_data.shape[0]-1
+        load_frame(context, node, node_tree, frame)
     timer.tick('Load Frame')
         
     # In case data has been pre-loaded
-    pixels_value = scene.nc_cache[node_tree][unique_identifier][step]
+    pixels_value = scene.nc_cache[node_tree][unique_identifier][frame]
     timer.tick('Assign to pixel')
     # TODO: Test version, make it copatible with 2.8 forwards
     image.pixels.foreach_set(pixels_value)
@@ -390,14 +391,14 @@ def update_image(context, node, node_tree, step, image):
     purge_cache(node_tree, unique_identifier)
     return True
 
-def update_datetime_text(context,node, node_tree, step, time_text='',decode=False):
+def update_datetime_text(context,node, node_tree, frame, time_text='',decode=False):
     """
     Update text object with time.
 
-    If text is provided, step is ignored. 
+    If text is provided, frame is ignored. 
     """
     if not time_text:
-        time = str(get_time(context, node, node_tree, step))[:10]
+        time = str(get_time(context, node, node_tree, frame))[:10]
     else: 
         time = time_text
     #TODO allow user to define format.
