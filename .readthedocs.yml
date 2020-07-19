@@ -1,11 +1,11 @@
 build:
     image: latest
-conda:
-    file: docs/environment.yml
 python:
     version: 3.7
     setup_py_install: true
     install:
       - method: pip
         path: sphinxcontrib.yt
+conda:
+    file: docs/environment.yml
 formats: []
