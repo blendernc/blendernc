@@ -87,6 +87,12 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.node = self.name
             operator.node_group = self.rna_type.id_data.name
             operator.image = self.image.name
+        
+        if 'Input Grid' in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 1:
+            self.inputs.new('bNCnetcdfSocket',"Grid")
+        elif 'Input Grid' not in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 2:
+            self.inputs.remove(self.inputs.get("Grid"))
+        
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):

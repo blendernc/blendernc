@@ -24,6 +24,7 @@ from blendernc.blendernc.nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_ne
 from blendernc.blendernc.nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
+from blendernc.blendernc.nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
@@ -57,6 +58,7 @@ classes = [
     BlenderNC_NT_range,
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
+    BlenderNC_NT_input_grid,
     BlenderNC_NT_select_axis,
     BlenderNC_NT_select_time,
     BlenderNC_NT_drop_dims,

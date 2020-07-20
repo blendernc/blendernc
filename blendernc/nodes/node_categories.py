@@ -16,6 +16,7 @@ node_categories = [
     ]),
     BlenderNCNodeCategory('Grid', "Grid", items=[
         # Grid operations
+        NodeItem("netCDFinputgrid"),
         NodeItem("netCDFResolution"),
         NodeItem("netCDFrotatelon"),
     ]),
