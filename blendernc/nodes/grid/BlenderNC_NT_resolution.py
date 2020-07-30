@@ -69,3 +69,4 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
         var_name = self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['selected_var_name']
         self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = netcdf_values(dataset,var_name,self.blendernc_resolution)
+        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['resolution'] = self.blendernc_resolution

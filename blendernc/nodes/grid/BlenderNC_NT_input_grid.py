@@ -1,9 +1,20 @@
 # Imports
 import bpy
 
+from blendernc.blendernc.python_functions import get_new_identifier, get_var
+
 from blendernc.blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
+
+def get_possible_grid(node, context):
+    ncfile = node.persistent_dict
+    if not ncfile or 'Dataset' not in node.persistent_dict.keys():
+        return []
+    ncdata = node.persistent_dict["Dataset"]
+    items = get_var(ncdata)
+    return items
+
 
 class BlenderNC_NT_input_grid(bpy.types.Node):
     # === Basics ===
@@ -20,13 +31,13 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     blendernc_file: bpy.props.StringProperty()
     
     blendernc_grid_x: bpy.props.EnumProperty(
-        items=[],
+        items=get_possible_grid,
         name="Select X grid",
         #update=dict_update,
     )
 
     blendernc_grid_y: bpy.props.EnumProperty(
-        items=[],
+        items=get_possible_grid,
         name="Select Y grid",
         #update=dict_update,
     )
@@ -34,6 +45,8 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
     blendernc_dict = defaultdict(None)
+    #Deep copy of blender dict to extract variables.
+    persistent_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -43,6 +56,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     def init(self, context):
         self.inputs.new('bNCstringSocket',"Path")
         self.outputs.new('bNCnetcdfSocket',"Grid")
+        self.blendernc_dataset_identifier = get_new_identifier(self)+'_g'
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -74,8 +88,12 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
 
     @NodesDecorators.node_connections
     def update(self):
-        #####################
-        # OPERATION HERE!!! #
-        #####################
-        pass
+        if self.persistent_dict!='':
+            self.persistent_dict = self.blendernc_dict.copy()
+        
+        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
+        dataset = blendernc_dict['Dataset']
+        if self.blendernc_grid_x and self.blendernc_grid_y:
+            blendernc_dict['Dataset'] = dataset.get([self.blendernc_grid_x,self.blendernc_grid_y])
+            blendernc_dict['Coords'] = {"X": self.blendernc_grid_x, "Y":self.blendernc_grid_y}
         

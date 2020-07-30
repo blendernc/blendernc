@@ -90,11 +90,14 @@ class NodesDecorators(object):
         """
         inputs = node.inputs[0]
         inputs_links = inputs.links[0]
-        if  node.bl_idname== 'netCDFPath':
-            pass
-        elif inputs_links.from_node.bl_idname == 'netCDFPath':
+        if node.bl_idname== 'netCDFPath':
+            return True
+        elif inputs_links.from_node.bl_idname == 'netCDFPath' and node.bl_idname == 'netCDFNode':
             cls.get_blendernc_file(node)
             return cls.select_var_dataset(node)
+        elif inputs_links.from_node.bl_idname == 'netCDFPath' and node.bl_idname == 'netCDFinputgrid':
+            cls.get_blendernc_file(node)
+            return cls.select_grid_dataset(node)
         elif inputs_links.from_node.bl_idname == 'netCDFNode':
             # Copy from socket! Note that this socket is shared in memory at \
             # any point in the nodetree.
@@ -154,7 +157,6 @@ class NodesDecorators(object):
     @classmethod
     def select_var_dataset(cls,node):
         if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
-            node.blendernc_file = node.inputs[0].links[0].from_socket.text
             bpy.ops.blendernc.ncload(file_path = node.blendernc_file, 
                                         node_group = node.rna_type.id_data.name, 
                                         node = node.name)
@@ -166,11 +168,33 @@ class NodesDecorators(object):
                                         node_group = node.rna_type.id_data.name, 
                                         node = node.name)
             return False
+
+    @classmethod
+    def select_grid_dataset(cls,node):
+        identifier = node.blendernc_dataset_identifier
+        if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
+            node.blendernc_file = node.inputs[0].links[0].from_socket.text
+            bpy.ops.blendernc.ncload(file_path = node.blendernc_file, 
+                                        node_group = node.rna_type.id_data.name, 
+                                        node = node.name)
+            # Duplicate  variables to extract variables
+            node.persistent_dict['Dataset'] = node.blendernc_dict[identifier]['Dataset'].copy()
+            return False
+        elif node.blendernc_grid_x != '' and node.blendernc_grid_y !='':
+            return True            
+        else:
+            bpy.ops.blendernc.ncload(file_path = node.blendernc_file, 
+                                        node_group = node.rna_type.id_data.name, 
+                                        node = node.name)
+            # Duplicate  variables to extract variables
+            node.persistent_dict['Dataset'] = node.blendernc_dict[identifier]['Dataset'].copy()
+            return False
     
     @staticmethod
     def get_blendernc_file(node):
         #TODO disconnect if not connected to proper node.
-        if not node.inputs[0].links[0].from_socket.text:
+        node.blendernc_file = node.inputs[0].links[0].from_socket.text
+        if not node.blendernc_file:
             node.blendernc_file = node.inputs[0].links[0].from_node.blendernc_file
         
     @staticmethod

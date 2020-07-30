@@ -25,7 +25,7 @@ def update_all_images(scene):
             continue
 
         frame = scene.frame_current
-        node.frame = frame
+        #node.frame = frame
 
         if frame == node.frame_loaded:
             continue
