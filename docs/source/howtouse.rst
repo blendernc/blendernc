@@ -2,65 +2,22 @@
 How to use BlenderNC
 ====================
 
-Beginner mode!
-##############
+BlenderNC has been developed with the goal to simplify the initial steps for a 
+first time Blender user. If you have never used Blender, please watch the 
+recommended videos, then follow the beginner mode tutorial. Otherwise, let's 
+jump into it with the PRO mode.
 
-.. raw:: html
+.. toctree::
+   :maxdepth: 2
 
-    <style> 
-        .red {color:red}
-        .purple {color:purple}
-        .green {color:green}
-        .orange {color:orange}
-        .teal {color:teal}
-    </style>
+   beginner_mode
+   pro_mode
 
 
-.. role:: red
+.. note::
+  We strongly recommend to follow the watch the first couple of videos from Blender Support.
 
-.. role:: purple
-
-.. role:: green
-
-.. role:: orange
-
-.. role:: teal
-
-Open Blender (>2.83), in the 3D view open the :red:`sidebar` by pressing "n".
-
-.. image:: ../images/right_panel.png
-  :width: 100%
-  :alt: BlenderNC panel
-
-Switch to the :purple:`BlenderNC panel`.
-
-.. image:: ../images/blendernc_ui.png
-  :width: 100%
-  :alt: BlenderNC panel
-
-Within the :purple:`BlenderNC panel` click on `Load netCDF`, then select a 
-netCDF by clicking the :green:`folder icon`.
-
-.. image:: ../images/blendernc_panel.png
-  :width: 30%
-  :alt: BlenderNC panel
-
-:teal:`Select a variable` and the :teal:`resolution` to load. 
-
-.. image:: ../images/variable_panel.png
-  :width: 30%
-  :alt: BlenderNC panel
-
-Finally, select an object and apply the material by clicking 
-:orange:`Apply Material`.
-
-.. image:: ../images/apply_material_panel.png
-  :width: 30%
-  :alt: BlenderNC panel
-
-
-.. note:: The material will be applied to the selected object.
-
-
-PRO mode!
-#########
+  .. toctree::
+    :maxdepth: 2
+    
+    extra/blender_support_videos

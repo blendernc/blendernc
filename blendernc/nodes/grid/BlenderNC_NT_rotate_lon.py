@@ -1,9 +1,13 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import rotatelon_update
+from blendernc.blendernc.python_functions import  ( rotate_longitude, 
+                                                update_value_and_node_tree,
+                                                update_node_tree )
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+from blendernc.blendernc.decorators import NodesDecorators
+
+from collections import defaultdict
 
 class BlenderNC_NT_rotatelon(bpy.types.Node):
     # === Basics ===
@@ -19,11 +23,13 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
 
     blendernc_rotation: bpy.props.FloatProperty(name = 'Degrees to rotate', 
                                                 default = 0, step = 1,
-                                                update=rotatelon_update,
-                                                precision=0, options={'ANIMATABLE'})
+                                                precision=0,
+                                                update = update_value_and_node_tree
+                                                )
 
-    blendernc_netcdf_vars: bpy.props.StringProperty()
-    blendernc_file: bpy.props.StringProperty()
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -46,7 +52,6 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
         layout.prop(self, "blendernc_rotation")
 
     # Detail buttons in the sidebar.
@@ -59,27 +64,8 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     def draw_label(self):
         return "Rotate Longitude"
 
-    def update_value(self, context):
-        self.update()
-
+    @NodesDecorators.node_connections
     def update(self):
-        if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if (self.inputs[0].links[0].from_socket.var != 'NONE' 
-                and self.inputs[0].links[0].from_socket.var != ''):
-                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
-            elif (self.inputs[0].links[0].from_socket.var == 'NONE'):
-                bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
-                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-            else: 
-                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
-        else:
-            pass
-            
-        if self.outputs.items() and self.blendernc_netcdf_vars:
-            if self.outputs[0].is_linked:
-                self.outputs[0].dataset=self.blendernc_file
-                self.outputs[0].var = self.blendernc_netcdf_vars
-        else: 
-            # TODO Raise issue to user
-            pass
+        rotate_longitude(self,bpy.context)
+
+         

@@ -1,9 +1,11 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import res_update
+from blendernc.blendernc.python_functions import netcdf_values, update_value_and_node_tree
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+from blendernc.blendernc.decorators import NodesDecorators
+
+from collections import defaultdict
 
 class BlenderNC_NT_resolution(bpy.types.Node):
     # === Basics ===
@@ -20,11 +22,12 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     blendernc_resolution: bpy.props.FloatProperty(name = 'Resolution', 
                                                 min = 1, max = 100, 
                                                 default = 50, step =100,
-                                                update=res_update,
+                                                update=update_value_and_node_tree,
                                                 precision=0, options={'ANIMATABLE'})
 
-    blendernc_netcdf_vars: bpy.props.StringProperty()
-    blendernc_file: bpy.props.StringProperty()
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -43,11 +46,12 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
+        if self.blendernc_dataset_identifier!='':
+            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
         layout.prop(self, "blendernc_resolution")
 
     # Detail buttons in the sidebar.
@@ -60,29 +64,9 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     def draw_label(self):
         return "Resolution"
 
-    def update_value(self, context):
-        self.update()
-
+    @NodesDecorators.node_connections
     def update(self):
-        if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if (self.inputs[0].links[0].from_socket.var != 'NONE' 
-                and self.inputs[0].links[0].from_socket.var != ''):
-                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
-                bpy.context.scene.nc_dictionary[self.blendernc_file][self.blendernc_netcdf_vars]['resolution'] = self.blendernc_resolution
-                #bpy.ops.blendernc.ncload(file_path = self.inputs[0].links[0].from_node.blendernc_file)
-            elif (self.inputs[0].links[0].from_socket.var == 'NONE'):
-                bpy.context.window_manager.popup_menu(unselected_nc_var, title="Error", icon='ERROR')
-                self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
-            else: 
-                bpy.context.window_manager.popup_menu(unselected_nc_file, title="Error", icon='ERROR')
-        else:
-            pass
-            
-        if self.outputs.items() and self.blendernc_netcdf_vars:
-            if self.outputs[0].is_linked:
-                self.outputs[0].dataset=self.blendernc_file
-                self.outputs[0].var = self.blendernc_netcdf_vars
-        else: 
-            # TODO Raise issue to user
-            pass
+        dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
+        var_name = self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['selected_var_name']
+        self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = netcdf_values(dataset,var_name,self.blendernc_resolution)
+        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['resolution'] = self.blendernc_resolution

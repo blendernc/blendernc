@@ -1,7 +1,13 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import step_update
+from blendernc.blendernc.python_functions import  update_image, update_value, update_colormap_interface
+
+from blendernc.blendernc.decorators import NodesDecorators
+
+from blendernc.blendernc.image import dataset_2_image_preview
+
+from collections import defaultdict
 
 class BlenderNC_NT_output(bpy.types.Node):
     # === Basics ===
@@ -23,19 +29,24 @@ class BlenderNC_NT_output(bpy.types.Node):
     image: bpy.props.PointerProperty(
         type = bpy.types.Image,
         name = "",
-        update = step_update,
+        update=update_value,
     )
 
     frame_loaded: bpy.props.IntProperty(
         default = -1,
     )
 
-    step: bpy.props.IntProperty(
-        update = step_update,
+    frame: bpy.props.IntProperty(
+        default = 1,
     )
 
-    blendernc_netcdf_vars: bpy.props.StringProperty()
-    blendernc_file: bpy.props.StringProperty()
+    grid_node_name: bpy.props.StringProperty()
+
+    
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
+
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
@@ -53,28 +64,38 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
+        if self.blendernc_dataset_identifier!='':
+            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
-
-        layout.template_ID(self, "image", new="image.new", open="image.open")
-
+        # Generated image supported by bpy to display, but perhaps show a preview of field?
+        layout.template_ID_preview(self, "image", new="image.new", open="image.open",rows=2, cols=3)
         if self.image:
-            layout.prop(self, "update_on_frame_change")
-            op = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            op.file_name = self.blendernc_file
-            op.var_name = self.blendernc_netcdf_vars
-            op.step = self.step
-            op.image = self.image.name
+            if self.image.is_float and (not self.image.preview.is_image_custom and
+                self.blendernc_dataset_identifier in self.blendernc_dict.keys()):
+                image_preview = dataset_2_image_preview(self)
+                self.image.preview.image_pixels_float[0:] = image_preview
 
-        # Hide unused sockets
-        if not self.update_on_frame_change:
-            layout.prop(self, "step")
-        else:
-            layout.label(text="%i" % scene.frame_current)
-  
+        if self.image and self.blendernc_dataset_identifier in self.blendernc_dict.keys():
+            layout.prop(self, "update_on_frame_change")
+            # operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
+            # operator.node = self.name
+            # operator.node_group = self.rna_type.id_data.name
+            # operator.frame = self.frame
+            # operator.image = self.image.name
+            
+            operator = layout.operator("blendernc.colorbar", icon='GROUP_VCOL')
+            operator.node = self.name
+            operator.node_group = self.rna_type.id_data.name
+            operator.image = self.image.name
+        
+        if 'Input Grid' in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 1:
+            self.inputs.new('bNCnetcdfSocket',"Grid")
+        elif 'Input Grid' not in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 2:
+            self.inputs.remove(self.inputs.get("Grid"))
+        
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -85,11 +106,15 @@ class BlenderNC_NT_output(bpy.types.Node):
     def draw_label(self):
         return "Image Output"
 
-    def update_value(self, context):
-        self.update()
-
+    @NodesDecorators.node_connections
     def update(self):
-        if bool(self.inputs[0].is_linked and self.inputs[0].links):
-            if self.inputs[0].links[0].from_socket.var != 'NONE':
-                self.blendernc_netcdf_vars = self.inputs[0].links[0].from_socket.var 
-                self.blendernc_file = self.inputs[0].links[0].from_socket.dataset
+        node_tree = self.rna_type.id_data.name
+        # TODO Move this section to the decorator.
+        if len(self.inputs)==2:
+            if self.inputs[1].is_linked and self.inputs[1].links:
+                self.grid_node_name = self.inputs[1].links[0].from_node.name
+
+        if self.image:
+            update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name, self.grid_node_name)
+            if self.image.users >=3 :
+                update_colormap_interface(bpy.context, self.name, node_tree)

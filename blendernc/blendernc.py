@@ -10,7 +10,7 @@ from blendernc.blendernc.panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT
 from blendernc.blendernc.operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
                         BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
                         BlenderNC_OT_apply_material, ImportnetCDFCollection,\
-                        Import_OT_mfnetCDF
+                        Import_OT_mfnetCDF, BlenderNC_OT_compute_range, BlenderNC_OT_colorbar
                         
 
 # from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
@@ -21,23 +21,31 @@ from . nodes.node_categories import node_categories
 
 from blendernc.blendernc.nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
 from blendernc.blendernc.nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
+from blendernc.blendernc.nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from blendernc.blendernc.nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
+from blendernc.blendernc.nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
-from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_dims import BlenderNC_NT_select_dims
+from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
+from blendernc.blendernc.nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 
 from blendernc.blendernc.nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
 from blendernc.blendernc.nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
+from blendernc.blendernc.nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
 from blendernc.blendernc.nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
+
+from blendernc.blendernc.nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
         
 from blendernc.blendernc.nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
                         node_tree_name
 
-from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket
+from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket, bNCfloatSocket
 
 from blendernc.blendernc.nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
+
+from . handlers import update_all_images
 
 classes = [
     # Panels
@@ -47,14 +55,20 @@ classes = [
     # Nodes
     BlenderNC_NT_path,
     BlenderNC_NT_netcdf,
+    BlenderNC_NT_range,
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
+    BlenderNC_NT_input_grid,
     BlenderNC_NT_select_axis,
-    BlenderNC_NT_select_dims,
+    BlenderNC_NT_select_time,
+    BlenderNC_NT_drop_dims,
+    BlenderNC_NT_math,
     BlenderNC_NT_transpose,
     BlenderNC_NT_derivatives,
     BlenderNC_NT_preloader,
     BlenderNC_NT_output,
+    # Nodes shortcuts
+    BlenderNC_NT_basic_nodes,
     # Shader Nodes 
     BLENDERNC_CMAPS_NT_node,
     # Operators: files
@@ -67,52 +81,16 @@ classes = [
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
+    BlenderNC_OT_compute_range,
+    BlenderNC_OT_colorbar,
     # Sockets
     bNCnetcdfSocket,
     bNCstringSocket,
+    bNCfloatSocket,
 ]
 
 if create_new_node_tree:
     classes.append(BlenderNCNodeTree)
-from bpy.app.handlers import persistent
-
-
-@persistent
-def update_all_images(scene):
-    print("Update images operator called at frame: %i" % bpy.context.scene.frame_current)
-
-    nodes = []
-    if create_new_node_tree:
-        node_trees = [ii for ii in bpy.data.node_groups if ii.bl_idname == "BlenderNC"]
-    else:
-        materials = bpy.data.materials
-        node_trees = [material.node_tree for material in materials]
-
-    # Find all nodes
-    for nt in node_trees:
-        for node in nt.nodes:
-            nodes.append(node)
-
-    op = bpy.ops.BlenderNC.nc2img
-    for node in nodes:
-        if not node.name.count("Output"):
-            continue
-        if not node.update_on_frame_change:
-            continue
-
-        step = scene.frame_current
-        node.step = step
-        print(step, node.frame_loaded)
-        if step == node.frame_loaded:
-            continue
-        file_name = node.blendernc_file
-        var_name = node.blendernc_netcdf_vars
-        #flip = node.flip
-        image = node.image.name
-        op(file_name=file_name, var_name=var_name, step=step, image=image)
-        node.frame_loaded = step
-        print("Var %s from file %s has been updated!" % (var_name, file_name))
-
 
 handlers = bpy.app.handlers
 
@@ -120,7 +98,7 @@ handlers = bpy.app.handlers
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
 
-    bpy.types.Scene.nc_dictionary = defaultdict(None)
+    #bpy.types.Scene.nc_dictionary = defaultdict(None)
     bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
@@ -134,7 +112,7 @@ def registerBlenderNC():
 
 
 def unregisterBlenderNC():
-    del bpy.types.Scene.nc_dictionary
+    #del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
     del bpy.types.Scene.nc_cache
 

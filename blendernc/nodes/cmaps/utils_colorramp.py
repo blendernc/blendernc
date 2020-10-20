@@ -6,6 +6,10 @@ NODE_TYPE =  'ShaderNodeValToRGB'
 def divide_cmap(n,step):
     return (n-1)*(1/(step-1)),int((n-1)*(256//(step-1)))
 
+def update_fill_value(node,context):
+    colorramp = node.node_tree.nodes.get('Color_Ramp.000').color_ramp
+    colorramp.elements[0].color = node.fv_color
+
 class ColorRamp(object):
     def __init__(self):
         self.cmaps = self.installed_cmaps()
@@ -58,8 +62,6 @@ class ColorRamp(object):
         
         #self.get_valid_evaluate_function(node.name)
         self.color_ramp=color_ramp
-
-        print(selected_cmap,cmap_steps)
 
         cmap_steps = cmap_steps
         s_cmap,maps = selected_cmap

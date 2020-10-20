@@ -1,6 +1,6 @@
 import bpy
 
-from . utils_colorramp import ColorRamp
+from . utils_colorramp import ColorRamp, update_fill_value
 
 node_group_name = ".Colormaps"
 
@@ -90,24 +90,20 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         max=16,
         update=update_colorramp,
     )
-    
-    vmin: bpy.props.FloatProperty(
-         default=0,
-         name="vmin",
-         update=update_colorramp,
-    )
-
-    vmax: bpy.props.FloatProperty(
-        default=1,
-        name="vmax",
-        update=update_colorramp,
-    )
 
     fcmap: bpy.props.BoolProperty(
         default=False,
         name="Flip cmap",
         update=update_colorramp,
     )
+
+    fv_color : bpy.props.FloatVectorProperty(name="Fill value color", 
+                                        min = 0.0,
+                                        max = 1.0,
+                                        size = 4,
+                                        subtype='COLOR', 
+                                        default=[0.0,0.0,0.0,1.0],
+                                        update =  update_fill_value)
 
     # Setup the node - setup the node tree and add the group Input and Output nodes
     def init(self, context):
@@ -139,10 +135,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         else:
             tnode = self.node_tree.nodes[self._get_name('Color_Ramp')]
         layout.template_color_ramp(tnode, "color_ramp", expand=True)
-
-        row=layout.row()
-        row.prop(self, "vmin")
-        row.prop(self, "vmax")
+        layout.prop(self, "fv_color")
 
     # Copy
     def copy(self, node):
