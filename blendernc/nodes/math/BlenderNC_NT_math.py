@@ -8,16 +8,19 @@ from blendernc.blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
+
+
 operation_items = [
     ("Multiply", "Multiply", "", 1),
     ("Divide", "Divide", "", 2),
     ("Add", "Add", "", 3),
     ("Subtract", "Subtract", "", 4),
     ("Logarithm", "Log", "", 5),
+    ("SymLog", "SymLog", "", 6),
 ]
 
 operation_types = {
-    'float':('Multiply','Divide'), 
+    'float':('Multiply','Divide','SymLog'), 
     'unique': ('Logarithm'),
     'dataset': ('Add','Subtract'),
     }
@@ -73,8 +76,8 @@ class BlenderNC_NT_math(bpy.types.Node):
             self.inputs.new('bNCfloatSocket',"Float")
         elif operation in operation_types['unique'] and 'Float' in self.inputs.keys() :
             if len(self.inputs.keys())==2:
-                self.inputs.remove(self.inputs[-1])
-            self.inputs.remove(self.inputs.get('Float'))
+                # self.inputs.remove(self.inputs[-1])
+                self.inputs.remove(self.inputs.get('Float'))
         elif operation in operation_types['unique'] and 'Float' not in self.inputs.keys() :
             if len(self.inputs.keys())==2:
                 self.inputs.remove(self.inputs[-1])
@@ -115,6 +118,9 @@ class BlenderNC_NT_math(bpy.types.Node):
                 dataset = dataset-self.inputs[-1].links[0].from_node.blendernc_dict
         elif self.blendernc_operation == 'Logarithm':
             dataset = np.log10(dataset)
+        elif self.blendernc_operation == 'SymLog':
+            constant = self.inputs.get('Float').Float
+            dataset = np.log10( 1 + np.abs(dataset)/constant ) * np.sign(dataset)
         # print(dataset.isel(latitude=0).isel(time=0).values)
         self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = dataset
 
@@ -123,3 +129,5 @@ class BlenderNC_NT_math(bpy.types.Node):
         identifier = self.blendernc_dataset_identifier
         refresh_cache(NodeTree, identifier, frame)
         update_node_tree(self,bpy.context)
+
+

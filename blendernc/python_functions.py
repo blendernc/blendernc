@@ -157,13 +157,13 @@ def update_range(node,context):
 
 def dataarray_random_sampling(dataarray,n):
     values=np.zeros(n)*np.nan
-    dataarray_coords = [coord for coord in dataarray.coords]
+    dataarray_dims = [dim for dim in dataarray.dims]
     counter=0
     while not np.isfinite(values).all():
-        coord_dict = {dataarray_coords[ii]:np.random.randint(0,
-                                len(dataarray[dataarray_coords[ii]])) 
-                                for ii in range(len(dataarray_coords))}
-        values[counter] = dataarray.isel(coord_dict).values
+        dims_dict = {dataarray_dims[ii]:np.random.randint(0,
+                                len(dataarray[dataarray_dims[ii]])) 
+                                for ii in range(len(dataarray_dims))}
+        values[counter] = dataarray.isel(dims_dict).values
         if np.isfinite(values[counter]):
             counter+=1
     return values
@@ -174,7 +174,7 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 300:
+    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 50:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
         bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
 
@@ -254,7 +254,10 @@ def get_var_data(context, node, node_tree):
     # Get var name
     var_name = data_dictionary[unique_identifier]["selected_var"]['selected_var_name']
     # Get the data of the selected variable
-    return ncdata[var_name]
+    # Remove Nans
+    # TODO: Add node to preserve NANs
+    data = ncdata[var_name].where(np.isfinite(ncdata[var_name]),0)
+    return data
 
 def normalize_data_w_grid(node, node_tree, data,  grid_node):
     node = bpy.data.node_groups[node_tree].nodes[node]
@@ -661,12 +664,12 @@ def netcdf_values(dataset,selected_variable,active_resolution):
     variable = dataset[selected_variable]
     max_shape = max(variable.shape)
 
-    if variable.coords:
+    if variable.dims: 
         dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
-                for ii in variable.coords if 'time' not in ii}
-    elif variable.dims: 
+                for ii in variable.dims if ('time' not in ii and 't' != ii)}
+    elif variable.coords:
         dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
-                for ii in variable.dims if 'time' not in ii}
+                for ii in variable.coords if ('time' not in ii and 't' != ii)}
     variable_res = variable.isel(dict_var_shape).to_dataset()
     return variable_res
     
