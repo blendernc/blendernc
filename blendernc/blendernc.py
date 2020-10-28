@@ -4,10 +4,10 @@ from collections import defaultdict
 
 import nodeitems_utils
 
-from blendernc.blendernc.panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
+from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
                      BlenderNC_LOAD_OT_Off
 
-from blendernc.blendernc.operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
+from . operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
                         BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
                         BlenderNC_OT_apply_material, ImportnetCDFCollection,\
                         Import_OT_mfnetCDF, BlenderNC_OT_compute_range, BlenderNC_OT_colorbar
@@ -19,31 +19,30 @@ from blendernc.blendernc.operators import BlenderNC_OT_ncload, BlenderNC_OT_nclo
 
 from . nodes.node_categories import node_categories
 
-from blendernc.blendernc.nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
-from blendernc.blendernc.nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
-from blendernc.blendernc.nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
-from blendernc.blendernc.nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
-from blendernc.blendernc.nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
-from blendernc.blendernc.nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
-from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
-from blendernc.blendernc.nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
-from blendernc.blendernc.nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
+from . nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
+from . nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
+from . nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
+from . nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
+from . nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
+from . nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
+from . nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
+from . nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 
-from blendernc.blendernc.nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
-from blendernc.blendernc.nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
-from blendernc.blendernc.nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
+from . nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
+from . nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
+from . nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 
-from blendernc.blendernc.nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
-from blendernc.blendernc.nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
+from . nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
+from . nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
 
-from blendernc.blendernc.nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
+from . nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
         
-from blendernc.blendernc.nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
+from . nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
                         node_tree_name
 
-from blendernc.blendernc.sockets import bNCnetcdfSocket,bNCstringSocket, bNCfloatSocket
+from . sockets import bNCnetcdfSocket,bNCstringSocket, bNCfloatSocket
 
-from blendernc.blendernc.nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
+from . nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
 
 from . handlers import update_all_images
 

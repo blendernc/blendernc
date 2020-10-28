@@ -9,7 +9,7 @@ import bpy
 import numpy as np
 from os.path import basename
 
-from .msg_errors import huge_image, drop_dim
+from . msg_errors import huge_image, drop_dim
 
 from . image import normalize_data, from_data_to_pixel_value
 

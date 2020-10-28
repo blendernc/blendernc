@@ -83,3 +83,36 @@ Then link all the packages from your python environment folder:
 .. code-block:: bash
 
     ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
+
+Install Addon
+#############
+
+The addon is installed just like any other Blender addon:
+
+
+* Download the open-source addon from the `GitHub <https://github.com/blendernc/blendernc>`_, or download the `current version zip <https://github.com/blendernc/blendernc/archive/master.zip>`_ (do not unzip it!).
+
+* In Blender go to the user preferences and open the **Addons** tab.
+
+* Once there, click **Install add-on from file** (bottom right corner)
+
+* Navigate to the downloaded zip, select it, and click in install.
+
+* Finally, check the box next to `BlenderNC` is enable.
+
+
+.. image:: ../images/addon_settings.png
+  :width: 80%
+  :alt: Install Addon
+
+Now you can follow the tutorials to import netCDFs into blender. 
+
+.. note::
+    BlenderNC is only supported by versions of **Blender > 2.8**.
+
+Update BlenderNC
+----------------
+
+It is recommended to uninstall the old version first, before installing the new version of `BlenderNC`. Alternatively, 
+enable the "Overwrite" option in Blender (enabled by default), before you navegate to the new addon zip file using the Blender's 
+file explorer. Finally, restart Blender once the new version is installed.
