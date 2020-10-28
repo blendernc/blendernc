@@ -1,7 +1,7 @@
 import bpy
 from bpy.app.handlers import persistent
 
-from blendernc.blendernc.nodes.node_tree import create_new_node_tree
+from . nodes.node_tree import create_new_node_tree
 
 @persistent
 def update_all_images(scene):

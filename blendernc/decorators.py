@@ -2,7 +2,7 @@ import bpy
 
 import functools
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+from . msg_errors import unselected_nc_var, unselected_nc_file
 
 class NodesDecorators(object):
 
