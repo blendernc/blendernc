@@ -4,7 +4,6 @@
 # Probably for this reason I should avoid importing bpy here...
 
 ## TODO: If netcdf file has been selected already create a copy of the TreeNode
-
 import bpy
 # Other imports
 import numpy as np
@@ -158,13 +157,13 @@ def update_range(node,context):
 
 def dataarray_random_sampling(dataarray,n):
     values=np.zeros(n)*np.nan
-    dataarray_coords = [coord for coord in dataarray.coords]
+    dataarray_dims = [dim for dim in dataarray.dims]
     counter=0
     while not np.isfinite(values).all():
-        coord_dict = {dataarray_coords[ii]:np.random.randint(0,
-                                len(dataarray[dataarray_coords[ii]])) 
-                                for ii in range(len(dataarray_coords))}
-        values[counter] = dataarray.isel(coord_dict).values
+        dims_dict = {dataarray_dims[ii]:np.random.randint(0,
+                                len(dataarray[dataarray_dims[ii]])) 
+                                for ii in range(len(dataarray_dims))}
+        values[counter] = dataarray.isel(dims_dict).values
         if np.isfinite(values[counter]):
             counter+=1
     return values
@@ -175,7 +174,7 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 300:
+    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 50:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
         bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
 
@@ -255,8 +254,64 @@ def get_var_data(context, node, node_tree):
     # Get var name
     var_name = data_dictionary[unique_identifier]["selected_var"]['selected_var_name']
     # Get the data of the selected variable
-    return ncdata[var_name]
+    # Remove Nans
+    # TODO: Add node to preserve NANs
+    data = ncdata[var_name].where(np.isfinite(ncdata[var_name]),0)
+    return data
 
+def normalize_data_w_grid(node, node_tree, data,  grid_node):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    grid_node = bpy.data.node_groups[node_tree].nodes[grid_node]
+
+    data_dictionary = node.blendernc_dict
+    unique_identifier = node.blendernc_dataset_identifier
+
+    grid_dictionary = grid_node.blendernc_dict
+    grid_identifier = grid_node.blendernc_dataset_identifier
+
+    grid = grid_dictionary[grid_identifier]['Dataset']
+    x_grid_name =  grid_dictionary[grid_identifier]['Coords']['X']
+    y_grid_name =  grid_dictionary[grid_identifier]['Coords']['Y']
+    active_resolution = data_dictionary[unique_identifier]["selected_var"]['resolution']
+    x_grid_data = netcdf_values(grid,x_grid_name,active_resolution)[x_grid_name]
+    y_grid_data = netcdf_values(grid,y_grid_name,active_resolution)[y_grid_name]
+    
+    # Plot image using matplotlib.
+    # TODO Current implementation is not ideal, it is slow 
+    # (3s for 3600x2700 grid), but better than 
+    # interpolation.
+    # Tripolar grids will have issues 
+    # in the North Pole. 
+    vmin = data_dictionary[unique_identifier]["selected_var"]['min_value']
+    vmax = data_dictionary[unique_identifier]["selected_var"]['max_value']
+    norm_data = plot_using_grid(x_grid_data,y_grid_data,data,vmin,vmax)
+    return norm_data
+
+def plot_using_grid(x,y,data,vmin,vmax,dpi = 300):
+    #from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    import matplotlib
+    matplotlib.use('agg')
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(data.shape[1]/dpi, data.shape[0]/dpi), dpi=dpi)
+    ax = fig.add_axes((0,0,1,1))
+    if vmin and vmax:
+        image = ax.pcolormesh(x.values,y.values,data,vmin=vmin,vmax=vmax)
+    else:
+        image = ax.pcolormesh(x.values,y.values,data)
+    ax.set_ylim(-90,90)
+    fig.patch.set_visible(False)
+    plt.axis('off')
+    fig.canvas.draw()
+    image = np.fromstring(fig.canvas.tostring_rgb(), dtype='uint8')
+    new_image = (image.reshape((data.shape[0],data.shape[1],3)).sum(axis=2)/(3*255))
+    plt.close()
+    new_image[new_image==1] = new_image.min() - (0.01*new_image.min())
+    # fig = plt.figure(figsize=(data.shape[0]/dpi, data.shape[1]/dpi), dpi=dpi)
+    # ax = fig.add_axes((0,0,1,1))
+    # ax.imshow(new_image)
+    # plt.savefig('test.png')
+    return normalize_data(new_image[::-1])
+    
 def get_time(context, node, node_tree,frame):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
@@ -279,8 +334,6 @@ def get_max_min_data(context, node, node_tree):
     # Get data dictionary stored at scene object
     data_dictionary = node.blendernc_dict
     unique_identifier = node.blendernc_dataset_identifier
-    # Get the netcdf of the selected file
-    ncdata = data_dictionary[unique_identifier]["Dataset"]
     # Get the metadata of the selected variable
     var_metadata = data_dictionary[unique_identifier]["selected_var"]
     if var_metadata['max_value']!=None and var_metadata['min_value']!=None:
@@ -290,8 +343,10 @@ def get_max_min_data(context, node, node_tree):
         return var_metadata['max_value'],var_metadata['min_value']
 
 
-def load_frame(context, node, node_tree, frame):
+def load_frame(context, node, node_tree, frame, grid_node=None):
     # Find netcdf file data
+    # Get the data of the selected variable and grid
+    
     var_data = get_var_data(context, node, node_tree)
 
     # Find cache dictionary
@@ -310,13 +365,16 @@ def load_frame(context, node, node_tree, frame):
         frame_data = var_data[frame, :, :].values[:, :]
     # TODO: Test if computing vmax and vmin once improves
     # the performance. May be really usefull with 3D and 4D dataset.
-    normalized_data = normalize_data(frame_data,vmax,vmin)
+    if grid_node:
+        normalized_data = normalize_data_w_grid(node, node_tree,frame_data,grid_node)
+    else:
+        normalized_data = normalize_data(frame_data,vmax,vmin)
 
     # Store in cache
-    var_dict[frame] =  from_data_to_pixel_value(normalized_data)
+    var_dict[frame] = from_data_to_pixel_value(normalized_data)
 
 
-def update_image(context, node, node_tree, frame, image):
+def update_image(context, node, node_tree, frame, image, grid_node=None):
     if not image:
         return False
     # Leave next line here, if move to the end it will crash blender. 
@@ -329,9 +387,13 @@ def update_image(context, node, node_tree, frame, image):
     node_ = bpy.data.node_groups[node_tree].nodes[node]
     unique_identifier = node_.blendernc_dataset_identifier
     scene = context.scene
+
+    if not grid_node and len(node_.inputs)==2:
+        grid_node = node_.inputs[1].links[0].from_node.name
     
     timer.tick('Variable load')
-    # Get the data of the selected variable
+    # Get the data of the selected variable and grid
+    
     var_data = get_var_data(context, node, node_tree)
     
     timer.tick('Variable load')
@@ -375,7 +437,7 @@ def update_image(context, node, node_tree, frame, image):
         # TODO:Use time coordinate, not index.
         if frame >= var_data.shape[0]: 
             frame = var_data.shape[0]-1
-        load_frame(context, node, node_tree, frame)
+        load_frame(context, node, node_tree, frame, grid_node)
     timer.tick('Load Frame')
         
     # In case data has been pre-loaded
@@ -602,9 +664,12 @@ def netcdf_values(dataset,selected_variable,active_resolution):
     variable = dataset[selected_variable]
     max_shape = max(variable.shape)
 
-    dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
-            for ii in variable.coords if 'time' not in ii}
-    
+    if variable.dims: 
+        dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
+                for ii in variable.dims if ('time' not in ii and 't' != ii)}
+    elif variable.coords:
+        dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
+                for ii in variable.coords if ('time' not in ii and 't' != ii)}
     variable_res = variable.isel(dict_var_shape).to_dataset()
     return variable_res
     

@@ -250,6 +250,8 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         # Check if an object is selected or picked.
         if not sel_obj and act_obj:
             sel_obj = act_obj
+        elif sel_obj or act_obj:
+            pass
         else: 
             return {'FINISHED'}
 

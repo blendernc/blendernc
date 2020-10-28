@@ -57,6 +57,7 @@ classes = [
     BlenderNC_NT_range,
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
+    BlenderNC_NT_input_grid,
     BlenderNC_NT_select_axis,
     BlenderNC_NT_select_time,
     BlenderNC_NT_drop_dims,

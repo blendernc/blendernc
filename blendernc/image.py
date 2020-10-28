@@ -44,7 +44,7 @@ def image_data(node):
     steps = max(data.shape)//128
     if steps<1:
         steps=1
-    while max(data.shape)//steps > 128:
+    while max(data.shape)//steps > 128 -1 : #substract 1 so max size is 128
         steps+=1
     return data[::steps,::steps]
 

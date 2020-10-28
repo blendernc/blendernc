@@ -1,29 +1,22 @@
 # Imports
 import bpy
-
-from blendernc.blendernc.python_functions import netcdf_values, update_value_and_node_tree
+import lic
 
 from blendernc.blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
-class BlenderNC_NT_resolution(bpy.types.Node):
+class BlenderNC_NT_template(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''NetCDF loading resolution '''
+    '''Select axis '''
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFResolution'
+    bl_idname = 'netCDFtemplate'
     # Label for nice name display
-    bl_label = "Resolution"
+    bl_label = "Template"
     # Icon identifier
-    bl_icon = 'MESH_GRID'
+    bl_icon = ''
     blb_type = "NETCDF"
-
-    blendernc_resolution: bpy.props.FloatProperty(name = 'Resolution', 
-                                                min = 1, max = 100, 
-                                                default = 50, step =100,
-                                                update=update_value_and_node_tree,
-                                                precision=0, options={'ANIMATABLE'})
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
@@ -36,9 +29,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
         self.inputs.new('bNCnetcdfSocket',"Dataset")
+        self.inputs.new('bNCnetcdfSocket',"Dataset")
         self.outputs.new('bNCnetcdfSocket',"Dataset")
-        self.color = (0.4,0.4,0.8)
-        self.use_custom_color = True
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -52,8 +44,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        layout.prop(self, "blendernc_resolution")
-
+        layout.label(text="Template", icon='INFO')
+        
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -62,10 +54,16 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
     def draw_label(self):
-        return "Resolution"
+        return "Template"
 
     @NodesDecorators.node_connections
     def update(self):
+        #####################
+        # OPERATION HERE!!! #
+        #####################
+        
+        lic_result = lic.lic(x, y, length=30)
+
         dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
         var_name = self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['selected_var_name']
         self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = netcdf_values(dataset,var_name,self.blendernc_resolution)

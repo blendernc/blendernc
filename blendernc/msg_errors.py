@@ -9,6 +9,9 @@ def unselected_nc_var(self, context):
 def unselected_nc_dim(self, context):
     self.layout.label(text="Select a dimension to drop.")
 
+def unselected_nc_coord(self, context):
+    self.layout.label(text="Select a coordinate to drop.")
+
 def huge_image(self, context):
     self.layout.label(text="Image is larger than 4096x4096 pixels, reduce the resolution.")
 

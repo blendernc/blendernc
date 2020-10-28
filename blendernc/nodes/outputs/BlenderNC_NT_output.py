@@ -40,6 +40,9 @@ class BlenderNC_NT_output(bpy.types.Node):
         default = 1,
     )
 
+    grid_node_name: bpy.props.StringProperty()
+
+    
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
     blendernc_dict = defaultdict(None)
@@ -87,6 +90,12 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.node = self.name
             operator.node_group = self.rna_type.id_data.name
             operator.image = self.image.name
+        
+        if 'Input Grid' in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 1:
+            self.inputs.new('bNCnetcdfSocket',"Grid")
+        elif 'Input Grid' not in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 2:
+            self.inputs.remove(self.inputs.get("Grid"))
+        
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -100,7 +109,12 @@ class BlenderNC_NT_output(bpy.types.Node):
     @NodesDecorators.node_connections
     def update(self):
         node_tree = self.rna_type.id_data.name
+        # TODO Move this section to the decorator.
+        if len(self.inputs)==2:
+            if self.inputs[1].is_linked and self.inputs[1].links:
+                self.grid_node_name = self.inputs[1].links[0].from_node.name
+
         if self.image:
-            update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name)
+            update_image(bpy.context, self.name, node_tree, bpy.context.scene.frame_current, self.image.name, self.grid_node_name)
             if self.image.users >=3 :
                 update_colormap_interface(bpy.context, self.name, node_tree)
