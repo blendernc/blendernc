@@ -8,8 +8,6 @@ from blendernc.blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
-
-
 operation_items = [
     ("Multiply", "Multiply", "", 1),
     ("Divide", "Divide", "", 2),
@@ -17,10 +15,11 @@ operation_items = [
     ("Subtract", "Subtract", "", 4),
     ("Logarithm", "Log", "", 5),
     ("SymLog", "SymLog", "", 6),
+    ("Power", "Power", "", 7),
 ]
 
 operation_types = {
-    'float':('Multiply','Divide','SymLog'), 
+    'float':('Multiply','Divide','SymLog','Power'), 
     'unique': ('Logarithm'),
     'dataset': ('Add','Subtract'),
     }
@@ -89,7 +88,6 @@ class BlenderNC_NT_math(bpy.types.Node):
         else:
             pass
 
-
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -121,6 +119,9 @@ class BlenderNC_NT_math(bpy.types.Node):
         elif self.blendernc_operation == 'SymLog':
             constant = self.inputs.get('Float').Float
             dataset = np.log10( 1 + np.abs(dataset)/constant ) * np.sign(dataset)
+        elif self.blendernc_operation == 'Power':
+            constant = self.inputs.get('Float').Float
+            dataset = dataset**constant
         # print(dataset.isel(latitude=0).isel(time=0).values)
         self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = dataset
 

@@ -61,7 +61,7 @@ def get_var(ncdata):
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
     if "long_name" in ncdata[variables[0]].attrs:
-        var_names = [(variables[ii], variables[ii], ncdata[variables[ii]].long_name, "DISK_DRIVE", ii+1) for ii in range(len(variables))]
+        var_names = [(variables[ii], variables[ii], ncdata[variables[0]].attrs['long_name'], "DISK_DRIVE", ii+1) for ii in range(len(variables))]
     else:
         var_names = [(variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii+1) for ii in range(len(variables))]
     return var_names
@@ -174,7 +174,7 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 50:
+    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 2:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
         bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
 
@@ -256,7 +256,10 @@ def get_var_data(context, node, node_tree):
     # Get the data of the selected variable
     # Remove Nans
     # TODO: Add node to preserve NANs
-    data = ncdata[var_name].where(np.isfinite(ncdata[var_name]),0)
+    if node.keep_nan:
+        data = ncdata[var_name]
+    else:
+        data = ncdata[var_name].where(np.isfinite(ncdata[var_name]),0)
     return data
 
 def normalize_data_w_grid(node, node_tree, data,  grid_node):
@@ -269,12 +272,19 @@ def normalize_data_w_grid(node, node_tree, data,  grid_node):
     grid_dictionary = grid_node.blendernc_dict
     grid_identifier = grid_node.blendernc_dataset_identifier
 
-    grid = grid_dictionary[grid_identifier]['Dataset']
+    grid = grid_dictionary[grid_identifier]['Dataset'].copy()
     x_grid_name =  grid_dictionary[grid_identifier]['Coords']['X']
     y_grid_name =  grid_dictionary[grid_identifier]['Coords']['Y']
     active_resolution = data_dictionary[unique_identifier]["selected_var"]['resolution']
-    x_grid_data = netcdf_values(grid,x_grid_name,active_resolution)[x_grid_name]
-    y_grid_data = netcdf_values(grid,y_grid_name,active_resolution)[y_grid_name]
+    
+    # Perhaps useful instead of not converting to dataset? 
+    # if x_grid_name in list(grid.coords) or y_grid_name in list(grid.coords):
+    #     grid_x = grid.coords[x_grid_name].drop((x_grid_name,y_grid_name))
+    #     grid_y = grid.coords[y_grid_name].drop((x_grid_name,y_grid_name))
+    #     grid = xarray.merge((grid_y,grid_x))
+
+    x_grid_data = netcdf_values(grid,x_grid_name,active_resolution,False)
+    y_grid_data = netcdf_values(grid,y_grid_name,active_resolution,False)
     
     # Plot image using matplotlib.
     # TODO Current implementation is not ideal, it is slow 
@@ -322,7 +332,9 @@ def get_time(context, node, node_tree,frame):
     # Get the data of the selected variable
     if 'time' in ncdata.coords.keys():
         time = ncdata['time']
-        if frame > time.size:
+        if time.size == 1:
+            return time.values
+        elif frame > time.size:
             return time[-1].values
         else:
             return time[frame].values
@@ -658,7 +670,7 @@ def get_all_nodes_using_image(image_name):
 
     return users
         
-def netcdf_values(dataset,selected_variable,active_resolution):
+def netcdf_values(dataset,selected_variable,active_resolution,return_dataset=True):
     """
     """
     variable = dataset[selected_variable]
@@ -670,7 +682,10 @@ def netcdf_values(dataset,selected_variable,active_resolution):
     elif variable.coords:
         dict_var_shape = {ii:slice(0,variable[ii].size,resolution_steps(max_shape,active_resolution))
                 for ii in variable.coords if ('time' not in ii and 't' != ii)}
-    variable_res = variable.isel(dict_var_shape).to_dataset()
+    if return_dataset:
+        variable_res = variable.isel(dict_var_shape).to_dataset()
+    else:
+        variable_res = variable.isel(dict_var_shape)
     return variable_res
     
 
