@@ -3,3 +3,6 @@ xarray
 cmocean
 matplotlib
 dask
+scipy
+netCDF4
+toolz
