@@ -1,10 +1,10 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import get_possible_dims, get_lost_dim, update_value_and_node_tree
+from .. .. blendernc.python_functions import get_possible_dims, get_lost_dim, update_value_and_node_tree
 
-from blendernc.blendernc.decorators import NodesDecorators
-from blendernc.blendernc.msg_errors import unselected_nc_dim
+from .. .. blendernc.decorators import NodesDecorators
+from .. .. blendernc.msg_errors import unselected_nc_dim
 
 from collections import defaultdict
 

@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import (get_possible_files, get_possible_variables)
+from .. .. blendernc.python_functions import (get_possible_files, get_possible_variables)
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===

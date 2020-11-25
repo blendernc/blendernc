@@ -1,11 +1,11 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import  update_image, update_value, update_colormap_interface
+from .. .. blendernc.python_functions import  update_image, update_value, update_colormap_interface
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
-from blendernc.blendernc.image import dataset_2_image_preview
+from .. .. blendernc.image import dataset_2_image_preview
 
 from collections import defaultdict
 

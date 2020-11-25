@@ -1,9 +1,9 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import get_new_identifier, get_var
+from .. .. blendernc.python_functions import get_new_identifier, get_var
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 

@@ -2,7 +2,7 @@
 import bpy
 import lic
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 

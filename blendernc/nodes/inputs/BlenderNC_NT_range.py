@@ -1,9 +1,9 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import  update_range
+from .. .. blendernc.python_functions import  update_range
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 

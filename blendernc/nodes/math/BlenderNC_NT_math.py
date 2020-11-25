@@ -2,9 +2,9 @@
 import bpy
 import numpy as np
 
-from blendernc.blendernc.python_functions import update_value_and_node_tree, update_node_tree, refresh_cache
+from .. .. blendernc.python_functions import update_value_and_node_tree, update_node_tree, refresh_cache
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
