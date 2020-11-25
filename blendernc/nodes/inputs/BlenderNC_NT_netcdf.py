@@ -1,10 +1,10 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.python_functions import (get_new_identifier, get_possible_files, get_possible_variables,
+from .. .. blendernc.python_functions import (get_new_identifier, get_possible_files, get_possible_variables,
                                 dict_update)
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 

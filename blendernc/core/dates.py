@@ -2,7 +2,7 @@ import bpy
 import numpy as np
 from calendar import monthrange
 
-from blendernc.blendernc.python_functions import update_value_and_node_tree, refresh_cache
+from .. python_functions import update_value_and_node_tree, refresh_cache
 
 def get_items_datetimes(self,context):
     if self.inputs[0].is_linked and self.inputs[0].links:

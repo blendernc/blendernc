@@ -1,12 +1,12 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.decorators import NodesDecorators
+from .. .. blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
 
-from blendernc.blendernc.core.dates import * 
-from blendernc.blendernc.python_functions import update_datetime_text, update_value_and_node_tree
+from .. .. blendernc.core.dates import * 
+from .. .. blendernc.python_functions import update_datetime_text, update_value_and_node_tree
 
 class BlenderNC_NT_select_time(bpy.types.Node):
     # === Basics ===

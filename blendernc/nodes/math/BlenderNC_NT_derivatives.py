@@ -1,7 +1,7 @@
 # Imports
 import bpy
 
-from blendernc.blendernc.msg_errors import unselected_nc_var, unselected_nc_file
+from .. .. blendernc.msg_errors import unselected_nc_var, unselected_nc_file
 
 from collections import defaultdict
 
