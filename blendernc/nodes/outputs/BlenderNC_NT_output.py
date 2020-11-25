@@ -40,6 +40,11 @@ class BlenderNC_NT_output(bpy.types.Node):
         default = 1,
     )
 
+    keep_nan: bpy.props.BoolProperty(
+        name = "Replace nan with zeros",
+        default = True,
+    )
+
     grid_node_name: bpy.props.StringProperty()
 
     
@@ -80,6 +85,8 @@ class BlenderNC_NT_output(bpy.types.Node):
 
         if self.image and self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             layout.prop(self, "update_on_frame_change")
+            
+            layout.prop(self, "keep_nan")
             # operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
             # operator.node = self.name
             # operator.node_group = self.rna_type.id_data.name
