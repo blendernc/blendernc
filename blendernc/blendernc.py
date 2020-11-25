@@ -24,6 +24,7 @@ from . nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
 from . nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
 from . nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from . nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
+from . nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from . nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
 from . nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
 from . nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
