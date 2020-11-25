@@ -24,7 +24,7 @@ MAC
 
     cd /Applications/Blender_2.8x.app/Contents/Resources/2.83/python/bin/
     ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib
+    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
 
 Linux
 #####
@@ -33,7 +33,7 @@ Linux
 
     cd /path/to/blender/2.83/python/bin/
     ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib
+    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
 
 Windows
 #######
@@ -42,7 +42,7 @@ Windows
 
     cd /path/to/blender/2.82/python/bin/
     python.exe -m ensurepip
-    python.exe -m pip install xarray xgcm cmocean matplotlib
+    python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
 
 Blender Compilation
 ###################
