@@ -57,7 +57,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Comunity
+Community
 ========
 
 This section show animations submitted by the BlenderNC users.
