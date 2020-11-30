@@ -1,10 +1,18 @@
 # Imports
 import bpy
+import numpy as np
+
+from .. .. blendernc.decorators import NodesDecorators
+
+from collections import defaultdict
+
+from .. .. blendernc.core.netcdf_metadata import * 
+from .. .. blendernc.python_functions import update_value_and_node_tree, update_node_tree, refresh_cache
 
 class BlenderNC_NT_select_axis(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''Select axis '''
+    '''Select axis'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
     bl_idname = 'netCDFaxis'
     # Label for nice name display
@@ -12,8 +20,21 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # Icon identifier
     bl_icon = 'MESH_GRID'
     blb_type = "NETCDF"
+    bl_width_default = 200
 
-    axis: bpy.props.EnumProperty(items=(''),name="")
+    axes : bpy.props.EnumProperty(
+        items=get_items_axes,
+        name="Axis",
+        )
+
+    axis_selection : bpy.props.FloatProperty(name = 'Axis selection:', 
+                                                update=update_value_and_node_tree, options={'ANIMATABLE'})
+
+    pre_selected :  bpy.props.FloatProperty()
+
+    # Dataset requirements
+    blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
@@ -34,8 +55,20 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
-        layout.label(text="INFO: Work in progress", icon='INFO')
+        if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dataset_identifier:
+            blendernc_dict= self.inputs[0].links[0].from_node.blendernc_dict
+            if blendernc_dict:
+                dataset = blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
+                dims = dataset[blendernc_dict[self.blendernc_dataset_identifier]['selected_var']['selected_var_name']].dims
+                if len(dims) >= 2:
+                    layout.prop(self, 'axes', text='')
+                if self.axes :
+                    layout.label(text="Select within range:")
+                    layout.label(text="[{0} - {1}]".format(np.round(dataset[self.axes][0].values,2),np.round(dataset[self.axes][-1].values),2))
+                    layout.prop(self, 'axis_selection', text='')
+                    layout.label(text="INFO: nearest value", icon='INFO')
+                    layout.label(text="will be selected")
+        # layout.label(text="INFO: Work in progress", icon='INFO')
         #layout.prop(self, "axis")
         
     # Detail buttons in the sidebar.
@@ -48,8 +81,16 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     def draw_label(self):
         return "Select Axis"
 
-    def update_value(self, context):
-        self.update()
-
+    @NodesDecorators.node_connections
     def update(self):
-        pass
+        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
+        dataset = blendernc_dict['Dataset']
+        node_tree = self.rna_type.id_data.name
+        if self.axes and self.axis_selection:
+            blendernc_dict['Dataset'] = dataset.sel({self.axes : self.axis_selection},method="nearest").drop(self.axes)
+            if self.pre_selected != self.axis_selection:
+                refresh_cache(node_tree, self.blendernc_dataset_identifier, bpy.context.scene.frame_current)
+                update_node_tree(self,bpy.context)
+                self.pre_selected = self.axis_selection
+            # blendernc_dict['Dataset'] = dataset.sel(time = self.selected_time).drop('time')
+            

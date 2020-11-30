@@ -357,6 +357,21 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
         
         return {'FINISHED'}
 
+class BlenderNC_OT_purge_all(bpy.types.Operator):
+    bl_idname = "blendernc.purge_all"
+    bl_label = "Purge all frames"
+    bl_description = "Purge all frames"
+    bl_options = {"REGISTER", "UNDO"}
+
+    node: bpy.props.StringProperty()
+    node_group: bpy.props.StringProperty()
+
+    def execute(self, context):
+        node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
+        unique_identifier = node.blendernc_dataset_identifier
+        
+        return {'FINISHED'}
+
 def findCommonName(filenames):
     import difflib
     cfname = ''

@@ -174,7 +174,7 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram. 
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data? 
-    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 2:
+    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 10:
         frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
         bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
 
@@ -744,9 +744,6 @@ def rotate_longitude(node,context):
     frame = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
     refresh_cache(NodeTree, identifier, frame)
-    
-
-    
 
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray

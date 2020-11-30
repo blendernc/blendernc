@@ -87,12 +87,7 @@ class BlenderNC_NT_output(bpy.types.Node):
             layout.prop(self, "update_on_frame_change")
             
             layout.prop(self, "keep_nan")
-            # operator = layout.operator("blendernc.nc2img", icon="FILE_REFRESH")
-            # operator.node = self.name
-            # operator.node_group = self.rna_type.id_data.name
-            # operator.frame = self.frame
-            # operator.image = self.image.name
-            
+
             operator = layout.operator("blendernc.colorbar", icon='GROUP_VCOL')
             operator.node = self.name
             operator.node_group = self.rna_type.id_data.name
@@ -107,6 +102,9 @@ class BlenderNC_NT_output(bpy.types.Node):
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
+        #TODO: Implement manual purge.
+        # layout.label(text="INFO: Purge all frames", icon='INFO')
+        # operator = layout.operator("blendernc.purge_all", icon='GROUP_VCOL')
 
     # Optional: custom label
     # Explicit user label overrides this, but here we can define a label dynamically
