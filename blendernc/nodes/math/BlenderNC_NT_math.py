@@ -109,8 +109,16 @@ class BlenderNC_NT_math(bpy.types.Node):
         elif self.blendernc_operation == 'Divide':
             dataset = dataset/self.inputs.get('Float').Float
         elif self.blendernc_operation == 'Add':
-            if  self.inputs[-1].links:
-                dataset = dataset+self.inputs[-1].links[0].from_node.blendernc_dict
+            if  self.inputs[-1].links and self.inputs[0].links :
+
+                dataset_self = self.blendernc_dict[self.blendernc_dataset_identifier]
+                varname_self = dataset_self['selected_var']['selected_var_name'] 
+
+                dataset_other = self.inputs[-1].links[0].from_node.blendernc_dict[self.inputs[-1].links[0].from_node.blendernc_dataset_identifier]
+                varname_other = dataset_other['selected_var']['selected_var_name'] 
+
+                dataset = dataset_self['Dataset'][varname_self] + dataset_other['Dataset'][varname_other].to_dataset(name=varname_self)
+
         elif self.blendernc_operation == 'Subtract':
             if  self.inputs[-1].links:
                 dataset = dataset-self.inputs[-1].links[0].from_node.blendernc_dict
