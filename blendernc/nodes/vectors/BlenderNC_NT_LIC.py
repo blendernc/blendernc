@@ -2,20 +2,21 @@
 import bpy
 import lic
 
-from .. .. blendernc.decorators import NodesDecorators
+from ....blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
+
 
 class BlenderNC_NT_template(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''Select axis '''
+    """Select axis """
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFtemplate'
+    bl_idname = "netCDFtemplate"
     # Label for nice name display
     bl_label = "Template"
     # Icon identifier
-    bl_icon = ''
+    bl_icon = ""
     blb_type = "NETCDF"
 
     # Dataset requirements
@@ -28,9 +29,9 @@ class BlenderNC_NT_template(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('bNCnetcdfSocket',"Dataset")
-        self.inputs.new('bNCnetcdfSocket',"Dataset")
-        self.outputs.new('bNCnetcdfSocket',"Dataset")
+        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.outputs.new("bNCnetcdfSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -38,14 +39,14 @@ class BlenderNC_NT_template(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier!='':
+        if self.blendernc_dataset_identifier != "":
             self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        layout.label(text="Template", icon='INFO')
-        
+        layout.label(text="Template", icon="INFO")
+
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -61,10 +62,16 @@ class BlenderNC_NT_template(bpy.types.Node):
         #####################
         # OPERATION HERE!!! #
         #####################
-        
+
         lic_result = lic.lic(x, y, length=30)
 
-        dataset = self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset']
-        var_name = self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['selected_var_name']
-        self.blendernc_dict[self.blendernc_dataset_identifier]['Dataset'] = netcdf_values(dataset,var_name,self.blendernc_resolution)
-        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"]['resolution'] = self.blendernc_resolution
+        dataset = self.blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
+        var_name = self.blendernc_dict[self.blendernc_dataset_identifier][
+            "selected_var"
+        ]["selected_var_name"]
+        self.blendernc_dict[self.blendernc_dataset_identifier][
+            "Dataset"
+        ] = netcdf_values(dataset, var_name, self.blendernc_resolution)
+        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
+            "resolution"
+        ] = self.blendernc_resolution
