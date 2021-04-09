@@ -8,7 +8,7 @@
 
 BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display netCDF data files as images and volumetric data in Blender.
 
-Why BlenderNC?
+#### Why BlenderNC?
 
 Science visualization is a fundamental part of science communication and exploration of large datasets. However, production quality real-time visualization and animation of scientific data has remain unreachable to the scientific community. BlenderNC main goal is to facilitate generation of quality animations of scientific gridded data with a powerful and simple interface. For example:
 
@@ -32,7 +32,3 @@ Use Github to:
 - suggest features,
 - provide examples,
 - and view the source code. 
-
-
-Tested with data with 1400x700 points it is fast enough to produce animations in real-time,
-which can make this tool useful not only for producing stunning animations but also for data exploration purposes. 
