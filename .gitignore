@@ -5,3 +5,6 @@
 .ipynb_checkpoints/
 *.bk
 .vscode/
+
+*develop_notebooks*
+.ipynb*

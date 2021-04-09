@@ -637,7 +637,9 @@ def get_colormaps_of_materials(node):
     '''
     unfind = True
     counter = 0
+    
     links = node.outputs.get('Color').links
+    #TODO: Change this to a recursive search. Currently, only colormaps directly connected to the output will generate a colormap.
     while unfind:
         for link in links:
             if link.to_node.bl_idname == 'cmapsNode':
@@ -649,7 +651,7 @@ def get_colormaps_of_materials(node):
             else:
                 counter+=1
 
-        links = [llink for llink in link.to_node.outputs.get('Color').links for link in links] 
+        #links = [ llink for llink in link.to_node.outputs.get('Color').links for link in links ] 
 
     if counter == 10:
         raise ValueError('Colormap not found after 10 tree node interations')
