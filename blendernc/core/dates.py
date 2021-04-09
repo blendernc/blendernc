@@ -12,12 +12,16 @@ def get_items_datetimes(self,context):
         dataset = blendernc_dict['Dataset']
         # BlenderNC times
         datetimes = dataset['time']
-
-    return datetimes.values
+        return datetimes.values
 
 def get_item_time(self,context):
     times = get_items_datetimes(self,context)
-    return [(str(time),str(time),str(time),"",int(time)) for time in times]
+    time_list = []
+    counter=0
+    for time in times:
+        time_list.append((str(counter),str(time),str(time),"",counter))
+        counter+=1
+    return time_list
 
 def get_item_days(self, context):
     datetimes = get_items_datetimes(self,context)

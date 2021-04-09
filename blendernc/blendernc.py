@@ -10,7 +10,7 @@ from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
 from . operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
                         BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
                         BlenderNC_OT_apply_material, ImportnetCDFCollection,\
-                        Import_OT_mfnetCDF, BlenderNC_OT_compute_range, BlenderNC_OT_colorbar
+                        Import_OT_mfnetCDF, BlenderNC_OT_compute_range, BlenderNC_OT_colorbar,BlenderNC_OT_purge_all
                         
 
 # from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
@@ -83,6 +83,7 @@ classes = [
     BlenderNC_OT_apply_material,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_colorbar,
+    BlenderNC_OT_purge_all,
     # Sockets
     bNCnetcdfSocket,
     bNCstringSocket,
