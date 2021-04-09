@@ -1,8 +1,8 @@
 # BlenderNC
 
-|  Read the Docs | 
-|:----------------------:|
-| [![Documentation Status](https://readthedocs.org/projects/blendernc/badge/?version=latest)](https://blendernc.readthedocs.io/en/latest/?badge=latest) |
+|  Read the Docs |  Maintainability |
+|:--------------:|:----------------:|
+| [![Documentation Status](https://readthedocs.org/projects/blendernc/badge/?version=latest)](https://blendernc.readthedocs.io/en/latest/?badge=latest) | [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) |
 
 **BlenderNC** is a [**Blender**](www.blender.org) Add-on to visualise **netCDF** data.
 
