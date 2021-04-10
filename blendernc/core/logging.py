@@ -57,7 +57,9 @@ class Timer:
             Frame = "{0} |".format(frame)
             print(
                 "{0}{1}{2}".format(
-                    Frame_text, " " * (len(titles) - len(Frame_text) - len(Frame)), Frame
+                    Frame_text,
+                    " " * (len(titles) - len(Frame_text) - len(Frame)),
+                    Frame,
                 )
             )
-            print("-" * len(titles)+'\n')
+            print("-" * len(titles) + "\n")

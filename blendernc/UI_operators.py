@@ -6,6 +6,7 @@ from os.path import abspath, isfile, join, dirname
 
 from bpy_extras.io_utils import ImportHelper
 
+
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
     bl_idname = "blendernc.ncload_sui"
     bl_label = "Load netcdf file"
@@ -51,6 +52,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         output.update_on_frame_change = scene.blendernc_animate
         output.update()
         return {"FINISHED"}
+
 
 class ImportnetCDFCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
@@ -102,6 +104,7 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
 
         return {"FINISHED"}
 
+
 def findCommonName(filenames):
     import difflib
 
@@ -136,4 +139,3 @@ class BlenderNC_OT_purge_all(bpy.types.Operator):
         pass
 
         return {"FINISHED"}
-
