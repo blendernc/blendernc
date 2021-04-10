@@ -49,8 +49,6 @@ def get_item_days(self, context):
         selected_year = dt2cal(selected_time)[0]  # year
         selected_month = dt2cal(selected_time)[1]  # month
 
-    days_in_month = monthrange(selected_year, selected_month)
-
     dataset_days_in_month = []
     for datetime in datetimes:
         if (
@@ -92,25 +90,12 @@ def get_item_month(self, context):
 
 def get_item_year(self, context):
     datetimes = get_items_datetimes(self, context)
-    if "datetime64" not in str(datetimes.dtype):
-        return []
-    if self.selected_time == "":
-        selected_time = min(datetimes)
-    elif self.selected_time in np.array(datetimes, dtype=str):
-        selected_time = np.datetime64(self.selected_time)
-    else:
-        selected_time = min(datetimes)
-        # TODO report ERROR
-        # self.report({'Error'}, "Day out of range!")
-
     dataset_years = np.unique(dt2cal(datetimes)[:, 0])
-
     return [(str(year), str(year), str(year)) for year in dataset_years]
 
 
 def update_date(self, context):
     NodeTree = self.rna_type.id_data.name
-    frame = bpy.context.scene.frame_current
     identifier = self.blendernc_dataset_identifier
     if self.day and self.month and self.year:
         self.selected_time = return_date(self.day, self.month, self.year)
