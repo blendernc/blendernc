@@ -1,10 +1,12 @@
 *__pycache__*
-*build*
+./docs/build*
+./docs/build/*
+docs/build/
 *.old
 .DS_Store
 .ipynb_checkpoints/
 *.bk
 .vscode/
 
-*develop_notebooks*
+./develop_notebooks*
 .ipynb*
