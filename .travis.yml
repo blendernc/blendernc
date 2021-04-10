@@ -11,5 +11,6 @@ services:
 
 before_install:
 - docker pull nytimes/blender:latest
+- zip -r .github/travis/blendernc_build.zip .
 - cd .github/travis/
 - docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "bash ./build-test.sh"
