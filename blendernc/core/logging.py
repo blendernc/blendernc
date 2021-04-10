@@ -19,9 +19,10 @@ class Timer:
             self.tmp.append(time.clock())
             self.timestamps[label] = self.tmp
             if len(self.timestamps[label]) == 2:
+
                 self.tmp = []
 
-    def report(self, total=False):
+    def report(self, total=False, frame=None):
         titles = ""
         times = ""
         for key, item in self.timestamps.items():
@@ -52,4 +53,11 @@ class Timer:
                     FPS_text, " " * (len(titles) - len(FPS_text) - len(FPS)), FPS
                 )
             )
-            print("-" * len(titles))
+            Frame_text = "| Frame = "
+            Frame = "{0} |".format(frame)
+            print(
+                "{0}{1}{2}".format(
+                    Frame_text, " " * (len(titles) - len(Frame_text) - len(Frame)), Frame
+                )
+            )
+            print("-" * len(titles)+'\n')

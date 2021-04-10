@@ -9,15 +9,18 @@ from .panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, BlenderNC_LOAD
 
 from .operators import (
     BlenderNC_OT_ncload,
-    BlenderNC_OT_ncload_Sui,
     BlenderNC_OT_var,
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
-    ImportnetCDFCollection,
-    Import_OT_mfnetCDF,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_colorbar,
+)
+
+from .UI_operators import (
+    BlenderNC_OT_Simple_UI,
+    ImportnetCDFCollection,
+    Import_OT_mfnetCDF,
     BlenderNC_OT_purge_all,
 )
 
@@ -78,19 +81,20 @@ classes = [
     BlenderNC_NT_basic_nodes,
     # Shader Nodes
     BLENDERNC_CMAPS_NT_node,
-    # Operators: files
-    ImportnetCDFCollection,
-    Import_OT_mfnetCDF,
     # Operators
     BlenderNC_OT_ncload,
-    BlenderNC_OT_ncload_Sui,
     BlenderNC_OT_var,
     BlenderNC_OT_netcdf2img,
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_colorbar,
+    # Operators: UI
+    BlenderNC_OT_Simple_UI,
     BlenderNC_OT_purge_all,
+    # Operators: files
+    ImportnetCDFCollection,
+    Import_OT_mfnetCDF,
     # Sockets
     bNCnetcdfSocket,
     bNCstringSocket,

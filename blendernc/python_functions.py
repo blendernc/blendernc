@@ -494,7 +494,7 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Update Image")
     image.update()
     timer.tick("Update Image")
-    timer.report(total=True)
+    timer.report(total=True,frame=frame)
     purge_cache(node_tree, unique_identifier)
     return True
 
