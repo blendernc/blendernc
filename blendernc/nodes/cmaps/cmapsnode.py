@@ -18,10 +18,7 @@ def update_colorramp(self, context):
         if selected_cmap[0].split("_")[-1] == "_r":
             selected_cmap[0] = selected_cmap[0].replace("_r", "")
 
-    if len(self.node_tree.nodes[:]) == 3:
-        colorramp = self.node_tree.nodes["Color_Ramp.000"].color_ramp
-    else:
-        colorramp = self.node_tree.nodes[self._get_name("Color_Ramp")].color_ramp
+    colorramp = self.node_tree.nodes[self._get_name("Color_Ramp")].color_ramp
     core_colorramp.update_colormap(colorramp, selected_cmap, cmap_steps)
 
 
@@ -62,17 +59,11 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Manage the internal nodes to perform the chained operation - clear all the nodes and build from scratch each time.
     def __nodetree_setup__(self):
-        # Remove all links and all nodes that aren  't Group Input or Group Output
-        if len(self.node_tree.nodes[:]) == 3:
-            input_node = self.node_tree.nodes["Group Input.000"]
-            ## TODO: ADD math here to control max and min values
-            cmap = self.node_tree.nodes["Color_Ramp.000"]
-            output_node = self.node_tree.nodes["Group Output.000"]
-        else:
-            input_node = self.node_tree.nodes[self._get_name("Group Input")]
-            ## TODO: ADD math here to control max and min values
-            cmap = self.node_tree.nodes[self._get_name("Color_Ramp")]
-            output_node = self.node_tree.nodes[self._get_name("Group Output")]
+        # Remove all links and all nodes that aren  't Group Input or Group 
+        input_node = self.node_tree.nodes[self._get_name("Group Input")]
+        ## TODO: ADD math here to control max and min values
+        cmap = self.node_tree.nodes[self._get_name("Color_Ramp")]
+        output_node = self.node_tree.nodes[self._get_name("Group Output")]
 
         # Links:
         self.node_tree.links.new(input_node.outputs[0], cmap.inputs[0])
@@ -134,10 +125,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         layout.prop(self, "n_stops")
         layout.prop(self, "fcmap")
 
-        if len(self.node_tree.nodes[:]) == 3:
-            tnode = self.node_tree.nodes["Color_Ramp.000"]
-        else:
-            tnode = self.node_tree.nodes[self._get_name("Color_Ramp")]
+        tnode = self.node_tree.nodes[self._get_name("Color_Ramp")]
         layout.template_color_ramp(tnode, "color_ramp", expand=True)
         layout.prop(self, "fv_color")
 
@@ -165,12 +153,11 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     def _get_name(self, name):
         n_split = self.name.split(".")
-        n_id = ".000"
         # See line 105 of utils_colorramp.py
-        # if len(n_split) == 1:
-        #     n_id=".000"
-        # else:
-        #     n_id='.'+n_split[-1]
+        if len(n_split) == 1:
+            n_id=".000"
+        else:
+            n_id='.'+n_split[-1]
         return name + n_id
 
 
