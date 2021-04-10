@@ -1,16 +1,17 @@
 # Imports
 import bpy
 
+
 class BlenderNC_NT_isosurface(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''Select axis '''
+    """Select axis """
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFisosurface'
+    bl_idname = "netCDFisosurface"
     # Label for nice name display
     bl_label = "Isosurface"
     # Icon identifier
-    bl_icon = 'MESH_GRID'
+    bl_icon = "MESH_GRID"
     blb_type = "NETCDF"
 
     # === Optional Functions ===
@@ -19,8 +20,8 @@ class BlenderNC_NT_isosurface(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('bNCnetcdfSocket',"Dataset")
-        self.outputs.new('bNCnetcdfSocket',"Dataset")
+        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.outputs.new("bNCnetcdfSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -33,8 +34,8 @@ class BlenderNC_NT_isosurface(bpy.types.Node):
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         scene = context.scene
-        layout.label(text="INFO: Work in progress", icon='INFO')
-        
+        layout.label(text="INFO: Work in progress", icon="INFO")
+
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):

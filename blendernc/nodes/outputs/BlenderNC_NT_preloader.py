@@ -1,38 +1,39 @@
 # Imports
 import bpy
 
-from .. .. blendernc.python_functions import (get_possible_files, get_possible_variables)
+from ....blendernc.python_functions import get_possible_files, get_possible_variables
+
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''A netcdf node'''
+    """A netcdf node"""
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFPreloadNode'
+    bl_idname = "netCDFPreloadNode"
     # Label for nice name display
     bl_label = "Load netCDF"
     # Icon identifier
-    bl_icon = 'SOUND'
+    bl_icon = "SOUND"
     blb_type = "NETCDF"
 
     file_name: bpy.props.EnumProperty(
-        items = get_possible_files,
-        name = "",
+        items=get_possible_files,
+        name="",
     )
 
     var_name: bpy.props.EnumProperty(
-        items = get_possible_variables,
-        name = "",
+        items=get_possible_variables,
+        name="",
     )
 
     frame_start: bpy.props.IntProperty(
-        default = 1,
-        name = "Start",
+        default=1,
+        name="Start",
     )
 
     frame_end: bpy.props.IntProperty(
-        default = 250,
-        name = "End",
+        default=250,
+        name="End",
     )
 
     # === Optional Functions ===
@@ -54,7 +55,7 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         scene = context.scene
-        layout.label(text="INFO: Work in progress", icon='INFO')
+        layout.label(text="INFO: Work in progress", icon="INFO")
         # if scene.nc_dictionary:
         #     layout.prop(self, "file_name")
         # else:

@@ -1,7 +1,8 @@
 import bpy
 from bpy.app.handlers import persistent
 
-from . nodes.node_tree import create_new_node_tree
+from .nodes.node_tree import create_new_node_tree
+
 
 @persistent
 def update_all_images(scene):
@@ -25,16 +26,17 @@ def update_all_images(scene):
             continue
 
         frame = scene.frame_current
-        #node.frame = frame
+        # node.frame = frame
 
         if frame == node.frame_loaded:
             continue
         node_name = node.name
         node_group = node.rna_type.id_data.name
-        #flip = node.flip
+        # flip = node.flip
         image = node.image.name
         operator(node=node_name, node_group=node_group, frame=frame, image=image)
         node.frame_loaded = frame
+
 
 # TODO Implement update_time as a handler
 # @persistent
@@ -52,10 +54,10 @@ def update_all_images(scene):
 #             text=bpy.context.object
 #             text.name="BlenderNC_time"
 #             text.parent = Camera
-#             text.location = coords  
-#             try: 
+#             text.location = coords
+#             try:
 #             # Add material
-#                 text.data.materials.append(mat)        
+#                 text.data.materials.append(mat)
 #             except:
 #                 pass
 #         else:
@@ -63,4 +65,4 @@ def update_all_images(scene):
 #             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
 #         text.data.body = str(time)
 #         if text.select_get():
-#             text.select_set(False) 
+#             text.select_set(False)

@@ -12,21 +12,22 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "BlenderNC",
-    "author" : "Oriol Tintó Prims & Josué Martínez-Moreno",
-    "description" : "Blender Add-On to visualize geo-scientific data",
-    "blender" : (2, 83, 0),
-    "version" : (0, 0, 1),
-    "location" : "View3D",
-    "warning" : "Very early version",
-    "category" : "Generic"
+    "name": "BlenderNC",
+    "author": "Oriol Tintó Prims & Josué Martínez-Moreno",
+    "description": "Blender Add-On to visualize geo-scientific data",
+    "blender": (2, 83, 0),
+    "version": (0, 0, 1),
+    "location": "View3D",
+    "warning": "Very early version",
+    "category": "Generic",
 }
 
-from . blendernc.blendernc import registerBlenderNC, unregisterBlenderNC
+from .blendernc.blendernc import registerBlenderNC, unregisterBlenderNC
 
 
 def register():
     registerBlenderNC()
+
 
 def unregister():
     unregisterBlenderNC()

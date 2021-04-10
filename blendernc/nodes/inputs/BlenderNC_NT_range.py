@@ -1,33 +1,30 @@
 # Imports
 import bpy
 
-from .. .. blendernc.python_functions import  update_range
+from ....blendernc.python_functions import update_range
 
-from .. .. blendernc.decorators import NodesDecorators
+from ....blendernc.decorators import NodesDecorators
 
 from collections import defaultdict
+
 
 class BlenderNC_NT_range(bpy.types.Node):
     # === Basics ===
     # Description string
-    '''Select axis '''
+    """Select axis """
     # Optional identifier string. If not explicitly defined, the python class name is used.
-    bl_idname = 'netCDFRange'
+    bl_idname = "netCDFRange"
     # Label for nice name display
     bl_label = "netCDF Range"
     # Icon identifier
-    bl_icon = 'OUTLINER'
+    bl_icon = "OUTLINER"
     blb_type = "NETCDF"
 
     blendernc_dataset_min: bpy.props.FloatProperty(
-                name='vmin',
-                default = 0,
-                update = update_range
+        name="vmin", default=0, update=update_range
     )
     blendernc_dataset_max: bpy.props.FloatProperty(
-                name='vmax',
-                default = 1,
-                update = update_range
+        name="vmax", default=1, update=update_range
     )
 
     # Dataset requirements
@@ -40,8 +37,8 @@ class BlenderNC_NT_range(bpy.types.Node):
     # NOTE: this is not the same as the standard __init__ function in Python, which is
     #       a purely internal Python method and unknown to the node system!
     def init(self, context):
-        self.inputs.new('bNCnetcdfSocket',"Dataset")
-        self.outputs.new('bNCnetcdfSocket',"Dataset")
+        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.outputs.new("bNCnetcdfSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -49,7 +46,7 @@ class BlenderNC_NT_range(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier!='':
+        if self.blendernc_dataset_identifier != "":
             self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
@@ -62,7 +59,7 @@ class BlenderNC_NT_range(bpy.types.Node):
         operator = layout.operator("blendernc.compute_range", icon="DRIVER_DISTANCE")
         operator.node = self.name
         operator.node_group = self.rna_type.id_data.name
-        
+
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
@@ -76,5 +73,9 @@ class BlenderNC_NT_range(bpy.types.Node):
     @NodesDecorators.node_connections
     def update(self):
         # Update vmax and vmin of the dataset.
-        self.blendernc_dict[self.blendernc_dataset_identifier]['selected_var']["max_value"] = self.blendernc_dataset_max
-        self.blendernc_dict[self.blendernc_dataset_identifier]['selected_var']["min_value"] = self.blendernc_dataset_min 
+        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
+            "max_value"
+        ] = self.blendernc_dataset_max
+        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
+            "min_value"
+        ] = self.blendernc_dataset_min

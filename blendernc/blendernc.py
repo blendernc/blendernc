@@ -4,48 +4,54 @@ from collections import defaultdict
 
 import nodeitems_utils
 
-from . panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, \
-                     BlenderNC_LOAD_OT_Off
+from .panels import BlenderNC_UI_PT_3dview, BlenderNC_LOAD_OT_On, BlenderNC_LOAD_OT_Off
 
-from . operators import BlenderNC_OT_ncload, BlenderNC_OT_ncload_Sui, BlenderNC_OT_var, \
-                        BlenderNC_OT_netcdf2img, BlenderNC_OT_preloader,\
-                        BlenderNC_OT_apply_material, ImportnetCDFCollection,\
-                        Import_OT_mfnetCDF, BlenderNC_OT_compute_range, BlenderNC_OT_colorbar,BlenderNC_OT_purge_all
-                        
+from .operators import (
+    BlenderNC_OT_ncload,
+    BlenderNC_OT_ncload_Sui,
+    BlenderNC_OT_var,
+    BlenderNC_OT_netcdf2img,
+    BlenderNC_OT_preloader,
+    BlenderNC_OT_apply_material,
+    ImportnetCDFCollection,
+    Import_OT_mfnetCDF,
+    BlenderNC_OT_compute_range,
+    BlenderNC_OT_colorbar,
+    BlenderNC_OT_purge_all,
+)
 
 # from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
 #                     BlenderNC_NT_resolution, BlenderNC_NT_output,\
 #                     BlenderNC_NT_select_axis, BlenderNC_NT_path
 
-from . nodes.node_categories import node_categories
+from .nodes.node_categories import node_categories
 
-from . nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
-from . nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
-from . nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
-from . nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
-from . nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
-from . nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
-from . nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
-from . nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
-from . nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
+from .nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
+from .nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
+from .nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
+from .nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
+from .nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
+from .nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
+from .nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
+from .nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
+from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 
-from . nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
-from . nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
-from . nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
+from .nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
+from .nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
+from .nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 
-from . nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
-from . nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
+from .nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
+from .nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
 
-from . nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
-        
-from . nodes.node_tree import create_new_node_tree, BlenderNCNodeTree,\
-                        node_tree_name
+from .nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
 
-from . sockets import bNCnetcdfSocket,bNCstringSocket, bNCfloatSocket
+from .nodes.node_tree import create_new_node_tree, BlenderNCNodeTree, node_tree_name
 
-from . nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
+from .sockets import bNCnetcdfSocket, bNCstringSocket, bNCfloatSocket
 
-from . handlers import update_all_images
+from .nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
+
+from .handlers import update_all_images
 
 classes = [
     # Panels
@@ -69,7 +75,7 @@ classes = [
     BlenderNC_NT_output,
     # Nodes shortcuts
     BlenderNC_NT_basic_nodes,
-    # Shader Nodes 
+    # Shader Nodes
     BLENDERNC_CMAPS_NT_node,
     # Operators: files
     ImportnetCDFCollection,
@@ -99,7 +105,7 @@ handlers = bpy.app.handlers
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
 
-    #bpy.types.Scene.nc_dictionary = defaultdict(None)
+    # bpy.types.Scene.nc_dictionary = defaultdict(None)
     bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
@@ -113,7 +119,7 @@ def registerBlenderNC():
 
 
 def unregisterBlenderNC():
-    #del bpy.types.Scene.nc_dictionary
+    # del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
     del bpy.types.Scene.nc_cache
 

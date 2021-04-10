@@ -3,11 +3,12 @@ import numpy as np
 
 # As https://scipy-cookbook.readthedocs.io/items/Matplotlib_Gridding_irregularly_spaced_data.html
 
+
 def griddata(x, y, z, binsize=0.01, retbin=True, retloc=True):
     """
     Place unevenly spaced 2D data on a grid by 2D binning (nearest
     neighbor interpolation).
-    
+
     Parameters
     ----------
     x : ndarray (1D)
@@ -26,7 +27,7 @@ def griddata(x, y, z, binsize=0.01, retbin=True, retloc=True):
     retloc : boolean, optional
         Function returns `wherebins` variable (see below for description)
         if set to True.  Defaults to True.
-   
+
     Returns
     -------
     grid : ndarray (2D)
@@ -50,14 +51,15 @@ def griddata(x, y, z, binsize=0.01, retbin=True, retloc=True):
     ymin, ymax = y.min(), y.max()
 
     # make coordinate arrays.
-    xi      = np.arange(xmin, xmax+binsize, binsize)
-    yi      = np.arange(ymin, ymax+binsize, binsize)
-    xi, yi = np.meshgrid(xi,yi)
+    xi = np.arange(xmin, xmax + binsize, binsize)
+    yi = np.arange(ymin, ymax + binsize, binsize)
+    xi, yi = np.meshgrid(xi, yi)
 
     # make the grid.
-    grid           = np.zeros(xi.shape, dtype=x.dtype)
+    grid = np.zeros(xi.shape, dtype=x.dtype)
     nrow, ncol = grid.shape
-    if retbin: bins = np.copy(grid)
+    if retbin:
+        bins = np.copy(grid)
 
     # create list in same shape as grid to store indices
     if retloc:
@@ -67,24 +69,26 @@ def griddata(x, y, z, binsize=0.01, retbin=True, retloc=True):
     # fill in the grid.
     for row in range(nrow):
         for col in range(ncol):
-            xc = xi[row, col]    # x coordinate.
-            yc = yi[row, col]    # y coordinate.
+            xc = xi[row, col]  # x coordinate.
+            yc = yi[row, col]  # y coordinate.
 
             # find the position that xc and yc correspond to.
             posx = np.abs(x - xc)
             posy = np.abs(y - yc)
-            ibin = np.logical_and(posx < binsize/2., posy < binsize/2.)
-            ind  = np.where(ibin == True)[0]
+            ibin = np.logical_and(posx < binsize / 2.0, posy < binsize / 2.0)
+            ind = np.where(ibin == True)[0]
 
             # fill the bin.
             bin = z[ibin]
-            if retloc: wherebin[row][col] = ind
-            if retbin: bins[row, col] = bin.size
+            if retloc:
+                wherebin[row][col] = ind
+            if retbin:
+                bins[row, col] = bin.size
             if bin.size != 0:
-                binval         = np.median(bin)
+                binval = np.median(bin)
                 grid[row, col] = binval
             else:
-                grid[row, col] = np.nan   # fill empty bins with nans.
+                grid[row, col] = np.nan  # fill empty bins with nans.
 
     # return the grid
     if retbin:

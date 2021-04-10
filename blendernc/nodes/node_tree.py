@@ -11,17 +11,18 @@ if create_new_node_tree:
     # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
     class BlenderNCNodeTree(bpy.types.NodeTree):
         # Description string
-        '''A custom node tree type that will show up in the editor type list'''
+        """A custom node tree type that will show up in the editor type list"""
         # Optional identifier string. If not explicitly defined, the python class name is used.
         bl_idname = node_tree_name
         # Label for nice name display
         bl_label = "BlenderNC"
         # Icon identifier
-        bl_icon = 'WORLD'
+        bl_icon = "WORLD"
 
         # for area in bpy.context.screen.areas:
         #     if area.type == 'SpaceNodeEditor':
         #         space_data = area.spaces.active
+
 
 class BlenderNCCustomTreeNode:
     pass
