@@ -8,5 +8,7 @@ docs/build/
 *.bk
 .vscode/
 
+./develop_notebooks/*
 ./develop_notebooks*
+develop_notebooks*
 .ipynb*
