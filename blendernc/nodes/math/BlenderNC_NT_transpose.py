@@ -36,7 +36,6 @@ class BlenderNC_NT_transpose(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
         layout.label(text="INFO: Work in progress", icon="INFO")
         # layout.prop(self, "axis")
 
