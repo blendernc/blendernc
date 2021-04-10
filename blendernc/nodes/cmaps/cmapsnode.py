@@ -59,7 +59,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Manage the internal nodes to perform the chained operation - clear all the nodes and build from scratch each time.
     def __nodetree_setup__(self):
-        # Remove all links and all nodes that aren  't Group Input or Group 
+        # Remove all links and all nodes that aren  't Group Input or Group
         input_node = self.node_tree.nodes[self._get_name("Group Input")]
         ## TODO: ADD math here to control max and min values
         cmap = self.node_tree.nodes[self._get_name("Color_Ramp")]
@@ -155,9 +155,9 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         n_split = self.name.split(".")
         # See line 105 of utils_colorramp.py
         if len(n_split) == 1:
-            n_id=".000"
+            n_id = ".000"
         else:
-            n_id='.'+n_split[-1]
+            n_id = "." + n_split[-1]
         return name + n_id
 
 

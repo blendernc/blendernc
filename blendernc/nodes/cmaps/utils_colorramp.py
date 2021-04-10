@@ -4,6 +4,7 @@ import importlib
 
 NODE_TYPE = "ShaderNodeValToRGB"
 
+
 def divide_cmap(n, step):
     return (n - 1) * (1 / (step - 1)), int((n - 1) * (256 // (step - 1)))
 
@@ -64,7 +65,7 @@ class ColorRamp(object):
                 names["matplotlib"] = list(cmap.cm.cmaps_listed) + list(cmap.cm.datad)
         return names
 
-    def get_cmap_values(self,cmap_module,s_cmap):
+    def get_cmap_values(self, cmap_module, s_cmap):
         maps = cmap_module.__name__
         if maps == "cmocean":
             cmap = cmap_module.cm.cmap_d.get(s_cmap)
@@ -78,9 +79,9 @@ class ColorRamp(object):
 
         cmap_steps = cmap_steps
         s_cmap, maps = selected_cmap
-        
+
         cmap = importlib.import_module(maps)
-        
+
         c_bar_elements = self.color_ramp.elements
 
         # Remove all items descendent to avoid missing points and leave first position.
@@ -88,18 +89,18 @@ class ColorRamp(object):
             c_bar_elements.remove(element)
             for item, element in c_bar_elements.items()[::-1][:-1]
         ]
-        
+
         c_bar_elements[0].color = (0, 0, 0, 1)
         c_bar_elements.new(1e-5)
         pos, value = divide_cmap(1e-5, cmap_steps)
-        c_bar_elements[1].color = self.get_cmap_values(cmap,s_cmap)(value)
-        
+        c_bar_elements[1].color = self.get_cmap_values(cmap, s_cmap)(value)
+
         for i in range(2, cmap_steps + 1):
             pos, value = divide_cmap(i, cmap_steps)
             c_bar_elements.new(pos)
             #
             c_bar_elements[i].position = pos
-            c_bar_elements[i].color = self.get_cmap_values(cmap,s_cmap)(value)
+            c_bar_elements[i].color = self.get_cmap_values(cmap, s_cmap)(value)
 
     def create_group_node(self, group_name):
         self.group_name = group_name
