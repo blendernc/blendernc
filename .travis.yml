@@ -1,5 +1,12 @@
 language: python
 
+# safelist
+branches:
+  only:
+  - master
+  - docs
+  - stable
+
 services:
   - docker
 
