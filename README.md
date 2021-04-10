@@ -1,8 +1,6 @@
 # BlenderNC
 
-|  Read the Docs |  Maintainability | CI Travis | Coverage | PyPi | Code Style |
-|:--------------:|:----------------:|:---------:|:--------:|:----:|:----------:|
-| [![Documentation Status](https://readthedocs.org/projects/blendernc/badge/?version=latest)](https://blendernc.readthedocs.io/en/latest/?badge=latest) | [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) | [![Build Status](https://travis-ci.com/blendernc/blendernc.svg?branch=master)](https://travis-ci.com/blendernc/blendernc) | [![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept) | [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) | [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)|
+![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Travis (.org)](https://img.shields.io/travis/blendernc/blendernc?label=travis) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-2.83--2.92-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag)
 
 **BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org). 
 
@@ -14,8 +12,10 @@ Science visualization is a fundamental part of science communication and explora
 
 - Quick load of netCDFs:
 <img src="./docs/images/quick_load_gif.gif" width="70%" />
+
 - Nodes tree for more complex visualizations: 
 <img src="./docs/images/GEBCO_blendernc.png" width="70%" />
+
 - Math computations in BlenderNC node tree.
 
 Documentation
@@ -32,3 +32,7 @@ Use Github to:
 - suggest features,
 - provide examples,
 - and view the source code. 
+
+---
+
+
