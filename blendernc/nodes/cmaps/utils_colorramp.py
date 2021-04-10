@@ -60,10 +60,8 @@ class ColorRamp(object):
             cmap = importlib.import_module(maps)
             if maps == "cmocean":
                 names["cmocean"] = cmap.cm.cmapnames
-            else:
-                names["matplotlib"] = [
-                    ii for ii in cmap.cm.cmap_d.keys() if "_r" not in ii
-                ]
+            if maps == "matplotlib":
+                names["matplotlib"]  = list(cmap.cm.cmaps_listed)+list(cmap.cm.datad)
         return names
 
     def update_colormap(self, color_ramp, selected_cmap, cmap_steps):
