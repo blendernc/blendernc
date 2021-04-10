@@ -1,7 +1,8 @@
 import time
 import numpy as np
 
-#TODO: Add debug - logger option as a setting of the Add-On
+# TODO: Add debug - logger option as a setting of the Add-On
+
 
 class Timer:
     def __init__(self):

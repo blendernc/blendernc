@@ -14,6 +14,7 @@ before_install:
   - docker pull nytimes/blender:2.83-cpu-ubuntu18.04
   - zip -r .github/travis/blendernc.zip ../blendernc
   - cd .github/travis/
+  - wget https://raw.githubusercontent.com/blendernc/blendernc/master/requirements.txt
 
 script:
   - docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "bash ./build-test.sh"
