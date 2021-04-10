@@ -82,3 +82,4 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
             "resolution"
         ] = self.blendernc_resolution
+        # TODO: Do I know time here if so, select time and load snapshot here
