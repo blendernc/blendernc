@@ -69,6 +69,7 @@ def get_new_identifier(node):
         return "{0:03}".format(int(node.name.split(".")[-1]))
 
 
+# TODO Add decorator to simplify.
 def get_possible_dims(node, context):
     if node.inputs:
         if node.inputs[0].is_linked and node.inputs[0].links:
@@ -468,20 +469,17 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Image dimensions")
     # Get data of the selected step
     timer.tick("Load Frame")
+    # IF timestep is larger, use the last time value
+    if frame >= var_data.shape[0]:
+        frame = var_data.shape[0] - 1
     try:
         # TODO:Use time coordinate, not index.
-        # IF timestep is larger, use the last time value
-        if frame >= var_data.shape[0]:
-            frame = var_data.shape[0] - 1
         pixels_cache = scene.nc_cache[node_tree][unique_identifier][frame]
         # If the size of the cache data does not match the size of the image multiplied by the 4 channels (RGBA)
         # we need to reload the data.
         if pixels_cache.size != 4 * img_x * img_y:
             raise ValueError("Size of image doesn't match")
     except (KeyError, ValueError):
-        # TODO:Use time coordinate, not index.
-        if frame >= var_data.shape[0]:
-            frame = var_data.shape[0] - 1
         load_frame(context, node, node_tree, frame, grid_node)
     timer.tick("Load Frame")
 
@@ -733,26 +731,20 @@ def netcdf_values(dataset, selected_variable, active_resolution, return_dataset=
     max_shape = max(variable.shape)
 
     if variable.dims:
-        dict_var_shape = {
-            ii: slice(
-                0, variable[ii].size, resolution_steps(max_shape, active_resolution)
-            )
-            for ii in variable.dims
-            if ("time" not in ii and "t" != ii)
-        }
+        axis_selection = variable.dims
     elif variable.coords:
-        dict_var_shape = {
-            ii: slice(
-                0, variable[ii].size, resolution_steps(max_shape, active_resolution)
-            )
-            for ii in variable.coords
-            if ("time" not in ii and "t" != ii)
-        }
+        axis_selection = variable.coords
+
+    dict_var_shape = {
+        ii: slice(0, variable[ii].size, resolution_steps(max_shape, active_resolution))
+        for ii in axis_selection
+        if ("time" not in ii and "t" != ii)
+    }
+
     if return_dataset:
-        variable_res = variable.isel(dict_var_shape).to_dataset()
+        return variable.isel(dict_var_shape).to_dataset()
     else:
-        variable_res = variable.isel(dict_var_shape)
-    return variable_res
+        return variable.isel(dict_var_shape)
 
 
 def resolution_steps(size, res):
