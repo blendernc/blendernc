@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Imports
 import bpy
 import lic

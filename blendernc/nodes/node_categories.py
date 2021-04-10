@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from .node_tree import BlenderNCNodeCategory
 from nodeitems_utils import NodeItem
 

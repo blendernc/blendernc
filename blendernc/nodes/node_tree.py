@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Imports
 import bpy
 from nodeitems_utils import NodeCategory

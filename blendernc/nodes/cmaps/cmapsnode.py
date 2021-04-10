@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import bpy
 
 from .utils_colorramp import ColorRamp, update_fill_value

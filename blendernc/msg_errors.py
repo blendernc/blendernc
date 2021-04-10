@@ -1,5 +1,5 @@
+#!/usr/bin/env python3
 import bpy
-
 
 def unselected_nc_file(self, context):
     self.layout.label(text="Select a netCDF file.")

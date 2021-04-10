@@ -1,4 +1,5 @@
-#
+#!/usr/bin/env python3
+
 # This file contains pure python functions
 #
 # Probably for this reason I should avoid importing bpy here...

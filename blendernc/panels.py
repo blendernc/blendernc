@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import bpy
 from .python_functions import (
     update_file_vars,
