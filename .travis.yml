@@ -11,7 +11,5 @@ services:
 
 before_install:
 - docker pull nytimes/blender:latest
-- docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "ls; bash ./build-test.sh"
-
-script:
-- ./build-test.sh
+- cd .github/travis/
+- docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "bash ./build-test.sh"
