@@ -10,12 +10,12 @@ services:
   - docker
 
 before_install:
-- docker pull nytimes/blender:latest
-- docker pull nytimes/blender:2.83-cpu-ubuntu18.04
-- zip -r .github/travis/blendernc.zip .
-- cd .github/travis/
+  - docker pull nytimes/blender:latest
+  - docker pull nytimes/blender:2.83-cpu-ubuntu18.04
+  - zip -r .github/travis/blendernc.zip .
+  - cd .github/travis/
 
 script:
-- docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "bash ./build-test.sh"
-z
-- docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./build-test.sh"
+  - docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:latest /bin/sh -c "bash ./build-test.sh"
+
+  - docker run -w /addon-test --rm -it -v $(pwd):/addon-test -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./build-test.sh"
