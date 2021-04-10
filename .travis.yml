@@ -12,7 +12,7 @@ services:
 before_install:
   - docker pull nytimes/blender:latest
   - docker pull nytimes/blender:2.83-cpu-ubuntu18.04
-  - zip -r .github/travis/blendernc.zip .
+  - zip -r .github/travis/blendernc.zip ../blendernc
   - cd .github/travis/
 
 script:
