@@ -81,7 +81,7 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                 if self.axes:
                     layout.label(text="Select within range:")
                     layout.label(
-                        text="[{0} - {1}]".format(
+                        text="[{} - {}]".format(
                             np.round(dataset[self.axes][0].values, 2),
                             np.round(dataset[self.axes][-1].values),
                             2,
