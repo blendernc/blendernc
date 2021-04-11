@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # Imports
-import bpy
+import copy
+from collections import defaultdict
 
-from ....blendernc.python_functions import (
-    get_possible_dims,
-    get_lost_dim,
-    update_value_and_node_tree,
-)
+import bpy
 
 from ....blendernc.decorators import NodesDecorators
 from ....blendernc.msg_errors import unselected_nc_dim
-
-from collections import defaultdict
-
-import copy
+from ....blendernc.python_functions import (
+    get_lost_dim,
+    get_possible_dims,
+    update_value_and_node_tree,
+)
 
 
 class BlenderNC_NT_drop_dims(bpy.types.Node):

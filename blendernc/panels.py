@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import bpy
+
 from .python_functions import (
+    get_possible_variables,
+    update_animation,
     update_file_vars,
     update_res,
-    update_animation,
-    get_possible_variables,
 )
 
 gui_active_panel_fin = None

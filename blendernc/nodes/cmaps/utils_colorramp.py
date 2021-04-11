@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import bpy
 import importlib
+
+import bpy
 
 NODE_TYPE = "ShaderNodeValToRGB"
 
@@ -19,25 +20,22 @@ class ColorRamp(object):
         self.cmaps = self.installed_cmaps()
 
     def installed_cmaps(self):
-        import importlib
+        import pkg_resources
 
         cmaps = []
-        import matplotlib
 
-        matplotlib.use("Agg")
-        try:
-            import cmocean as cmocean
+        installed_packages = pkg_resources.working_set
+        installed_packages_list = sorted([i.key for i in installed_packages])
 
+        if "cmocean" and "matplotlib" in installed_packages_list:
             cmaps.append("cmocean")
-        except ImportError as importerror:
-            raise importerror
-            # TODO: Raise error in UI.
-        try:
-            from matplotlib import cm
-
             cmaps.append("matplotlib")
-        except ImportError as importerror:
-            raise importerror
+        elif "cmocean" in installed_packages_list:
+            cmaps.append("cmocean")
+        elif "matplotlib" in installed_packages_list:
+            cmaps.append("matplotlib")
+        else:
+            raise ImportError("Can't import 'cmocean' or 'matplotlib.'")
             # TODO: Raise error in UI.
 
         return cmaps
@@ -46,9 +44,12 @@ class ColorRamp(object):
         names = self.get_cmaps()
         cmap_names = []
         counter = 0
+
         for key, items in names.items():
             for item in items:
-                cmap_names.append((item + ":" + key, item + " - " + key, "", counter))
+                element_1 = "{0}:{1}".format(item, key)
+                element_2 = "{0}-{1}".format(item, key)
+                cmap_names.append((element_1, element_2, "", counter))
                 counter += 1
         return cmap_names
         # [(cmaps[ii],cmaps[ii],"",ii) for ii in range(len(cmaps))]
@@ -62,7 +63,9 @@ class ColorRamp(object):
             if maps == "cmocean":
                 names["cmocean"] = cmap.cm.cmapnames
             if maps == "matplotlib":
-                names["matplotlib"] = list(cmap.cm.cmaps_listed) + list(cmap.cm.datad)
+                cmaps_listed = list(cmap.cm.cmaps_listed)
+                cmaps_datad = list(cmap.cm.datad)
+                names["matplotlib"] = cmaps_listed + cmaps_datad
         return names
 
     def get_cmap_values(self, cmap_module, s_cmap):
@@ -84,7 +87,8 @@ class ColorRamp(object):
 
         c_bar_elements = self.color_ramp.elements
 
-        # Remove all items descendent to avoid missing points and leave first position.
+        # Remove all items descendent to avoid missing points and
+        # leave first position.
         [
             c_bar_elements.remove(element)
             for item, element in c_bar_elements.items()[::-1][:-1]
@@ -143,13 +147,5 @@ class ColorRamp(object):
         will force its existence, then return the evaluate function.
         """
         self.node = self.get_valid_node(node_name)
-
         self.color_ramp = self.node.color_ramp
-
-        try:
-            self.color_ramp.evaluate(0.0)
-        except:
-            self.color_ramp.initialize()
-
-        evaluate = lambda val: self.color_ramp.evaluate(val)
-        return evaluate
+        self.color_ramp.evaluate(0.0)

@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 import numpy as np
 
-from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
-
 from ....blendernc.core.netcdf_metadata import *
+from ....blendernc.decorators import NodesDecorators
 from ....blendernc.python_functions import (
-    update_value_and_node_tree,
-    update_node_tree,
     refresh_cache,
+    update_node_tree,
+    update_value_and_node_tree,
 )
 
 

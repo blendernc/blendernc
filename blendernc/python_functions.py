@@ -4,20 +4,19 @@
 #
 # Probably for this reason I should avoid importing bpy here...
 
-## TODO: If netcdf file has been selected already create a copy of the TreeNode
+from os.path import basename
+
+# TODO: If netcdf file has been selected already create a copy of the TreeNode
 import bpy
 
 # Other imports
 import numpy as np
-from os.path import basename
-
-from .msg_errors import huge_image, drop_dim
-
-from .image import normalize_data, from_data_to_pixel_value
-
-import time
 
 from .core.logging import Timer
+from .image import from_data_to_pixel_value, normalize_data
+from .msg_errors import drop_dim, huge_image
+
+from .get_utils import get_unique_data_dict
 
 
 def get_dims(ncdata, var):
@@ -56,8 +55,8 @@ def get_possible_variables(node, context):
     unique_identifier = node.blendernc_dataset_identifier
     if not ncfile or unique_identifier not in node.blendernc_dict.keys():
         return []
-    data_dictionary = node.blendernc_dict[unique_identifier]
-    ncdata = data_dictionary["Dataset"]
+    unique_data_dict = get_unique_data_dict(node)
+    ncdata = unique_data_dict["Dataset"]
     items = get_var(ncdata)
     return items
 
@@ -73,15 +72,14 @@ def get_new_identifier(node):
 def get_possible_dims(node, context):
     if node.inputs:
         if node.inputs[0].is_linked and node.inputs[0].links:
+            link = node.inputs[0].links[0]
             unique_identifier = node.blendernc_dataset_identifier
-            parent_node = node.inputs[0].links[0].from_node
+            parent_node = link.from_node
             blendernc_dict = parent_node.blendernc_dict
             if not blendernc_dict:
                 return []
             else:
-                data_dictionary = (
-                    node.inputs[0].links[0].from_node.blendernc_dict[unique_identifier]
-                )
+                data_dictionary = parent_node.blendernc_dict[unique_identifier]
                 ncdata = data_dictionary["Dataset"]
                 var_name = data_dictionary["selected_var"]["selected_var_name"]
                 items = get_dims(ncdata, var_name)
@@ -94,12 +92,11 @@ def get_possible_dims(node, context):
 
 def get_possible_files(node, context):
     unique_identifier = node.blendernc_dataset_identifier
-    if not unique_identifier in node.blendernc_dict.keys():
+    if unique_identifier not in node.blendernc_dict.keys():
         return []
     data_dictionary = node.blendernc_dict[unique_identifier]
-    items = [
-        (f, basename(f), basename(f), ii) for ii, f in enumerate(data_dictionary.keys())
-    ]
+    enum_data_dict_keys = enumerate(data_dictionary.keys())
+    items = [(f, basename(f), basename(f), i) for i, f in enum_data_dict_keys]
     return items
 
 
@@ -135,46 +132,51 @@ def update_dict(selected_variable, node):
     }
 
 
-def update_range(node, context):
-    unique_identifier = node.blendernc_dataset_identifier
+def get_selected_var(node):
     dataset = node.blendernc_dict[unique_identifier]["Dataset"]
     selected_variable = node.blendernc_dict[unique_identifier]["selected_var"][
         "selected_var_name"
     ]
-    try:
-        node.blendernc_dict[unique_identifier]["selected_var"][
-            "max_value"
-        ] = node.blendernc_dataset_max
-        node.blendernc_dict[unique_identifier]["selected_var"][
-            "min_value"
-        ] = node.blendernc_dataset_min
+    selected_var_dataset = dataset[selected_variable]
+    return selected_var_dataset
 
-        if node.outputs[0].is_linked:
-            NodeTree = node.rna_type.id_data.name
-            frame = bpy.context.scene.frame_current
-            refresh_cache(NodeTree, unique_identifier, frame)
-        update_value_and_node_tree(node, context)
-    except:
-        if node.blendernc_dict[unique_identifier]["selected_var"]["max_value"]:
-            pass
-        else:
-            values = dataarray_random_sampling(dataset[selected_variable], 100)
-            node.blendernc_dict[unique_identifier]["selected_var"]["max_value"] = max(
-                values
-            )
-            node.blendernc_dict[unique_identifier]["selected_var"]["min_value"] = min(
-                values
-            )
+
+def update_range(node, context):
+    unique_identifier = node.blendernc_dataset_identifier
+    try:
+        max_val = node.blendernc_dataset_max
+        min_val = node.blendernc_dataset_min
+    except AttributeError:
+        dataset = node.blendernc_dict[unique_identifier]["Dataset"]
+        selected_variable = node.blendernc_dict[unique_identifier]["selected_var"][
+            "selected_var_name"
+        ]
+        selected_var_dataset = dataset[selected_variable]
+        rand_sample = dataarray_random_sampling(selected_var_dataset, 100)
+        max_val = np.max(rand_sample)
+        min_val = np.min(rand_sample)
+
+    node.blendernc_dict[unique_identifier]["selected_var"]["max_value"] = max_val
+    node.blendernc_dict[unique_identifier]["selected_var"]["min_value"] = min_val
+
+    if len(node.outputs) != 0:
+        NodeTree = node.rna_type.id_data.name
+        frame = bpy.context.scene.frame_current
+        refresh_cache(NodeTree, unique_identifier, frame)
+
+    update_value_and_node_tree(node, context)
 
 
 def dataarray_random_sampling(dataarray, n):
     values = np.zeros(n) * np.nan
     dataarray_dims = [dim for dim in dataarray.dims]
     counter = 0
+    randint = np.random.randint
     while not np.isfinite(values).all():
+        len_data_dims = len(dataarray_dims)
         dims_dict = {
-            dataarray_dims[ii]: np.random.randint(0, len(dataarray[dataarray_dims[ii]]))
-            for ii in range(len(dataarray_dims))
+            dataarray_dims[ii]: randint(0, len(dataarray[dataarray_dims[ii]]))
+            for ii in range(len_data_dims)
         }
         values[counter] = dataarray.isel(dims_dict).values
         if np.isfinite(values[counter]):
@@ -188,15 +190,17 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram.
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data?
-    if len(bpy.context.scene.nc_cache[NodeTree][identifier]) > 10:
-        frames_loaded = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
-        bpy.context.scene.nc_cache[NodeTree][identifier].pop(frames_loaded[0])
+    cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
+    if len(cached_nodetree) > 10:
+        frames_loaded = list(cached_nodetree.keys())
+        cached_nodetree.pop(frames_loaded[0])
 
 
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.nc_cache:
-        if frame in list(bpy.context.scene.nc_cache[NodeTree][identifier].keys()):
-            bpy.context.scene.nc_cache[NodeTree][identifier].pop(frame)
+        cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
+        if frame in list(cached_nodetree.keys()):
+            cached_nodetree.pop(frame)
 
 
 def del_cache(NodeTree, identifier):
@@ -275,12 +279,11 @@ def get_var_dict(context, node, node_tree):
 def get_var_data(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
-    data_dictionary = node.blendernc_dict
-    unique_identifier = node.blendernc_dataset_identifier
+    unique_data_dict = get_unique_data_dict(node)
     # Get the netcdf of the selected file
-    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    ncdata = unique_data_dict["Dataset"]
     # Get var name
-    var_name = data_dictionary[unique_identifier]["selected_var"]["selected_var_name"]
+    var_name = unique_data_dict["selected_var"]["selected_var_name"]
     # Get the data of the selected variable
     # Remove Nans
     # TODO: Add node to preserve NANs
@@ -293,18 +296,15 @@ def get_var_data(context, node, node_tree):
 
 def normalize_data_w_grid(node, node_tree, data, grid_node):
     node = bpy.data.node_groups[node_tree].nodes[node]
+    unique_data_dict = get_unique_data_dict(node)
+
     grid_node = bpy.data.node_groups[node_tree].nodes[grid_node]
+    unique_grid_dict = get_unique_data_dict(grid_node)
 
-    data_dictionary = node.blendernc_dict
-    unique_identifier = node.blendernc_dataset_identifier
-
-    grid_dictionary = grid_node.blendernc_dict
-    grid_identifier = grid_node.blendernc_dataset_identifier
-
-    grid = grid_dictionary[grid_identifier]["Dataset"].copy()
-    x_grid_name = grid_dictionary[grid_identifier]["Coords"]["X"]
-    y_grid_name = grid_dictionary[grid_identifier]["Coords"]["Y"]
-    active_resolution = data_dictionary[unique_identifier]["selected_var"]["resolution"]
+    grid = unique_grid_dict["Dataset"].copy()
+    x_grid_name = unique_grid_dict["Coords"]["X"]
+    y_grid_name = unique_grid_dict["Coords"]["Y"]
+    active_resolution = unique_data_dict["selected_var"]["resolution"]
 
     # Perhaps useful instead of not converting to dataset?
     # if x_grid_name in list(grid.coords) or y_grid_name in list(grid.coords):
@@ -321,8 +321,8 @@ def normalize_data_w_grid(node, node_tree, data, grid_node):
     # interpolation.
     # Tripolar grids will have issues
     # in the North Pole.
-    vmin = data_dictionary[unique_identifier]["selected_var"]["min_value"]
-    vmax = data_dictionary[unique_identifier]["selected_var"]["max_value"]
+    vmin = unique_data_dict["selected_var"]["min_value"]
+    vmax = unique_data_dict["selected_var"]["max_value"]
     norm_data = plot_using_grid(x_grid_data, y_grid_data, data, vmin, vmax)
     return norm_data
 
@@ -358,10 +358,9 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
 def get_time(context, node, node_tree, frame):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
-    data_dictionary = node.blendernc_dict
-    unique_identifier = node.blendernc_dataset_identifier
+    unique_data_dict = get_unique_data_dict(node)
     # Get the netcdf of the selected file
-    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    ncdata = unique_data_dict["Dataset"]
     # Get the data of the selected variable
     if "time" in ncdata.coords.keys():
         time = ncdata["time"]
@@ -378,10 +377,9 @@ def get_time(context, node, node_tree, frame):
 def get_max_min_data(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
-    data_dictionary = node.blendernc_dict
-    unique_identifier = node.blendernc_dataset_identifier
+    unique_data_dict = get_unique_data_dict(node)
     # Get the metadata of the selected variable
-    var_metadata = data_dictionary[unique_identifier]["selected_var"]
+    var_metadata = unique_data_dict["selected_var"]
     if var_metadata["max_value"] != None and var_metadata["min_value"] != None:
         return var_metadata["max_value"], var_metadata["min_value"]
     else:
@@ -547,11 +545,10 @@ def ui_material():
 
 def update_colormap_interface(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
-    data_dictionary = node.blendernc_dict
-    unique_identifier = node.blendernc_dataset_identifier
+    unique_data_dict = get_unique_data_dict(node)
     # Get var range
-    max_val = data_dictionary[unique_identifier]["selected_var"]["max_value"]
-    min_val = data_dictionary[unique_identifier]["selected_var"]["min_value"]
+    max_val = unique_data_dict["selected_var"]["max_value"]
+    min_val = unique_data_dict["selected_var"]["min_value"]
 
     # Find all nodes using the selected image in the node.
     all_nodes = get_all_nodes_using_image(node.image.name)
@@ -829,10 +826,11 @@ def rotate_longitude(node, context):
     refresh_cache(NodeTree, identifier, frame)
 
 
+import glob
+import os
+
 # xarray core TODO: Divide file for future computations (isosurfaces, vector fields, etc.)
 import xarray
-import os
-import glob
 
 
 class BlenderncEngine:

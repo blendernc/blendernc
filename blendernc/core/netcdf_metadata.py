@@ -1,8 +1,9 @@
-import bpy
-import numpy as np
 from calendar import monthrange
 
-from ..python_functions import update_value_and_node_tree, refresh_cache, get_dims
+import bpy
+import numpy as np
+
+from ..python_functions import get_dims, refresh_cache, update_value_and_node_tree
 
 
 def get_items_dims(self, context):

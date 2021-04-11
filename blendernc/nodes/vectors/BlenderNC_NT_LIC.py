@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 import lic
 
 from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
 
 
 class BlenderNC_NT_template(bpy.types.Node):

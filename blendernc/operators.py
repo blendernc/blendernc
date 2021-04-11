@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 # Imports
-import bpy
+from os.path import abspath, dirname, isfile, join
 
-from os.path import abspath, isfile, join, dirname
+import bpy
+from bpy_extras.io_utils import ImportHelper
 
 from .python_functions import (
-    load_frame,
-    update_image,
+    BlenderncEngine,
     get_node,
     get_var,
+    load_frame,
+    update_colormap_interface,
+    update_image,
     update_nodes,
     update_proxy_file,
-    BlenderncEngine,
-    update_colormap_interface,
 )
-
-from bpy_extras.io_utils import ImportHelper
 
 bNCEngine = BlenderncEngine()
 
@@ -127,6 +126,7 @@ class BlenderNC_OT_compute_range(bpy.types.Operator):
     def execute(self, context):
         node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
         unique_identifier = node.blendernc_dataset_identifier
+        # TODO: Fix bug when the node isn't connected.
         dataset = node.blendernc_dict[unique_identifier]["Dataset"]
         selected_variable = node.blendernc_dict[unique_identifier]["selected_var"][
             "selected_var_name"

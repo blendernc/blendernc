@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 import math
+from collections import defaultdict
 
 import bpy
-
 from bpy.props import (
-    StringProperty,
     BoolProperty,
+    FloatProperty,
     FloatVectorProperty,
     IntProperty,
-    FloatProperty,
+    StringProperty,
 )
-from bpy.types import NodeTree, NodeSocket
-
-from collections import defaultdict
+from bpy.types import NodeSocket, NodeTree
 
 socket_colors = {
     "bNCnetcdfSocket": (0.6, 1.0, 0.6, 1.0),

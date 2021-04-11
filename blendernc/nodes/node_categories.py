@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from .node_tree import BlenderNCNodeCategory
 from nodeitems_utils import NodeItem
+
+from .node_tree import BlenderNCNodeCategory
 
 # all categories in a list
 node_categories = [

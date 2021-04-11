@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import bpy
-
 import functools
 
-from .msg_errors import unselected_nc_var, unselected_nc_file
+import bpy
+
+from .msg_errors import unselected_nc_file, unselected_nc_var
 
 
 class NodesDecorators(object):

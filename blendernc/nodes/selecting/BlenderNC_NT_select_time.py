@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # Imports
-import bpy
-
-from ....blendernc.decorators import NodesDecorators
-
 from collections import defaultdict
 
+import bpy
+
 from ....blendernc.core.dates import *
+from ....blendernc.decorators import NodesDecorators
 from ....blendernc.python_functions import (
-    update_datetime_text,
-    update_value_and_node_tree,
-    update_node_tree,
     refresh_cache,
+    update_datetime_text,
+    update_node_tree,
+    update_value_and_node_tree,
 )
 
 
@@ -131,20 +130,21 @@ class BlenderNC_NT_select_time(bpy.types.Node):
 
     @NodesDecorators.node_connections
     def update(self):
-        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
-        dataset = blendernc_dict["Dataset"]
+        unique_identifier = self.blendernc_dataset_identifier
+        unique_data_dict_node = self.blendernc_dict[unique_identifier]
+        dataset = unique_data_dict_node["Dataset"]
         node_tree = self.rna_type.id_data.name
         if self.day and self.month and self.year and self.selected_time:
-            blendernc_dict["Dataset"] = dataset.sel(time=self.selected_time).drop(
-                "time"
-            )
+            unique_data_dict_node["Dataset"] = dataset.sel(
+                time=self.selected_time
+            ).drop("time")
             update_datetime_text(
                 bpy.context, self.name, node_tree, 0, self.selected_time
             )
         elif self.selected_time and self.selected_time == self.step:
-            blendernc_dict["Dataset"] = dataset.isel(time=int(self.selected_time)).drop(
-                "time"
-            )
+            unique_data_dict_node["Dataset"] = dataset.isel(
+                time=int(self.selected_time)
+            ).drop("time")
             update_datetime_text(
                 bpy.context, self.name, node_tree, 0, self.selected_time
             )

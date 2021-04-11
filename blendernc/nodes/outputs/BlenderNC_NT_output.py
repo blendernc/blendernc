@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 
+from ....blendernc.decorators import NodesDecorators
+from ....blendernc.image import dataset_2_image_preview
 from ....blendernc.python_functions import (
+    update_colormap_interface,
     update_image,
     update_value,
-    update_colormap_interface,
 )
-
-from ....blendernc.decorators import NodesDecorators
-
-from ....blendernc.image import dataset_2_image_preview
-
-from collections import defaultdict
 
 
 class BlenderNC_NT_output(bpy.types.Node):
     # === Basics ===
     # Description string
     """NetCDF loading resolution """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFOutput"
     # Label for nice name display
     bl_label = "Output"
@@ -59,9 +58,8 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.frame_loaded = -1
         self.inputs.new("bNCnetcdfSocket", "Dataset")
@@ -80,49 +78,58 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        # Generated image supported by bpy to display, but perhaps show a preview of field?
+        identifier = self.blendernc_dataset_identifier
+        # Generated image supported by bpy to display,
+        # but perhaps show a preview of field?
         layout.template_ID_preview(
-            self, "image", new="image.new", open="image.open", rows=2, cols=3
+            self,
+            "image",
+            new="image.new",
+            open="image.open",
+            rows=2,
+            cols=3,
         )
         if self.image:
+            is_custom_image = self.image.preview.is_image_custom
+            blender_dict_keys = self.blendernc_dict.keys()
             if self.image.is_float and (
-                not self.image.preview.is_image_custom
-                and self.blendernc_dataset_identifier in self.blendernc_dict.keys()
+                not is_custom_image and identifier in blender_dict_keys
             ):
                 image_preview = dataset_2_image_preview(self)
                 self.image.preview.image_pixels_float[0:] = image_preview
 
-        if (
-            self.image
-            and self.blendernc_dataset_identifier in self.blendernc_dict.keys()
-        ):
+        if self.image and identifier in blender_dict_keys:
             layout.prop(self, "update_on_frame_change")
 
             layout.prop(self, "keep_nan")
 
-            operator = layout.operator("blendernc.colorbar", icon="GROUP_VCOL")
+            operator = layout.operator(
+                "blendernc.colorbar",
+                icon="GROUP_VCOL",
+            )
             operator.node = self.name
             operator.node_group = self.rna_type.id_data.name
             operator.image = self.image.name
 
-        if "Input Grid" in self.rna_type.id_data.nodes.keys() and len(self.inputs) == 1:
+        node_names = self.rna_type.id_data.nodes.keys()
+        if "Input Grid" in node_names and len(self.inputs) == 1:
             self.inputs.new("bNCnetcdfSocket", "Grid")
-        elif (
-            "Input Grid" not in self.rna_type.id_data.nodes.keys()
-            and len(self.inputs) == 2
-        ):
+        elif "Input Grid" not in node_names and len(self.inputs) == 2:
             self.inputs.remove(self.inputs.get("Grid"))
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
         # TODO: Implement manual purge.
         # layout.label(text="INFO: Purge all frames", icon='INFO')
-        # operator = layout.operator("blendernc.purge_all", icon='GROUP_VCOL')
+        # operator = layout.operator("blendernc.purge_all",
+        #                             icon='GROUP_VCOL')
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Image Output"
 

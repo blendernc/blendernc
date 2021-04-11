@@ -2,14 +2,18 @@
 # Imports
 import bpy
 
-from ....blendernc.python_functions import get_possible_files, get_possible_variables
+from ....blendernc.python_functions import (
+    get_possible_files,
+    get_possible_variables,
+)
 
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
     # Description string
     """A netcdf node"""
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFPreloadNode"
     # Label for nice name display
     bl_label = "Load netCDF"
@@ -39,9 +43,8 @@ class BlenderNC_NT_preloader(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         pass
 
@@ -55,7 +58,7 @@ class BlenderNC_NT_preloader(bpy.types.Node):
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        scene = context.scene
+        # scene = context.scene
         layout.label(text="INFO: Work in progress", icon="INFO")
         # if scene.nc_dictionary:
         #     layout.prop(self, "file_name")
@@ -67,7 +70,8 @@ class BlenderNC_NT_preloader(bpy.types.Node):
         #     layout.prop(self, "frame_start")
         #     layout.prop(self, "frame_end")
         #     if self.frame_end > self.frame_start:
-        #         op = layout.operator("blendernc.preloader", icon="FILE_REFRESH")
+        #         op = layout.operator("blendernc.preloader",
+        #                           icon="FILE_REFRESH",)
         #         op.file_name = self.file_name
         #         op.var_name = self.var_name
         #         op.frame_start = self.frame_start
@@ -76,12 +80,14 @@ class BlenderNC_NT_preloader(bpy.types.Node):
         #         layout.label(text="Cannot preload!")
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Load netCDF"
 

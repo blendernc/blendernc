@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # Imports
+from os.path import abspath, dirname, isfile, join
+
 import bpy
-
-from os.path import abspath, isfile, join, dirname
-
 from bpy_extras.io_utils import ImportHelper
 
 
