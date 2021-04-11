@@ -2,7 +2,7 @@
 
 ![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Travis (.org)](https://img.shields.io/travis/blendernc/blendernc?label=travis) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-2.83--2.92-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/blendernc/blendernc/master.svg)](https://results.pre-commit.ci/latest/github/blendernc/blendernc/master)
 
-**BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org). 
+**BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org).
 
 BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display netCDF data files as images and volumetric data in Blender.
 
@@ -13,25 +13,25 @@ Science visualization is a fundamental part of science communication and explora
 - Quick load of netCDFs:
 <img src="./docs/images/quick_load_gif.gif" width="70%" />
 
-- Nodes tree for more complex visualizations: 
+- Nodes tree for more complex visualizations:
 <img src="./docs/images/GEBCO_blendernc.png" width="70%" />
 
 - Math computations in BlenderNC node tree.
 
 Documentation
-------------- 
+-------------
 
 Lear more about BlenderNC in the official documentation at [https://blendernc.readthedocs.io](https://blendernc.readthedocs.io)
 
 Contributing
 ------------
-All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. More information about contributing to BlenderNC can be found at our [Contribution page](https://blendernc.readthedocs.io/contribute). 
+All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. More information about contributing to BlenderNC can be found at our [Contribution page](https://blendernc.readthedocs.io/contribute).
 
 Use Github to:
 - report bugs,
 - suggest features,
 - provide examples,
-- and view the source code. 
+- and view the source code.
 
 ---
 
