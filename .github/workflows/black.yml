@@ -1,6 +1,6 @@
-name: Lint
+name: Lint-black
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   lint:
