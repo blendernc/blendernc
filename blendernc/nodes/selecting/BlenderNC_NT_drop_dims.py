@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 # Imports
-import copy
 from collections import defaultdict
 
 import bpy
 
 from ....blendernc.decorators import NodesDecorators
-from ....blendernc.msg_errors import unselected_nc_dim
-from ....blendernc.python_functions import (
-    get_lost_dim,
-    get_possible_dims,
-    update_value_and_node_tree,
-)
+from ....blendernc.python_functions import get_possible_dims, update_value_and_node_tree
 
 
 class BlenderNC_NT_drop_dims(bpy.types.Node):
     # === Basics ===
     # Description string
     """Select axis """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFdims"
     # Label for nice name display
     bl_label = "Drop Dimension"
@@ -38,16 +33,16 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
 
-    # Copy function to initialize a copied node from an existing one.
+    # Copy
     def copy(self, node):
         print("Copying from node ", node)
+        self.node_tree = node.node_tree.copy()
 
     # Free function to clean up on removal.
     def free(self):
@@ -60,12 +55,14 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
         layout.prop(self, "blendernc_dims", text="")
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Drop Dimension"
 

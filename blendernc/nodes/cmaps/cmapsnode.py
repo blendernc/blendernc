@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import bpy
 
-from .utils_colorramp import ColorRamp, update_fill_value
-
 # in blender2.80 use ShaderNodeCategory
 from nodeitems_builtins import ShaderNodeCategory
 from nodeitems_utils import (
@@ -10,6 +8,8 @@ from nodeitems_utils import (
     register_node_categories,
     unregister_node_categories,
 )
+
+from .utils_colorramp import ColorRamp, update_fill_value
 
 node_group_name = ".Colormaps"
 
