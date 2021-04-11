@@ -47,8 +47,8 @@ class ColorRamp(object):
 
         for key, items in names.items():
             for item in items:
-                element_1 = "{0}:{1}".format(item, key)
-                element_2 = "{0}-{1}".format(item, key)
+                element_1 = "{}:{}".format(item, key)
+                element_2 = "{}-{}".format(item, key)
                 cmap_names.append((element_1, element_2, "", counter))
                 counter += 1
         return cmap_names

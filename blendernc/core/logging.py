@@ -28,10 +28,10 @@ class Timer:
         times = ""
         for key, item in self.timestamps.items():
             if key != "":
-                titles += "| {0} |".format(key)
-                time_elapsed_s = "{0:.2e}".format(item[1] - item[0])
+                titles += "| {} |".format(key)
+                time_elapsed_s = "{:.2e}".format(item[1] - item[0])
                 spaceL = " " * (len(key) - len(time_elapsed_s))
-                times += "| {0}{1} |".format(spaceL, time_elapsed_s)
+                times += "| {}{} |".format(spaceL, time_elapsed_s)
         print("-" * len(titles))
         print(titles)
         print(times)
@@ -39,25 +39,25 @@ class Timer:
             times = np.array([item for key, item in self.timestamps.items()]).ravel()
             print("-" * len(titles))
             total_text = "| Total = "
-            total_t = "{0:.2e} seconds |".format(max(times) - min(times))
+            total_t = "{:.2e} seconds |".format(max(times) - min(times))
             print(
-                "{0}{1}{2}".format(
+                "{}{}{}".format(
                     total_text,
                     " " * (len(titles) - len(total_text) - len(total_t)),
                     total_t,
                 )
             )
             FPS_text = "| FPS = "
-            FPS = "{0:.2g} |".format(1 / (max(times) - min(times)))
+            FPS = "{:.2g} |".format(1 / (max(times) - min(times)))
             print(
-                "{0}{1}{2}".format(
+                "{}{}{}".format(
                     FPS_text, " " * (len(titles) - len(FPS_text) - len(FPS)), FPS
                 )
             )
             Frame_text = "| Frame = "
-            Frame = "{0} |".format(frame)
+            Frame = "{} |".format(frame)
             print(
-                "{0}{1}{2}".format(
+                "{}{}{}".format(
                     Frame_text,
                     " " * (len(titles) - len(Frame_text) - len(Frame)),
                     Frame,

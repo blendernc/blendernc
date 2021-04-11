@@ -63,9 +63,9 @@ def get_possible_variables(node, context):
 
 def get_new_identifier(node):
     if len(node.name.split(".")) == 1:
-        return "{0:03}".format(0)
+        return "{:03}".format(0)
     else:
-        return "{0:03}".format(int(node.name.split(".")[-1]))
+        return "{:03}".format(int(node.name.split(".")[-1]))
 
 
 # TODO Add decorator to simplify.
@@ -566,10 +566,10 @@ def update_colormap_interface(context, node, node_tree):
     if "Camera" in bpy.data.objects.keys():
         Camera = bpy.data.objects.get("Camera")
         children_name = [children.name for children in Camera.children]
-        if "cbar_{0}".format(node.name) not in children_name:
+        if "cbar_{}".format(node.name) not in children_name:
             bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
             cbar_plane = bpy.context.object
-            cbar_plane.name = "cbar_{0}".format(node.name)
+            cbar_plane.name = "cbar_{}".format(node.name)
             cbar_plane.dimensions = (width, height, 0)
             cbar_plane.location = (0.15, 0, -0.5)
             cbar_plane.parent = Camera
@@ -579,12 +579,12 @@ def update_colormap_interface(context, node, node_tree):
             cbar_plane = [
                 child
                 for child in c_childrens
-                if child.name == "cbar_{0}".format(node.name)
+                if child.name == "cbar_{}".format(node.name)
             ][-1]
             splines = [
                 child
                 for child in cbar_plane.children
-                if "text_cbar_{0}".format(node.name) in child.name
+                if "text_cbar_{}".format(node.name) in child.name
             ]
 
         # Update splines
@@ -613,7 +613,7 @@ def add_splines(n, cbar_plane, width=0.1, height=1):
         spline.location = (1.4, locs[ii], 0)
         spline.lock_location = (True, True, True)
         spline.scale = (1.7, y_rescale, 1.2)
-        spline.name = "text_{0}".format(cbar_plane.name)
+        spline.name = "text_{}".format(cbar_plane.name)
         mat = ui_material()
         try:
             spline.data.materials.append(mat)
