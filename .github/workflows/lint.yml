@@ -1,7 +1,7 @@
 name: Lint-Flake8
 
 on:
-  push:
+  pull_request:
     paths:
       - '*.py'
 
@@ -12,8 +12,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7.10
-          architecture: x64
+          python-version: 3.7.4
       - name: Checkout PyTorch
         uses: actions/checkout@master
       - name: Install flake8
