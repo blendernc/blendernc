@@ -18,6 +18,7 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        uses: suo/flake8-github-action@releases/v1
+        uses: TrueBrain/actions-flake8@master
         with:
-          configuration: "--ignore F722,F821,E203,W503,F405 --max-line-length 88"
+          ignore: F722,F821,E203,W503,F405
+          max-line-length: 88
