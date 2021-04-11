@@ -7,14 +7,14 @@ Install BlenderNC
 BlenderNC requires the following python modules:
 
 .. code-block:: python
-    
+
     xarray
     xgcm
     cmocean
     matplotlib
 
 
-To install the previous python modules in your Blender distribution execute the 
+To install the previous python modules in your Blender distribution execute the
 following commands depending on your OS:
 
 MAC
@@ -47,8 +47,8 @@ Windows
 Blender Compilation
 ###################
 
-To furter configure Blender, you could install it using a `conda` environment 
-by following the official `Blender installation website 
+To furter configure Blender, you could install it using a `conda` environment
+by following the official `Blender installation website
 <https://wiki.blender.org/index.php/Dev:Doc/Building_Blender/>`_.
 
 Create conda environment:
@@ -62,8 +62,8 @@ Create conda environment:
 Compile Blender:
 
 .. code-block:: bash
-    
-    cmake -DPYTHON_VERSION=3.7  -DPYTHON_ROOT_DIR=~/path/to/python/root ../blender 
+
+    cmake -DPYTHON_VERSION=3.7  -DPYTHON_ROOT_DIR=~/path/to/python/root ../blender
 
 
 .. note::
@@ -105,7 +105,7 @@ The addon is installed just like any other Blender addon:
   :width: 80%
   :alt: Install Addon
 
-Now you can follow the tutorials to import netCDFs into blender. 
+Now you can follow the tutorials to import netCDFs into blender.
 
 .. note::
     BlenderNC is only supported by versions of **Blender > 2.8**.
@@ -113,6 +113,6 @@ Now you can follow the tutorials to import netCDFs into blender.
 Update BlenderNC
 ----------------
 
-It is recommended to uninstall the old version first, before installing the new version of `BlenderNC`. Alternatively, 
-enable the "Overwrite" option in Blender (enabled by default), before you navegate to the new addon zip file using the Blender's 
+It is recommended to uninstall the old version first, before installing the new version of `BlenderNC`. Alternatively,
+enable the "Overwrite" option in Blender (enabled by default), before you navegate to the new addon zip file using the Blender's
 file explorer. Finally, restart Blender once the new version is installed.
