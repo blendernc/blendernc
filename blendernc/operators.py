@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # Imports
-from os.path import abspath, dirname, isfile, join
+from os.path import abspath
 
 import bpy
-from bpy_extras.io_utils import ImportHelper
 
 from .python_functions import (
     BlenderncEngine,
@@ -13,7 +12,6 @@ from .python_functions import (
     update_colormap_interface,
     update_image,
     update_nodes,
-    update_proxy_file,
 )
 
 bNCEngine = BlenderncEngine()
@@ -238,7 +236,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
     def execute(self, context):
         act_obj = (
             context.active_object
-            if context.active_object.select_get() == True
+            if context.active_object.select_get() is True
             else None
         )
         sel_obj = context.scene.blendernc_meshes

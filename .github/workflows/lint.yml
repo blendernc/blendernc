@@ -21,4 +21,4 @@ jobs:
       - name: Run flake8
         uses: suo/flake8-github-action@releases/v1
         with:
-          configuration: "--ignore F722,F821,E203,W503 --max-line-length 88"
+          configuration: "--ignore F722,F821,E203,W503,F405 --max-line-length 88"

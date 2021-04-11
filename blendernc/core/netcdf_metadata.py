@@ -1,11 +1,4 @@
-from calendar import monthrange
-
-import bpy
-import numpy as np
-
-from ..python_functions import get_dims, refresh_cache, update_value_and_node_tree
-
-
+#!/usr/bin/env python3
 def get_items_dims(self, context):
     if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
         # BlenderNC dictionary

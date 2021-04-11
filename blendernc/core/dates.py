@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-from calendar import monthrange
-
-import bpy
 import numpy as np
 
 from ..python_functions import refresh_cache, update_value_and_node_tree

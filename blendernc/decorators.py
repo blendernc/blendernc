@@ -48,7 +48,7 @@ class NodesDecorators(object):
         # over the place.
         return wrapper_update
 
-    ## Example of dummy decorator.
+    # Example of dummy decorator.
     @staticmethod
     def dummy(func):
         @functools.wraps(func)
@@ -233,8 +233,9 @@ class NodesDecorators(object):
         """
         Test all output connections.
         """
-        outputs = node.outputs[0]
-        outputs_links = outputs.links
+        pass
+        # outputs = node.outputs[0]
+        # outputs_links = outputs.links
 
     @staticmethod
     def dummy_update(node):

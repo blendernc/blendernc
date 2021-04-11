@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 def get_unique_data_dict(node):
     # Replaces all node.blendernc_dict[unique_identifier]
     # TODO: Make sure to replace all the unique data dicts

@@ -13,7 +13,8 @@ if create_new_node_tree:
     class BlenderNCNodeTree(bpy.types.NodeTree):
         # Description string
         """A custom node tree type that will show up in the editor type list"""
-        # Optional identifier string. If not explicitly defined, the python class name is used.
+        # Optional identifier string. If not explicitly defined,
+        # the python class name is used.
         bl_idname = node_tree_name
         # Label for nice name display
         bl_label = "BlenderNC"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Imports
-from os.path import abspath, dirname, isfile, join
+from os.path import dirname, join
 
 import bpy
 from bpy_extras.io_utils import ImportHelper
@@ -65,7 +65,8 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
 class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
     """"""
 
-    bl_idname = "blendernc.import_mfnetcdf"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "blendernc.import_mfnetcdf"
+
     bl_label = "Load netCDF"
     bl_description = "Import netCDF with xarray"
 

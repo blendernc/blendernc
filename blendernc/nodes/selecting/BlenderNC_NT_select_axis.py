@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 import numpy as np
 
-from ....blendernc.core.netcdf_metadata import *
+from ....blendernc.core.netcdf_metadata import get_items_axes
 from ....blendernc.decorators import NodesDecorators
 from ....blendernc.python_functions import (
     refresh_cache,
@@ -18,7 +18,8 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # === Basics ===
     # Description string
     """Select axis"""
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFaxis"
     # Label for nice name display
     bl_label = "Select Axis"
@@ -47,8 +48,6 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
@@ -81,10 +80,9 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                 if self.axes:
                     layout.label(text="Select within range:")
                     layout.label(
-                        text="[{} - {}]".format(
+                        text="[{0} - {1}]".format(
                             np.round(dataset[self.axes][0].values, 2),
-                            np.round(dataset[self.axes][-1].values),
-                            2,
+                            np.round(dataset[self.axes][-1].values, 2),
                         )
                     )
                     layout.prop(self, "axis_selection", text="")
@@ -120,4 +118,3 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                 )
                 update_node_tree(self, bpy.context)
                 self.pre_selected = self.axis_selection
-            # blendernc_dict['Dataset'] = dataset.sel(time = self.selected_time).drop('time')

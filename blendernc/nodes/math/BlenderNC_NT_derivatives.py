@@ -11,7 +11,8 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
     # === Basics ===
     # Description string
     """Select axis """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFderivative"
     # Label for nice name display
     bl_label = "Derivate"
@@ -25,9 +26,8 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
