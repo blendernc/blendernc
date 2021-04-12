@@ -816,20 +816,21 @@ def rotate_longitude(node, context):
     unique_data_dict = get_unique_data_dict(node)
     # TODO Clear cache, otherwise the transform wont be applied.
     dataset = unique_data_dict["Dataset"]
-    lon_coords = [
-        coord
-        for coord in dataset.coords
-        if ("lon" in coord or "xt" in coord or "xu" in coord)
-    ]
+    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
     if len(lon_coords) == 1:
-        unique_data_dict["Dataset"] = dataset.roll(
-            {lon_coords[0]: int(node.blendernc_rotation)}, roll_coords=True
-        )
+        coord = lon_coords[0]
+        new_dataset = dataset.assign_coords(
+            {coord: (((dataset[coord] - node.blendernc_rotation) % 360))}
+        ).sortby(coord)
+        unique_data_dict["Dataset"] = new_dataset
+        # dataset.roll(
+        # {lon_coords[0]: int(node.blendernc_rotation)}, roll_coords=True
+        # )
     else:
         raise ValueError(
             """Multiple lon axis are not supported.
              The default axis names are anything containing
-             'lon','xt' and 'yt'."""
+             'lon' or 'x'."""
         )
     NodeTree = node.rna_type.id_data.name
     frame = bpy.context.scene.frame_current

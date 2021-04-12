@@ -3,7 +3,6 @@
 from collections import defaultdict
 
 import bpy
-import numpy as np
 
 from ....blendernc.core.netcdf_metadata import get_items_axes
 from ....blendernc.decorators import NodesDecorators
@@ -79,15 +78,16 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                     layout.prop(self, "axes", text="")
                 if self.axes:
                     layout.label(text="Select within range:")
+                    min_val_axes = dataset[self.axes][0].values
+                    max_val_axes = dataset[self.axes][-1].values
+
                     layout.label(
-                        text="[{0} - {1}]".format(
-                            np.round(dataset[self.axes][0].values, 2),
-                            np.round(dataset[self.axes][-1].values, 2),
-                        )
+                        text="[{0:.2f} - {1:.2f}]".format(min_val_axes, max_val_axes)
                     )
                     layout.prop(self, "axis_selection", text="")
                     layout.label(text="INFO: nearest value", icon="INFO")
                     layout.label(text="will be selected")
+
         # layout.label(text="INFO: Work in progress", icon='INFO')
         # layout.prop(self, "axis")
 
@@ -106,7 +106,7 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
         dataset = blendernc_dict["Dataset"]
         node_tree = self.rna_type.id_data.name
-        if self.axes and self.axis_selection:
+        if self.axes:
             blendernc_dict["Dataset"] = dataset.sel(
                 {self.axes: self.axis_selection}, method="nearest"
             ).drop(self.axes)

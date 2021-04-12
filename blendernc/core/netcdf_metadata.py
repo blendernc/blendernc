@@ -22,6 +22,10 @@ def get_items_axes(self, context):
     dims_list = []
     counter = 0
     for dim in dims:
+        # TODO: Shift this condition to select axis?
+        if ("time" or "t") == dim:
+            continue
         dims_list.append((str(dim), str(dim), str(dim), "EMPTY_DATA", counter))
         counter += 1
+
     return dims_list
