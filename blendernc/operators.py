@@ -49,10 +49,12 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         unique_identifier = node.blendernc_dataset_identifier
         node.blendernc_dict[unique_identifier] = bNCEngine.check_files_netcdf(file_path)
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
-        var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
-        bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
-            items=var_names, name="", update=update_nodes
-        )
+        # If quick import, define global variable.
+        if self.node_group == "BlenderNC":
+            var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
+            bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
+                items=var_names, name="", update=update_nodes
+            )
         # Create new node in BlenderNC node
         blendernc_nodes = [
             keys
