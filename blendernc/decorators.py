@@ -182,7 +182,7 @@ class NodesDecorators(object):
                 node=node.name,
             )
             return False
-        elif node.blendernc_netcdf_vars != "":
+        elif node.blendernc_netcdf_vars != "No dataset":
             return True
         else:
             bpy.ops.blendernc.ncload(

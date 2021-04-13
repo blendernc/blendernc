@@ -52,11 +52,15 @@ def get_var(ncdata):
     return var_names
 
 
+def empty_item():
+    return [("No dataset", "No dataset ", "Empty", "CANCEL", 0)]
+
+
 def get_possible_variables(node, context):
     ncfile = node.blendernc_file
     unique_identifier = node.blendernc_dataset_identifier
     if not ncfile or unique_identifier not in node.blendernc_dict.keys():
-        return []
+        return empty_item()
     unique_data_dict = get_unique_data_dict(node)
     ncdata = unique_data_dict["Dataset"]
     items = get_var(ncdata)
@@ -864,6 +868,13 @@ class BlenderncEngine:
 
         return {"Dataset": self.dataset}
 
+    def load_netcdf(self):
+        """
+        Load netcdf using xarray.
+        """
+        filepath = self.file_path
+        self.dataset = xarray.open_mfdataset(filepath, combine="by_coords")
+
     def check_netcdf(self):
         """
         Check if file is a netcdf and contain at least one variable.
@@ -886,13 +897,6 @@ class BlenderncEngine:
                     self.load_netcdf()
                 except RuntimeError:
                     raise ValueError("Files aren't netCDFs:", self.file_path)
-
-    def load_netcdf(self):
-        """
-        Load netcdf using xarray.
-        """
-        filepath = self.file_path
-        self.dataset = xarray.open_mfdataset(filepath, combine="by_coords")
 
 
 class dataset_modifiers:
