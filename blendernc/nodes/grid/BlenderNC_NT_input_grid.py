@@ -1,11 +1,11 @@
+#!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 
-from ....blendernc.python_functions import get_new_identifier, get_var
-
 from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
+from ....blendernc.python_functions import get_new_identifier, get_var
 
 
 def get_possible_grid(node, context):
@@ -21,7 +21,8 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     # === Basics ===
     # Description string
     """Select axis """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFinputgrid"
     # Label for nice name display
     bl_label = "Input Grid"
@@ -38,9 +39,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     )
 
     blendernc_grid_y: bpy.props.EnumProperty(
-        items=get_possible_grid,
-        name="Select Y grid",
-        # update=dict_update,
+        items=get_possible_grid, name="Select Y grid"
     )
 
     # Dataset requirements
@@ -51,9 +50,6 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
     def init(self, context):
         self.inputs.new("bNCstringSocket", "Path")
         self.outputs.new("bNCnetcdfSocket", "Grid")
@@ -78,12 +74,14 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
         layout.prop(self, "blendernc_grid_y", text="")
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Grid Import"
 
@@ -92,13 +90,14 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
         if self.persistent_dict != "":
             self.persistent_dict = self.blendernc_dict.copy()
 
-        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
-        dataset = blendernc_dict["Dataset"]
+        unique_identifier = self.blendernc_dataset_identifier
+        unique_data_dict_node = self.blendernc_dict[unique_identifier]
+        dataset = unique_data_dict_node["Dataset"]
         if self.blendernc_grid_x and self.blendernc_grid_y:
-            blendernc_dict["Dataset"] = dataset.get(
+            unique_data_dict_node["Dataset"] = dataset.get(
                 [self.blendernc_grid_x, self.blendernc_grid_y]
             )
-            blendernc_dict["Coords"] = {
+            unique_data_dict_node["Coords"] = {
                 "X": self.blendernc_grid_x,
                 "Y": self.blendernc_grid_y,
             }

@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 import bpy
-from mathutils import Matrix
+
+# from mathutils import Matrix
 
 context = bpy.context
 
-## Only works with particle instances.
+# Only works with particle instances.
 dg = context.evaluated_depsgraph_get()
 ob = context.object.evaluated_get(dg)
 

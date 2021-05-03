@@ -1,16 +1,15 @@
+#!/usr/bin/env python3
 # Imports
-import bpy
-import numpy as np
-
-from ....blendernc.decorators import NodesDecorators
-
 from collections import defaultdict
 
-from ....blendernc.core.netcdf_metadata import *
+import bpy
+
+from ....blendernc.core.netcdf_metadata import get_items_axes
+from ....blendernc.decorators import NodesDecorators
 from ....blendernc.python_functions import (
-    update_value_and_node_tree,
-    update_node_tree,
     refresh_cache,
+    update_node_tree,
+    update_value_and_node_tree,
 )
 
 
@@ -18,7 +17,8 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # === Basics ===
     # Description string
     """Select axis"""
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFaxis"
     # Label for nice name display
     bl_label = "Select Axis"
@@ -47,8 +47,6 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
@@ -80,16 +78,16 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                     layout.prop(self, "axes", text="")
                 if self.axes:
                     layout.label(text="Select within range:")
+                    min_val_axes = dataset[self.axes][0].values
+                    max_val_axes = dataset[self.axes][-1].values
+
                     layout.label(
-                        text="[{0} - {1}]".format(
-                            np.round(dataset[self.axes][0].values, 2),
-                            np.round(dataset[self.axes][-1].values),
-                            2,
-                        )
+                        text="[{0:.2f} - {1:.2f}]".format(min_val_axes, max_val_axes)
                     )
                     layout.prop(self, "axis_selection", text="")
                     layout.label(text="INFO: nearest value", icon="INFO")
                     layout.label(text="will be selected")
+
         # layout.label(text="INFO: Work in progress", icon='INFO')
         # layout.prop(self, "axis")
 
@@ -108,7 +106,7 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
         dataset = blendernc_dict["Dataset"]
         node_tree = self.rna_type.id_data.name
-        if self.axes and self.axis_selection:
+        if self.axes:
             blendernc_dict["Dataset"] = dataset.sel(
                 {self.axes: self.axis_selection}, method="nearest"
             ).drop(self.axes)
@@ -120,4 +118,3 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                 )
                 update_node_tree(self, bpy.context)
                 self.pre_selected = self.axis_selection
-            # blendernc_dict['Dataset'] = dataset.sel(time = self.selected_time).drop('time')
