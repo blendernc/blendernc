@@ -11,7 +11,7 @@ from ....blendernc.python_functions import update_range
 class BlenderNC_NT_range(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFRange"

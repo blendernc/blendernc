@@ -63,7 +63,7 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
 
 
 class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
-    """"""
+    """ """
 
     bl_idname = "blendernc.import_mfnetcdf"
 

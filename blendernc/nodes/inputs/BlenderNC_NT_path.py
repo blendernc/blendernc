@@ -8,7 +8,7 @@ from ....blendernc.python_functions import update_value_and_node_tree
 class BlenderNC_NT_path(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFPath"

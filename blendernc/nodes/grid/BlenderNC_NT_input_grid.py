@@ -20,7 +20,7 @@ def get_possible_grid(node, context):
 class BlenderNC_NT_input_grid(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFinputgrid"
