@@ -22,7 +22,7 @@ from ....blendernc.python_functions import (
 class BlenderNC_NT_select_time(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFtime"

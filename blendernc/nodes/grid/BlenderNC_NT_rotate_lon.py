@@ -11,7 +11,7 @@ from ....blendernc.python_functions import rotate_longitude, update_value_and_no
 class BlenderNC_NT_rotatelon(bpy.types.Node):
     # === Basics ===
     # Description string
-    """NetCDF loading resolution """
+    """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFrotatelon"

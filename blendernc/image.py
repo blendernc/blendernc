@@ -51,7 +51,7 @@ def image_data(node):
 
 
 def array_to_image(array, image_float=False):
-    """"""
+    """ """
     normalized_data = normalize_data(array)
     rgba = from_data_to_pixel_value(normalized_data, image_float)
     return rgba
@@ -59,7 +59,7 @@ def array_to_image(array, image_float=False):
 
 # Definitions
 def normalize_data(data, max_range=None, min_range=None):
-    """"""
+    """ """
     # Find ranges and normalize in the interval [0,1]
     if min_range is None:
         min_range = np.nanmin(data)

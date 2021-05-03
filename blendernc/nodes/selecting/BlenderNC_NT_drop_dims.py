@@ -11,7 +11,7 @@ from ....blendernc.python_functions import get_possible_dims, update_value_and_n
 class BlenderNC_NT_drop_dims(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFdims"

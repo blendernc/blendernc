@@ -10,7 +10,7 @@ from ....blendernc.msg_errors import unselected_nc_file, unselected_nc_var
 class BlenderNC_NT_derivatives(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFderivative"

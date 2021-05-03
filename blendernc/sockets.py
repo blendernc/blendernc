@@ -11,7 +11,7 @@ socket_colors = {
 
 
 class bNCSocketDefault:
-    """ Base class for all Sockets """
+    """Base class for all Sockets"""
 
     def unlink(self, link):
         return self.id_data.links.remove(link)

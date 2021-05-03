@@ -16,7 +16,7 @@ from ....blendernc.python_functions import (
 class BlenderNC_NT_output(bpy.types.Node):
     # === Basics ===
     # Description string
-    """NetCDF loading resolution """
+    """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "netCDFOutput"
