@@ -4,7 +4,6 @@
 docs/build/
 *.old
 .DS_Store
-.ipynb_checkpoints/
 *.bk
 .vscode/
 .cython_build/*
@@ -29,6 +28,23 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Develop - Jupyter Notebook
+.ipynb_checkpoints
 ./develop_notebooks/*
 ./develop_notebooks*
 develop_notebooks*
