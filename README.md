@@ -36,7 +36,6 @@ Use Github to:
 ---
 
 #### Authors
-
 [@josuemtzmo](https://github.com/josuemtzmo)
 [@orioltinto](https://github.com/orioltinto)
 
