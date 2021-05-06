@@ -24,7 +24,7 @@ from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 from .nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
 from .nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
 from .nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
-from .nodes.vectors.BlenderNC_NT_lic import BlenderNC_NT_lic
+from .nodes.vectors.BlenderNC_NT_line_int_conv import BlenderNC_NT_lic
 from .operators import (
     BlenderNC_OT_apply_material,
     BlenderNC_OT_colorbar,

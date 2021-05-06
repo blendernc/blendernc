@@ -41,7 +41,6 @@ cdef void _advance(float vx, float vy,
         y[0]=h-1 # FIXME: other boundary conditions?
 
 
-#np.ndarray[float, ndim=2]
 def line_integral_convolution(
         np.ndarray[float, ndim=3] vectors,
         np.ndarray[float, ndim=2] texture,
@@ -68,13 +67,11 @@ def line_integral_convolution(
             fy = 0.5
 
             k = kernellen//2
-            #print i, j, k, x, y
             result[i,j] += kernel[k]*texture[x,y]
             while k<kernellen-1:
                 _advance(vectors[y,x,0],vectors[y,x,1],
                         &x, &y, &fx, &fy, w, h)
                 k+=1
-                #print i, j, k, x, y
                 result[i,j] += kernel[k]*texture[x,y]
 
             x = j
@@ -86,7 +83,6 @@ def line_integral_convolution(
                 _advance(-vectors[y,x,0],-vectors[y,x,1],
                         &x, &y, &fx, &fy, w, h)
                 k-=1
-                #print i, j, k, x, y
                 result[i,j] += kernel[k]*texture[x,y]
 
     return result

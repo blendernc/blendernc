@@ -30,6 +30,12 @@ def get_dims(ncdata, var):
     return dim_names
 
 
+def get_geo_coord_names(dataset):
+    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
+    lat_coords = [coord for coord in dataset.coords if ("lat" in coord or "y" in coord)]
+    return {"lon_name": lon_coords, "lat_name": lat_coords}
+
+
 def get_var(ncdata):
     dimensions = list(ncdata.coords.dims.keys())
     variables = list(ncdata.variables.keys() - dimensions)
@@ -820,7 +826,7 @@ def rotate_longitude(node, context):
     unique_data_dict = get_unique_data_dict(node)
     # TODO Clear cache, otherwise the transform wont be applied.
     dataset = unique_data_dict["Dataset"]
-    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
+    lon_coords = get_geo_coord_names(dataset)["lon_name"]
     if len(lon_coords) == 1:
         coord = lon_coords[0]
         new_dataset = dataset.assign_coords(

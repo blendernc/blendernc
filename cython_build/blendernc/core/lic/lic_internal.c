@@ -3,19 +3,13 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "define_macros": [
-            [
-                "NPY_NO_DEPRECATED_API",
-                "NPY_1_7_API_VERSION"
-            ]
-        ],
         "depends": [],
-        "name": "lic_internal",
+        "name": "cython_build.lic_internal",
         "sources": [
             "./blendernc/core/lic/lic_internal.pyx"
         ]
     },
-    "module_name": "lic_internal"
+    "module_name": "cython_build.lic_internal"
 }
 END: Cython Metadata */
 
@@ -621,8 +615,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__lic_internal
-#define __PYX_HAVE_API__lic_internal
+#define __PYX_HAVE__cython_build__lic_internal
+#define __PYX_HAVE_API__cython_build__lic_internal
 /* Early includes */
 #include <string.h>
 #include <stdio.h>
@@ -1675,14 +1669,14 @@ static PyTypeObject *__pyx_ptype_5numpy_broadcast = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ndarray = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 
-/* Module declarations from 'lic_internal' */
-static void __pyx_f_12lic_internal__advance(float, float, int *, int *, float *, float *, int, int); /*proto*/
+/* Module declarations from 'cython_build.lic_internal' */
+static void __pyx_f_12cython_build_12lic_internal__advance(float, float, int *, int *, float *, float *, int, int); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_float = { "float", NULL, sizeof(float), { 0 }, 0, 'R', 0, 0 };
-#define __Pyx_MODULE_NAME "lic_internal"
-extern int __pyx_module_is_main_lic_internal;
-int __pyx_module_is_main_lic_internal = 0;
+#define __Pyx_MODULE_NAME "cython_build.lic_internal"
+extern int __pyx_module_is_main_cython_build__lic_internal;
+int __pyx_module_is_main_cython_build__lic_internal = 0;
 
-/* Implementation of 'lic_internal' */
+/* Implementation of 'cython_build.lic_internal' */
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_ImportError;
@@ -1715,8 +1709,8 @@ static const char __pyx_k_vectors[] = "vectors";
 static const char __pyx_k_kernellen[] = "kernellen";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_ImportError[] = "ImportError";
-static const char __pyx_k_lic_internal[] = "lic_internal";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_cython_build_lic_internal[] = "cython_build.lic_internal";
 static const char __pyx_k_line_integral_convolution[] = "line_integral_convolution";
 static const char __pyx_k_blendernc_core_lic_lic_internal[] = "blendernc/core/lic/lic_internal.pyx";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
@@ -1727,6 +1721,7 @@ static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_kp_s_Vectors_must_have_two_components;
 static PyObject *__pyx_kp_s_blendernc_core_lic_lic_internal;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_n_s_cython_build_lic_internal;
 static PyObject *__pyx_n_s_dtype;
 static PyObject *__pyx_n_s_float32;
 static PyObject *__pyx_n_s_fx;
@@ -1738,7 +1733,6 @@ static PyObject *__pyx_n_s_j;
 static PyObject *__pyx_n_s_k;
 static PyObject *__pyx_n_s_kernel;
 static PyObject *__pyx_n_s_kernellen;
-static PyObject *__pyx_n_s_lic_internal;
 static PyObject *__pyx_n_s_line_integral_convolution;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name;
@@ -1758,22 +1752,22 @@ static PyObject *__pyx_n_s_w;
 static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_vectors, PyArrayObject *__pyx_v_texture, PyArrayObject *__pyx_v_kernel); /* proto */
+static PyObject *__pyx_pf_12cython_build_12lic_internal_line_integral_convolution(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_vectors, CYTHON_UNUSED PyArrayObject *__pyx_v_texture, PyArrayObject *__pyx_v_kernel); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_codeobj__4;
 /* Late includes */
 
-/* "lic_internal.pyx":5
- * cimport numpy as np
+/* "blendernc/core/lic/lic_internal.pyx":7
+ *
  *
  * cdef void _advance(float vx, float vy,             # <<<<<<<<<<<<<<
  *         int* x, int* y, float*fx, float*fy, int w, int h):
  *     cdef float tx, ty
  */
 
-static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, int *__pyx_v_x, int *__pyx_v_y, float *__pyx_v_fx, float *__pyx_v_fy, int __pyx_v_w, int __pyx_v_h) {
+static void __pyx_f_12cython_build_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, int *__pyx_v_x, int *__pyx_v_y, float *__pyx_v_fx, float *__pyx_v_fy, int __pyx_v_w, int __pyx_v_h) {
   float __pyx_v_tx;
   float __pyx_v_ty;
   __Pyx_RefNannyDeclarations
@@ -1785,7 +1779,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_advance", 0);
 
-  /* "lic_internal.pyx":8
+  /* "blendernc/core/lic/lic_internal.pyx":10
  *         int* x, int* y, float*fx, float*fy, int w, int h):
  *     cdef float tx, ty
  *     if vx>=0:             # <<<<<<<<<<<<<<
@@ -1795,7 +1789,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = ((__pyx_v_vx >= 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":9
+    /* "blendernc/core/lic/lic_internal.pyx":11
  *     cdef float tx, ty
  *     if vx>=0:
  *         tx = (1-fx[0])/vx             # <<<<<<<<<<<<<<
@@ -1805,11 +1799,11 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_2 = (1.0 - (__pyx_v_fx[0]));
     if (unlikely(__pyx_v_vx == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 9, __pyx_L1_error)
+      __PYX_ERR(0, 11, __pyx_L1_error)
     }
     __pyx_v_tx = (__pyx_t_2 / __pyx_v_vx);
 
-    /* "lic_internal.pyx":8
+    /* "blendernc/core/lic/lic_internal.pyx":10
  *         int* x, int* y, float*fx, float*fy, int w, int h):
  *     cdef float tx, ty
  *     if vx>=0:             # <<<<<<<<<<<<<<
@@ -1819,7 +1813,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     goto __pyx_L3;
   }
 
-  /* "lic_internal.pyx":11
+  /* "blendernc/core/lic/lic_internal.pyx":13
  *         tx = (1-fx[0])/vx
  *     else:
  *         tx = -fx[0]/vx             # <<<<<<<<<<<<<<
@@ -1830,13 +1824,13 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_2 = (-(__pyx_v_fx[0]));
     if (unlikely(__pyx_v_vx == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 11, __pyx_L1_error)
+      __PYX_ERR(0, 13, __pyx_L1_error)
     }
     __pyx_v_tx = (__pyx_t_2 / __pyx_v_vx);
   }
   __pyx_L3:;
 
-  /* "lic_internal.pyx":12
+  /* "blendernc/core/lic/lic_internal.pyx":14
  *     else:
  *         tx = -fx[0]/vx
  *     if vy>=0:             # <<<<<<<<<<<<<<
@@ -1846,7 +1840,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = ((__pyx_v_vy >= 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":13
+    /* "blendernc/core/lic/lic_internal.pyx":15
  *         tx = -fx[0]/vx
  *     if vy>=0:
  *         ty = (1-fy[0])/vy             # <<<<<<<<<<<<<<
@@ -1856,11 +1850,11 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_2 = (1.0 - (__pyx_v_fy[0]));
     if (unlikely(__pyx_v_vy == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 13, __pyx_L1_error)
+      __PYX_ERR(0, 15, __pyx_L1_error)
     }
     __pyx_v_ty = (__pyx_t_2 / __pyx_v_vy);
 
-    /* "lic_internal.pyx":12
+    /* "blendernc/core/lic/lic_internal.pyx":14
  *     else:
  *         tx = -fx[0]/vx
  *     if vy>=0:             # <<<<<<<<<<<<<<
@@ -1870,7 +1864,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     goto __pyx_L4;
   }
 
-  /* "lic_internal.pyx":15
+  /* "blendernc/core/lic/lic_internal.pyx":17
  *         ty = (1-fy[0])/vy
  *     else:
  *         ty = -fy[0]/vy             # <<<<<<<<<<<<<<
@@ -1881,13 +1875,13 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_2 = (-(__pyx_v_fy[0]));
     if (unlikely(__pyx_v_vy == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 15, __pyx_L1_error)
+      __PYX_ERR(0, 17, __pyx_L1_error)
     }
     __pyx_v_ty = (__pyx_t_2 / __pyx_v_vy);
   }
   __pyx_L4:;
 
-  /* "lic_internal.pyx":16
+  /* "blendernc/core/lic/lic_internal.pyx":18
  *     else:
  *         ty = -fy[0]/vy
  *     if tx<ty:             # <<<<<<<<<<<<<<
@@ -1897,7 +1891,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = ((__pyx_v_tx < __pyx_v_ty) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":17
+    /* "blendernc/core/lic/lic_internal.pyx":19
  *         ty = -fy[0]/vy
  *     if tx<ty:
  *         if vx>=0:             # <<<<<<<<<<<<<<
@@ -1907,7 +1901,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_1 = ((__pyx_v_vx >= 0.0) != 0);
     if (__pyx_t_1) {
 
-      /* "lic_internal.pyx":18
+      /* "blendernc/core/lic/lic_internal.pyx":20
  *     if tx<ty:
  *         if vx>=0:
  *             x[0]+=1             # <<<<<<<<<<<<<<
@@ -1917,7 +1911,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       __pyx_t_3 = 0;
       (__pyx_v_x[__pyx_t_3]) = ((__pyx_v_x[__pyx_t_3]) + 1);
 
-      /* "lic_internal.pyx":19
+      /* "blendernc/core/lic/lic_internal.pyx":21
  *         if vx>=0:
  *             x[0]+=1
  *             fx[0]=0             # <<<<<<<<<<<<<<
@@ -1926,7 +1920,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
       (__pyx_v_fx[0]) = 0.0;
 
-      /* "lic_internal.pyx":17
+      /* "blendernc/core/lic/lic_internal.pyx":19
  *         ty = -fy[0]/vy
  *     if tx<ty:
  *         if vx>=0:             # <<<<<<<<<<<<<<
@@ -1936,7 +1930,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       goto __pyx_L6;
     }
 
-    /* "lic_internal.pyx":21
+    /* "blendernc/core/lic/lic_internal.pyx":23
  *             fx[0]=0
  *         else:
  *             x[0]-=1             # <<<<<<<<<<<<<<
@@ -1947,7 +1941,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       __pyx_t_3 = 0;
       (__pyx_v_x[__pyx_t_3]) = ((__pyx_v_x[__pyx_t_3]) - 1);
 
-      /* "lic_internal.pyx":22
+      /* "blendernc/core/lic/lic_internal.pyx":24
  *         else:
  *             x[0]-=1
  *             fx[0]=1             # <<<<<<<<<<<<<<
@@ -1958,7 +1952,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     }
     __pyx_L6:;
 
-    /* "lic_internal.pyx":23
+    /* "blendernc/core/lic/lic_internal.pyx":25
  *             x[0]-=1
  *             fx[0]=1
  *         fy[0]+=tx*vy             # <<<<<<<<<<<<<<
@@ -1968,7 +1962,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_3 = 0;
     (__pyx_v_fy[__pyx_t_3]) = ((__pyx_v_fy[__pyx_t_3]) + (__pyx_v_tx * __pyx_v_vy));
 
-    /* "lic_internal.pyx":16
+    /* "blendernc/core/lic/lic_internal.pyx":18
  *     else:
  *         ty = -fy[0]/vy
  *     if tx<ty:             # <<<<<<<<<<<<<<
@@ -1978,7 +1972,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     goto __pyx_L5;
   }
 
-  /* "lic_internal.pyx":25
+  /* "blendernc/core/lic/lic_internal.pyx":27
  *         fy[0]+=tx*vy
  *     else:
  *         if vy>=0:             # <<<<<<<<<<<<<<
@@ -1989,7 +1983,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     __pyx_t_1 = ((__pyx_v_vy >= 0.0) != 0);
     if (__pyx_t_1) {
 
-      /* "lic_internal.pyx":26
+      /* "blendernc/core/lic/lic_internal.pyx":28
  *     else:
  *         if vy>=0:
  *             y[0]+=1             # <<<<<<<<<<<<<<
@@ -1999,7 +1993,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       __pyx_t_3 = 0;
       (__pyx_v_y[__pyx_t_3]) = ((__pyx_v_y[__pyx_t_3]) + 1);
 
-      /* "lic_internal.pyx":27
+      /* "blendernc/core/lic/lic_internal.pyx":29
  *         if vy>=0:
  *             y[0]+=1
  *             fy[0]=0             # <<<<<<<<<<<<<<
@@ -2008,7 +2002,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
       (__pyx_v_fy[0]) = 0.0;
 
-      /* "lic_internal.pyx":25
+      /* "blendernc/core/lic/lic_internal.pyx":27
  *         fy[0]+=tx*vy
  *     else:
  *         if vy>=0:             # <<<<<<<<<<<<<<
@@ -2018,7 +2012,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       goto __pyx_L7;
     }
 
-    /* "lic_internal.pyx":29
+    /* "blendernc/core/lic/lic_internal.pyx":31
  *             fy[0]=0
  *         else:
  *             y[0]-=1             # <<<<<<<<<<<<<<
@@ -2029,7 +2023,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
       __pyx_t_3 = 0;
       (__pyx_v_y[__pyx_t_3]) = ((__pyx_v_y[__pyx_t_3]) - 1);
 
-      /* "lic_internal.pyx":30
+      /* "blendernc/core/lic/lic_internal.pyx":32
  *         else:
  *             y[0]-=1
  *             fy[0]=1             # <<<<<<<<<<<<<<
@@ -2040,7 +2034,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
     }
     __pyx_L7:;
 
-    /* "lic_internal.pyx":31
+    /* "blendernc/core/lic/lic_internal.pyx":33
  *             y[0]-=1
  *             fy[0]=1
  *         fx[0]+=ty*vx             # <<<<<<<<<<<<<<
@@ -2052,7 +2046,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   }
   __pyx_L5:;
 
-  /* "lic_internal.pyx":32
+  /* "blendernc/core/lic/lic_internal.pyx":34
  *             fy[0]=1
  *         fx[0]+=ty*vx
  *     if x[0]>=w:             # <<<<<<<<<<<<<<
@@ -2062,7 +2056,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = (((__pyx_v_x[0]) >= __pyx_v_w) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":33
+    /* "blendernc/core/lic/lic_internal.pyx":35
  *         fx[0]+=ty*vx
  *     if x[0]>=w:
  *         x[0]=w-1 # FIXME: other boundary conditions?             # <<<<<<<<<<<<<<
@@ -2071,7 +2065,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
     (__pyx_v_x[0]) = (__pyx_v_w - 1);
 
-    /* "lic_internal.pyx":32
+    /* "blendernc/core/lic/lic_internal.pyx":34
  *             fy[0]=1
  *         fx[0]+=ty*vx
  *     if x[0]>=w:             # <<<<<<<<<<<<<<
@@ -2080,7 +2074,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
   }
 
-  /* "lic_internal.pyx":34
+  /* "blendernc/core/lic/lic_internal.pyx":36
  *     if x[0]>=w:
  *         x[0]=w-1 # FIXME: other boundary conditions?
  *     if x[0]<0:             # <<<<<<<<<<<<<<
@@ -2090,7 +2084,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = (((__pyx_v_x[0]) < 0) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":35
+    /* "blendernc/core/lic/lic_internal.pyx":37
  *         x[0]=w-1 # FIXME: other boundary conditions?
  *     if x[0]<0:
  *         x[0]=0 # FIXME: other boundary conditions?             # <<<<<<<<<<<<<<
@@ -2099,7 +2093,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
     (__pyx_v_x[0]) = 0;
 
-    /* "lic_internal.pyx":34
+    /* "blendernc/core/lic/lic_internal.pyx":36
  *     if x[0]>=w:
  *         x[0]=w-1 # FIXME: other boundary conditions?
  *     if x[0]<0:             # <<<<<<<<<<<<<<
@@ -2108,7 +2102,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
   }
 
-  /* "lic_internal.pyx":36
+  /* "blendernc/core/lic/lic_internal.pyx":38
  *     if x[0]<0:
  *         x[0]=0 # FIXME: other boundary conditions?
  *     if y[0]<0:             # <<<<<<<<<<<<<<
@@ -2118,7 +2112,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = (((__pyx_v_y[0]) < 0) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":37
+    /* "blendernc/core/lic/lic_internal.pyx":39
  *         x[0]=0 # FIXME: other boundary conditions?
  *     if y[0]<0:
  *         y[0]=0 # FIXME: other boundary conditions?             # <<<<<<<<<<<<<<
@@ -2127,7 +2121,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
     (__pyx_v_y[0]) = 0;
 
-    /* "lic_internal.pyx":36
+    /* "blendernc/core/lic/lic_internal.pyx":38
  *     if x[0]<0:
  *         x[0]=0 # FIXME: other boundary conditions?
  *     if y[0]<0:             # <<<<<<<<<<<<<<
@@ -2136,7 +2130,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
   }
 
-  /* "lic_internal.pyx":38
+  /* "blendernc/core/lic/lic_internal.pyx":40
  *     if y[0]<0:
  *         y[0]=0 # FIXME: other boundary conditions?
  *     if y[0]>=h:             # <<<<<<<<<<<<<<
@@ -2146,7 +2140,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   __pyx_t_1 = (((__pyx_v_y[0]) >= __pyx_v_h) != 0);
   if (__pyx_t_1) {
 
-    /* "lic_internal.pyx":39
+    /* "blendernc/core/lic/lic_internal.pyx":41
  *         y[0]=0 # FIXME: other boundary conditions?
  *     if y[0]>=h:
  *         y[0]=h-1 # FIXME: other boundary conditions?             # <<<<<<<<<<<<<<
@@ -2155,7 +2149,7 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
     (__pyx_v_y[0]) = (__pyx_v_h - 1);
 
-    /* "lic_internal.pyx":38
+    /* "blendernc/core/lic/lic_internal.pyx":40
  *     if y[0]<0:
  *         y[0]=0 # FIXME: other boundary conditions?
  *     if y[0]>=h:             # <<<<<<<<<<<<<<
@@ -2164,8 +2158,8 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
   }
 
-  /* "lic_internal.pyx":5
- * cimport numpy as np
+  /* "blendernc/core/lic/lic_internal.pyx":7
+ *
  *
  * cdef void _advance(float vx, float vy,             # <<<<<<<<<<<<<<
  *         int* x, int* y, float*fx, float*fy, int w, int h):
@@ -2175,12 +2169,12 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
   /* function exit code */
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_WriteUnraisable("lic_internal._advance", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("cython_build.lic_internal._advance", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
 }
 
-/* "lic_internal.pyx":43
+/* "blendernc/core/lic/lic_internal.pyx":45
  *
  * #np.ndarray[float, ndim=2]
  * def line_integral_convolution(             # <<<<<<<<<<<<<<
@@ -2189,11 +2183,11 @@ static void __pyx_f_12lic_internal__advance(float __pyx_v_vx, float __pyx_v_vy, 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_12lic_internal_1line_integral_convolution(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_12lic_internal_1line_integral_convolution = {"line_integral_convolution", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_12lic_internal_1line_integral_convolution, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_12lic_internal_1line_integral_convolution(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_12cython_build_12lic_internal_1line_integral_convolution(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_12cython_build_12lic_internal_1line_integral_convolution = {"line_integral_convolution", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_12cython_build_12lic_internal_1line_integral_convolution, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_12cython_build_12lic_internal_1line_integral_convolution(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_vectors = 0;
-  PyArrayObject *__pyx_v_texture = 0;
+  CYTHON_UNUSED PyArrayObject *__pyx_v_texture = 0;
   PyArrayObject *__pyx_v_kernel = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -2226,17 +2220,17 @@ static PyObject *__pyx_pw_12lic_internal_1line_integral_convolution(PyObject *__
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_texture)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, 1); __PYX_ERR(0, 43, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, 1); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kernel)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, 2); __PYX_ERR(0, 43, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, 2); __PYX_ERR(0, 45, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "line_integral_convolution") < 0)) __PYX_ERR(0, 43, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "line_integral_convolution") < 0)) __PYX_ERR(0, 45, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -2251,16 +2245,16 @@ static PyObject *__pyx_pw_12lic_internal_1line_integral_convolution(PyObject *__
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 43, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("line_integral_convolution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 45, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("lic_internal.line_integral_convolution", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cython_build.lic_internal.line_integral_convolution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vectors), __pyx_ptype_5numpy_ndarray, 1, "vectors", 0))) __PYX_ERR(0, 44, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_texture), __pyx_ptype_5numpy_ndarray, 1, "texture", 0))) __PYX_ERR(0, 45, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kernel), __pyx_ptype_5numpy_ndarray, 1, "kernel", 0))) __PYX_ERR(0, 46, __pyx_L1_error)
-  __pyx_r = __pyx_pf_12lic_internal_line_integral_convolution(__pyx_self, __pyx_v_vectors, __pyx_v_texture, __pyx_v_kernel);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vectors), __pyx_ptype_5numpy_ndarray, 1, "vectors", 0))) __PYX_ERR(0, 46, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_texture), __pyx_ptype_5numpy_ndarray, 1, "texture", 0))) __PYX_ERR(0, 47, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kernel), __pyx_ptype_5numpy_ndarray, 1, "kernel", 0))) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_r = __pyx_pf_12cython_build_12lic_internal_line_integral_convolution(__pyx_self, __pyx_v_vectors, __pyx_v_texture, __pyx_v_kernel);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2271,7 +2265,7 @@ static PyObject *__pyx_pw_12lic_internal_1line_integral_convolution(PyObject *__
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_vectors, PyArrayObject *__pyx_v_texture, PyArrayObject *__pyx_v_kernel) {
+static PyObject *__pyx_pf_12cython_build_12lic_internal_line_integral_convolution(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_vectors, CYTHON_UNUSED PyArrayObject *__pyx_v_texture, PyArrayObject *__pyx_v_kernel) {
   int __pyx_v_i;
   int __pyx_v_j;
   int __pyx_v_k;
@@ -2339,21 +2333,21 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
   __pyx_pybuffernd_kernel.rcbuffer = &__pyx_pybuffer_kernel;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vectors.rcbuffer->pybuffer, (PyObject*)__pyx_v_vectors, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 3, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vectors.rcbuffer->pybuffer, (PyObject*)__pyx_v_vectors, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 3, 0, __pyx_stack) == -1)) __PYX_ERR(0, 45, __pyx_L1_error)
   }
   __pyx_pybuffernd_vectors.diminfo[0].strides = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vectors.diminfo[0].shape = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vectors.diminfo[1].strides = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vectors.diminfo[1].shape = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.shape[1]; __pyx_pybuffernd_vectors.diminfo[2].strides = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.strides[2]; __pyx_pybuffernd_vectors.diminfo[2].shape = __pyx_pybuffernd_vectors.rcbuffer->pybuffer.shape[2];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_texture.rcbuffer->pybuffer, (PyObject*)__pyx_v_texture, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_texture.rcbuffer->pybuffer, (PyObject*)__pyx_v_texture, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 45, __pyx_L1_error)
   }
   __pyx_pybuffernd_texture.diminfo[0].strides = __pyx_pybuffernd_texture.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_texture.diminfo[0].shape = __pyx_pybuffernd_texture.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_texture.diminfo[1].strides = __pyx_pybuffernd_texture.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_texture.diminfo[1].shape = __pyx_pybuffernd_texture.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_kernel.rcbuffer->pybuffer, (PyObject*)__pyx_v_kernel, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_kernel.rcbuffer->pybuffer, (PyObject*)__pyx_v_kernel, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 45, __pyx_L1_error)
   }
   __pyx_pybuffernd_kernel.diminfo[0].strides = __pyx_pybuffernd_kernel.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_kernel.diminfo[0].shape = __pyx_pybuffernd_kernel.rcbuffer->pybuffer.shape[0];
 
-  /* "lic_internal.pyx":53
+  /* "blendernc/core/lic/lic_internal.pyx":55
  *     cdef np.ndarray[float, ndim=2] result
  *
  *     h = vectors.shape[0]             # <<<<<<<<<<<<<<
@@ -2362,7 +2356,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
   __pyx_v_h = (__pyx_v_vectors->dimensions[0]);
 
-  /* "lic_internal.pyx":54
+  /* "blendernc/core/lic/lic_internal.pyx":56
  *
  *     h = vectors.shape[0]
  *     w = vectors.shape[1]             # <<<<<<<<<<<<<<
@@ -2371,7 +2365,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
   __pyx_v_w = (__pyx_v_vectors->dimensions[1]);
 
-  /* "lic_internal.pyx":55
+  /* "blendernc/core/lic/lic_internal.pyx":57
  *     h = vectors.shape[0]
  *     w = vectors.shape[1]
  *     t = vectors.shape[2]             # <<<<<<<<<<<<<<
@@ -2380,7 +2374,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
   __pyx_v_t = (__pyx_v_vectors->dimensions[2]);
 
-  /* "lic_internal.pyx":56
+  /* "blendernc/core/lic/lic_internal.pyx":58
  *     w = vectors.shape[1]
  *     t = vectors.shape[2]
  *     kernellen = kernel.shape[0]             # <<<<<<<<<<<<<<
@@ -2389,7 +2383,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
   __pyx_v_kernellen = (__pyx_v_kernel->dimensions[0]);
 
-  /* "lic_internal.pyx":57
+  /* "blendernc/core/lic/lic_internal.pyx":59
  *     t = vectors.shape[2]
  *     kernellen = kernel.shape[0]
  *     if t!=2:             # <<<<<<<<<<<<<<
@@ -2399,26 +2393,26 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
   __pyx_t_1 = ((__pyx_v_t != 2) != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "lic_internal.pyx":58
+    /* "blendernc/core/lic/lic_internal.pyx":60
  *     kernellen = kernel.shape[0]
  *     if t!=2:
  *         raise ValueError("Vectors must have two components (not %d)" % t)             # <<<<<<<<<<<<<<
  *     result = np.zeros((h,w),dtype=np.float32)
  *
  */
-    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_t); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_t); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_Vectors_must_have_two_components, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_Vectors_must_have_two_components, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 60, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 58, __pyx_L1_error)
+    __PYX_ERR(0, 60, __pyx_L1_error)
 
-    /* "lic_internal.pyx":57
+    /* "blendernc/core/lic/lic_internal.pyx":59
  *     t = vectors.shape[2]
  *     kernellen = kernel.shape[0]
  *     if t!=2:             # <<<<<<<<<<<<<<
@@ -2427,23 +2421,23 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
   }
 
-  /* "lic_internal.pyx":59
+  /* "blendernc/core/lic/lic_internal.pyx":61
  *     if t!=2:
  *         raise ValueError("Vectors must have two components (not %d)" % t)
  *     result = np.zeros((h,w),dtype=np.float32)             # <<<<<<<<<<<<<<
  *
  *     for i in range(h):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_h); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_h); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_w); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_w); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2);
@@ -2451,26 +2445,26 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
   PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
   __pyx_t_2 = 0;
   __pyx_t_4 = 0;
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 61, __pyx_L1_error)
   __pyx_t_7 = ((PyArrayObject *)__pyx_t_6);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2487,13 +2481,13 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
       __pyx_t_9 = __pyx_t_10 = __pyx_t_11 = 0;
     }
     __pyx_pybuffernd_result.diminfo[0].strides = __pyx_pybuffernd_result.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_result.diminfo[0].shape = __pyx_pybuffernd_result.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_result.diminfo[1].strides = __pyx_pybuffernd_result.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_result.diminfo[1].shape = __pyx_pybuffernd_result.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 59, __pyx_L1_error)
+    if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
   }
   __pyx_t_7 = 0;
   __pyx_v_result = ((PyArrayObject *)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "lic_internal.pyx":61
+  /* "blendernc/core/lic/lic_internal.pyx":63
  *     result = np.zeros((h,w),dtype=np.float32)
  *
  *     for i in range(h):             # <<<<<<<<<<<<<<
@@ -2505,7 +2499,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
   for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
     __pyx_v_i = __pyx_t_13;
 
-    /* "lic_internal.pyx":62
+    /* "blendernc/core/lic/lic_internal.pyx":64
  *
  *     for i in range(h):
  *         for j in range(w):             # <<<<<<<<<<<<<<
@@ -2517,7 +2511,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
     for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
       __pyx_v_j = __pyx_t_16;
 
-      /* "lic_internal.pyx":63
+      /* "blendernc/core/lic/lic_internal.pyx":65
  *     for i in range(h):
  *         for j in range(w):
  *             x = j             # <<<<<<<<<<<<<<
@@ -2526,7 +2520,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_x = __pyx_v_j;
 
-      /* "lic_internal.pyx":64
+      /* "blendernc/core/lic/lic_internal.pyx":66
  *         for j in range(w):
  *             x = j
  *             y = i             # <<<<<<<<<<<<<<
@@ -2535,7 +2529,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_y = __pyx_v_i;
 
-      /* "lic_internal.pyx":65
+      /* "blendernc/core/lic/lic_internal.pyx":67
  *             x = j
  *             y = i
  *             fx = 0.5             # <<<<<<<<<<<<<<
@@ -2544,7 +2538,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_fx = 0.5;
 
-      /* "lic_internal.pyx":66
+      /* "blendernc/core/lic/lic_internal.pyx":68
  *             y = i
  *             fx = 0.5
  *             fy = 0.5             # <<<<<<<<<<<<<<
@@ -2553,19 +2547,19 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_fy = 0.5;
 
-      /* "lic_internal.pyx":68
+      /* "blendernc/core/lic/lic_internal.pyx":70
  *             fy = 0.5
  *
  *             k = kernellen//2             # <<<<<<<<<<<<<<
- *             #print i, j, k, x, y
- *             result[i,j] += kernel[k]*texture[x,y]
+ *             result[i,j] += kernel[k]#*texture[x,y]
+ *             while k<kernellen-1:
  */
       __pyx_v_k = __Pyx_div_long(__pyx_v_kernellen, 2);
 
-      /* "lic_internal.pyx":70
+      /* "blendernc/core/lic/lic_internal.pyx":71
+ *
  *             k = kernellen//2
- *             #print i, j, k, x, y
- *             result[i,j] += kernel[k]*texture[x,y]             # <<<<<<<<<<<<<<
+ *             result[i,j] += kernel[k]#*texture[x,y]             # <<<<<<<<<<<<<<
  *             while k<kernellen-1:
  *                 _advance(vectors[y,x,0],vectors[y,x,1],
  */
@@ -2577,43 +2571,28 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
       } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_kernel.diminfo[0].shape)) __pyx_t_18 = 0;
       if (unlikely(__pyx_t_18 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_18);
-        __PYX_ERR(0, 70, __pyx_L1_error)
+        __PYX_ERR(0, 71, __pyx_L1_error)
       }
-      __pyx_t_19 = __pyx_v_x;
-      __pyx_t_20 = __pyx_v_y;
+      __pyx_t_19 = __pyx_v_i;
+      __pyx_t_20 = __pyx_v_j;
       __pyx_t_18 = -1;
       if (__pyx_t_19 < 0) {
-        __pyx_t_19 += __pyx_pybuffernd_texture.diminfo[0].shape;
+        __pyx_t_19 += __pyx_pybuffernd_result.diminfo[0].shape;
         if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 0;
-      } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_texture.diminfo[0].shape)) __pyx_t_18 = 0;
+      } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
       if (__pyx_t_20 < 0) {
-        __pyx_t_20 += __pyx_pybuffernd_texture.diminfo[1].shape;
+        __pyx_t_20 += __pyx_pybuffernd_result.diminfo[1].shape;
         if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 1;
-      } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_texture.diminfo[1].shape)) __pyx_t_18 = 1;
+      } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
       if (unlikely(__pyx_t_18 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_18);
-        __PYX_ERR(0, 70, __pyx_L1_error)
+        __PYX_ERR(0, 71, __pyx_L1_error)
       }
-      __pyx_t_21 = __pyx_v_i;
-      __pyx_t_22 = __pyx_v_j;
-      __pyx_t_18 = -1;
-      if (__pyx_t_21 < 0) {
-        __pyx_t_21 += __pyx_pybuffernd_result.diminfo[0].shape;
-        if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 0;
-      } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
-      if (__pyx_t_22 < 0) {
-        __pyx_t_22 += __pyx_pybuffernd_result.diminfo[1].shape;
-        if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 1;
-      } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
-      if (unlikely(__pyx_t_18 != -1)) {
-        __Pyx_RaiseBufferIndexError(__pyx_t_18);
-        __PYX_ERR(0, 70, __pyx_L1_error)
-      }
-      *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_result.diminfo[1].strides) += ((*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_kernel.diminfo[0].strides)) * (*__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_texture.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_texture.diminfo[0].strides, __pyx_t_20, __pyx_pybuffernd_texture.diminfo[1].strides)));
+      *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_20, __pyx_pybuffernd_result.diminfo[1].strides) += (*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_kernel.diminfo[0].strides));
 
-      /* "lic_internal.pyx":71
- *             #print i, j, k, x, y
- *             result[i,j] += kernel[k]*texture[x,y]
+      /* "blendernc/core/lic/lic_internal.pyx":72
+ *             k = kernellen//2
+ *             result[i,j] += kernel[k]#*texture[x,y]
  *             while k<kernellen-1:             # <<<<<<<<<<<<<<
  *                 _advance(vectors[y,x,0],vectors[y,x,1],
  *                         &x, &y, &fx, &fy, w, h)
@@ -2622,76 +2601,76 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
         __pyx_t_1 = ((__pyx_v_k < (__pyx_v_kernellen - 1)) != 0);
         if (!__pyx_t_1) break;
 
-        /* "lic_internal.pyx":72
- *             result[i,j] += kernel[k]*texture[x,y]
+        /* "blendernc/core/lic/lic_internal.pyx":73
+ *             result[i,j] += kernel[k]#*texture[x,y]
  *             while k<kernellen-1:
  *                 _advance(vectors[y,x,0],vectors[y,x,1],             # <<<<<<<<<<<<<<
  *                         &x, &y, &fx, &fy, w, h)
  *                 k+=1
  */
-        __pyx_t_20 = __pyx_v_y;
-        __pyx_t_19 = __pyx_v_x;
-        __pyx_t_17 = 0;
+        __pyx_t_17 = __pyx_v_y;
+        __pyx_t_20 = __pyx_v_x;
+        __pyx_t_19 = 0;
         __pyx_t_18 = -1;
-        if (__pyx_t_20 < 0) {
-          __pyx_t_20 += __pyx_pybuffernd_vectors.diminfo[0].shape;
-          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (__pyx_t_19 < 0) {
-          __pyx_t_19 += __pyx_pybuffernd_vectors.diminfo[1].shape;
-          if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
         if (__pyx_t_17 < 0) {
-          __pyx_t_17 += __pyx_pybuffernd_vectors.diminfo[2].shape;
-          if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 2;
-        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
+          __pyx_t_17 += __pyx_pybuffernd_vectors.diminfo[0].shape;
+          if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 0;
+        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
+        if (__pyx_t_20 < 0) {
+          __pyx_t_20 += __pyx_pybuffernd_vectors.diminfo[1].shape;
+          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
+        if (__pyx_t_19 < 0) {
+          __pyx_t_19 += __pyx_pybuffernd_vectors.diminfo[2].shape;
+          if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 2;
+        } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 72, __pyx_L1_error)
+          __PYX_ERR(0, 73, __pyx_L1_error)
         }
-        __pyx_t_22 = __pyx_v_y;
-        __pyx_t_21 = __pyx_v_x;
+        __pyx_t_21 = __pyx_v_y;
+        __pyx_t_22 = __pyx_v_x;
         __pyx_t_23 = 1;
         __pyx_t_18 = -1;
-        if (__pyx_t_22 < 0) {
-          __pyx_t_22 += __pyx_pybuffernd_vectors.diminfo[0].shape;
-          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
         if (__pyx_t_21 < 0) {
-          __pyx_t_21 += __pyx_pybuffernd_vectors.diminfo[1].shape;
-          if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
+          __pyx_t_21 += __pyx_pybuffernd_vectors.diminfo[0].shape;
+          if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 0;
+        } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
+        if (__pyx_t_22 < 0) {
+          __pyx_t_22 += __pyx_pybuffernd_vectors.diminfo[1].shape;
+          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
         if (__pyx_t_23 < 0) {
           __pyx_t_23 += __pyx_pybuffernd_vectors.diminfo[2].shape;
           if (unlikely(__pyx_t_23 < 0)) __pyx_t_18 = 2;
         } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 72, __pyx_L1_error)
+          __PYX_ERR(0, 73, __pyx_L1_error)
         }
 
-        /* "lic_internal.pyx":73
+        /* "blendernc/core/lic/lic_internal.pyx":74
  *             while k<kernellen-1:
  *                 _advance(vectors[y,x,0],vectors[y,x,1],
  *                         &x, &y, &fx, &fy, w, h)             # <<<<<<<<<<<<<<
  *                 k+=1
- *                 #print i, j, k, x, y
+ *                 result[i,j] += kernel[k]#*texture[x,y]
  */
-        __pyx_f_12lic_internal__advance((*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_17, __pyx_pybuffernd_vectors.diminfo[2].strides)), (*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_23, __pyx_pybuffernd_vectors.diminfo[2].strides)), (&__pyx_v_x), (&__pyx_v_y), (&__pyx_v_fx), (&__pyx_v_fy), __pyx_v_w, __pyx_v_h);
+        __pyx_f_12cython_build_12lic_internal__advance((*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_20, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_19, __pyx_pybuffernd_vectors.diminfo[2].strides)), (*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_23, __pyx_pybuffernd_vectors.diminfo[2].strides)), (&__pyx_v_x), (&__pyx_v_y), (&__pyx_v_fx), (&__pyx_v_fy), __pyx_v_w, __pyx_v_h);
 
-        /* "lic_internal.pyx":74
+        /* "blendernc/core/lic/lic_internal.pyx":75
  *                 _advance(vectors[y,x,0],vectors[y,x,1],
  *                         &x, &y, &fx, &fy, w, h)
  *                 k+=1             # <<<<<<<<<<<<<<
- *                 #print i, j, k, x, y
- *                 result[i,j] += kernel[k]*texture[x,y]
+ *                 result[i,j] += kernel[k]#*texture[x,y]
+ *
  */
         __pyx_v_k = (__pyx_v_k + 1);
 
-        /* "lic_internal.pyx":76
+        /* "blendernc/core/lic/lic_internal.pyx":76
+ *                         &x, &y, &fx, &fy, w, h)
  *                 k+=1
- *                 #print i, j, k, x, y
- *                 result[i,j] += kernel[k]*texture[x,y]             # <<<<<<<<<<<<<<
+ *                 result[i,j] += kernel[k]#*texture[x,y]             # <<<<<<<<<<<<<<
  *
  *             x = j
  */
@@ -2705,41 +2684,26 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
           __PYX_ERR(0, 76, __pyx_L1_error)
         }
-        __pyx_t_21 = __pyx_v_x;
-        __pyx_t_22 = __pyx_v_y;
+        __pyx_t_22 = __pyx_v_i;
+        __pyx_t_21 = __pyx_v_j;
         __pyx_t_18 = -1;
-        if (__pyx_t_21 < 0) {
-          __pyx_t_21 += __pyx_pybuffernd_texture.diminfo[0].shape;
-          if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_texture.diminfo[0].shape)) __pyx_t_18 = 0;
         if (__pyx_t_22 < 0) {
-          __pyx_t_22 += __pyx_pybuffernd_texture.diminfo[1].shape;
-          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_texture.diminfo[1].shape)) __pyx_t_18 = 1;
+          __pyx_t_22 += __pyx_pybuffernd_result.diminfo[0].shape;
+          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 0;
+        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
+        if (__pyx_t_21 < 0) {
+          __pyx_t_21 += __pyx_pybuffernd_result.diminfo[1].shape;
+          if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
           __PYX_ERR(0, 76, __pyx_L1_error)
         }
-        __pyx_t_17 = __pyx_v_i;
-        __pyx_t_19 = __pyx_v_j;
-        __pyx_t_18 = -1;
-        if (__pyx_t_17 < 0) {
-          __pyx_t_17 += __pyx_pybuffernd_result.diminfo[0].shape;
-          if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (__pyx_t_19 < 0) {
-          __pyx_t_19 += __pyx_pybuffernd_result.diminfo[1].shape;
-          if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
-        if (unlikely(__pyx_t_18 != -1)) {
-          __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 76, __pyx_L1_error)
-        }
-        *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_result.diminfo[1].strides) += ((*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_kernel.diminfo[0].strides)) * (*__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_texture.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_texture.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_texture.diminfo[1].strides)));
+        *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_result.diminfo[1].strides) += (*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_kernel.diminfo[0].strides));
       }
 
-      /* "lic_internal.pyx":78
- *                 result[i,j] += kernel[k]*texture[x,y]
+      /* "blendernc/core/lic/lic_internal.pyx":78
+ *                 result[i,j] += kernel[k]#*texture[x,y]
  *
  *             x = j             # <<<<<<<<<<<<<<
  *             y = i
@@ -2747,7 +2711,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_x = __pyx_v_j;
 
-      /* "lic_internal.pyx":79
+      /* "blendernc/core/lic/lic_internal.pyx":79
  *
  *             x = j
  *             y = i             # <<<<<<<<<<<<<<
@@ -2756,7 +2720,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_y = __pyx_v_i;
 
-      /* "lic_internal.pyx":80
+      /* "blendernc/core/lic/lic_internal.pyx":80
  *             x = j
  *             y = i
  *             fx = 0.5             # <<<<<<<<<<<<<<
@@ -2765,7 +2729,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_fx = 0.5;
 
-      /* "lic_internal.pyx":81
+      /* "blendernc/core/lic/lic_internal.pyx":81
  *             y = i
  *             fx = 0.5
  *             fy = 0.5             # <<<<<<<<<<<<<<
@@ -2774,7 +2738,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
  */
       __pyx_v_fy = 0.5;
 
-      /* "lic_internal.pyx":83
+      /* "blendernc/core/lic/lic_internal.pyx":83
  *             fy = 0.5
  *
  *             while k>0:             # <<<<<<<<<<<<<<
@@ -2785,126 +2749,111 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
         __pyx_t_1 = ((__pyx_v_k > 0) != 0);
         if (!__pyx_t_1) break;
 
-        /* "lic_internal.pyx":84
+        /* "blendernc/core/lic/lic_internal.pyx":84
  *
  *             while k>0:
  *                 _advance(-vectors[y,x,0],-vectors[y,x,1],             # <<<<<<<<<<<<<<
  *                         &x, &y, &fx, &fy, w, h)
  *                 k-=1
  */
-        __pyx_t_22 = __pyx_v_y;
+        __pyx_t_23 = __pyx_v_y;
         __pyx_t_21 = __pyx_v_x;
-        __pyx_t_23 = 0;
+        __pyx_t_22 = 0;
         __pyx_t_18 = -1;
-        if (__pyx_t_22 < 0) {
-          __pyx_t_22 += __pyx_pybuffernd_vectors.diminfo[0].shape;
-          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
+        if (__pyx_t_23 < 0) {
+          __pyx_t_23 += __pyx_pybuffernd_vectors.diminfo[0].shape;
+          if (unlikely(__pyx_t_23 < 0)) __pyx_t_18 = 0;
+        } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
         if (__pyx_t_21 < 0) {
           __pyx_t_21 += __pyx_pybuffernd_vectors.diminfo[1].shape;
           if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 1;
         } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
-        if (__pyx_t_23 < 0) {
-          __pyx_t_23 += __pyx_pybuffernd_vectors.diminfo[2].shape;
-          if (unlikely(__pyx_t_23 < 0)) __pyx_t_18 = 2;
-        } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
+        if (__pyx_t_22 < 0) {
+          __pyx_t_22 += __pyx_pybuffernd_vectors.diminfo[2].shape;
+          if (unlikely(__pyx_t_22 < 0)) __pyx_t_18 = 2;
+        } else if (unlikely(__pyx_t_22 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
           __PYX_ERR(0, 84, __pyx_L1_error)
         }
         __pyx_t_19 = __pyx_v_y;
-        __pyx_t_17 = __pyx_v_x;
-        __pyx_t_20 = 1;
+        __pyx_t_20 = __pyx_v_x;
+        __pyx_t_17 = 1;
         __pyx_t_18 = -1;
         if (__pyx_t_19 < 0) {
           __pyx_t_19 += __pyx_pybuffernd_vectors.diminfo[0].shape;
           if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 0;
         } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_vectors.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (__pyx_t_17 < 0) {
-          __pyx_t_17 += __pyx_pybuffernd_vectors.diminfo[1].shape;
-          if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
         if (__pyx_t_20 < 0) {
-          __pyx_t_20 += __pyx_pybuffernd_vectors.diminfo[2].shape;
-          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 2;
-        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
+          __pyx_t_20 += __pyx_pybuffernd_vectors.diminfo[1].shape;
+          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_vectors.diminfo[1].shape)) __pyx_t_18 = 1;
+        if (__pyx_t_17 < 0) {
+          __pyx_t_17 += __pyx_pybuffernd_vectors.diminfo[2].shape;
+          if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 2;
+        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_vectors.diminfo[2].shape)) __pyx_t_18 = 2;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
           __PYX_ERR(0, 84, __pyx_L1_error)
         }
 
-        /* "lic_internal.pyx":85
+        /* "blendernc/core/lic/lic_internal.pyx":85
  *             while k>0:
  *                 _advance(-vectors[y,x,0],-vectors[y,x,1],
  *                         &x, &y, &fx, &fy, w, h)             # <<<<<<<<<<<<<<
  *                 k-=1
- *                 #print i, j, k, x, y
+ *                 result[i,j] += kernel[k]#*texture[x,y]
  */
-        __pyx_f_12lic_internal__advance((-(*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_23, __pyx_pybuffernd_vectors.diminfo[2].strides))), (-(*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_17, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_20, __pyx_pybuffernd_vectors.diminfo[2].strides))), (&__pyx_v_x), (&__pyx_v_y), (&__pyx_v_fx), (&__pyx_v_fy), __pyx_v_w, __pyx_v_h);
+        __pyx_f_12cython_build_12lic_internal__advance((-(*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_22, __pyx_pybuffernd_vectors.diminfo[2].strides))), (-(*__Pyx_BufPtrStrided3d(float *, __pyx_pybuffernd_vectors.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_vectors.diminfo[0].strides, __pyx_t_20, __pyx_pybuffernd_vectors.diminfo[1].strides, __pyx_t_17, __pyx_pybuffernd_vectors.diminfo[2].strides))), (&__pyx_v_x), (&__pyx_v_y), (&__pyx_v_fx), (&__pyx_v_fy), __pyx_v_w, __pyx_v_h);
 
-        /* "lic_internal.pyx":86
+        /* "blendernc/core/lic/lic_internal.pyx":86
  *                 _advance(-vectors[y,x,0],-vectors[y,x,1],
  *                         &x, &y, &fx, &fy, w, h)
  *                 k-=1             # <<<<<<<<<<<<<<
- *                 #print i, j, k, x, y
- *                 result[i,j] += kernel[k]*texture[x,y]
+ *                 result[i,j] += kernel[k]#*texture[x,y]
+ *
  */
         __pyx_v_k = (__pyx_v_k - 1);
 
-        /* "lic_internal.pyx":88
+        /* "blendernc/core/lic/lic_internal.pyx":87
+ *                         &x, &y, &fx, &fy, w, h)
  *                 k-=1
- *                 #print i, j, k, x, y
- *                 result[i,j] += kernel[k]*texture[x,y]             # <<<<<<<<<<<<<<
+ *                 result[i,j] += kernel[k]#*texture[x,y]             # <<<<<<<<<<<<<<
  *
  *     return result
  */
-        __pyx_t_20 = __pyx_v_k;
-        __pyx_t_18 = -1;
-        if (__pyx_t_20 < 0) {
-          __pyx_t_20 += __pyx_pybuffernd_kernel.diminfo[0].shape;
-          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_kernel.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (unlikely(__pyx_t_18 != -1)) {
-          __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 88, __pyx_L1_error)
-        }
-        __pyx_t_17 = __pyx_v_x;
-        __pyx_t_19 = __pyx_v_y;
+        __pyx_t_17 = __pyx_v_k;
         __pyx_t_18 = -1;
         if (__pyx_t_17 < 0) {
-          __pyx_t_17 += __pyx_pybuffernd_texture.diminfo[0].shape;
+          __pyx_t_17 += __pyx_pybuffernd_kernel.diminfo[0].shape;
           if (unlikely(__pyx_t_17 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_texture.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (__pyx_t_19 < 0) {
-          __pyx_t_19 += __pyx_pybuffernd_texture.diminfo[1].shape;
-          if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_texture.diminfo[1].shape)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_kernel.diminfo[0].shape)) __pyx_t_18 = 0;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 88, __pyx_L1_error)
+          __PYX_ERR(0, 87, __pyx_L1_error)
         }
-        __pyx_t_23 = __pyx_v_i;
-        __pyx_t_21 = __pyx_v_j;
+        __pyx_t_20 = __pyx_v_i;
+        __pyx_t_19 = __pyx_v_j;
         __pyx_t_18 = -1;
-        if (__pyx_t_23 < 0) {
-          __pyx_t_23 += __pyx_pybuffernd_result.diminfo[0].shape;
-          if (unlikely(__pyx_t_23 < 0)) __pyx_t_18 = 0;
-        } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
-        if (__pyx_t_21 < 0) {
-          __pyx_t_21 += __pyx_pybuffernd_result.diminfo[1].shape;
-          if (unlikely(__pyx_t_21 < 0)) __pyx_t_18 = 1;
-        } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
+        if (__pyx_t_20 < 0) {
+          __pyx_t_20 += __pyx_pybuffernd_result.diminfo[0].shape;
+          if (unlikely(__pyx_t_20 < 0)) __pyx_t_18 = 0;
+        } else if (unlikely(__pyx_t_20 >= __pyx_pybuffernd_result.diminfo[0].shape)) __pyx_t_18 = 0;
+        if (__pyx_t_19 < 0) {
+          __pyx_t_19 += __pyx_pybuffernd_result.diminfo[1].shape;
+          if (unlikely(__pyx_t_19 < 0)) __pyx_t_18 = 1;
+        } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_result.diminfo[1].shape)) __pyx_t_18 = 1;
         if (unlikely(__pyx_t_18 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_18);
-          __PYX_ERR(0, 88, __pyx_L1_error)
+          __PYX_ERR(0, 87, __pyx_L1_error)
         }
-        *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_result.diminfo[1].strides) += ((*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_kernel.diminfo[0].strides)) * (*__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_texture.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_texture.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_texture.diminfo[1].strides)));
+        *__Pyx_BufPtrStrided2d(float *, __pyx_pybuffernd_result.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_result.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_result.diminfo[1].strides) += (*__Pyx_BufPtrStrided1d(float *, __pyx_pybuffernd_kernel.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_kernel.diminfo[0].strides));
       }
     }
   }
 
-  /* "lic_internal.pyx":90
- *                 result[i,j] += kernel[k]*texture[x,y]
+  /* "blendernc/core/lic/lic_internal.pyx":89
+ *                 result[i,j] += kernel[k]#*texture[x,y]
  *
  *     return result             # <<<<<<<<<<<<<<
  *
@@ -2914,7 +2863,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
   __pyx_r = ((PyObject *)__pyx_v_result);
   goto __pyx_L0;
 
-  /* "lic_internal.pyx":43
+  /* "blendernc/core/lic/lic_internal.pyx":45
  *
  * #np.ndarray[float, ndim=2]
  * def line_integral_convolution(             # <<<<<<<<<<<<<<
@@ -2938,7 +2887,7 @@ static PyObject *__pyx_pf_12lic_internal_line_integral_convolution(CYTHON_UNUSED
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_texture.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vectors.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("lic_internal.line_integral_convolution", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cython_build.lic_internal.line_integral_convolution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   goto __pyx_L2;
   __pyx_L0:;
@@ -3847,6 +3796,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_Vectors_must_have_two_components, __pyx_k_Vectors_must_have_two_components, sizeof(__pyx_k_Vectors_must_have_two_components), 0, 0, 1, 0},
   {&__pyx_kp_s_blendernc_core_lic_lic_internal, __pyx_k_blendernc_core_lic_lic_internal, sizeof(__pyx_k_blendernc_core_lic_lic_internal), 0, 0, 1, 0},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_n_s_cython_build_lic_internal, __pyx_k_cython_build_lic_internal, sizeof(__pyx_k_cython_build_lic_internal), 0, 0, 1, 1},
   {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
   {&__pyx_n_s_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 0, 1, 1},
   {&__pyx_n_s_fx, __pyx_k_fx, sizeof(__pyx_k_fx), 0, 0, 1, 1},
@@ -3858,7 +3808,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_k, __pyx_k_k, sizeof(__pyx_k_k), 0, 0, 1, 1},
   {&__pyx_n_s_kernel, __pyx_k_kernel, sizeof(__pyx_k_kernel), 0, 0, 1, 1},
   {&__pyx_n_s_kernellen, __pyx_k_kernellen, sizeof(__pyx_k_kernellen), 0, 0, 1, 1},
-  {&__pyx_n_s_lic_internal, __pyx_k_lic_internal, sizeof(__pyx_k_lic_internal), 0, 0, 1, 1},
   {&__pyx_n_s_line_integral_convolution, __pyx_k_line_integral_convolution, sizeof(__pyx_k_line_integral_convolution), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
@@ -3881,8 +3830,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 58, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 63, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 884, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -3915,17 +3864,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "lic_internal.pyx":43
+  /* "blendernc/core/lic/lic_internal.pyx":45
  *
  * #np.ndarray[float, ndim=2]
  * def line_integral_convolution(             # <<<<<<<<<<<<<<
  *         np.ndarray[float, ndim=3] vectors,
  *         np.ndarray[float, ndim=2] texture,
  */
-  __pyx_tuple__3 = PyTuple_Pack(17, __pyx_n_s_vectors, __pyx_n_s_texture, __pyx_n_s_kernel, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_k, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_h, __pyx_n_s_w, __pyx_n_s_kernellen, __pyx_n_s_t, __pyx_n_s_fx, __pyx_n_s_fy, __pyx_n_s_tx, __pyx_n_s_ty, __pyx_n_s_result); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(17, __pyx_n_s_vectors, __pyx_n_s_texture, __pyx_n_s_kernel, __pyx_n_s_i, __pyx_n_s_j, __pyx_n_s_k, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_h, __pyx_n_s_w, __pyx_n_s_kernellen, __pyx_n_s_t, __pyx_n_s_fx, __pyx_n_s_fy, __pyx_n_s_tx, __pyx_n_s_ty, __pyx_n_s_result); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(3, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_blendernc_core_lic_lic_internal, __pyx_n_s_line_integral_convolution, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(3, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_blendernc_core_lic_lic_internal, __pyx_n_s_line_integral_convolution, 45, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4210,14 +4159,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_lic_internal) {
+  if (__pyx_module_is_main_cython_build__lic_internal) {
     if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name, __pyx_n_s_main) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 2, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "lic_internal")) {
-      if (unlikely(PyDict_SetItemString(modules, "lic_internal", __pyx_m) < 0)) __PYX_ERR(0, 2, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "cython_build.lic_internal")) {
+      if (unlikely(PyDict_SetItemString(modules, "cython_build.lic_internal", __pyx_m) < 0)) __PYX_ERR(0, 2, __pyx_L1_error)
     }
   }
   #endif
@@ -4238,34 +4187,34 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   #endif
 
-  /* "lic_internal.pyx":2
+  /* "blendernc/core/lic/lic_internal.pyx":2
  *
  * import numpy as np             # <<<<<<<<<<<<<<
- * cimport numpy as np
  *
+ * cimport numpy as np
  */
   __pyx_t_1 = __Pyx_Import(__pyx_n_s_numpy, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "lic_internal.pyx":43
+  /* "blendernc/core/lic/lic_internal.pyx":45
  *
  * #np.ndarray[float, ndim=2]
  * def line_integral_convolution(             # <<<<<<<<<<<<<<
  *         np.ndarray[float, ndim=3] vectors,
  *         np.ndarray[float, ndim=2] texture,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12lic_internal_1line_integral_convolution, NULL, __pyx_n_s_lic_internal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12cython_build_12lic_internal_1line_integral_convolution, NULL, __pyx_n_s_cython_build_lic_internal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_line_integral_convolution, __pyx_t_1) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_line_integral_convolution, __pyx_t_1) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "lic_internal.pyx":2
+  /* "blendernc/core/lic/lic_internal.pyx":2
  *
  * import numpy as np             # <<<<<<<<<<<<<<
- * cimport numpy as np
  *
+ * cimport numpy as np
  */
   __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -4287,11 +4236,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init lic_internal", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init cython_build.lic_internal", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_CLEAR(__pyx_m);
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init lic_internal");
+    PyErr_SetString(PyExc_ImportError, "init cython_build.lic_internal");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
