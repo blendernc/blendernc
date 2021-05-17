@@ -62,6 +62,14 @@ node_categories = [
         ],
     ),
     BlenderNCNodeCategory(
+        "Vectors",
+        "Vectors",
+        items=[
+            # Vectors Nodes.
+            NodeItem("netCDFlic"),
+        ],
+    ),
+    BlenderNCNodeCategory(
         "Output",
         "Output",
         items=[

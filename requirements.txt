@@ -1,4 +1,5 @@
 numpy
+cython
 xarray
 cmocean
 matplotlib

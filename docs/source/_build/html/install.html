@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Install BlenderNC &mdash; blendernc v0.1a documentation</title>
+
+
+
+
+
+
+
+
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+
+
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+
+
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How to use BlenderNC" href="howtouse.html" />
+    <link rel="prev" title="Welcome to BlenderNC’s documentation!" href="index.html" />
+</head>
+
+<body class="wy-body-for-nav">
+
+
+  <div class="wy-grid-for-nav">
+
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+            <a href="index.html" class="icon icon-home"> blendernc
+
+
+
+          </a>
+
+
+
+
+
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+
+
+
+
+
+
+              <p class="caption"><span class="caption-text">Quick Start</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install BlenderNC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up-the-blender-python-environment">Setting up the Blender Python environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windows">Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#install-addon">Install Addon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#update-blendernc">Update BlenderNC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#blender-compilation-optional">Blender Compilation (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="howtouse.html">How to use BlenderNC</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/import_gebco.html">Import Gebco Topography</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Help &amp; References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="help.html">Scope</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html#development">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html#related-projects">Related Projects</a></li>
+</ul>
+
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+
+      <nav class="wy-nav-top" aria-label="top navigation">
+
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">blendernc</a>
+
+      </nav>
+
+
+      <div class="wy-nav-content">
+
+        <div class="rst-content">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+
+      <li><a href="index.html">Docs</a> &raquo;</li>
+
+      <li>Install BlenderNC</li>
+
+
+      <li class="wy-breadcrumbs-aside">
+
+
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+
+
+      </li>
+
+  </ul>
+
+
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <div class="section" id="install-blendernc">
+<h1>Install BlenderNC<a class="headerlink" href="#install-blendernc" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>BlenderNC is supported by versions of <strong>Blender &gt; 2.8</strong>.</p>
+</div>
+<div class="section" id="setting-up-the-blender-python-environment">
+<h2>Setting up the Blender Python environment<a class="headerlink" href="#setting-up-the-blender-python-environment" title="Permalink to this headline">¶</a></h2>
+<p>BlenderNC requires the following python modules to be installed in Blender’s Python environment:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">xarray</span>
+<span class="n">xgcm</span>
+<span class="n">cmocean</span>
+<span class="n">matplotlib</span>
+</pre></div>
+</div>
+<p>To install the previous python modules in your Blender distribution execute the
+following commands depending on your OS:</p>
+<div class="section" id="macos">
+<h3>macOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> /Applications/Blender.app/Contents/Resources/2.83/python/bin/
+./python3.7m -m ensurepip
+./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+</pre></div>
+</div>
+</div>
+<div class="section" id="linux">
+<h3>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> /path/to/blender/2.83/python/bin/
+./python3.7m -m ensurepip
+./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+</pre></div>
+</div>
+</div>
+<div class="section" id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> /path/to/blender/2.82/python/bin/
+python.exe -m ensurepip
+python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="install-addon">
+<h2>Install Addon<a class="headerlink" href="#install-addon" title="Permalink to this headline">¶</a></h2>
+<p>The addon is installed just like any other Blender addon:</p>
+<ul class="simple">
+<li><p>Download the open-source addon from the <a class="reference external" href="https://github.com/blendernc/blendernc">GitHub</a>,
+or download the <a class="reference external" href="https://github.com/blendernc/blendernc/archive/master.zip">current version zip</a>
+(do not unzip it! Under macOS you might have to select “Download Linked File As…” to avoid automatic unzip).</p></li>
+<li><p>In Blender go to the user preferences and open the <strong>Addons</strong> tab.</p></li>
+<li><p>Once there, click <strong>Install add-on from file</strong> (bottom right corner)</p></li>
+<li><p>Navigate to the downloaded zip, select it, and click in install.</p></li>
+<li><p>Finally, check the box next to <cite>BlenderNC</cite> is enable.</p></li>
+</ul>
+<a class="reference internal image-reference" href="_images/addon_settings.png"><img alt="Install Addon" src="_images/addon_settings.png" style="width: 80%;" /></a>
+<p>Now you can follow the tutorials to import netCDFs into blender.</p>
+</div>
+<div class="section" id="update-blendernc">
+<h2>Update BlenderNC<a class="headerlink" href="#update-blendernc" title="Permalink to this headline">¶</a></h2>
+<p>It is recommended to uninstall the old version first, before installing the new version of <cite>BlenderNC</cite>. Alternatively,
+enable the “Overwrite” option in Blender (enabled by default), before you navegate to the new addon zip file using the Blender’s
+file explorer. Finally, restart Blender once the new version is installed.</p>
+</div>
+<div class="section" id="blender-compilation-optional">
+<h2>Blender Compilation (optional)<a class="headerlink" href="#blender-compilation-optional" title="Permalink to this headline">¶</a></h2>
+<p>Alternatively, to further configure Blender, you could install it using a <cite>conda</cite> environment
+by following the official <a class="reference external" href="https://wiki.blender.org/index.php/Dev:Doc/Building_Blender/">Blender installation website</a>.</p>
+<p>Create conda environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --prefix ~/path/to/python/root <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.7
+conda activate ~/path/to/python/root
+conda install --file ./requirements.txt
+</pre></div>
+</div>
+<p>Compile Blender:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake -DPYTHON_VERSION<span class="o">=</span><span class="m">3</span>.7  -DPYTHON_ROOT_DIR<span class="o">=</span>~/path/to/python/root ../blender
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Make sure to use the same python version.</p>
+</div>
+<p>Another <strong>not recomended</strong> option is to symbolically link your python modules to blender:</p>
+<p>On <strong>macOS</strong>, find the folder <cite>modules</cite> within the blender.app:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> /Applications/blender.app/Contents/Resources/2.8x/scripts/modules
+</pre></div>
+</div>
+<p>Then link all the packages from your python environment folder:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ln -s <span class="nv">$PATH_PYTHON</span>/lib/python3.6/site-packages/* .
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+
+          </div>
+          <footer>
+
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+
+        <a href="howtouse.html" class="btn btn-neutral float-right" title="How to use BlenderNC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+
+
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to BlenderNC’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+
+    </div>
+
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Josue Martinez-Moreno
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+
+
+
+
+
+</body>
+</html>
