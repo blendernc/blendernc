@@ -113,7 +113,6 @@ class BlenderNC_NT_math(bpy.types.Node):
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
         parent_node = self.inputs[0].links[0].from_node
         dataset = parent_node.blendernc_dict[unique_identifier]["Dataset"].copy()
-        input_from_node = self.inputs[-1].links[0].from_node
         # print(dataset.isel(latitude=0).isel(time=0).values)
         if self.blendernc_operation == "Multiply":
             dataset = dataset * self.inputs.get("Float").Float
@@ -121,7 +120,7 @@ class BlenderNC_NT_math(bpy.types.Node):
             dataset = dataset / self.inputs.get("Float").Float
         elif self.blendernc_operation == "Add":
             if self.inputs[-1].links and self.inputs[0].links:
-
+                input_from_node = self.inputs[-1].links[0].from_node
                 sel_var = unique_data_dict_node["selected_var"]
                 var_name = sel_var["selected_var_name"]
 
@@ -142,6 +141,7 @@ class BlenderNC_NT_math(bpy.types.Node):
 
         elif self.blendernc_operation == "Subtract":
             if self.inputs[-1].links:
+                input_from_node = self.inputs[-1].links[0].from_node
                 dataset = dataset - input_from_node.blendernc_dict
         elif self.blendernc_operation == "Logarithm":
             dataset = np.log10(dataset)

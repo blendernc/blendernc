@@ -7,11 +7,15 @@ cimport numpy as np
 cdef void _advance(float vx, float vy,
         int* x, int* y, float*fx, float*fy, int w, int h):
     cdef float tx, ty
-    if vx>=0:
+    if vx==0:
+        tx=0
+    elif vx>=0:
         tx = (1-fx[0])/vx
     else:
         tx = -fx[0]/vx
-    if vy>=0:
+    if vy==0:
+        ty=0
+    elif vy>=0:
         ty = (1-fy[0])/vy
     else:
         ty = -fy[0]/vy

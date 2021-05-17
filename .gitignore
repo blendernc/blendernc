@@ -6,7 +6,8 @@ docs/build/
 .DS_Store
 *.bk
 .vscode/
-.cython_build/*
+cython_build/*
+cython_build
 
 # Distribution / packaging
 .Python

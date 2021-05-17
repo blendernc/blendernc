@@ -7,11 +7,7 @@ import numpy as np
 import xarray as xr
 
 from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import (
-    get_geo_coord_names,
-    refresh_cache,
-    update_node_tree,
-)
+from ....blendernc.python_functions import get_geo_coord_names, refresh_cache
 from ....cython_build import lic_internal
 
 
@@ -74,9 +70,9 @@ class BlenderNC_NT_lic(bpy.types.Node):
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
         parent_node = self.inputs[0].links[0].from_node
         dataset = parent_node.blendernc_dict[unique_identifier]["Dataset"].copy()
-        input_from_node = self.inputs[-1].links[0].from_node
         # TODO: Move this condition to the decorator.
         if self.inputs[-1].links and self.inputs[0].links:
+            input_from_node = self.inputs[-1].links[0].from_node
             sel_var = unique_data_dict_node["selected_var"]
             var_name = sel_var["selected_var_name"]
 
@@ -106,7 +102,7 @@ class BlenderNC_NT_lic(bpy.types.Node):
 
             vectors = xr.concat(vector_list, dim="vel").T.values.astype(np.float32)
 
-            kernellen = int(0.06 * len(x_coord))
+            kernellen = int(0.2 * len(x_coord))
             if (kernellen % 2) == 0:
                 kernellen += 1
 
@@ -119,7 +115,7 @@ class BlenderNC_NT_lic(bpy.types.Node):
             )
 
             kernel = kernel.astype(np.float32)
-
+            # TODO: Move this function to the image production
             lic_data = lic_internal.line_integral_convolution(
                 vectors,
                 texture,
@@ -128,7 +124,7 @@ class BlenderNC_NT_lic(bpy.types.Node):
 
             lic_dataset = xr.Dataset(
                 {
-                    var_name: (["lat", "lon"], lic_data),
+                    var_name: (["lat", "lon"], lic_data.T),
                 },
                 coords={
                     "lon": (["lon"], x_coord),
@@ -140,4 +136,3 @@ class BlenderNC_NT_lic(bpy.types.Node):
             NodeTree = self.rna_type.id_data.name
             identifier = self.blendernc_dataset_identifier
             refresh_cache(NodeTree, identifier, frame)
-            update_node_tree(self, bpy.context)
