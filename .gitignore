@@ -12,3 +12,4 @@ docs/build/
 ./develop_notebooks*
 develop_notebooks*
 .ipynb*
+blendernc.zip
