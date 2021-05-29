@@ -887,6 +887,27 @@ class BlenderncEngine:
                 except RuntimeError:
                     raise ValueError("Files aren't netCDFs:", self.file_path)
 
+    def load_datacube(self):
+        """
+        Detect format and load datacube using appropriate Xarray Driver
+        - NetCDF is the existing implementation
+        - CFGrib support is being implemented as part of ECMWC
+        - Zarr support will give true scalable cloud-native usage and on the roadmap
+        Engine detection by extension : 
+        http://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray.open_mfdataset
+        """
+        # Determine engine to use based on extension
+        basename = os.path.basename(self.file_path)
+        ext = os.path.splitext(basename)
+        if ext == ".nc":
+            self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
+            return
+        if ext == ".grib":
+            self.dataset = xarray.open_mfdataset(self.file_path,  engine="cfgrib", combine="by_coords")
+            return
+        # If no specific extension is detected, or whole folder is being loaded delegate
+        self.load_netcdf()
+
     def load_netcdf(self):
         """
         Load netcdf using xarray.
