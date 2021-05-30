@@ -864,14 +864,30 @@ class BlenderncEngine:
 
         return {"Dataset": self.dataset}
 
+    def check_files_datacube(self, file_path):
+        """
+        Check that file(s) are xarray datacube compatible
+        """
+        if "*" in file_path:
+            self.file_path = glob.glob(file_path)
+            self.check_datacube()
+        elif os.path.isfile(file_path):
+            self.file_path = [file_path]
+            self.check_datacube()
+        else:
+            raise NameError("File doesn't exist:", file_path)
+        
+        return {"Dataset": self.dataset}
+
     def check_netcdf(self):
         """
         Check if file is a netcdf and contain at least one variable.
         """
+        # FIXME: This function has a lot of repititive code, make it DRY
         if len(self.file_path) == 1:
             extension = self.file_path[0].split(".")[-1]
             if extension == ".nc":
-                self.load_netcd()
+                self.load_netcdf()
             else:
                 try:
                     self.load_netcdf()
@@ -880,12 +896,24 @@ class BlenderncEngine:
         else:
             extension = self.file_path[0].split(".")[-1]
             if extension == ".nc":
-                self.load_netcd()
+                self.load_netcdf()
             else:
                 try:
                     self.load_netcdf()
                 except RuntimeError:
                     raise ValueError("Files aren't netCDFs:", self.file_path)
+
+    def check_datacube(self):
+        """
+        Check if file(s) are xarray compatible and contain at least one variable.
+        """
+        extension = os.path.splitext(self.file_path[0])
+        print(f"Attempting to load {extension} format files")
+        try:
+            self.load_datacube()
+        except RuntimeError:
+            raise ValueError("File isn't supported by Xarray install:", self.file_path)
+
 
     def load_datacube(self):
         """
@@ -896,8 +924,8 @@ class BlenderncEngine:
         Engine detection by extension : 
         http://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray.open_mfdataset
         """
-        # Determine engine to use based on extension
-        basename = os.path.basename(self.file_path)
+        # Determine engine to use based on extension of first file
+        basename = os.path.basename(self.file_path[0])
         ext = os.path.splitext(basename)
         if ext == ".nc":
             self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")

@@ -48,8 +48,10 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name.
         # Useful for large datasets. Implement node with chunks if file is huge.
 
+        # TODO: allow handling of multiple formats using "*.nc" or "*.grib"
+
         unique_identifier = node.blendernc_dataset_identifier
-        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_netcdf(file_path)
+        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(file_path)
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
         var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
         bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
@@ -224,7 +226,7 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         file_path = abspath(self.file_name)
 
         scene = context.scene
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
+        scene.nc_dictionary[file_path] = bNCEngine.check_files_datacube(file_path)
 
         var_name = self.var_name
         if not var_name:
@@ -368,6 +370,7 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
     bl_description = "Import netCDF with xarray"
 
     # ImportHelper mixin class uses this
+    # TODO: Support GRIB extension
     filename_ext: ".nc"
 
     filter_glob: bpy.props.StringProperty(
