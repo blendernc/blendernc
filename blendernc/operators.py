@@ -53,7 +53,7 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         if self.node_group == "BlenderNC":
             var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
             bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
-                items=var_names, name="", update=update_nodes
+                items=var_names, name="Select Variable", update=update_nodes
             )
         # Create new node in BlenderNC node
         blendernc_nodes = [

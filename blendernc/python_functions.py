@@ -55,11 +55,15 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
-    return var_names
+    return select_item() + [None] + var_names
 
 
 def empty_item():
-    return [("No dataset", "No dataset ", "Empty", "CANCEL", 0)]
+    return [("No var", "No variable", "Empty", "CANCEL", 0)]
+
+
+def select_item():
+    return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
 
 
 def get_possible_variables(node, context):

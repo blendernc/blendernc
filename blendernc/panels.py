@@ -50,7 +50,7 @@ bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(
 )
 
 bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
-    items=empty_item(), name="Select variable"
+    items=empty_item(), name="No variable"
 )
 
 bpy.types.Scene.blendernc_file = bpy.props.StringProperty(

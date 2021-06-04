@@ -5,6 +5,10 @@ def unselected_nc_file(self, context):
     self.layout.label(text="Select a netCDF file.")
 
 
+def unselected_variable(self, context):
+    self.layout.label(text="Select a variable file.")
+
+
 def unselected_nc_var(self, context):
     self.layout.label(text="Select a variable from the netCDF file.")
 
