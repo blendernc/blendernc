@@ -10,10 +10,10 @@ Welcome to BlenderNC's documentation!
 BlenderNC
 =========
 
-**BlenderNC** is a Blender add-on that allows to import netCDF files into 
-Blender. It allows 2D and 3D visualization and generation of scientific data 
-animations. The main development of *BlenderNC* is currently focus in 
-geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework 
+**BlenderNC** is a Blender add-on that allows to import netCDF files into
+Blender. It allows 2D and 3D visualization and generation of scientific data
+animations. The main development of *BlenderNC* is currently focus in
+geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework
 should support the load of any netCDF.
 
 .. image:: ../images/GEBCO_blendernc.png
@@ -25,7 +25,7 @@ should support the load of any netCDF.
    :caption: Quick Start
 
    install
-   howtouse 
+   howtouse
 
 .. toctree::
    :maxdepth: 2
@@ -46,7 +46,7 @@ should support the load of any netCDF.
 
 .. toctree::
    :caption: Help & References
-      
+
    help
 
 
@@ -66,8 +66,8 @@ This section show animations submitted by the BlenderNC users.
   :width: 100%
   :alt: Potential temperature.
 
-The animation by `JoshuaB-L 
+The animation by `JoshuaB-L
 <https://github.com/JoshuaB-L>`_ shows equivalent potential temperature (theta-e) of a diabatic process - air moving across a warming urban surface from 10-11:00am on the 16.07.2018 at Potsdamer Platz, Berlin. The wind speed is 7.2 km/ h considered a factor of 2 on the Beaufort Scale (‘Light breeze’). The temperature scale is represented in Kelvin and can be translated to celsius as a min and max value of 20.85 °C - 28.65 °C. Convection of the rising air parcels is clearly visible from the ground and building surfaces. Heat transfer occurs due the mixing of warm air (at ground level z0) and cool air (above the building canopy), caused by the turbulent rising eddies. Thus, the ambient air temperature of the urban environment rises. The simulation model used is PALM in LES mode. More information can be found `here <https://palm.muk.uni-hannover.de/trac/wiki/doc/tut/palm>`_.
 
- 
+
 

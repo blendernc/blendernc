@@ -4,7 +4,7 @@ Beginner mode!
 
 .. raw:: html
 
-    <style> 
+    <style>
         .red {color:red}
         .purple {color:purple}
         .green {color:green}
@@ -35,32 +35,32 @@ Switch to the :purple:`BlenderNC panel`.
   :width: 100%
   :alt: BlenderNC panel
 
-Within the :purple:`BlenderNC panel` click on `Load netCDF`, then select a 
+Within the :purple:`BlenderNC panel` click on `Load netCDF`, then select a
 netCDF by clicking the :green:`folder icon`.
 
 .. image:: ../images/blendernc_panel.png
   :width: 30%
   :alt: BlenderNC panel
 
-:teal:`Select a variable` and the :teal:`resolution` to load. 
+:teal:`Select a variable` and the :teal:`resolution` to load.
 
 .. image:: ../images/variable_panel.png
   :width: 30%
   :alt: BlenderNC panel
 
-Select an object and apply the material by clicking 
+Select an object and apply the material by clicking
 :orange:`Apply Material`.
 
 .. image:: ../images/apply_material_panel.png
   :width: 30%
   :alt: BlenderNC panel
 
-To animate the netCDF in time click over "**Animate netCDF**". Press **space** 
+To animate the netCDF in time click over "**Animate netCDF**". Press **space**
 in your keyboard to visualize animation.
 
 .. note:: The material will be applied to the selected object.
 
-The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To acces it, 
+The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To acces it,
 divide the workspace and select **BlenderNC** node editor:
 
 .. image:: ../images/blenderNC_workspace.gif

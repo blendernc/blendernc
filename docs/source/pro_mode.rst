@@ -1,7 +1,7 @@
 PRO mode!
 #########
 
-The first step to becoming a PRO is to access the **BlenderNC** node editor 
+The first step to becoming a PRO is to access the **BlenderNC** node editor
 on the top left corner (drop down menu) and select BlenderNC:
 
 .. image:: ../images/Blendernc_editor.png
@@ -16,8 +16,8 @@ Next, create a new editor on the middle top of the workspace:
 
 Finally, add the basic nodes by pressing (shift + A) and selecting Shortcuts > Create Basic Nodes:
 
-- Path node 
-- Input node 
+- Path node
+- Input node
 - Resolution node
 - Output node
 
@@ -25,13 +25,13 @@ Finally, add the basic nodes by pressing (shift + A) and selecting Shortcuts > C
   :width: 80%
   :alt: BlenderNC create nodes
 
-Any data visualization requires at least these nodes. 
+Any data visualization requires at least these nodes.
 
 .. image:: ../images/blender_basic_nodes.png
   :width: 80%
   :alt: BlenderNC basic nodes
 
-Now you are ready to start loading netCDFs. 
+Now you are ready to start loading netCDFs.
 Let's move to the first tutorial:
 
 - Import Gebco Data (WIP)

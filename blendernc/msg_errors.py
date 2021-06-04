@@ -1,4 +1,4 @@
-import bpy
+#!/usr/bin/env python3
 
 
 def unselected_nc_file(self, context):
