@@ -14,10 +14,10 @@ class Timer:
 
     def tick(self, label=""):
         if label == "":
-            self.nolabel.append(time.clock())
+            self.nolabel.append(time.time())
             self.timestamps[label] = self.nolabel
         else:
-            self.tmp.append(time.clock())
+            self.tmp.append(time.time())
             self.timestamps[label] = self.tmp
             if len(self.timestamps[label]) == 2:
 

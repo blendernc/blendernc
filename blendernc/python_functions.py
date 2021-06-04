@@ -55,11 +55,15 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
-    return var_names
+    return select_item() + [None] + var_names
 
 
 def empty_item():
-    return [("No dataset", "No dataset ", "Empty", "CANCEL", 0)]
+    return [("No var", "No variable", "Empty", "CANCEL", 0)]
+
+
+def select_item():
+    return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
 
 
 def get_possible_variables(node, context):
@@ -252,16 +256,17 @@ def dict_update(node, context):
         if "selected_var" in dataset_dict.keys()
         else ""
     )
+    node_tree = node.rna_type.id_data.name
+    unique_identifier = node.blendernc_dataset_identifier
     # Update if user selected a new variable.
     if selected_var and selected_var != node.blendernc_netcdf_vars:
         # Update dict
         update_dict(node.blendernc_netcdf_vars, node)
-        node_tree = node.rna_type.id_data.name
-        unique_identifier = node.blendernc_dataset_identifier
         del_cache(node_tree, unique_identifier)
         update_value_and_node_tree(node, context)
     else:
         update_dict(node.blendernc_netcdf_vars, node)
+        del_cache(node_tree, unique_identifier)
         update_value(node, context)
 
 
@@ -573,11 +578,10 @@ def ui_material():
 
 
 def update_colormap_interface(context, node, node_tree):
-    node = bpy.data.node_groups[node_tree].nodes[node]
-    unique_data_dict = get_unique_data_dict(node)
     # Get var range
-    max_val = unique_data_dict["selected_var"]["max_value"]
-    min_val = unique_data_dict["selected_var"]["min_value"]
+    max_val, min_val = get_max_min_data(context, node, node_tree)
+
+    node = bpy.data.node_groups[node_tree].nodes[node]
 
     # Find all nodes using the selected image in the node.
     all_nodes = get_all_nodes_using_image(node.image.name)

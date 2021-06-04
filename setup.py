@@ -2,8 +2,10 @@
 from distutils.extension import Extension
 
 import numpy as np
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+
+# TODO: Fix issue with blender not having python headers.
+# from Cython.Build import cythonize
+# from Cython.Distutils import build_ext
 from setuptools import setup
 
 extensions = Extension(
@@ -13,7 +15,7 @@ extensions = Extension(
 
 setup(
     name="blendernc",
-    version="0.1.0",
+    version="0.1.1",
     description="Blender add-on to import netCDF",
     url="https://github.com/blendernc/blendernc",
     author="josuemtzmo",
@@ -23,6 +25,7 @@ setup(
     install_requires=[],
     zip_safe=True,
     include_dirs=[np.get_include()],
-    cmdclass={"build_ext": build_ext},
-    ext_modules=cythonize([extensions], build_dir="cython_build"),
+    # cmdclass={"build_ext": build_ext},
+    # TODO: Fix issue with blender not having python headers.
+    # ext_modules=cythonize([extensions], build_dir="cython_build"),
 )
