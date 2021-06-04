@@ -874,7 +874,6 @@ class BlenderncEngine:
 
         return {"Dataset": self.dataset}
 
-<<<<<<< HEAD
     def check_files_datacube(self, file_path):
         """
         Check that file(s) are xarray datacube compatible
@@ -889,14 +888,6 @@ class BlenderncEngine:
             raise NameError("File doesn't exist:", file_path)
         
         return {"Dataset": self.dataset}
-=======
-    def load_netcdf(self):
-        """
-        Load netcdf using xarray.
-        """
-        filepath = self.file_path
-        self.dataset = xarray.open_mfdataset(filepath, combine="by_coords")
->>>>>>> 640d357df2083f2ae0f2323f9b2d6474a3140b67
 
     def check_netcdf(self):
         """
@@ -922,7 +913,6 @@ class BlenderncEngine:
                 except RuntimeError:
                     raise ValueError("Files aren't netCDFs:", self.file_path)
 
-<<<<<<< HEAD
     def check_datacube(self):
         """
         Check if file(s) are xarray compatible and contain at least one variable.
@@ -962,8 +952,6 @@ class BlenderncEngine:
         """
         self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
 
-=======
->>>>>>> 640d357df2083f2ae0f2323f9b2d6474a3140b67
 
 class dataset_modifiers:
     def __init__(self):

@@ -302,11 +302,6 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
 
         return {"FINISHED"}
-<<<<<<< HEAD
-
-
-import os
-
 
 class ImportnetCDFCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
@@ -396,5 +391,3 @@ def findCommonName(filenames):
                 raise ValueError("Filenames don't match")
         fcounter += 1
     return cfname
-=======
->>>>>>> 640d357df2083f2ae0f2323f9b2d6474a3140b67
