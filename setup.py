@@ -5,7 +5,7 @@ import numpy as np
 
 # TODO: Fix issue with blender not having python headers.
 # from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+# from Cython.Distutils import build_ext
 from setuptools import setup
 
 extensions = Extension(
@@ -25,7 +25,7 @@ setup(
     install_requires=[],
     zip_safe=True,
     include_dirs=[np.get_include()],
-    cmdclass={"build_ext": build_ext},
+    # cmdclass={"build_ext": build_ext},
     # TODO: Fix issue with blender not having python headers.
     # ext_modules=cythonize([extensions], build_dir="cython_build"),
 )
