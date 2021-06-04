@@ -70,9 +70,6 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
     bl_label = "Load netCDF"
     bl_description = "Import netCDF with xarray"
 
-    # ImportHelper mixin class uses this
-    filename_ext: ".nc"
-
     filter_glob: bpy.props.StringProperty(
         default="*.nc",
         options={"HIDDEN"},

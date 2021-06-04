@@ -24,7 +24,9 @@ from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 from .nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
 from .nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
 from .nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
-from .nodes.vectors.BlenderNC_NT_line_int_conv import BlenderNC_NT_lic
+
+# TODO: Uncomment after fixing issue with Python header.
+# from .nodes.vectors.BlenderNC_NT_line_int_conv import BlenderNC_NT_lic
 from .operators import (
     BlenderNC_OT_apply_material,
     BlenderNC_OT_colorbar,
@@ -69,7 +71,8 @@ classes = [
     BlenderNC_NT_preloader,
     BlenderNC_NT_output,
     # Vectors
-    BlenderNC_NT_lic,
+    # TODO: Uncomment after fixing issue with Python header.
+    # BlenderNC_NT_lic,
     # Nodes shortcuts
     BlenderNC_NT_basic_nodes,
     # Shader Nodes
