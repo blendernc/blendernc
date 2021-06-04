@@ -35,7 +35,7 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: >-
           python -m
-          build cython numpy
+          build
           --sdist
           --wheel
           --outdir dist/
