@@ -105,7 +105,10 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             box_asts.label(text="Select variable:", icon="WORLD_DATA")
             box_asts.prop(scn, "blendernc_netcdf_vars", text="")
             box_asts.prop(scn, "blendernc_animate")
-            box_asts.prop(scn, "blendernc_resolution")
+            row = box_asts.row(align=True)
+            split = row.split(factor=0.9)
+            split.prop(scn, "blendernc_resolution")
+            split.label(text=str("%"))
             # TO DO: Add info?
             # box_asts.label(text="INFO", icon='INFO')
 

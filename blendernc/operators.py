@@ -292,7 +292,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         blendernc_material.node_tree.links.new(cmap.inputs[0], imagetex.outputs[0])
         blendernc_material.node_tree.links.new(bump.inputs[2], imagetex.outputs[0])
         blendernc_material.node_tree.links.new(P_BSDF.inputs[0], cmap.outputs[0])
-        blendernc_material.node_tree.links.new(P_BSDF.inputs[19], bump.outputs[0])
+        blendernc_material.node_tree.links.new(P_BSDF.inputs[-3], bump.outputs[0])
 
         imagetex.image = bpy.data.images.get("BlenderNC_default")
 
