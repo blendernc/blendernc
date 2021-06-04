@@ -1,18 +1,19 @@
+#!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 
-from ....blendernc.python_functions import netcdf_values, update_value_and_node_tree
-
 from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
+from ....blendernc.python_functions import netcdf_values, update_value_and_node_tree
 
 
 class BlenderNC_NT_resolution(bpy.types.Node):
     # === Basics ===
     # Description string
-    """NetCDF loading resolution """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    """NetCDF loading resolution"""
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFResolution"
     # Label for nice name display
     bl_label = "Resolution"
@@ -37,9 +38,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
@@ -61,25 +61,26 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         layout.prop(self, "blendernc_resolution")
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Resolution"
 
     @NodesDecorators.node_connections
     def update(self):
-        dataset = self.blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
-        var_name = self.blendernc_dict[self.blendernc_dataset_identifier][
-            "selected_var"
-        ]["selected_var_name"]
-        self.blendernc_dict[self.blendernc_dataset_identifier][
-            "Dataset"
-        ] = netcdf_values(dataset, var_name, self.blendernc_resolution)
-        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
-            "resolution"
-        ] = self.blendernc_resolution
+        unique_identifier = self.blendernc_dataset_identifier
+        unique_data_dict_node = self.blendernc_dict[unique_identifier]
+        sel_var = unique_data_dict_node["selected_var"]
+        dataset = unique_data_dict_node["Dataset"]
+        var_name = sel_var["selected_var_name"]
+        resolution = self.blendernc_resolution
+        netcdf_data = netcdf_values(dataset, var_name, resolution)
+        unique_data_dict_node["Dataset"] = netcdf_data
+        sel_var["resolution"] = resolution
         # TODO: Do I know time here if so, select time and load snapshot here

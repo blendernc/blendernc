@@ -1,22 +1,19 @@
+#!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 
-from ....blendernc.python_functions import (
-    rotate_longitude,
-    update_value_and_node_tree,
-    update_node_tree,
-)
-
 from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
+from ....blendernc.python_functions import rotate_longitude, update_value_and_node_tree
 
 
 class BlenderNC_NT_rotatelon(bpy.types.Node):
     # === Basics ===
     # Description string
-    """NetCDF loading resolution """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    """NetCDF loading resolution"""
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFrotatelon"
     # Label for nice name display
     bl_label = "Rotate Longitude"
@@ -38,9 +35,8 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
@@ -60,12 +56,14 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
         layout.prop(self, "blendernc_rotation")
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Rotate Longitude"
 

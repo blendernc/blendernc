@@ -1,8 +1,9 @@
-import bpy
-
+#!/usr/bin/env python3
 import functools
 
-from .msg_errors import unselected_nc_var, unselected_nc_file
+import bpy
+
+from .msg_errors import unselected_nc_file, unselected_nc_var
 
 
 class NodesDecorators(object):
@@ -23,13 +24,13 @@ class NodesDecorators(object):
             # Who am I connected?
             connections = cls.amIconnected(node)
             # Test types of connections.
-            if not connections:
+            if not connections["input"] and not connections["output"]:
                 pass
-            elif "input" in connections.keys() and "output" in connections.keys():
+            elif connections["input"] and connections["output"]:
                 update = cls.input_connections(node)
-            elif "input" in connections.keys():
+            elif connections["input"]:
                 update = cls.input_connections(node)
-            elif "output" in connections.keys():
+            elif connections["output"]:
                 # If only output is connected, disconnect it.
                 cls.unlink_output(node)
             else:
@@ -47,7 +48,7 @@ class NodesDecorators(object):
         # over the place.
         return wrapper_update
 
-    ## Example of dummy decorator.
+    # Example of dummy decorator.
     @staticmethod
     def dummy(func):
         @functools.wraps(func)
@@ -70,21 +71,24 @@ class NodesDecorators(object):
     @staticmethod
     def amIconnected(node):
         # Connections dictionary
-        connections = {}
+        connections = {"input": [], "output": []}
         # Test input
-        inputs = node.inputs[0] if node.inputs else node.inputs
-        if inputs.is_linked and inputs.links:
-            inputs_links = inputs.links[0]
-            connections["input"] = inputs_links.from_node.bl_idname
+        inputs = [ii for ii in node.inputs] if node.inputs else node.inputs
+        for input in inputs:
+            if input.is_linked and input.links:
+                input_links = input.links[0]
+                connections["input"].append(input_links.from_node.bl_idname)
         # Test output
-        outputs = node.outputs[0] if node.outputs else node.outputs
+        outputs = [ii for ii in node.outputs] if node.outputs else node.outputs
         # This condition is to avoid errors after init each node.
-        if outputs.keys():
-            if outputs.is_linked and outputs.links:
-                output_links = outputs.links
-                connections["output"] = [
-                    link.from_node.bl_idname for link in output_links
-                ]
+        for output in outputs:
+            if output.keys():
+                if output.is_linked and output.links:
+                    output_links = output.links
+                    connections["output"].append(
+                        [link.from_node.bl_idname for link in output_links]
+                    )
+        print(connections)
         return connections
 
     @classmethod
@@ -92,6 +96,7 @@ class NodesDecorators(object):
         """
         Test only one incomming connection.
         """
+        # TODO: Add function to check for multiple connectgions
         inputs = node.inputs[0]
         inputs_links = inputs.links[0]
         if node.bl_idname == "netCDFPath":
@@ -181,7 +186,10 @@ class NodesDecorators(object):
                 node=node.name,
             )
             return False
-        elif node.blendernc_netcdf_vars != "":
+        elif (
+            node.blendernc_netcdf_vars != "No dataset"
+            and node.blendernc_netcdf_vars != ""
+        ):
             return True
         else:
             bpy.ops.blendernc.ncload(
@@ -232,8 +240,9 @@ class NodesDecorators(object):
         """
         Test all output connections.
         """
-        outputs = node.outputs[0]
-        outputs_links = outputs.links
+        pass
+        # outputs = node.outputs[0]
+        # outputs_links = outputs.links
 
     @staticmethod
     def dummy_update(node):

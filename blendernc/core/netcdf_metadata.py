@@ -1,10 +1,4 @@
-import bpy
-import numpy as np
-from calendar import monthrange
-
-from ..python_functions import update_value_and_node_tree, refresh_cache, get_dims
-
-
+#!/usr/bin/env python3
 def get_items_dims(self, context):
     if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
         # BlenderNC dictionary
@@ -28,6 +22,10 @@ def get_items_axes(self, context):
     dims_list = []
     counter = 0
     for dim in dims:
+        # TODO: Shift this condition to select axis?
+        if ("time" or "t") == dim:
+            continue
         dims_list.append((str(dim), str(dim), str(dim), "EMPTY_DATA", counter))
         counter += 1
+
     return dims_list

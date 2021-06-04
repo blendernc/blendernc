@@ -1,10 +1,7 @@
+#!/usr/bin/env python3
 import bpy
-from .python_functions import (
-    update_file_vars,
-    update_res,
-    update_animation,
-    get_possible_variables,
-)
+
+from .python_functions import empty_item, update_animation, update_file_vars, update_res
 
 gui_active_panel_fin = None
 gui_active_materials = None
@@ -53,7 +50,7 @@ bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(
 )
 
 bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
-    items=[("NONE", "Select Variable", "Select Variable", "DISK_DRIVE", 0)], name=""
+    items=empty_item(), name="Select variable"
 )
 
 bpy.types.Scene.blendernc_file = bpy.props.StringProperty(
@@ -106,7 +103,7 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             split.operator("blendernc.import_mfnetcdf", text="", icon="FILEBROWSER")
             # Select variables menu
             box_asts.label(text="Select variable:", icon="WORLD_DATA")
-            box_asts.prop(scn, "blendernc_netcdf_vars")
+            box_asts.prop(scn, "blendernc_netcdf_vars", text="")
             box_asts.prop(scn, "blendernc_animate")
             box_asts.prop(scn, "blendernc_resolution")
             # TO DO: Add info?

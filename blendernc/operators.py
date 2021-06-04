@@ -1,20 +1,18 @@
+#!/usr/bin/env python3
 # Imports
+from os.path import abspath
+
 import bpy
 
-from os.path import abspath, isfile, join, dirname
-
 from .python_functions import (
-    load_frame,
-    update_image,
+    BlenderncEngine,
     get_node,
     get_var,
-    update_nodes,
-    update_proxy_file,
-    BlenderncEngine,
+    load_frame,
     update_colormap_interface,
+    update_image,
+    update_nodes,
 )
-
-from bpy_extras.io_utils import ImportHelper
 
 bNCEngine = BlenderncEngine()
 
@@ -53,10 +51,12 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         unique_identifier = node.blendernc_dataset_identifier
         node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(file_path)
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
-        var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
-        bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
-            items=var_names, name="", update=update_nodes
-        )
+        # If quick import, define global variable.
+        if self.node_group == "BlenderNC":
+            var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
+            bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
+                items=var_names, name="", update=update_nodes
+            )
         # Create new node in BlenderNC node
         blendernc_nodes = [
             keys
@@ -70,53 +70,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         if not bpy.data.node_groups[-1].nodes:
             bpy.data.node_groups[-1].nodes.new("netCDFNode")
 
-        return {"FINISHED"}
-
-
-class BlenderNC_OT_ncload_Sui(bpy.types.Operator):
-    bl_idname = "blendernc.ncload_sui"
-    bl_label = "Load netcdf file"
-    bl_description = "Loads netcdf file"
-    bl_options = {"REGISTER", "UNDO"}
-
-    file_path: bpy.props.StringProperty(
-        name="File path",
-        description="Path to the netCDF file that will be loaded.",
-        subtype="FILE_PATH",
-    )
-
-    def execute(self, context):
-        scene = context.scene
-        netcdf = bpy.data.node_groups.get("BlenderNC").nodes.get("netCDF input")
-        node_group = bpy.data.node_groups.get("BlenderNC")
-        if not node_group.nodes.get("Resolution"):
-            ####################
-            resol = node_group.nodes.new("netCDFResolution")
-            resol.location[0] = 30
-            output = node_group.nodes.new("netCDFOutput")
-            output.location[0] = 190
-        else:
-            resol = node_group.nodes.get("Resolution")
-            output = node_group.nodes.get("Output")
-        # LINK
-        node_group.links.new(resol.inputs[0], netcdf.outputs[0])
-
-        resol.blendernc_resolution = scene.blendernc_resolution
-
-        # LINK
-        node_group.links.new(output.inputs[0], resol.outputs[0])
-        bpy.ops.image.new(
-            name="BlenderNC_default",
-            width=1024,
-            height=1024,
-            color=(0.0, 0.0, 0.0, 1.0),
-            alpha=True,
-            generated_type="BLANK",
-            float=True,
-        )
-        output.image = bpy.data.images.get("BlenderNC_default")
-        output.update_on_frame_change = scene.blendernc_animate
-        output.update()
         return {"FINISHED"}
 
 
@@ -175,6 +128,7 @@ class BlenderNC_OT_compute_range(bpy.types.Operator):
     def execute(self, context):
         node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
         unique_identifier = node.blendernc_dataset_identifier
+        # TODO: Fix bug when the node isn't connected.
         dataset = node.blendernc_dict[unique_identifier]["Dataset"]
         selected_variable = node.blendernc_dict[unique_identifier]["selected_var"][
             "selected_var_name"
@@ -286,7 +240,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
     def execute(self, context):
         act_obj = (
             context.active_object
-            if context.active_object.select_get() == True
+            if context.active_object.select_get() is True
             else None
         )
         sel_obj = context.scene.blendernc_meshes
@@ -348,6 +302,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
 
         return {"FINISHED"}
+<<<<<<< HEAD
 
 
 import os
@@ -441,3 +396,5 @@ def findCommonName(filenames):
                 raise ValueError("Filenames don't match")
         fcounter += 1
     return cfname
+=======
+>>>>>>> 640d357df2083f2ae0f2323f9b2d6474a3140b67
