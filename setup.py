@@ -15,7 +15,7 @@ extensions = Extension(
 
 setup(
     name="blendernc",
-    version="0.1.0",
+    version="0.1.1",
     description="Blender add-on to import netCDF",
     url="https://github.com/blendernc/blendernc",
     author="josuemtzmo",
