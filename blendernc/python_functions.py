@@ -37,8 +37,8 @@ def get_geo_coord_names(dataset):
 
 
 def get_var(ncdata):
-    dimensions = list(ncdata.coords.dims.keys())
-    variables = list(ncdata.variables.keys() - dimensions)
+    dimensions = sorted(list(ncdata.coords.dims.keys()))
+    variables = sorted(list(ncdata.variables.keys() - dimensions))
     if "long_name" in ncdata[variables[0]].attrs:
         var_names = [
             (
@@ -55,7 +55,7 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
-    var_names = sorted(var_names)
+
     return select_item() + [None] + var_names
 
 
