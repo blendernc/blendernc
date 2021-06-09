@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 
+def increase_resolution(self, context):
+    self.layout.label(text="Increase resolution.")
+
+
 def unselected_nc_file(self, context):
     self.layout.label(text="Select a netCDF file.")
 

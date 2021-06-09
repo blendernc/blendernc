@@ -18,7 +18,7 @@ import xarray
 from .core.logging import Timer
 from .get_utils import get_unique_data_dict
 from .image import from_data_to_pixel_value, normalize_data
-from .msg_errors import drop_dim, huge_image
+from .msg_errors import drop_dim, huge_image, increase_resolution
 
 
 def get_dims(ncdata, var):
@@ -171,6 +171,11 @@ def update_range(node, context):
         rand_sample = dataarray_random_sampling(selected_var_dataset, 100)
         max_val = np.max(rand_sample)
         min_val = np.min(rand_sample)
+        if max_val == min_val:
+            window_manager = bpy.context.window_manager
+            window_manager.popup_menu(increase_resolution, title="Error", icon="ERROR")
+            # Cancel update range and force the user to change the resolution.
+            return
 
     unique_data_dict["selected_var"]["max_value"] = max_val
     unique_data_dict["selected_var"]["min_value"] = min_val
@@ -857,14 +862,43 @@ def rotate_longitude(node, context):
 
 
 class BlenderncEngine:
-    """ " """
+    """
+    BlenderNC engine, this class makes sure the input file exists
+    and it has the right format.
+
+    Returns
+    -------
+    Datacube
+        If datacubes have the expected format (netCDF, cgrid, and zar)
+        then the dataset is returned.
+
+    Raises
+    ------
+    ValueError:
+        when `datacubes` are not the expected format
+    """
 
     def __init__(self):
         pass
 
     def check_files_netcdf(self, file_path):
         """
-        Check that file exists.
+        Check if file exists and it's format.
+
+        Parameters
+        ----------
+        filepath: str
+            string to data
+
+        Returns
+        -------
+        dataset: dict
+            Initial dictionary containing lazy datacube load.
+
+        Raises
+        ------
+        NameError:
+            when datafile doesn't exist.
         """
         # file_folder = os.path.dirname(file_path)
         if "*" in file_path:

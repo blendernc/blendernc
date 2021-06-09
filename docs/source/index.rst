@@ -36,11 +36,32 @@ should support the load of any netCDF.
    :maxdepth: 2
    :caption: Examples
 
-   examples/import_gebco
+   examples/import_gebco_netCDF
+   examples/simple_animation
+   examples/import_ECMWF_netCDF
+   examples/import_ECMWF_grid
+   examples/multiple_field_animations
+   examples/irregular_grid
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Nodes
+
+   modules/blendernc_nodes_cmap
+   .. TODO fix relative import for other nodes.
+   .. modules/blendernc_nodes_inputs
+
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
+
+   modules/blendernc_python_functions
+   modules/blendernc_handlers
+   modules/blendernc_decorators
+   modules/blendernc_image
+   modules/blendernc_errors
 
 
 
@@ -58,7 +79,7 @@ Indices and tables
 * :ref:`search`
 
 Community
-========
+=========
 
 This section show animations submitted by the BlenderNC users.
 
