@@ -55,6 +55,7 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
+    var_names = sorted(var_names)
     return select_item() + [None] + var_names
 
 
@@ -354,10 +355,9 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     pixel_size_figure = data.shape[1] / dpi, data.shape[0] / dpi
     fig = plt.figure(figsize=(pixel_size_figure), dpi=dpi)
     ax = fig.add_axes((0, 0, 1, 1))
-    if vmin and vmax:
-        image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
-    else:
-        image = ax.pcolormesh(x.values, y.values, data)
+
+    image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
+
     ax.set_ylim(-90, 90)
     fig.patch.set_visible(False)
     plt.axis("off")
