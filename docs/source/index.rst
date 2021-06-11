@@ -40,6 +40,7 @@ should support the load of any netCDF.
    examples/simple_animation
    examples/import_ECMWF_netCDF
    examples/import_ECMWF_grid
+   examples/displacement_animation
    examples/multiple_field_animations
    examples/irregular_grid
 
