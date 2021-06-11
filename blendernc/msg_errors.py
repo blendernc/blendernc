@@ -10,6 +10,10 @@ def unselected_object(self, context):
     self.layout.label(text="Select an object to apply material.")
 
 
+def increase_resolution(self, context):
+    self.layout.label(text="Increase resolution.")
+
+
 def unselected_nc_file(self, context):
     self.layout.label(text="Select a netCDF file.")
 
