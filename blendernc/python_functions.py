@@ -916,7 +916,7 @@ class BlenderncEngine:
         else:
             raise ValueError(
 <<<<<<< HEAD
-                """File extension is not supported, 
+                """File extension is not supported,
                 make sure you select a supported file ('.nc' or '.grib')""",
 =======
                 "File extension is not supported, make sure you select a supported file ('.nc' or '.grib')",
