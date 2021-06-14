@@ -3,7 +3,7 @@ import functools
 
 import bpy
 
-from .msg_errors import unselected_nc_file, unselected_nc_var
+from .msg_errors import unselected_nc_var, unselected_variable
 
 
 class NodesDecorators(object):
@@ -88,7 +88,7 @@ class NodesDecorators(object):
                     connections["output"].append(
                         [link.from_node.bl_idname for link in output_links]
                     )
-        print(connections)
+        # print(connections)
         return connections
 
     @classmethod
@@ -172,7 +172,7 @@ class NodesDecorators(object):
         else:
             # Exception for netCDFNode to update dataset
             bpy.context.window_manager.popup_menu(
-                unselected_nc_file, title="Error", icon="ERROR"
+                unselected_variable, title="Error", icon="ERROR"
             )
             cls.unlink_input(node)
             return False
@@ -180,6 +180,7 @@ class NodesDecorators(object):
     @classmethod
     def select_var_dataset(cls, node):
         if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
+            node.blendernc_file = node.inputs[0].links[0].from_socket.text
             bpy.ops.blendernc.ncload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
@@ -187,8 +188,7 @@ class NodesDecorators(object):
             )
             return False
         elif (
-            node.blendernc_netcdf_vars != "No dataset"
-            and node.blendernc_netcdf_vars != ""
+            node.blendernc_netcdf_vars != "No var" and node.blendernc_netcdf_vars != ""
         ):
             return True
         else:
@@ -231,7 +231,6 @@ class NodesDecorators(object):
     @staticmethod
     def get_blendernc_file(node):
         # TODO disconnect if not connected to proper node.
-        node.blendernc_file = node.inputs[0].links[0].from_socket.text
         if not node.blendernc_file:
             node.blendernc_file = node.inputs[0].links[0].from_node.blendernc_file
 
