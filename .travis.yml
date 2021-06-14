@@ -18,8 +18,11 @@ services:
 
 before_install:
   - docker pull nytimes/blender:latest
+  - docker pull nytimes/blender:2.91-cpu-ubuntu18.04
   - docker pull nytimes/blender:2.83-cpu-ubuntu18.04
   - zip -r .github/travis/blendernc.zip ../blendernc
+  - pip install -r requirements.txt
+  - pip install -e .
   - cd .github/travis/
   - wget https://raw.githubusercontent.com/blendernc/blendernc/master/requirements.txt
 

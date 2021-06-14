@@ -1,8 +1,8 @@
 name: Publish Python 🐍 distributions 📦 to PyPI and TestPyPI
 
-on: 
+on:
   push:
-    branches: 
+    branches:
       - master
 
 jobs:
@@ -22,6 +22,16 @@ jobs:
           pip install
           build
           --user
+      - name: Upgrade pip
+        run: >-
+          python -m
+          pip install
+          --upgrade pip
+      - name: Install Cython and Numpy
+        run: >-
+          python -m
+          pip install
+          cython numpy --user
       - name: Build a binary wheel and a source tarball
         run: >-
           python -m

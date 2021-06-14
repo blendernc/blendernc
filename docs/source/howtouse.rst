@@ -2,9 +2,9 @@
 How to use BlenderNC
 ====================
 
-BlenderNC has been developed with the goal to simplify the initial steps for a 
-first time Blender user. If you have never used Blender, please watch the 
-recommended videos, then follow the beginner mode tutorial. Otherwise, let's 
+BlenderNC has been developed with the goal to simplify the initial steps for a
+first time Blender user. If you have never used Blender, please watch the
+recommended videos, then follow the beginner mode tutorial. Otherwise, let's
 jump into it with the PRO mode.
 
 .. toctree::
@@ -19,5 +19,5 @@ jump into it with the PRO mode.
 
   .. toctree::
     :maxdepth: 2
-    
+
     extra/blender_support_videos

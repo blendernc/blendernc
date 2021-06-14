@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Imports
 import bpy
 
@@ -5,8 +6,9 @@ import bpy
 class BlenderNC_NT_basic_nodes(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    """Select axis"""
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFbasincnodes"
     # Label for nice name display
     bl_label = "Create Basic Nodes"

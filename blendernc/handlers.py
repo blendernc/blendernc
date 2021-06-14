@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import bpy
 from bpy.app.handlers import persistent
 

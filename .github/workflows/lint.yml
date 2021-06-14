@@ -1,0 +1,24 @@
+name: Lint-Flake8
+
+on:
+  pull_request:
+    paths:
+      - '*.py'
+
+jobs:
+  flake8_py3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7.10
+      - name: Checkout PyTorch
+        uses: actions/checkout@master
+      - name: Install flake8
+        run: pip install flake8
+      - name: Run flake8
+        uses: TrueBrain/actions-flake8@master
+        with:
+          ignore: F722,F821,E203,W503,F405
+          max_line_length: 88

@@ -1,18 +1,19 @@
+#!/usr/bin/env python3
 # Imports
+from collections import defaultdict
+
 import bpy
 
-from ....blendernc.python_functions import update_range
-
 from ....blendernc.decorators import NodesDecorators
-
-from collections import defaultdict
+from ....blendernc.python_functions import update_range
 
 
 class BlenderNC_NT_range(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis """
-    # Optional identifier string. If not explicitly defined, the python class name is used.
+    """Select axis"""
+    # Optional identifier string. If not explicitly defined,
+    # the python class name is used.
     bl_idname = "netCDFRange"
     # Label for nice name display
     bl_label = "netCDF Range"
@@ -33,9 +34,8 @@ class BlenderNC_NT_range(bpy.types.Node):
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
-    # This is the most common place to create the sockets for a node, as shown below.
-    # NOTE: this is not the same as the standard __init__ function in Python, which is
-    #       a purely internal Python method and unknown to the node system!
+    # This is the most common place to create the sockets for a node,
+    # as shown below.
     def init(self, context):
         self.inputs.new("bNCnetcdfSocket", "Dataset")
         self.outputs.new("bNCnetcdfSocket", "Dataset")
@@ -56,26 +56,30 @@ class BlenderNC_NT_range(bpy.types.Node):
         layout.prop(self, "blendernc_dataset_min")
         layout.prop(self, "blendernc_dataset_max")
         layout.label(text="or")
-        operator = layout.operator("blendernc.compute_range", icon="DRIVER_DISTANCE")
+        operator = layout.operator(
+            "blendernc.compute_range",
+            icon="DRIVER_DISTANCE",
+        )
         operator.node = self.name
         operator.node_group = self.rna_type.id_data.name
 
     # Detail buttons in the sidebar.
-    # If this function is not defined, the draw_buttons function is used instead
+    # If this function is not defined,
+    # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
         pass
 
     # Optional: custom label
-    # Explicit user label overrides this, but here we can define a label dynamically
+    # Explicit user label overrides this,
+    # but here we can define a label dynamically
     def draw_label(self):
         return "Range"
 
     @NodesDecorators.node_connections
     def update(self):
+        unique_identifier = self.blendernc_dataset_identifier
+        unique_data_dict_node = self.blendernc_dict[unique_identifier]
+        sel_var = unique_data_dict_node["selected_var"]
         # Update vmax and vmin of the dataset.
-        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
-            "max_value"
-        ] = self.blendernc_dataset_max
-        self.blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
-            "min_value"
-        ] = self.blendernc_dataset_min
+        sel_var["max_value"] = self.blendernc_dataset_max
+        sel_var["min_value"] = self.blendernc_dataset_min
