@@ -62,16 +62,16 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
     )
 
 
-class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
+class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     """ """
 
-    bl_idname = "blendernc.import_mfnetcdf"
+    bl_idname = "blendernc.import_mfdataset"
 
-    bl_label = "Load netCDF"
-    bl_description = "Import netCDF with xarray"
+    bl_label = "Load Datacube"
+    bl_description = "Import Datacube with xarray"
 
     filter_glob: bpy.props.StringProperty(
-        default="*.nc",
+        default="*.nc;*.grib;*.zarr",
         options={"HIDDEN"},
     )
 

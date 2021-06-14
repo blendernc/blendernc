@@ -100,7 +100,7 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             split = row.split(factor=0.85, align=True)
 
             split.prop(scn, "blendernc_file")
-            split.operator("blendernc.import_mfnetcdf", text="", icon="FILEBROWSER")
+            split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
             # Select variables menu
             box_asts.label(text="Select variable:", icon="WORLD_DATA")
             box_asts.prop(scn, "blendernc_netcdf_vars", text="")

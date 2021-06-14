@@ -862,22 +862,6 @@ class BlenderncEngine:
     def __init__(self):
         pass
 
-    def check_files_netcdf(self, file_path):
-        """
-        Check that file exists.
-        """
-        # file_folder = os.path.dirname(file_path)
-        if "*" in file_path:
-            self.file_path = glob.glob(file_path)
-            self.check_netcdf()
-        elif os.path.isfile(file_path):
-            self.file_path = [file_path]
-            self.check_netcdf()
-        else:
-            raise NameError("File doesn't exist:", file_path)
-
-        return {"Dataset": self.dataset}
-
     def check_files_datacube(self, file_path):
         """
         Check that file(s) are xarray datacube compatible
@@ -893,19 +877,6 @@ class BlenderncEngine:
 
         return {"Dataset": self.dataset}
 
-    def check_netcdf(self):
-        """
-        Check if file is a netcdf and contain at least one variable.
-        """
-        basename = os.path.basename(self.file_path[0])
-        ext = os.path.splitext(basename)
-        if ext == ".nc":
-            self.load_netcdf()
-        else:
-            try:
-                self.load_netcdf()
-            except RuntimeError:
-                raise ValueError("File(s) not netCDF:", self.file_path)
 
     def check_datacube(self):
         """
@@ -930,22 +901,21 @@ class BlenderncEngine:
         # Determine engine to use based on extension of first file
         basename = os.path.basename(self.file_path[0])
         ext = os.path.splitext(basename)
-        if ext == ".nc":
+        if ext[1] == ".nc":
             self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
             return
-        if ext == ".grib":
+        elif ext[1] == ".grib":
             self.dataset = xarray.open_mfdataset(
                 self.file_path, engine="cfgrib", combine="by_coords"
             )
             return
-        # If no specific extension is detected, or whole folder is being loaded delegate
-        self.load_netcdf()
-
-    def load_netcdf(self):
-        """
-        Load netcdf using xarray.
-        """
-        self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
+        elif ext[1] == ".zar":
+            self.dataset = xarray.open_mfdataset(
+                self.file_path, engine="zarr", combine="by_coords"
+            )
+            return
+        else:
+            raise ValueError("File extension is not supported, make sure you select a supported file ('.nc' or '.grib')", self.file_path)
 
 
 class dataset_modifiers:

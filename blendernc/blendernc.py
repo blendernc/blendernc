@@ -41,7 +41,7 @@ from .sockets import bNCfloatSocket, bNCnetcdfSocket, bNCstringSocket
 from .UI_operators import (
     BlenderNC_OT_purge_all,
     BlenderNC_OT_Simple_UI,
-    Import_OT_mfnetCDF,
+    Import_OT_mfdataset,
     ImportnetCDFCollection,
 )
 
@@ -90,7 +90,7 @@ classes = [
     BlenderNC_OT_purge_all,
     # Operators: files
     ImportnetCDFCollection,
-    Import_OT_mfnetCDF,
+    Import_OT_mfdataset,
     # Sockets
     bNCnetcdfSocket,
     bNCstringSocket,

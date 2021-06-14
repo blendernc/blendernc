@@ -56,7 +56,7 @@ class BlenderNC_NT_path(bpy.types.Node):
 
         split.prop(self, "blendernc_file")
         operator = split.operator(
-            "blendernc.import_mfnetcdf", text="", icon="FILEBROWSER"
+            "blendernc.import_mfdataset", text="", icon="FILEBROWSER"
         )
         operator.node = self.name
         operator.node_group = self.rna_type.id_data.name

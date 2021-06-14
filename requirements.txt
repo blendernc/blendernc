@@ -1,5 +1,7 @@
 numpy
 cython
+zarr
+cfgrib
 xarray
 cmocean
 matplotlib
