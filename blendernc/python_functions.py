@@ -877,7 +877,6 @@ class BlenderncEngine:
 
         return {"Dataset": self.dataset}
 
-
     def check_datacube(self):
         """
         Check if file(s) are xarray compatible and contain at least one variable.
@@ -915,7 +914,11 @@ class BlenderncEngine:
             )
             return
         else:
-            raise ValueError("File extension is not supported, make sure you select a supported file ('.nc' or '.grib')", self.file_path)
+            raise ValueError(
+                """File extension is not supported, 
+                make sure you select a supported file ('.nc' or '.grib')""",
+                self.file_path,
+            )
 
 
 class dataset_modifiers:
