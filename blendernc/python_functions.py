@@ -909,7 +909,7 @@ class BlenderncEngine:
                 self.file_path, engine="cfgrib", combine="by_coords"
             )
             return
-        elif ext[1] == ".zar":
+        elif ext[1] == ".zarr":
             self.dataset = xarray.open_mfdataset(
                 self.file_path, engine="zarr", combine="by_coords"
             )
