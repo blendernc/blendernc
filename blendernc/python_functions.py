@@ -897,25 +897,15 @@ class BlenderncEngine:
         """
         Check if file is a netcdf and contain at least one variable.
         """
-        # FIXME: This function has a lot of repititive code, make it DRY
-        if len(self.file_path) == 1:
-            extension = self.file_path[0].split(".")[-1]
-            if extension == ".nc":
-                self.load_netcdf()
-            else:
-                try:
-                    self.load_netcdf()
-                except RuntimeError:
-                    raise ValueError("File isn't a netCDF:", self.file_path)
+        basename = os.path.basename(self.file_path[0])
+        ext = os.path.splitext(basename)
+        if ext == ".nc":
+            self.load_netcdf()
         else:
-            extension = self.file_path[0].split(".")[-1]
-            if extension == ".nc":
+            try:
                 self.load_netcdf()
-            else:
-                try:
-                    self.load_netcdf()
-                except RuntimeError:
-                    raise ValueError("Files aren't netCDFs:", self.file_path)
+            except RuntimeError:
+                raise ValueError("File(s) not netCDF:", self.file_path)
 
     def check_datacube(self):
         """
