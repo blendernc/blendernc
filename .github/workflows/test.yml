@@ -14,5 +14,5 @@ jobs:
           zip ./tests/blendernc.zip -r ../blendernc
 
 
-          docker run -w /tests --rm -v $(pwd):/tests -t nytimes/blender:latest /bin/sh -c "bash ./test/build-test.sh"
+          docker run -w /tests --rm -v $(pwd):/tests -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
           docker run -w /tests --rm -v $(pwd):/tests -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
