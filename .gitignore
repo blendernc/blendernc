@@ -10,6 +10,13 @@ docs/source/_build/
 cython_build/*
 cython_build
 
+# Test
+tests/*.zip
+tests/*.zip
+tests/*.png
+tests/sitecustomize.py
+
+
 # Distribution / packaging
 .Python
 build/
