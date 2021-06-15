@@ -60,7 +60,7 @@ Indices and tables
 Support
 =======
 
-BlenderNC was part of the `ECMWF Summer of Weather Code 2021 <https://esowc.ecmwf.int/>`_, an innovation program organised by the 
+BlenderNC was part of the `ECMWF Summer of Weather Code 2021 <https://esowc.ecmwf.int/>`_, an innovation program organised by the
 `European Centre for Medium-Range Weather Forecasts <https://www.ecmwf.int>`_ focusing on weather- and climate-related open-source developments.
 The sponsored work was aimed at improving the support of weather and climate data in GRIB format.
 
