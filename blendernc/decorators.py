@@ -101,6 +101,8 @@ class NodesDecorators(object):
         inputs_links = inputs.links[0]
         if node.bl_idname == "netCDFPath":
             return True
+        elif node.bl_idname == "Datacube_tutorial":
+            return True
         elif (
             inputs_links.from_node.bl_idname == "netCDFPath"
             and node.bl_idname == "netCDFNode"

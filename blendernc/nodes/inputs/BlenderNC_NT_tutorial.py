@@ -4,28 +4,37 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
+from blendernc.blendernc.decorators import NodesDecorators
+
 from ....blendernc.python_functions import (
     dict_update,
+    dict_update_tutorial_datacube,
     get_new_identifier,
     get_possible_variables,
+    get_xarray_datasets,
 )
 
 
-class BlenderNC_NT_netcdf(bpy.types.Node):
+class BlenderNC_NT_tutorial(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Node to initiate netCDF dataset using xarray"""
+    """Select axis"""
     # Optional identifier string. If not explicitly defined,
-    # he python class name is used.
-    bl_idname = "netCDFNode"
+    # the python class name is used.
+    bl_idname = "Datacube_tutorial"
     # Label for nice name display
-    bl_label = "netCDF input"
+    bl_label = "Datacube tutorial"
     # Icon identifier
-    bl_icon = "UGLYPACKAGE"
-    bl_type = "NETCDF"
+    bl_icon = "ASSET_MANAGER"
+    blb_type = "NETCDF"
 
     blendernc_file: bpy.props.StringProperty()
+
+    blendernc_xarray_datacube: bpy.props.EnumProperty(
+        items=get_xarray_datasets,
+        name="Select Variable",
+        update=dict_update_tutorial_datacube,
+    )
 
     blendernc_netcdf_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
@@ -33,18 +42,17 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         update=dict_update,
     )
 
-    # Note that this dictionary is in shared memory.
-    blendernc_dict = defaultdict()
+    # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCstringSocket", "Path")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
         self.blendernc_dataset_identifier = get_new_identifier(self)
+        self.outputs.new("bNCnetcdfSocket", "Dataset")
         self.color = (0.4, 0.8, 0.4)
         self.use_custom_color = True
 
@@ -55,12 +63,14 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier in self.blendernc_dict.keys():
+        if self.blendernc_dataset_identifier != "":
             self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
+        layout.label(text="Select Datacube:")
+        layout.prop(self, "blendernc_xarray_datacube", text="")
         layout.label(text="Select Variable:")
         layout.prop(self, "blendernc_netcdf_vars", text="")
 
@@ -68,29 +78,17 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # If this function is not defined,
     # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
-        layout.label(text="Select Variable:")
         pass
 
     # Optional: custom label
     # Explicit user label overrides this,
     # but here we can define a label dynamically
     def draw_label(self):
-        if self.blendernc_dataset_identifier not in self.blendernc_dict.keys():
-            return "netCDF input"
-        else:
-            return self.blendernc_file.split("/")[-1]
+        return "Datacube tutorial"
 
     @NodesDecorators.node_connections
     def update(self):
-        identifier = self.blendernc_dataset_identifier
-        blendernc_dict = self.blendernc_dict[identifier]
-        updated_dataset = blendernc_dict["Dataset"][
-            self.blendernc_netcdf_vars
-        ].to_dataset()
-
-        # Note, only this node will have access to the socket.
-        # All the following nodes will pass directly to the next node.
-        self.outputs[0].dataset[identifier] = blendernc_dict.copy()
-        self.outputs[0].dataset[identifier]["Dataset"] = updated_dataset.copy()
-        self.outputs[0].unique_identifier = identifier
-        # Check decorators before modifying anything here.
+        #####################
+        # OPERATION HERE!!! #
+        #####################
+        pass
