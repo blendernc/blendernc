@@ -19,7 +19,6 @@ jobs:
 
           docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
 
-    steps:
       - name: Upload coverage
       - uses: actions/checkout@master
       - uses: codecov/codecov-action@v1
