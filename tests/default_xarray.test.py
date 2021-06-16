@@ -1,10 +1,27 @@
 import os
+import sys
 import unittest
 
 import bpy
 
 
-def render_image():
+def capture_render_log(func):
+    def wrapper(*args, **kwargs):
+        logfile = "blender_render.log"
+        open(logfile, "a").close()
+        old = os.dup(1)
+        sys.stdout.flush()
+        os.close(1)
+        os.open(logfile, os.O_WRONLY)
+        func(*args, **kwargs)
+        os.close(1)
+        os.dup(old)
+
+    return wrapper
+
+
+@capture_render_log
+def render_image(datacube="air_temperature", var="air"):
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
 
@@ -26,8 +43,8 @@ def render_image():
     out.location = (300, 0)
 
     # Select variable
-    inp.blendernc_xarray_datacube = "air_temperature"
-    inp.blendernc_netcdf_vars = "air"
+    inp.blendernc_xarray_datacube = datacube
+    inp.blendernc_netcdf_vars = var
 
     # Change resolution
     res.blendernc_resolution = 100
@@ -79,16 +96,25 @@ def render_image():
     render = scene.render
     directory = bpy.path.abspath("//")
 
-    render.filepath = f"{directory}" + "test_image.png"
+    render.filepath = f"{directory}" + "{0}_image.png".format(var)
     bpy.ops.render.render(write_still=True)
 
     render.filepath = directory
 
 
 class Test_simple_render(unittest.TestCase):
-    def test_render_tutorial_data(self):
-        render_image()
-        file_exist = os.path.isfile("./test_image.png")
+    def test_air_tutorial_data(self):
+        datacube = "air_temperature"
+        var = "air"
+        render_image(datacube, var)
+        file_exist = os.path.isfile("./{0}_image.png".format(var))
+        self.assertTrue(file_exist)
+
+    def test_ROMS_tutorial_data(self):
+        datacube = "ROMS_example"
+        var = "zeta"
+        render_image(datacube, var)
+        file_exist = os.path.isfile("./{0}_image.png".format(var))
         self.assertTrue(file_exist)
 
 

@@ -1,5 +1,4 @@
 import glob
-import os
 import subprocess
 import sys
 
@@ -23,10 +22,7 @@ for file in glob.glob("./*.test.py"):
     # TODO: Try to fake display (See link below)
     # https://github.com/nytimes/rd-blender-docker/issues/3#issuecomment-620199501
     # blender --background --addons "blendernc" -E CYCLES --python "test_default.py"
-    env = dict(os.environ)
-    env["COVERAGE_PROCESS_START"] = os.path.realpath("./") + ".coveragerc"
-
-    subprocess.run(
+    proc = subprocess.run(
         [
             blenderExecutable,
             "--addons",
@@ -34,8 +30,8 @@ for file in glob.glob("./*.test.py"):
             "-E",
             "CYCLES",
             "-b",
+            "--python-use-system-env",
             "--python",
             file,
         ],
-        env=env,
     )
