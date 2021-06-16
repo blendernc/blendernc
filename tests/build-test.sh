@@ -26,3 +26,4 @@ $BLENDERPY run_tests.py
 
 coverage combine
 coverage report
+coverage xml
