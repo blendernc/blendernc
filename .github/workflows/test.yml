@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: codecov/codecov-action@v1
+
       - name: Pull Blender Docker Image
         run: |
           docker pull nytimes/blender:latest
@@ -19,10 +21,8 @@ jobs:
 
           docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
 
-      - name: Upload coverage
-      - uses: actions/checkout@master
-      - uses: codecov/codecov-action@v1
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./tests/coverage.xml  # optional
-          name: codecov-umbrella # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./tests/coverage.xml
