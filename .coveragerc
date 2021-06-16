@@ -1,7 +1,7 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-source = \blendernc
+source = /blendernc
 source_pkgs = blendernc
 # omit= '*tests*
 
