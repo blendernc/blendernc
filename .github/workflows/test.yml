@@ -18,3 +18,12 @@ jobs:
           docker run -w /blendernc --rm -v $(pwd):/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
 
           docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
+
+    steps:
+      - name: Upload coverage
+      - uses: actions/checkout@master
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./tests/coverage.xml  # optional
+          name: codecov-umbrella # optional
