@@ -34,8 +34,8 @@ else:
 
 sys.path.append(str(user_addon_directory))
 
-try:
-    bpy.ops.preferences.addon_refresh()
-    bpy.ops.preferences.addon_enable(module="blendernc")
-except Exception:  # Generic excepts to catch any error
-    sys.exit(1)
+# try:
+#     bpy.ops.preferences.addon_refresh()
+#     bpy.ops.preferences.addon_enable(module="blendernc")
+# except Exception:  # Generic excepts to catch any error
+#     sys.exit(1)

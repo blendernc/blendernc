@@ -7,12 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Pull Blender Docker Image and test addon
+      - name: Pull Blender Docker Image
         run: |
           docker pull nytimes/blender:latest
           docker pull nytimes/blender:2.83-cpu-ubuntu18.04
-          zip ./tests/blendernc.zip -r ../blendernc
 
-
+      - name: Test addon
+        run: |
           docker run -w /blendernc --rm -v $(pwd):/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
           docker run -w /blendernc --rm -v $(pwd):/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+
+          docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"

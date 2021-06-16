@@ -4,9 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.blendernc.decorators import NodesDecorators
-
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import (
     dict_update,
     dict_update_tutorial_datacube,
     get_new_identifier,

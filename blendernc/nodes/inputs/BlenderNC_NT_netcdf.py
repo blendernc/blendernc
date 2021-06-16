@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import (
     dict_update,
     get_new_identifier,
     get_possible_variables,
