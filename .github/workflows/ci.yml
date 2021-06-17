@@ -1,4 +1,4 @@
-name: Push to another repository
+name: CI
 on:
   push:
     branches:
@@ -17,7 +17,7 @@ jobs:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
         source-directory: 'blendernc'
-        destination-github-username: 'release'
+        destination-github-username: 'blendernc'
         destination-repository-name: 'blendernc-zip-install'
         user-email: josue.martinezmoreno@anu.edu.au
         target-branch: main
