@@ -11,8 +11,6 @@ cython_build/*
 cython_build
 
 # Test
-tests/*.zip
-tests/*.zip
 tests/*.png
 tests/sitecustomize.py
 tests/blender_render.log
