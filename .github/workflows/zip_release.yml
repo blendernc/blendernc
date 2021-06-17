@@ -11,10 +11,10 @@ jobs:
     - uses: actions/checkout@v1
     - name: Create Release Folder
       run: |
-        rsync -arv  ./blendernc/ ./release
+        rsync -arv  ./blendernc/ ../release
     - name: Switch to Release Folder
       run: |
-        cd release
+        cd ../release
         ls -la
     - name: Bump version and push tag
       uses: anothrNick/github-tag-action@master
