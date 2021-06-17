@@ -21,3 +21,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         REPO_OWNER: blendernc
+        DEFAULT_BUMP: minor
+        SOURCE: ./release
