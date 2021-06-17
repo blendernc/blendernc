@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 
 
+def active_selection_preference(self, context):
+    self.layout.label(text="The active selection has preference over picked object.")
+    self.layout.label(text="Make sure you selected the right mesh to apply material.")
+
+
+def unselected_object(self, context):
+    self.layout.label(text="Select an object to apply material.")
+
+
 def increase_resolution(self, context):
     self.layout.label(text="Increase resolution.")
 

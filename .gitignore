@@ -8,6 +8,12 @@ docs/source/_build/
 cython_build/*
 cython_build
 
+# Test
+tests/*.png
+tests/sitecustomize.py
+tests/blender_render.log
+
+
 # Distribution / packaging
 .Python
 build/
@@ -49,3 +55,4 @@ cover/
 ./develop_notebooks*
 develop_notebooks*
 .ipynb*
+blendernc.zip

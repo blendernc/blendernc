@@ -37,8 +37,8 @@ def get_geo_coord_names(dataset):
 
 
 def get_var(ncdata):
-    dimensions = list(ncdata.coords.dims.keys())
-    variables = list(ncdata.variables.keys() - dimensions)
+    dimensions = sorted(list(ncdata.coords.dims.keys()))
+    variables = sorted(list(ncdata.variables.keys() - dimensions))
     if "long_name" in ncdata[variables[0]].attrs:
         var_names = [
             (
@@ -55,6 +55,7 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
+
     return select_item() + [None] + var_names
 
 
@@ -64,6 +65,10 @@ def empty_item():
 
 def select_item():
     return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
+
+
+def select_datacube():
+    return [("No datacube", "Select datacube", "Empty", "NODE_SEL", 0)]
 
 
 def get_possible_variables(node, context):
@@ -223,6 +228,14 @@ def refresh_cache(NodeTree, identifier, frame):
             cached_nodetree.pop(frame)
 
 
+def is_cached(NodeTree, identifier):
+    if NodeTree in bpy.context.scene.nc_cache.keys():
+        if identifier in bpy.context.scene.nc_cache[NodeTree].keys():
+            return True
+    else:
+        return False
+
+
 def del_cache(NodeTree, identifier):
     if bpy.context.scene.nc_cache:
         bpy.context.scene.nc_cache[NodeTree].pop(identifier)
@@ -263,16 +276,16 @@ def dict_update(node, context):
     )
     node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
-    # Update if user selected a new variable.
-    if selected_var and selected_var != node.blendernc_netcdf_vars:
-        # Update dict
-        update_dict(node.blendernc_netcdf_vars, node)
+
+    update_dict(node.blendernc_netcdf_vars, node)
+
+    if (
+        is_cached(node_tree, unique_identifier)
+        and selected_var != node.blendernc_netcdf_vars
+    ):
         del_cache(node_tree, unique_identifier)
-        update_value_and_node_tree(node, context)
-    else:
-        update_dict(node.blendernc_netcdf_vars, node)
-        del_cache(node_tree, unique_identifier)
-        update_value(node, context)
+
+    update_value_and_node_tree(node, context)
 
 
 def get_node(node_group, node):
@@ -359,10 +372,9 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     pixel_size_figure = data.shape[1] / dpi, data.shape[0] / dpi
     fig = plt.figure(figsize=(pixel_size_figure), dpi=dpi)
     ax = fig.add_axes((0, 0, 1, 1))
-    if vmin and vmax:
-        image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
-    else:
-        image = ax.pcolormesh(x.values, y.values, data)
+
+    image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
+
     ax.set_ylim(-90, 90)
     fig.patch.set_visible(False)
     plt.axis("off")
@@ -627,7 +639,7 @@ def update_colormap_interface(context, node, node_tree):
             splines = [
                 child
                 for child in cbar_plane.children
-                if "text_cbar_{}".format(node.name) in child.name
+                if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
             ]
 
         # Update splines
@@ -855,6 +867,34 @@ def rotate_longitude(node, context):
     frame = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
     refresh_cache(NodeTree, identifier, frame)
+
+
+def get_xarray_datasets(node, context):
+    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+    enum_datacube_dict_keys = enumerate(xarray_datacube)
+    datacube_names = [
+        (
+            key,
+            key,
+            key,
+            "DISK_DRIVE",
+            i + 1,
+        )
+        for i, key in enum_datacube_dict_keys
+    ]
+    return select_datacube() + datacube_names
+
+
+def dict_update_tutorial_datacube(node, context):
+    unique_identifier = node.blendernc_dataset_identifier
+    data_dictionary = node.blendernc_dict
+    selected_datacube = node.blendernc_xarray_datacube
+    if selected_datacube == "No datacube":
+        return
+    node.blendernc_file = "Tutorial"
+    data_dictionary[unique_identifier] = {
+        "Dataset": xarray.tutorial.open_dataset(selected_datacube)
+    }
 
 
 # xarray core TODO: Divide file for future computations
