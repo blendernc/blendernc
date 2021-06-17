@@ -10,8 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: creates output
-        run:  |
-          rsync -arv  ./blendernc/ ./release
+        run: rsync -arv  ./blendernc/ ./release
     - name: Pushes to another repository
         uses: cpina/github-action-push-to-another-repository@main
         env:
