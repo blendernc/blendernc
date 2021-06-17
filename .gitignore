@@ -2,12 +2,19 @@
 ./docs/build*
 ./docs/build/*
 docs/build/
+docs/source/_build/
 *.old
 .DS_Store
 *.bk
 .vscode/
 cython_build/*
 cython_build
+
+# Test
+tests/*.png
+tests/sitecustomize.py
+tests/blender_render.log
+
 
 # Distribution / packaging
 .Python
@@ -50,3 +57,4 @@ cover/
 ./develop_notebooks*
 develop_notebooks*
 .ipynb*
+blendernc.zip

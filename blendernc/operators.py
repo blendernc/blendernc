@@ -4,7 +4,7 @@ from os.path import abspath
 
 import bpy
 
-from ..blendernc.msg_errors import active_selection_preference, unselected_object
+from .msg_errors import active_selection_preference, unselected_object
 from .python_functions import (
     BlenderncEngine,
     get_node,
