@@ -9,20 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
-        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
-    - name: Create local changes
-      run: |
-        cd blendernc
-    - name: Commit files
-      run: |
-        git init .
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git commit -m "Blendernc new release" -a
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref }}
+    - name: creates output
+        run:  |
+          rsync -arv  ./blendernc/ ./release
+    - name: Pushes to another repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: 'blendernc'
+          destination-github-username: 'release'
+          destination-repository-name: 'blendernc-zip-install'
+          user-email: josue.martinezmoreno@anu.edu.au
+          target-branch: main
