@@ -18,7 +18,7 @@ import xarray
 from .core.logging import Timer
 from .get_utils import get_unique_data_dict
 from .image import from_data_to_pixel_value, normalize_data
-from .msg_errors import drop_dim, huge_image
+from .msg_errors import drop_dim, huge_image, increase_resolution
 
 
 def get_dims(ncdata, var):
@@ -37,8 +37,8 @@ def get_geo_coord_names(dataset):
 
 
 def get_var(ncdata):
-    dimensions = list(ncdata.coords.dims.keys())
-    variables = list(ncdata.variables.keys() - dimensions)
+    dimensions = sorted(list(ncdata.coords.dims.keys()))
+    variables = sorted(list(ncdata.variables.keys() - dimensions))
     if "long_name" in ncdata[variables[0]].attrs:
         var_names = [
             (
@@ -55,6 +55,7 @@ def get_var(ncdata):
             (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
             for ii in range(len(variables))
         ]
+
     return select_item() + [None] + var_names
 
 
@@ -64,6 +65,10 @@ def empty_item():
 
 def select_item():
     return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
+
+
+def select_datacube():
+    return [("No datacube", "Select datacube", "Empty", "NODE_SEL", 0)]
 
 
 def get_possible_variables(node, context):
@@ -170,6 +175,11 @@ def update_range(node, context):
         rand_sample = dataarray_random_sampling(selected_var_dataset, 100)
         max_val = np.max(rand_sample)
         min_val = np.min(rand_sample)
+        if max_val == min_val:
+            window_manager = bpy.context.window_manager
+            window_manager.popup_menu(increase_resolution, title="Error", icon="ERROR")
+            # Cancel update range and force the user to change the resolution.
+            return
 
     unique_data_dict["selected_var"]["max_value"] = max_val
     unique_data_dict["selected_var"]["min_value"] = min_val
@@ -218,6 +228,14 @@ def refresh_cache(NodeTree, identifier, frame):
             cached_nodetree.pop(frame)
 
 
+def is_cached(NodeTree, identifier):
+    if NodeTree in bpy.context.scene.nc_cache.keys():
+        if identifier in bpy.context.scene.nc_cache[NodeTree].keys():
+            return True
+    else:
+        return False
+
+
 def del_cache(NodeTree, identifier):
     if bpy.context.scene.nc_cache:
         bpy.context.scene.nc_cache[NodeTree].pop(identifier)
@@ -258,16 +276,16 @@ def dict_update(node, context):
     )
     node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
-    # Update if user selected a new variable.
-    if selected_var and selected_var != node.blendernc_netcdf_vars:
-        # Update dict
-        update_dict(node.blendernc_netcdf_vars, node)
+
+    update_dict(node.blendernc_netcdf_vars, node)
+
+    if (
+        is_cached(node_tree, unique_identifier)
+        and selected_var != node.blendernc_netcdf_vars
+    ):
         del_cache(node_tree, unique_identifier)
-        update_value_and_node_tree(node, context)
-    else:
-        update_dict(node.blendernc_netcdf_vars, node)
-        del_cache(node_tree, unique_identifier)
-        update_value(node, context)
+
+    update_value_and_node_tree(node, context)
 
 
 def get_node(node_group, node):
@@ -354,10 +372,9 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     pixel_size_figure = data.shape[1] / dpi, data.shape[0] / dpi
     fig = plt.figure(figsize=(pixel_size_figure), dpi=dpi)
     ax = fig.add_axes((0, 0, 1, 1))
-    if vmin and vmax:
-        image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
-    else:
-        image = ax.pcolormesh(x.values, y.values, data)
+
+    image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
+
     ax.set_ylim(-90, 90)
     fig.patch.set_visible(False)
     plt.axis("off")
@@ -622,7 +639,7 @@ def update_colormap_interface(context, node, node_tree):
             splines = [
                 child
                 for child in cbar_plane.children
-                if "text_cbar_{}".format(node.name) in child.name
+                if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
             ]
 
         # Update splines
@@ -852,19 +869,76 @@ def rotate_longitude(node, context):
     refresh_cache(NodeTree, identifier, frame)
 
 
+def get_xarray_datasets(node, context):
+    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+    enum_datacube_dict_keys = enumerate(xarray_datacube)
+    datacube_names = [
+        (
+            key,
+            key,
+            key,
+            "DISK_DRIVE",
+            i + 1,
+        )
+        for i, key in enum_datacube_dict_keys
+    ]
+    return select_datacube() + datacube_names
+
+
+def dict_update_tutorial_datacube(node, context):
+    unique_identifier = node.blendernc_dataset_identifier
+    data_dictionary = node.blendernc_dict
+    selected_datacube = node.blendernc_xarray_datacube
+    if selected_datacube == "No datacube":
+        return
+    node.blendernc_file = "Tutorial"
+    data_dictionary[unique_identifier] = {
+        "Dataset": xarray.tutorial.open_dataset(selected_datacube)
+    }
+
+
 # xarray core TODO: Divide file for future computations
 # (isosurfaces, vector fields, etc.)
 
 
 class BlenderncEngine:
-    """ " """
+    """
+    BlenderNC engine, this class makes sure the input file exists
+    and it has the right format.
+
+    Returns
+    -------
+    Datacube
+        If datacubes have the expected format (netCDF, cgrid, and zar)
+        then the dataset is returned.
+
+    Raises
+    ------
+    ValueError:
+        when `datacubes` are not the expected format
+    """
 
     def __init__(self):
         pass
 
     def check_files_netcdf(self, file_path):
         """
-        Check that file exists.
+        Check if file exists and it's format.
+
+        Parameters
+        ----------
+        filepath: str
+            string to data
+
+        Returns
+        -------
+        dataset: dict
+            Initial dictionary containing lazy datacube load.
+
+        Raises
+        ------
+        NameError:
+            when datafile doesn't exist.
         """
         # file_folder = os.path.dirname(file_path)
         if "*" in file_path:

@@ -1,3 +1,4 @@
+.. _beginner_mode:
 
 Beginner mode!
 ##############
@@ -27,7 +28,7 @@ Open Blender (>2.83), in the 3D view open the :red:`sidebar` by pressing "n".
 
 .. image:: ../images/right_panel.png
   :width: 100%
-  :alt: BlenderNC panel
+  :alt: Blender panel
 
 Switch to the :purple:`BlenderNC panel`.
 
@@ -40,20 +41,20 @@ netCDF by clicking the :green:`folder icon`.
 
 .. image:: ../images/blendernc_panel.png
   :width: 30%
-  :alt: BlenderNC panel
+  :alt: BlenderNC search
 
 :teal:`Select a variable` and the :teal:`resolution` to load.
 
 .. image:: ../images/variable_panel.png
   :width: 30%
-  :alt: BlenderNC panel
+  :alt: BlenderNC select
 
 Select an object and apply the material by clicking
 :orange:`Apply Material`.
 
 .. image:: ../images/apply_material_panel.png
   :width: 30%
-  :alt: BlenderNC panel
+  :alt: BlenderNC apply
 
 To animate the netCDF in time click over "**Animate netCDF**". Press **space**
 in your keyboard to visualize animation.
@@ -63,8 +64,9 @@ in your keyboard to visualize animation.
 The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To acces it,
 divide the workspace and select **BlenderNC** node editor:
 
-.. image:: ../images/blenderNC_workspace.gif
-  :width: 100%
-  :alt: BlenderNC workspace
+.. image:: ../images/blender_nodetree_gebco.png
+  :width: 1000%
+  :alt: BlenderNC Node Tree
+
 
 Now you are ready to become a PRO!

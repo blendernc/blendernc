@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import (
     dict_update,
     get_new_identifier,
     get_possible_variables,
@@ -50,7 +50,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
-        # self.blendernc_dataset_identifier = get_new_identifier(self)
+        self.blendernc_dataset_identifier = get_new_identifier(self)
         print("Copying from node ", node)
 
     # Free function to clean up on removal.
@@ -68,6 +68,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # If this function is not defined,
     # the draw_buttons function is used instead
     def draw_buttons_ext(self, context, layout):
+        layout.label(text="Select Variable:")
         pass
 
     # Optional: custom label

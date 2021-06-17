@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import update_range
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import update_range
 
 
 class BlenderNC_NT_range(bpy.types.Node):
