@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
+import bpy
 
 from .blendernc import registerBlenderNC, unregisterBlenderNC
+from .preferences import (
+    BlenderNC_Preferences,
+    import_workspace,
+    load_handler_for_startup,
+)
 
 bl_info = {
     "name": "BlenderNC",
@@ -17,7 +23,17 @@ bl_info = {
 
 def register():
     registerBlenderNC()
+    bpy.utils.register_class(BlenderNC_Preferences)
+    print("Registering to Change Defaults")
+    bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
+    bpy.app.handlers.load_factory_preferences_post.append(import_workspace)
+    bpy.app.handlers.load_factory_startup_post.append(import_workspace)
 
 
 def unregister():
     unregisterBlenderNC()
+    bpy.utils.unregister_class(BlenderNC_Preferences)
+    print("Unregistering to Change Defaults")
+    bpy.app.handlers.load_factory_startup_post.remove(load_handler_for_startup)
+    bpy.app.handlers.load_factory_preferences_post.remove(import_workspace)
+    bpy.app.handlers.load_factory_startup_post.remove(import_workspace)
