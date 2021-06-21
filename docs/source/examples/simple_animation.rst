@@ -2,7 +2,7 @@
 Simple animation
 ================
 
-.. important:: For this first example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
+.. important:: For this third example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
 
 Data provided
 -------------
