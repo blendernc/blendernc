@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.blendernc.decorators import NodesDecorators
+from blendernc.decorators import NodesDecorators
 
 
 class BlenderNC_NT_template(bpy.types.Node):

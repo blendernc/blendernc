@@ -13,6 +13,7 @@ from .nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
 from .nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
 from .nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
 from .nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
+from .nodes.inputs.BlenderNC_NT_tutorial import BlenderNC_NT_tutorial
 from .nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
 from .nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 from .nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
@@ -59,6 +60,7 @@ classes = [
     BlenderNC_NT_path,
     BlenderNC_NT_netcdf,
     BlenderNC_NT_range,
+    BlenderNC_NT_tutorial,
     BlenderNC_NT_resolution,
     BlenderNC_NT_rotatelon,
     BlenderNC_NT_input_grid,

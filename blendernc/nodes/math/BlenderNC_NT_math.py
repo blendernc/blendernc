@@ -5,8 +5,8 @@ from collections import defaultdict
 import bpy
 import numpy as np
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import (
     refresh_cache,
     update_node_tree,
     update_value_and_node_tree,

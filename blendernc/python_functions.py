@@ -67,6 +67,10 @@ def select_item():
     return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
 
 
+def select_datacube():
+    return [("No datacube", "Select datacube", "Empty", "NODE_SEL", 0)]
+
+
 def get_possible_variables(node, context):
     ncfile = node.blendernc_file
     unique_identifier = node.blendernc_dataset_identifier
@@ -224,6 +228,14 @@ def refresh_cache(NodeTree, identifier, frame):
             cached_nodetree.pop(frame)
 
 
+def is_cached(NodeTree, identifier):
+    if NodeTree in bpy.context.scene.nc_cache.keys():
+        if identifier in bpy.context.scene.nc_cache[NodeTree].keys():
+            return True
+    else:
+        return False
+
+
 def del_cache(NodeTree, identifier):
     if bpy.context.scene.nc_cache:
         bpy.context.scene.nc_cache[NodeTree].pop(identifier)
@@ -264,16 +276,16 @@ def dict_update(node, context):
     )
     node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
-    # Update if user selected a new variable.
-    if selected_var and selected_var != node.blendernc_netcdf_vars:
-        # Update dict
-        update_dict(node.blendernc_netcdf_vars, node)
+
+    update_dict(node.blendernc_netcdf_vars, node)
+
+    if (
+        is_cached(node_tree, unique_identifier)
+        and selected_var != node.blendernc_netcdf_vars
+    ):
         del_cache(node_tree, unique_identifier)
-        update_value_and_node_tree(node, context)
-    else:
-        update_dict(node.blendernc_netcdf_vars, node)
-        del_cache(node_tree, unique_identifier)
-        update_value(node, context)
+
+    update_value_and_node_tree(node, context)
 
 
 def get_node(node_group, node):
@@ -627,7 +639,7 @@ def update_colormap_interface(context, node, node_tree):
             splines = [
                 child
                 for child in cbar_plane.children
-                if "text_cbar_{}".format(node.name) in child.name
+                if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
             ]
 
         # Update splines
@@ -855,6 +867,34 @@ def rotate_longitude(node, context):
     frame = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
     refresh_cache(NodeTree, identifier, frame)
+
+
+def get_xarray_datasets(node, context):
+    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+    enum_datacube_dict_keys = enumerate(xarray_datacube)
+    datacube_names = [
+        (
+            key,
+            key,
+            key,
+            "DISK_DRIVE",
+            i + 1,
+        )
+        for i, key in enum_datacube_dict_keys
+    ]
+    return select_datacube() + datacube_names
+
+
+def dict_update_tutorial_datacube(node, context):
+    unique_identifier = node.blendernc_dataset_identifier
+    data_dictionary = node.blendernc_dict
+    selected_datacube = node.blendernc_xarray_datacube
+    if selected_datacube == "No datacube":
+        return
+    node.blendernc_file = "Tutorial"
+    data_dictionary[unique_identifier] = {
+        "Dataset": xarray.tutorial.open_dataset(selected_datacube)
+    }
 
 
 # xarray core TODO: Divide file for future computations
