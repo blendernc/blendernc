@@ -2,7 +2,8 @@
 
 
 def load_after_restart(self, context):
-    self.layout.label(text="This change will be loaded after restarting Blender.")
+    self.layout.label(text="This change will be loaded after restarting Blender")
+    self.layout.label(text="or creating a new file.")
 
 
 def active_selection_preference(self, context):
