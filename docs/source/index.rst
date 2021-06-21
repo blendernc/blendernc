@@ -26,6 +26,7 @@ should support the load of any netCDF.
 
    install
    howtouse
+   preferences
 
 .. toctree::
    :maxdepth: 2
