@@ -120,6 +120,8 @@ def registerBlenderNC():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    return {"FINISHED"}
+
 
 def unregisterBlenderNC():
     # del bpy.types.Scene.nc_dictionary
@@ -135,3 +137,5 @@ def unregisterBlenderNC():
 
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    return {"FINISHED"}

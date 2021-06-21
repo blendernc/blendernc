@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 
+def load_after_restart(self, context):
+    self.layout.label(text="This change will be loaded after restarting Blender.")
+
+
 def active_selection_preference(self, context):
     self.layout.label(text="The active selection has preference over picked object.")
     self.layout.label(text="Make sure you selected the right mesh to apply material.")

@@ -4,7 +4,7 @@ from os.path import abspath
 
 import bpy
 
-from .msg_errors import active_selection_preference, unselected_object
+from .messages import active_selection_preference, unselected_object
 from .python_functions import (
     BlenderncEngine,
     get_node,
@@ -244,6 +244,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         )
         sel_obj = context.scene.blendernc_meshes
         # Check if an object is selected or picked.
+        # TODO change to hasattr(context.scene, "my_prop")?
         if not sel_obj and act_obj:
             sel_obj = act_obj
         elif sel_obj and not act_obj:

@@ -18,7 +18,7 @@ import xarray
 from .core.logging import Timer
 from .get_utils import get_unique_data_dict
 from .image import from_data_to_pixel_value, normalize_data
-from .msg_errors import drop_dim, huge_image, increase_resolution
+from .messages import drop_dim, huge_image, increase_resolution
 
 
 def get_dims(ncdata, var):

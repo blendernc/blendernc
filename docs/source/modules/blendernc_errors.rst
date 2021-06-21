@@ -1,7 +1,7 @@
-:mod:`blendernc.msg_errors`
+:mod:`blendernc.messages`
 ===========================
 
-.. automodule:: blendernc.msg_errors
+.. automodule:: blendernc.messages
    :members:
    :undoc-members:
    :special-members:
