@@ -1,4 +1,4 @@
-sphinx
+sphinx==3.5.4
 sphinx-gallery
 sphinx_rtd_theme
 sphinxcontrib.yt

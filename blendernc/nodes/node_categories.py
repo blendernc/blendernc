@@ -22,6 +22,7 @@ node_categories = [
             NodeItem("netCDFPath"),
             NodeItem("netCDFNode"),
             NodeItem("netCDFRange"),
+            NodeItem("Datacube_tutorial"),
         ],
     ),
     BlenderNCNodeCategory(

@@ -29,15 +29,16 @@ from setuptools import setup
 
 setup(
     name="blendernc",
-    version="0.1.2",
+    version="0.2.0",
     description="Blender add-on to import netCDF",
     url="https://github.com/blendernc/blendernc",
     author="josuemtzmo",
     author_email="josue.martinezmoreno@anu.edu.au",
     license="MIT License",
-    packages=[],
+    package_dir={"blendernc": "./blendernc"},
+    packages=["blendernc"],
     install_requires=["cython", "numpy"],
-    zip_safe=True,
+    zip_safe=False,
     # cmdclass={"build_ext": CustomBuildExtCommand},
     # TODO: Fix issue with blender not having python headers.
     # ext_modules=cythonize([extensions], build_dir="cython_build"),

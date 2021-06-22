@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.msg_errors import unselected_nc_file, unselected_nc_var
+from blendernc.msg_errors import unselected_nc_file, unselected_nc_var
 
 
 class BlenderNC_NT_derivatives(bpy.types.Node):
