@@ -4,6 +4,7 @@ from os.path import abspath
 
 import bpy
 
+from .messages import active_selection_preference, unselected_object
 from .python_functions import (
     BlenderncEngine,
     get_node,
@@ -247,11 +248,21 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         )
         sel_obj = context.scene.blendernc_meshes
         # Check if an object is selected or picked.
+        # TODO change to hasattr(context.scene, "my_prop")?
         if not sel_obj and act_obj:
             sel_obj = act_obj
-        elif sel_obj or act_obj:
+        elif sel_obj and not act_obj:
             pass
+        elif sel_obj and act_obj:
+            if sel_obj.name != act_obj.name:
+                bpy.context.window_manager.popup_menu(
+                    active_selection_preference, title="Warning", icon="INFO"
+                )
+                sel_obj = act_obj
         else:
+            bpy.context.window_manager.popup_menu(
+                unselected_object, title="Error", icon="ERROR"
+            )
             return {"FINISHED"}
 
         blendernc_materials = [
@@ -285,7 +296,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
 
         P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
 
-        if act_obj.name == "Icosphere" or sel_obj.name == "Icosphere":
+        if sel_obj.name == "Icosphere":
             texcoord_link = texcoord.outputs.get("Generated")
             imagetex.projection = "SPHERE"
         else:

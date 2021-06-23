@@ -3,7 +3,7 @@ import functools
 
 import bpy
 
-from .msg_errors import unselected_nc_var, unselected_variable
+from .messages import unselected_nc_var, unselected_variable
 
 
 class NodesDecorators(object):
@@ -100,6 +100,8 @@ class NodesDecorators(object):
         inputs = node.inputs[0]
         inputs_links = inputs.links[0]
         if node.bl_idname == "netCDFPath":
+            return True
+        elif node.bl_idname == "Datacube_tutorial":
             return True
         elif (
             inputs_links.from_node.bl_idname == "netCDFPath"

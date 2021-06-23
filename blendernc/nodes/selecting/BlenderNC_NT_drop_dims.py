@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import get_possible_dims, update_value_and_node_tree
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import get_possible_dims, update_value_and_node_tree
 
 
 class BlenderNC_NT_drop_dims(bpy.types.Node):
@@ -42,7 +42,6 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     # Copy
     def copy(self, node):
         print("Copying from node ", node)
-        self.node_tree = node.node_tree.copy()
 
     # Free function to clean up on removal.
     def free(self):

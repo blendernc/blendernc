@@ -5,8 +5,8 @@ from collections import defaultdict
 import bpy
 import numpy as np
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.python_functions import (
     refresh_cache,
     update_node_tree,
     update_value_and_node_tree,
@@ -20,10 +20,20 @@ operation_items = [
     ("Logarithm", "Log", "", 5),
     ("SymLog", "SymLog", "", 6),
     ("Power", "Power", "", 7),
+    None,
+    ("Greater than", "Greater than", "", 8),
+    ("Smaller than", "Smaller than", "", 9),
 ]
 
 operation_types = {
-    "float": ("Multiply", "Divide", "SymLog", "Power"),
+    "float": (
+        "Multiply",
+        "Divide",
+        "SymLog",
+        "Power",
+        "Greater than",
+        "Smaller than",
+    ),
     "unique": ("Logarithm"),
     "dataset": ("Add", "Subtract"),
 }
@@ -153,6 +163,12 @@ class BlenderNC_NT_math(bpy.types.Node):
         elif self.blendernc_operation == "Power":
             constant = self.inputs.get("Float").Float
             dataset = dataset ** constant
+        elif self.blendernc_operation == "Greater than":
+            value = self.inputs.get("Float").Float
+            dataset = dataset.where(dataset > value, 1).where(dataset <= value, 0)
+        elif self.blendernc_operation == "Smaller than":
+            value = self.inputs.get("Float").Float
+            dataset = dataset.where(dataset < value, 1).where(dataset >= value, 0)
         unique_data_dict_node["Dataset"] = dataset
 
         NodeTree = self.rna_type.id_data.name

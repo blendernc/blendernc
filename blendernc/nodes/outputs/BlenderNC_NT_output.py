@@ -4,9 +4,9 @@ from collections import defaultdict
 
 import bpy
 
-from ....blendernc.decorators import NodesDecorators
-from ....blendernc.image import dataset_2_image_preview
-from ....blendernc.python_functions import (
+from blendernc.decorators import NodesDecorators
+from blendernc.image import dataset_2_image_preview
+from blendernc.python_functions import (
     update_colormap_interface,
     update_image,
     update_value,
@@ -69,7 +69,6 @@ class BlenderNC_NT_output(bpy.types.Node):
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
         print("Copying from node ", node)
-        self.node_tree = node.node_tree.copy()
 
     # Free function to clean up on removal.
     def free(self):
