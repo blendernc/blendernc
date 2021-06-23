@@ -1,6 +1,7 @@
 numpy
 cython
 zarr
+ecmwflibs
 cfgrib
 xarray
 cmocean
