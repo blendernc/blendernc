@@ -15,7 +15,7 @@ jobs:
     - name: creates zip release
       run: zip -r ./release/blendernc.zip ./blendernc -x "*__pycache__*"
     - name: modify README.md
-      run: awk '{sub("<!--INFO-->","> ## **BlenderNC** can be installed using the zip file provided in this repository.\n\n **This is an automated repository**.")}1' ./release/README.md > ./release/tmp.md ;mv ./release/tmp.md ./release/README.md
+      run: awk '{sub("<!--INFO-->","> \#\#\# This is an automated repository.\n\n >  \#\#\#\# Important:\n\n > **BlenderNC** can be installed using the zip file provided in this repository. .")}1' ./release/README.md > ./release/tmp.md ;mv ./release/tmp.md ./release/README.md
     - name: Change images path
       run: awk -v branch=${GITHUB_REF##*/} '{sub("./docs/images/","https://raw.githubusercontent.com/blendernc/blendernc/'"$branch"'")}1' ./release/README.md > ./release/tmp.md; mv ./release/tmp.md ./release/README.md
     - name: Extract branch name
