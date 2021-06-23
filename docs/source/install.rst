@@ -53,8 +53,8 @@ Install Addon
 
 The addon is installed just like any other Blender addon:
 
-* Download the open-source addon from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_,
-  or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/archive/refs/heads/main.zip>`_
+* Download the pre-generated zip from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_,
+  or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/raw/master/blendernc.zip>`_
   (do not unzip it! Under macOS you might have to select "Download Linked File As..." to avoid automatic unzip).
 
 * In Blender go to the user preferences and open the **Addons** tab.
