@@ -143,7 +143,6 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     # Copy
     def copy(self, node):
         print("Copying from node ", node)
-        self.node_tree = node.node_tree.copy()
 
     # Free (when node is deleted)
     def free(self):

@@ -3,7 +3,7 @@ import functools
 
 import bpy
 
-from .msg_errors import unselected_nc_var, unselected_variable
+from .messages import unselected_nc_var, unselected_variable
 
 
 class NodesDecorators(object):
