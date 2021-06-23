@@ -11,7 +11,11 @@ jobs:
     - uses: actions/checkout@v2
     - name: creates release
       run:  rsync -arv  ./blendernc/ ./release
-    - name: Pushes to another repository at branch ${GITHUB_REF##*/}
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    - name: Pushes to another repository at branch
       uses: cpina/github-action-push-to-another-repository@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
@@ -20,4 +24,4 @@ jobs:
         destination-github-username: 'blendernc'
         destination-repository-name: 'blendernc-zip-install'
         user-email: josue.martinezmoreno@anu.edu.au
-        target-branch: ${GITHUB_REF##*/}
+        target-branch: ${{ steps.extract_branch.outputs.branch }}
