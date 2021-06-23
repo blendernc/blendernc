@@ -42,7 +42,6 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     # Copy
     def copy(self, node):
         print("Copying from node ", node)
-        self.node_tree = node.node_tree.copy()
 
     # Free function to clean up on removal.
     def free(self):
