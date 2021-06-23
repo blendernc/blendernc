@@ -133,5 +133,6 @@ class Test_format_import(unittest.TestCase):
     #     file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
     #     self.assertTrue(file_exist)
 
+
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
 unittest.TextTestRunner().run(suite)
