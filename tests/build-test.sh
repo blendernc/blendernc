@@ -4,7 +4,7 @@ $BLENDERPY -m ensurepip --default-pip
 
 $BLENDERPY -m pip install -r requirements.txt --progress-bar off
 
-$BLENDERPY -m pip install coverage pytest --progress-bar off
+$BLENDERPY -m pip install coverage --progress-bar off
 
 $BLENDERPY -m pip install -e . --progress-bar off
 

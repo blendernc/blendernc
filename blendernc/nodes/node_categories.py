@@ -3,80 +3,53 @@ from nodeitems_utils import NodeItem
 
 from .node_tree import BlenderNCNodeCategory
 
-# all categories in a list
-node_categories = [
-    # identifier, label, items list
-    BlenderNCNodeCategory(
-        "Shortcuts",
-        "Shortcuts",
-        items=[
-            # Create shortcuts,
-            NodeItem("netCDFbasincnodes"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "netCDF",
-        "netCDF",
-        items=[
-            # netCDF Input nodes.
-            NodeItem("netCDFPath"),
-            NodeItem("netCDFNode"),
-            NodeItem("netCDFRange"),
-            NodeItem("Datacube_tutorial"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Grid",
-        "Grid",
-        items=[
-            # Grid operations
-            NodeItem("netCDFinputgrid"),
-            NodeItem("netCDFResolution"),
-            NodeItem("netCDFrotatelon"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Selection",
-        "Selection",
-        items=[
-            # Slice and data selection
-            NodeItem("netCDFaxis"),
-            NodeItem("netCDFtime"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Dimensions",
-        "Dimensions",
-        items=[
-            # Dimension operations.
-            NodeItem("netCDFdims"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Math",
-        "Math",
-        items=[
-            # Math Nodes.
-            NodeItem("netCDFmath"),
-            # NodeItem("netCDFtranspose"),
-            # NodeItem("netCDFderivative"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Vectors",
-        "Vectors",
-        items=[
-            # Vectors Nodes.
-            NodeItem("netCDFlic"),
-        ],
-    ),
-    BlenderNCNodeCategory(
-        "Output",
-        "Output",
-        items=[
-            # Output Nodes, generate textures and openVDB objects
-            NodeItem("netCDFOutput"),
-            # NodeItem("netCDFPreloadNode"),
-        ],
-    ),
-]
+node_dicts = {
+    "Shortcuts": {
+        "name": "Shortcuts",
+        "items": ["netCDFbasincnodes"],
+    },
+    "Datacube": {
+        "name": "Datacube",
+        "items": ["netCDFPath", "netCDFNode", "netCDFRange", "Datacube_tutorial"],
+    },
+    "Grid": {
+        "name": "Grid",
+        "items": ["netCDFinputgrid", "netCDFResolution", "netCDFrotatelon"],
+    },
+    "Selection": {
+        "name": "Selection",
+        "items": ["netCDFaxis", "netCDFtime"],
+    },
+    "Dimensions": {
+        "name": "Dimensions",
+        "items": ["netCDFdims"],
+    },
+    "Math": {
+        "name": "Math",
+        "items": ["netCDFmath"],  # 'netCDFtranspose','netCDFderivative'],
+    },
+    # 'Vectors':{
+    #     'name':'Vectors',
+    #     'items':['netCDFlic'],
+    # },
+    "Output": {
+        "name": "Output",
+        "items": ["netCDFOutput"],  # netCDFPreloadNode
+    },
+}
+
+
+def generate_node_cathegories(node_dict):
+    node_list = []
+    for key, item in node_dict.items():
+        node_list.append(
+            BlenderNCNodeCategory(
+                key,
+                item["name"],
+                items=[NodeItem(it) for it in item["items"]],
+            ),
+        )
+    return node_list
+
+
+node_categories = generate_node_cathegories(node_dicts)
