@@ -61,8 +61,8 @@ The addon is installed just like any other Blender addon:
     Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
 
     - Manually zip the blendernc folder.
-        *
     - Change Safari preferences:
+
         * Open Safari
         * Click Preferences
         * Under the General tab, uncheck the option Open “safe” files after downloading
