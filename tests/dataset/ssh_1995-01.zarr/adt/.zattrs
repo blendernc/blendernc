@@ -1,0 +1,13 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time",
+        "latitude",
+        "longitude"
+    ],
+    "comment": "The absolute dynamic topography is the sea surface height above geoid; the adt is obtained as follows: adt=sla+mdt where mdt is the mean dynamic topography; see the product user manual for details",
+    "grid_mapping": "crs",
+    "long_name": "Absolute dynamic topography",
+    "scale_factor": 0.0001,
+    "standard_name": "sea_surface_height_above_geoid",
+    "units": "m"
+}

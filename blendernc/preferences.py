@@ -12,6 +12,8 @@ def get_addon_preference():
     # Check if addon is defined
     if addon is not None:
         prefs = addon.preferences
+    else:
+        prefs = None
     return prefs
 
 
@@ -43,7 +45,26 @@ def update_workspace(self, context):
 
 
 def update_message(self, context):
-    bpy.context.window_manager.popup_menu(load_after_restart, title="Info", icon="INFO")
+    # Test for blender running in background mode.
+    # If blender is running in background mode,
+    # a popup_menu will crash with the following error:
+    # ERROR (bke.icons):
+    # source/blender/blenkernel/intern/icons.cc:889 BKE_icon_get:
+    # no icon for icon ID: 110,101,101
+    # TODO: Report issue to Blender.
+    if not bpy.app.background:
+        bpy.context.window_manager.popup_menu(
+            load_after_restart, title="Info", icon="INFO"
+        )
+    else:
+        import warnings
+
+        warnings.warn(
+            """
+            Running in background mode,
+            this option will be loaded after restarting Blender.
+            """
+        )
 
 
 class BlenderNC_Preferences(bpy.types.AddonPreferences):
@@ -82,6 +103,7 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         row = layout.row()
         row.label(text="Default load shading:")
         row.prop(self, "blendernc_workspace_shading", expand=True)
+        # TODO: Add dask option here!
 
 
 @persistent
