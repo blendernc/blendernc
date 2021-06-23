@@ -20,8 +20,6 @@ echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
-# blender -b --python bpy_activate_addon.py
-
 $BLENDERPY run_tests.py
 
 coverage combine
