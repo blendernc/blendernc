@@ -42,7 +42,7 @@ Support
 
 **BlenderNC** is supported by:
 
-<div>
+<div style='width:100%'>
 <a href="https://esowc.ecmwf.int">
 <img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
 </a>
