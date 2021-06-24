@@ -53,22 +53,20 @@ Install Addon
 
 The addon is installed just like any other Blender addon:
 
-* Download the pre-generated zip from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_,
-  or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/raw/master/blendernc.zip>`_
-  (do not unzip it!).
+* Download the pre-generated zip from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_, or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/raw/master/blendernc.zip>`_ (do not unzip it!).
 
 .. note::
     Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
 
-    #.  Manually zip the blendernc folder.
+    #. Manually zip the blendernc folder, or
 
-    #.  Change Safari preferences:
+    #. change Safari preferences:
 
-      - Open Safari
+      * Open Safari
 
-      - Click Preferences
+      * Click Preferences
 
-      - Under the General tab, uncheck the option Open “safe” files after downloading
+      * Under the General tab, uncheck the option Open “safe” files after downloading
 
 
 * In Blender go to the user preferences and open the **Addons** tab.
@@ -77,28 +75,27 @@ The addon is installed just like any other Blender addon:
 
 * Navigate to the downloaded zip, select it, and click in install.
 
-* Finally, check the box next to `BlenderNC` is enable.
+* Finally, check the box next to the `BlenderNC` addon, to enable it.
 
 
 .. image:: ../images/addon_settings.png
-  :width: 80%
-  :alt: Install Addon
+    :width: 80%
+    :alt: Install Addon
 
-Now you can follow the tutorials to import netCDFs into blender.
+Now you can follow the tutorials to import datacubes in Blender.
 
 
 Update BlenderNC
 ================
 
 It is recommended to uninstall the old version first, before installing the new version of `BlenderNC`. Alternatively,
-enable the "Overwrite" option in Blender (enabled by default), before you navegate to the new addon zip file using the Blender's
+enable the "Overwrite" option in Blender (enabled by default), before you navigate to the new addon zip file using Blender's
 file explorer. Finally, restart Blender once the new version is installed.
 
 Blender Compilation (optional)
 ==============================
 
-Alternatively, to further configure Blender, you could install it using a `conda` environment
-by following the official `Blender installation website
+Alternatively, to further configure Blender, you could install it using a `conda` environment by following the official `Blender installation website
 <https://wiki.blender.org/index.php/Dev:Doc/Building_Blender/>`_.
 
 Create conda environment:
@@ -113,12 +110,12 @@ Compile Blender:
 
 .. code-block:: bash
 
-    cmake -DPYTHON_VERSION=3.7  -DPYTHON_ROOT_DIR=~/path/to/python/root ../blender
+    cmake -DPYTHON_VERSION=3.7 -DPYTHON_ROOT_DIR=~/path/to/python/root ../blender
 
 .. note::
     Make sure to use the same python version.
 
-Another **not recomended** option is to symbolically link your python modules to blender:
+Another **not recommended** option is to symbolically link your python modules to blender:
 
 On **macOS**, find the folder `modules` within the blender.app:
 
