@@ -6,7 +6,6 @@
 
 import glob
 import os
-from os.path import basename
 
 # TODO: If netcdf file has been selected already create a copy of the TreeNode
 import bpy
@@ -16,17 +15,25 @@ import numpy as np
 import xarray
 
 from .core.logging import Timer
-from .get_utils import get_unique_data_dict
+from .get_utils import get_input_links, get_unique_data_dict
 from .image import from_data_to_pixel_value, normalize_data
 from .messages import drop_dim, huge_image, increase_resolution
 
 
+def build_enum_prop_list(list, icon, long_name_list=None):
+    if long_name_list:
+        list = [
+            (list[ii], list[ii], long_name_list[ii], icon, ii + 1)
+            for ii in range(len(list))
+        ]
+    else:
+        list = [(list[ii], list[ii], list[ii], icon, ii + 1) for ii in range(len(list))]
+    return list
+
+
 def get_dims(ncdata, var):
     dimensions = list(ncdata[var].coords.dims)
-    dim_names = [
-        (dimensions[ii], dimensions[ii], dimensions[ii], "EMPTY_DATA", ii + 1)
-        for ii in range(len(dimensions))
-    ]
+    dim_names = build_enum_prop_list(dimensions, "EMPTY_DATA")
     return dim_names
 
 
@@ -39,22 +46,11 @@ def get_geo_coord_names(dataset):
 def get_var(ncdata):
     dimensions = sorted(list(ncdata.coords.dims.keys()))
     variables = sorted(list(ncdata.variables.keys() - dimensions))
+    long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
     if "long_name" in ncdata[variables[0]].attrs:
-        var_names = [
-            (
-                variables[ii],
-                variables[ii],
-                ncdata[variables[0]].attrs["long_name"],
-                "DISK_DRIVE",
-                ii + 1,
-            )
-            for ii in range(len(variables))
-        ]
+        var_names = build_enum_prop_list(variables, "DISK_DRIVE", long_name_list)
     else:
-        var_names = [
-            (variables[ii], variables[ii], variables[ii], "DISK_DRIVE", ii + 1)
-            for ii in range(len(variables))
-        ]
+        var_names = build_enum_prop_list(variables, "DISK_DRIVE")
 
     return select_item() + [None] + var_names
 
@@ -93,7 +89,7 @@ def get_new_identifier(node):
 def get_possible_dims(node, context):
     if node.inputs:
         if node.inputs[0].is_linked and node.inputs[0].links:
-            link = node.inputs[0].links[0]
+            link = get_input_links(node)
             unique_identifier = node.blendernc_dataset_identifier
             parent_node = link.from_node
             blendernc_dict = parent_node.blendernc_dict
@@ -109,16 +105,6 @@ def get_possible_dims(node, context):
             return []
     else:
         return []
-
-
-def get_possible_files(node, context):
-    unique_identifier = node.blendernc_dataset_identifier
-    if unique_identifier not in node.blendernc_dict.keys():
-        return []
-    data_dictionary = node.blendernc_dict[unique_identifier]
-    enum_data_dict_keys = enumerate(data_dictionary.keys())
-    items = [(f, basename(f), basename(f), i) for i, f in enum_data_dict_keys]
-    return items
 
 
 def update_value(self, context):
@@ -871,17 +857,7 @@ def rotate_longitude(node, context):
 
 def get_xarray_datasets(node, context):
     xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
-    enum_datacube_dict_keys = enumerate(xarray_datacube)
-    datacube_names = [
-        (
-            key,
-            key,
-            key,
-            "DISK_DRIVE",
-            i + 1,
-        )
-        for i, key in enum_datacube_dict_keys
-    ]
+    datacube_names = build_enum_prop_list(xarray_datacube, "DISK_DRIVE")
     return select_datacube() + datacube_names
 
 
