@@ -20,4 +20,4 @@ jobs:
       - name: Run flake8
         uses: jonasrk/flake8-action@master
         with:
-          args: "--max-line-length=88 --exclude  ^blendernc/addon_updater.*.py --ignore F722,F821,E203,W503,F405"
+          args: "--max-line-length=88 --exclude  .*blendernc/addon_updater.*.py --ignore F722,F821,E203,W503,F405"
