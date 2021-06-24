@@ -94,7 +94,7 @@ class NodesDecorators(object):
     @classmethod
     def input_connections(cls, node):
         """
-        Test only one incomming connection.
+        Test only one incoming connection.
         """
         # TODO: Add function to check for multiple connectgions
         inputs = node.inputs[0]
@@ -158,7 +158,7 @@ class NodesDecorators(object):
         blendernc_dict = node.blendernc_dict
         # If identifier exist a file has been selected.
         if identifier in blendernc_dict.keys():
-            # If var is not selected disconect and return update == False
+            # If var is not selected disconnect and return update == False
             if "selected_var" not in blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
                 bpy.context.window_manager.popup_menu(

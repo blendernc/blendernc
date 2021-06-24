@@ -88,7 +88,7 @@ The addon is installed just like any other Blender addon:
 
 Now you can follow the tutorials to import datacubes in Blender.
 
-Optionally, **but not recommended**, you can link or copy the blendernc folder within the repository (i.e. ``blendernc/blendernc``) to your prefered blender add-on path. You can get the exact path by running within a Blender Console:
+Optionally, **but not recommended**, you can link or copy the blendernc folder within the repository (i.e. ``blendernc/blendernc``) to your preferred blender add-on path. You can get the exact path by running within a Blender Console:
 
 .. code-block::
 

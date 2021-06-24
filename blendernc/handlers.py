@@ -62,8 +62,8 @@ def update_all_images(scene):
 #             except:
 #                 pass
 #         else:
-#             childrens = Camera.children
-#             text = [child for child in childrens if child.name=="BlenderNC_time"][-1]
+#             children = Camera.children
+#             text = [child for child in children if child.name=="BlenderNC_time"][-1]
 #         text.data.body = str(time)
 #         if text.select_get():
 #             text.select_set(False)

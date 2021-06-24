@@ -447,7 +447,7 @@ def load_frame(context, node, node_tree, frame, grid_node=None):
     elif len(var_data.shape) == 3:
         frame_data = var_data[frame, :, :].values[:, :]
     # TODO: Test if computing vmax and vmin once improves
-    # the performance. May be really usefull with 3D and 4D dataset.
+    # the performance. May be really useful with 3D and 4D dataset.
     if grid_node:
         normalized_data = normalize_data_w_grid(
             node,
@@ -575,8 +575,8 @@ def update_datetime_text(
             mat = ui_material()
             text.data.materials.append(mat)
         else:
-            childrens = Camera.children
-            text = [c for c in childrens if c.name == "BlenderNC_time"][-1]
+            children = Camera.children
+            text = [c for c in children if c.name == "BlenderNC_time"][-1]
         text.data.body = time
         if text.select_get():
             text.select_set(False)
@@ -845,7 +845,7 @@ def update_animation(self, context):
 
 def rotate_longitude(node, context):
     unique_data_dict = get_unique_data_dict(node)
-    # TODO Clear cache, otherwise the transform wont be applied.
+    # TODO Clear cache, otherwise the transform won't be applied.
     dataset = unique_data_dict["Dataset"]
     lon_coords = get_geo_coord_names(dataset)["lon_name"]
     if len(lon_coords) == 1:

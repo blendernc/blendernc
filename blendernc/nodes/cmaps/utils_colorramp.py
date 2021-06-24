@@ -111,7 +111,7 @@ class ColorRamp(object):
         self.node_groups = bpy.data.node_groups
         # make sure the node-group is present
         group = self.node_groups.get(self.group_name)
-        # Uncoment to create nodes only when duplicating the node.
+        # Uncomment to create nodes only when duplicating the node.
         # This was commented as it created issues with multiple colormap nodes
         # sharing the same node output.
         # if not group:
