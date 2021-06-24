@@ -81,15 +81,30 @@ Indices and tables
 Support
 =======
 
-BlenderNC was part of the `ECMWF Summer of Weather Code 2021 <https://esowc.ecmwf.int/>`_, an innovation program organised by the
-`European Centre for Medium-Range Weather Forecasts <https://www.ecmwf.int>`_ focusing on weather- and climate-related open-source developments.
-The sponsored work was aimed at improving the support of weather and climate data in GRIB format.
+**BlenderNC** is supported by:
+
+.. image:: ../images/logo_ESoWC.png
+   :target: https://esowc.ecmwf.int/
+   :alt: ESoWC logo
+   :width: 47%
+
+
+.. image:: ../images/logo_cosima.png
+   :target: http://cosima.org.au/
+   :class: float-right
+   :alt: COSIMA logo
+   :width: 47%
+
+
+- **BlenderNC** is part of the `ECMWF Summer of Weather Code 2021 <https://esowc.ecmwf.int/>`_, an innovation program organised by the `European Centre for Medium-Range Weather Forecasts <https://www.ecmwf.int>`_ focusing on weather- and climate-related open-source developments. The sponsored work aims to implement and improve support of weather and climate data visualizations in GRIB format within **BlenderNC**.
 
 .. image:: ../images/esowc_2021_banner.jpg
   :width: 400
   :align: center
   :target: https://esowc.ecmwf.int
   :alt: ESoWC logo
+
+- `Consortium for Ocean-Sea Ice Modelling in Australia <http://cosima.org.au/>`_ (COSIMA) funds development of **BlenderNC** to visualize numerical models of the global ocean and sea ice (`ACCESS-OM2 <http://cosima.org.au/index.php/models/access-om2/>`_).
 
 Community
 =========

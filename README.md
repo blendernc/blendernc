@@ -37,6 +37,16 @@ Use Github to:
 - provide examples,
 - and view the source code.
 
+Support
+-------
+
+**BlenderNC** is supported by:
+
+<img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
+<img src="./docs/images/logo_cosima.png" width="47%" style='float:right;'/>
+
+To implement and improve support of weather and climate data visualizations in GRIB format and visualize numerical models of the global ocean and sea-ice.
+
 ---
 
 #### Authors
@@ -46,5 +56,6 @@ Use Github to:
 #### Contributors
 [@whatnick](https://github.com/whatnick)
 [@navidcy](https://github.com/navidcy)
+[@stephansiemen](https://github.com/stephansiemen)
 
 
