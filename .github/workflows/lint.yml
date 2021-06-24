@@ -21,5 +21,5 @@ jobs:
         uses: py-actions/flake8@v1
         with:
           ignore: "F722,F821,E203,W503,F405"
-          exclude: "./blendernc/addon_updater.*.py"
+          exclude: "./blendernc/addon_updater*.py"
           max-line-length: "88"
