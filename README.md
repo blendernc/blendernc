@@ -42,8 +42,14 @@ Support
 
 **BlenderNC** is supported by:
 
+<div>
+<a href="https://esowc.ecmwf.int">
 <img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
+</a>
+<a href="http://cosima.org.au/">
 <img src="./docs/images/logo_cosima.png" width="47%" style='float:right;'/>
+</a>
+</div>
 
 To implement and improve support of weather and climate data visualizations in GRIB format and visualize numerical models of the global ocean and sea-ice.
 
