@@ -22,4 +22,4 @@ jobs:
         with:
           ignore: F722,F821,E203,W503,F405
           max_line_length: 88
-          exclude: ^blendernc/addon_updater.*.py
+          args: "--exclude  ^blendernc/addon_updater.*.py"
