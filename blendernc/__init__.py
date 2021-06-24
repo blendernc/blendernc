@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import bpy
 
+from . import addon_updater_ops
 from .blendernc import registerBlenderNC, unregisterBlenderNC
 from .preferences import (
     BlenderNC_Preferences,
@@ -22,6 +23,8 @@ bl_info = {
 
 
 def register():
+    # Update addon by CGCookie
+    addon_updater_ops.register(bl_info)
     registerBlenderNC()
     bpy.utils.register_class(BlenderNC_Preferences)
     print("Registering to Change Defaults")
@@ -31,6 +34,8 @@ def register():
 
 
 def unregister():
+    # Update addon by CGCookie
+    addon_updater_ops.unregister()
     unregisterBlenderNC()
     bpy.utils.unregister_class(BlenderNC_Preferences)
     print("Unregistering to Change Defaults")

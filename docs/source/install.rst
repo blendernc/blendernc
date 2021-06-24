@@ -115,7 +115,30 @@ make sure you replace everything within the {}.
 
 Update BlenderNC
 ================
-https://github.com/CGCookie/blender-addon-updater
+
+A blender addon autoupdater has been implemented, for more information refer to
+`blender-addon-updater <https://github.com/CGCookie/blender-addon-updater>`_. In order to update the BlenderNC:
+
+- Navegate to the user preferences and open the **Addons** tab.
+
+- Search for **BlenderNC**.
+
+- Click in *Check for new blendernc update*.
+
+  * Optionally, you can set **BlenderNC** to check automatically for updates.
+
+- After checking for updates, select the branch you will like to install or release.
+
+
+.. image:: ../images/addon_update.png
+  :width: 80%
+  :alt: Update Addon
+
+.. important::
+    - The `master` branch contains the most recent bug fix (recommended).
+    - The release mark milestones in the development, you can revert to them by selecting any `release x.x.x`. The latest release will point closely to `master`.
+    - The `dev` branch is experimental and constantly changing, recommended if you are developing **BlenderNC**.
+
 
 Optionally, you can do this process manually by uninstall the old version first. Thein install the new version of `BlenderNC`.
 
