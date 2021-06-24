@@ -8,3 +8,8 @@ def get_unique_data_dict(node):
     unique_identifier = node.blendernc_dataset_identifier
     unique_data_dict = data_dictionary[unique_identifier]
     return unique_data_dict
+
+
+def get_input_links(node):
+    inputs = node.inputs[0]
+    return inputs.links[0]
