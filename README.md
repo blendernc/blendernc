@@ -1,6 +1,8 @@
 # BlenderNC
 
-![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Github CI](https://github.com/blendernc/blendernc/actions/workflows/test.yml/badge.svg) [![codecov](https://codecov.io/gh/blendernc/blendernc/branch/master/graph/badge.svg?token=NYJMMGIMPJ)](https://codecov.io/gh/blendernc/blendernc) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-2.83--2.92-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/blendernc/blendernc/master.svg)](https://results.pre-commit.ci/latest/github/blendernc/blendernc/master)
+![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Github CI](https://github.com/blendernc/blendernc/actions/workflows/test.yml/badge.svg) [![codecov](https://codecov.io/gh/blendernc/blendernc/branch/master/graph/badge.svg?token=NYJMMGIMPJ)](https://codecov.io/gh/blendernc/blendernc) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-2.83--2.93-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/blendernc/blendernc/master.svg)](https://results.pre-commit.ci/latest/github/blendernc/blendernc/master)
+
+<!--INFO-->
 
 **BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org).
 
@@ -35,6 +37,22 @@ Use Github to:
 - provide examples,
 - and view the source code.
 
+Support
+-------
+
+**BlenderNC** is supported by:
+
+<div style="width:100%">
+<a href="https://esowc.ecmwf.int">
+<img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
+</a>
+<a href="http://cosima.org.au/">
+<img src="./docs/images/logo_cosima.png" width="47%" style='float:right;'/>
+</a>
+</div>
+
+To implement and improve support of weather and climate data visualizations in GRIB format and visualize numerical models of the global ocean and sea-ice.
+
 ---
 
 #### Authors
@@ -44,5 +62,6 @@ Use Github to:
 #### Contributors
 [@whatnick](https://github.com/whatnick)
 [@navidcy](https://github.com/navidcy)
+[@stephansiemen](https://github.com/stephansiemen)
 
 

@@ -29,7 +29,7 @@ from setuptools import setup
 
 setup(
     name="blendernc",
-    version="0.2.0",
+    version="0.2.1",
     description="Blender add-on to import netCDF",
     url="https://github.com/blendernc/blendernc",
     author="josuemtzmo",

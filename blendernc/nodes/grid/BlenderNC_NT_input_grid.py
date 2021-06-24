@@ -61,7 +61,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
+        if self.blendernc_dataset_identifier in self.blendernc_dict.keys():
             self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
