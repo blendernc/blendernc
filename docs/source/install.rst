@@ -53,21 +53,25 @@ Install Addon
 
 The addon is installed just like any other Blender addon:
 
-* Download the pre-generated zip from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_, or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/raw/master/blendernc.zip>`_ (do not unzip it!).
+* Get a **BlenderNC** installable zip:
 
-.. note::
-    Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
+  1. (Recommended) Download the pre-generated zip from the `GitHub <https://github.com/blendernc/blendernc-zip-install>`_, or download the `current version zip <https://github.com/blendernc/blendernc-zip-install/raw/master/blendernc.zip>`_ (do not unzip it!).
 
-    #. Manually zip the blendernc folder, or
+  .. note::
+      Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
 
-    #. change Safari preferences:
+      #. Manually zip the blendernc folder, or
 
-      * Open Safari
+      #. change Safari preferences:
 
-      * Click Preferences
+        * Open Safari
 
-      * Under the General tab, uncheck the option Open “safe” files after downloading
+        * Click Preferences
 
+        * Under the General tab, uncheck the option Open “safe” files after downloading
+
+
+  2. Clone BlenderNC and zip compress only the blendernc folder within the repository (i.e. ``blendernc/blendernc``). Use your generated ``blendernc.zip`` in the following steps.
 
 * In Blender go to the user preferences and open the **Addons** tab.
 
@@ -84,13 +88,40 @@ The addon is installed just like any other Blender addon:
 
 Now you can follow the tutorials to import datacubes in Blender.
 
+Optionally, **but not recommended**, you can link or copy the blendernc folder within the repository (i.e. ``blendernc/blendernc``) to your prefered blender add-on path. You can get the exact path by running within a Blender Console:
+
+.. code-block::
+
+    bpy.utils.user_resource("SCRIPTS", path="addons")
+
+output example on:
+
+- macOS:
+    .. code-block::
+
+        '/Users/{username}/Library/Application\ Support/Blender/2.9{X}/scripts/addons'
+
+- Linux:
+    .. code-block::
+
+        '/usr/share/blender/2.9{X}/scripts/addons'
+
+- Windows 10:
+    .. code-block::
+
+        '%USERPROFILE%\AppData\Roaming\Blender Foundation\Blender\2.9{X}\scripts\addons'
+
+make sure you replace everything within the {}.
 
 Update BlenderNC
 ================
+https://github.com/CGCookie/blender-addon-updater
 
-It is recommended to uninstall the old version first, before installing the new version of `BlenderNC`. Alternatively,
-enable the "Overwrite" option in Blender (enabled by default), before you navigate to the new addon zip file using Blender's
-file explorer. Finally, restart Blender once the new version is installed.
+Optionally, you can do this process manually by uninstall the old version first. Thein install the new version of `BlenderNC`.
+
+.. note:: You can just reinstall `blendernc` if you have enabled the ``Overwrite`` option in Blender (enabled by default). Then automatically the new addon zip will replace the old version.
+
+Restart Blender once the new version is installed.
 
 Blender Compilation (optional)
 ==============================
@@ -115,13 +146,16 @@ Compile Blender:
 .. note::
     Make sure to use the same python version.
 
-Another **not recommended** option is to symbolically link your python modules to blender:
+Another **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
-On **macOS**, find the folder `modules` within the blender.app:
+- macOS:
+    .. code-block:: bash
 
-.. code-block:: bash
+        cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
 
-    cd /Applications/blender.app/Contents/Resources/2.8x/scripts/modules
+- Linux and Windows:
+    Go to the directory where Blender is installed and look for the ``modules`` folder
+
 
 Then link all the packages from your python environment folder:
 
