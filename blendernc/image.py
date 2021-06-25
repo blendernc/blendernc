@@ -21,7 +21,7 @@ def dataset_2_image_preview(node):
 
         image = array_to_image(data_image, image_float=False)
     # Commented: This only adds an icon in only a few cases, paricularly when
-    # reloading data in developing mode, therefore, it is comented to reduce
+    # reloading data in developing mode, therefore, it is commented to reduce
     # dependency requirements.
     # else:
     #     i = Image.open(os.path.abspath('./icons/no_image_icon.png')).convert('RGBA')
@@ -45,7 +45,7 @@ def image_data(node):
     steps = max(data.shape) // 128
     if steps < 1:
         steps = 1
-    while max(data.shape) // steps > 128 - 1:  # substract 1 so max size is 128
+    while max(data.shape) // steps > 128 - 1:  # subtract 1 so max size is 128
         steps += 1
     return data[::steps, ::steps]
 

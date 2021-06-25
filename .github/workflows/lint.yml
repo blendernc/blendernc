@@ -18,7 +18,8 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        uses: TrueBrain/actions-flake8@master
+        uses: py-actions/flake8@v1
         with:
-          ignore: F722,F821,E203,W503,F405
-          max_line_length: 88
+          ignore: "F722,F821,E203,W503,F405"
+          exclude: "./blendernc/addon_updater*.py"
+          max-line-length: "88"

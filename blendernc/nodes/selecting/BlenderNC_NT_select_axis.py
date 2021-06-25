@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.core.netcdf_metadata import get_items_axes
 from blendernc.decorators import NodesDecorators
+from blendernc.get_utils import get_items_axes
 from blendernc.python_functions import (
     refresh_cache,
     update_node_tree,

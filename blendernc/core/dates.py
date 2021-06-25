@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import numpy as np
 
-from ..python_functions import refresh_cache, update_value_and_node_tree
+from ..python_functions import (
+    build_enum_prop_list,
+    refresh_cache,
+    update_value_and_node_tree,
+)
 
 
 def get_items_datetimes(self, context):
@@ -22,12 +26,7 @@ def get_items_datetimes(self, context):
 
 def get_item_time(self, context):
     times = get_items_datetimes(self, context)
-    time_list = []
-    counter = 0
-    for time in times:
-        time_list.append((str(counter), str(time), str(time), "", counter))
-        counter += 1
-    return time_list
+    return build_enum_prop_list(times, start=0)
 
 
 def get_item_days(self, context):
@@ -57,9 +56,7 @@ def get_item_days(self, context):
         else:
             break
 
-    return [
-        (str(day), str(day), str(day), "", int(day)) for day in dataset_days_in_month
-    ]
+    return build_enum_prop_list(dataset_days_in_month, start=0)
 
 
 def get_item_month(self, context):
@@ -80,16 +77,13 @@ def get_item_month(self, context):
     cal = dt2cal(datetimes)
     dataset_months_in_years = np.unique(cal[:, 1][cal[:, 0] == selected_year])
 
-    return [
-        (str(month), str(month), str(month), "", int(month))
-        for month in dataset_months_in_years
-    ]
+    return build_enum_prop_list(dataset_months_in_years, start=0)
 
 
 def get_item_year(self, context):
     datetimes = get_items_datetimes(self, context)
     dataset_years = np.unique(dt2cal(datetimes)[:, 0])
-    return [(str(year), str(year), str(year)) for year in dataset_years]
+    return build_enum_prop_list(dataset_years, start=0)
 
 
 def update_date(self, context):
