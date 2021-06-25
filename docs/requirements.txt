@@ -2,5 +2,6 @@ sphinx
 sphinx-gallery
 sphinx_rtd_theme
 numpy
+xarray
 sphinxcontrib.yt
 docutils
