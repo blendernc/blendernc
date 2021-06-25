@@ -64,12 +64,9 @@ The addon is installed just like any other Blender addon:
 
       #. change Safari preferences:
 
-<<<<<<< HEAD
     - Manually zip the blendernc folder.
     - Change Safari preferences:
 
-=======
->>>>>>> b9e26825d7f92c868d5ed56f3ca6045972a1f111
         * Open Safari
 
         * Click Preferences
