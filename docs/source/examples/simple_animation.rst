@@ -15,7 +15,8 @@ Download your own data! (optional)
 
 Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`__! Let's start downloading one year, for example, 2020.
 
-.. code-block:: python
+.. code-block::
+ python
 
     import cdsapi
 
