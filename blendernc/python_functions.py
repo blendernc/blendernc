@@ -15,21 +15,24 @@ import numpy as np
 import xarray
 
 # Partial import to avoid cyclic import
-import blendernc.get_utils as blnc_gutils
+import blendernc.get_utils as bnc_gutils
+import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 from blendernc.core.logging import Timer
 from blendernc.image import from_data_to_pixel_value, normalize_data
 from blendernc.messages import drop_dim, huge_image, increase_resolution
-from blendernc.nodes.cmaps.utils_colorramp import add_splines, colorbar_material
 
 
-def build_enum_prop_list(list, icon, long_name_list=None):
+def build_enum_prop_list(list, icon="", long_name_list=None, start=1):
     if long_name_list:
         list = [
-            (list[ii], list[ii], long_name_list[ii], icon, ii + 1)
+            (str(list[ii]), str(list[ii]), long_name_list[ii], icon, ii + start)
             for ii in range(len(list))
         ]
     else:
-        list = [(list[ii], list[ii], list[ii], icon, ii + 1) for ii in range(len(list))]
+        list = [
+            (str(list[ii]), str(list[ii]), str(list[ii]), icon, ii + start)
+            for ii in range(len(list))
+        ]
     return list
 
 
@@ -67,7 +70,7 @@ def update_nodes(scene, context):
 
 
 def update_dict(selected_variable, node):
-    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
+    unique_data_dict = bnc_gutils.get_unique_data_dict(node)
     unique_data_dict["selected_var"] = {
         "max_value": None,
         "min_value": None,
@@ -79,7 +82,7 @@ def update_dict(selected_variable, node):
 
 def update_range(node, context):
     unique_identifier = node.blendernc_dataset_identifier
-    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
+    unique_data_dict = bnc_gutils.get_unique_data_dict(node)
     try:
         max_val = node.blendernc_dataset_max
         min_val = node.blendernc_dataset_min
@@ -192,10 +195,10 @@ def dict_update(node, context):
 
 def normalize_data_w_grid(node, node_tree, data, grid_node):
     node = bpy.data.node_groups[node_tree].nodes[node]
-    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
+    unique_data_dict = bnc_gutils.get_unique_data_dict(node)
 
     grid_node = bpy.data.node_groups[node_tree].nodes[grid_node]
-    unique_grid_dict = blnc_gutils.get_unique_data_dict(grid_node)
+    unique_grid_dict = bnc_gutils.get_unique_data_dict(grid_node)
 
     grid = unique_grid_dict["Dataset"].copy()
     x_grid_name = unique_grid_dict["Coords"]["X"]
@@ -257,13 +260,13 @@ def load_frame(context, node, node_tree, frame, grid_node=None):
     # Find netcdf file data
     # Get the data of the selected variable and grid
 
-    var_data = blnc_gutils.get_var_data(context, node, node_tree)
+    var_data = bnc_gutils.get_var_data(context, node, node_tree)
 
     # Find cache dictionary
-    var_dict = blnc_gutils.get_var_dict(context, node, node_tree)
+    var_dict = bnc_gutils.get_var_dict(context, node, node_tree)
 
     # Global max and min
-    vmax, vmin = blnc_gutils.get_max_min_data(context, node, node_tree)
+    vmax, vmin = bnc_gutils.get_max_min_data(context, node, node_tree)
 
     # TODO: Improve by using coordinates,
     # could generate issues if the first axis isn't time
@@ -312,7 +315,7 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Variable load")
     # Get the data of the selected variable and grid
 
-    var_data = blnc_gutils.get_var_data(context, node, node_tree)
+    var_data = bnc_gutils.get_var_data(context, node, node_tree)
 
     timer.tick("Variable load")
     # Get object shape
@@ -384,7 +387,7 @@ def update_datetime_text(
     If text is provided, frame is ignored.
     """
     if not time_text:
-        time = str(blnc_gutils.get_time(context, node, node_tree, frame))[:10]
+        time = str(bnc_gutils.get_time(context, node, node_tree, frame))[:10]
     else:
         time = time_text
     # TODO allow user to define format.
@@ -424,12 +427,12 @@ def ui_material():
 
 def update_colormap_interface(context, node, node_tree):
     # Get var range
-    max_val, min_val = blnc_gutils.get_max_min_data(context, node, node_tree)
+    max_val, min_val = bnc_gutils.get_max_min_data(context, node, node_tree)
 
     node = bpy.data.node_groups[node_tree].nodes[node]
 
     # Find all nodes using the selected image in the node.
-    all_nodes = get_all_nodes_using_image(node.image.name)
+    all_nodes = bnc_gutils.get_all_nodes_using_image(node.image.name)
     # Find only materials using image.
     material_users = [
         items
@@ -437,7 +440,7 @@ def update_colormap_interface(context, node, node_tree):
         if items.rna_type.id_data.name == "Shader Nodetree"
     ]
     # support for multiple materials. This will generate multiple colorbars.
-    colormap = [blnc_gutils.get_colormaps_of_materials(node) for node in material_users]
+    colormap = [bnc_gutils.get_colormaps_of_materials(node) for node in material_users]
 
     width = 0.007
     height = 0.12
@@ -451,7 +454,7 @@ def update_colormap_interface(context, node, node_tree):
             cbar_plane.dimensions = (width, height, 0)
             cbar_plane.location = (0.15, 0, -0.5)
             cbar_plane.parent = Camera
-            splines = add_splines(
+            splines = bnc_cramputils.add_splines(
                 colormap[-1].n_stops,
                 cbar_plane,
                 width,
@@ -476,7 +479,7 @@ def update_colormap_interface(context, node, node_tree):
         for s_index in range(len(splines)):
             splines[s_index].data.body = str(np.round(labels[s_index], 2))
 
-        c_material = colorbar_material(node, colormap[-1])
+        c_material = bnc_cramputils.colorbar_material(node, colormap[-1])
         if c_material:
             cbar_plane.data.materials.append(c_material)
     # Get data dictionary stored at scene object
@@ -550,10 +553,10 @@ def update_animation(self, context):
 
 
 def rotate_longitude(node, context):
-    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
+    unique_data_dict = bnc_gutils.get_unique_data_dict(node)
     # TODO Clear cache, otherwise the transform won't be applied.
     dataset = unique_data_dict["Dataset"]
-    lon_coords = blnc_gutils.get_geo_coord_names(dataset)["lon_name"]
+    lon_coords = bnc_gutils.get_geo_coord_names(dataset)["lon_name"]
     if len(lon_coords) == 1:
         coord = lon_coords[0]
         new_dataset = dataset.assign_coords(
