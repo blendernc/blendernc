@@ -19,7 +19,6 @@ Development workflow
 - Clone BlenderNC source code (`BlenderNC repo <https://github.com/blendernc/blendernc>`_):
 
     .. code-block::
-
         git clone https://github.com/blendernc/blendernc.git
 
 - Set up your remotes (i.e. ``origin`` and ``upstream``).
@@ -32,14 +31,12 @@ Testing
 In order to merge into any branch of the **BlenderNC** repository, all test must pass. Locally testing **BlenderNC** is really simple, as it uses docker containers by `nytimes/rd-blender-docker <https://github.com/nytimes/rd-blender-docker>`_. Execute the following code from the cloned repository root directory:
 
 .. code-block::
-
     docker pull nytimes/blender:latest
     docker run -w /addon/blendernc -it --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c
 
 If you want more control on each test, you can run an interactive docker container:
 
 .. code-block::
-
     docker pull nytimes/blender:latest
     docker run -w /addon/blendernc --rm -it --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/bash
 

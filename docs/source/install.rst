@@ -11,7 +11,6 @@ Setting up the Blender Python environment
 BlenderNC requires the following python modules to be installed in Blender's Python environment:
 
 .. code-block:: python
-
     xarray
     xgcm
     cmocean
@@ -25,7 +24,6 @@ macOS
 -----
 
 .. code-block:: bash
-
     cd /Applications/Blender.app/Contents/Resources/2.83/python/bin/
     ./python3.7m -m ensurepip
     ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
@@ -34,7 +32,6 @@ Linux
 -----
 
 .. code-block:: bash
-
     cd /path/to/blender/2.83/python/bin/
     ./python3.7m -m ensurepip
     ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
@@ -43,7 +40,6 @@ Windows
 -------
 
 .. code-block:: bash
-
     cd /path/to/blender/2.82/python/bin/
     python.exe -m ensurepip
     python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
@@ -90,25 +86,24 @@ Now you can follow the tutorials to import datacubes in Blender.
 
 Optionally, **but not recommended**, you can link or copy the blendernc folder within the repository (i.e. ``blendernc/blendernc``) to your preferred blender add-on path. You can get the exact path by running within a Blender Console:
 
-.. code-block::
-
+.. code-block::python
     bpy.utils.user_resource("SCRIPTS", path="addons")
 
 output example on:
 
 - macOS:
+-
     .. code-block::
-
         '/Users/{username}/Library/Application\ Support/Blender/2.9{X}/scripts/addons'
 
 - Linux:
-    .. code-block::
 
+    .. code-block::
         '/usr/share/blender/2.9{X}/scripts/addons'
 
 - Windows 10:
-    .. code-block::
 
+    .. code-block::
         '%USERPROFILE%\AppData\Roaming\Blender Foundation\Blender\2.9{X}\scripts\addons'
 
 make sure you replace everything within the {}.
@@ -155,7 +150,6 @@ Alternatively, to further configure Blender, you could install it using a `conda
 Create conda environment:
 
 .. code-block:: bash
-
     conda create --prefix ~/path/to/python/root python=3.7
     conda activate ~/path/to/python/root
     conda install --file ./requirements.txt
@@ -163,7 +157,6 @@ Create conda environment:
 Compile Blender:
 
 .. code-block:: bash
-
     cmake -DPYTHON_VERSION=3.7 -DPYTHON_ROOT_DIR=~/path/to/python/root ../blender
 
 .. note::
@@ -172,8 +165,8 @@ Compile Blender:
 Another **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
 - macOS:
-    .. code-block:: bash
 
+    .. code-block:: bash
         cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
 
 - Linux and Windows:
@@ -183,5 +176,4 @@ Another **not recommended** option is to symbolically link your python modules t
 Then link all the packages from your python environment folder:
 
 .. code-block:: bash
-
     ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
