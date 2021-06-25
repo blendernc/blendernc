@@ -8,6 +8,3 @@ dependencies:
   - sphinx-gallery = 0.2.0
   - sphinx_rtd_theme = 0.4.2
   - numpy
-  - pip:
-    sphinxcontrib.yt
-    docutils
