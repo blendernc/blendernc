@@ -87,7 +87,7 @@ run on `NCI Gadi <https://nci.org.au>`_.
 
 
 Underlying Python technologies
-------------------------------
+##############################
 
 - `Dask <https://dask.org>`_
 
