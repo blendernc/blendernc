@@ -69,4 +69,9 @@ html_static_path = ["_static"]
 
 
 # Mock bpy import
-autodoc_mock_imports = ["bpy", "nodeitems_utils", "nodeitems_builtins"]
+autodoc_mock_imports = [
+    "bpy",
+    "nodeitems_utils",
+    "nodeitems_builtins",
+    "addon_utils",
+]
