@@ -18,7 +18,7 @@ Development workflow
 - Set up your ``Blender`` executable by pressing ``ctrl+shift+P`` -> ``Blender Start`` -> ``Choose new blender executable``.
 - Clone BlenderNC source code (`BlenderNC repo <https://github.com/blendernc/blendernc>`_):
 
-    .. code-block::
+    .. code-block:: bash
 
         git clone https://github.com/blendernc/blendernc.git
 
@@ -31,21 +31,21 @@ Testing
 
 In order to merge into any branch of the **BlenderNC** repository, all test must pass. Locally testing **BlenderNC** is really simple, as it uses docker containers by `nytimes/rd-blender-docker <https://github.com/nytimes/rd-blender-docker>`_. Execute the following code from the cloned repository root directory:
 
-.. code-block::
+.. code-block:: bash
 
     docker pull nytimes/blender:latest
     docker run -w /addon/blendernc -it --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c
 
 If you want more control on each test, you can run an interactive docker container:
 
-.. code-block::
+.. code-block:: bash
 
     docker pull nytimes/blender:latest
     docker run -w /addon/blendernc --rm -it --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/bash
 
 and then run the following code in sections:
 
-.. code-block::
+.. code-block:: bash
 
     #!/bin/sh
 
