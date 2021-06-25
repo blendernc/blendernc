@@ -13,7 +13,7 @@ Data provided
 Download your own data! (optional)
 ----------------------------------
 
-Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`__! Let's start downloading one year, for example, 2020.
+Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`_ [Dataset]_! Let's start downloading one year, for example, 2020.
 
 .. code-block:: bash
 
@@ -57,8 +57,8 @@ Let's download daily sea surface temperature data from 1981 to the present deriv
 .. important::
     You will need to create an account and follow the instructions to use the ``cdsapp``: `click here <https://cds.climate.copernicus.eu/api-how-to>`__!
 
-Load data!
-----------
+Import data!
+------------
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 

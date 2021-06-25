@@ -4,9 +4,9 @@ from os.path import abspath
 
 import bpy
 
-from .get_utils import get_node, get_var
-from .messages import active_selection_preference, unselected_object
-from .python_functions import (
+from blendernc.get_utils import get_node, get_var
+from blendernc.messages import active_selection_preference, unselected_object
+from blendernc.python_functions import (
     BlenderncEngine,
     load_frame,
     update_colormap_interface,

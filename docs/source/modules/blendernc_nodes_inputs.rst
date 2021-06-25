@@ -1,5 +1,5 @@
 :mod:`blendernc.nodes.inputs`
-============================
+=============================
 
 .. automodule:: blendernc.nodes.inputs.BlenderNC_NT_netcdf
    :members:
@@ -17,7 +17,7 @@
    :show-inheritance:
    :exclude-members: __dict__,__weakref__,__module__
 
-   .. automodule:: blendernc.nodes.inputs.BlenderNC_NT_range
+.. automodule:: blendernc.nodes.inputs.BlenderNC_NT_range
    :members:
    :undoc-members:
    :special-members:

@@ -4,9 +4,10 @@ import os
 import bpy
 from bpy.app.handlers import persistent
 
+from blendernc.messages import load_after_restart
+
 # Import auto updater
 from . import addon_updater_ops
-from .messages import load_after_restart
 
 
 def get_addon_preference():

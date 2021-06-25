@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import bpy
 
-from . import addon_updater_ops
-from .blendernc import registerBlenderNC, unregisterBlenderNC
-from .preferences import (
+from blendernc.blendernc import registerBlenderNC, unregisterBlenderNC
+from blendernc.preferences import (
     BlenderNC_Preferences,
     import_workspace,
     load_handler_for_startup,
 )
+
+from . import addon_updater_ops
 
 bl_info = {
     "name": "BlenderNC",

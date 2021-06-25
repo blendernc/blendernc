@@ -3,8 +3,8 @@ import functools
 
 import bpy
 
-from .get_utils import get_input_links
-from .messages import unselected_nc_var, unselected_variable
+from blendernc.get_utils import get_input_links
+from blendernc.messages import unselected_nc_var, unselected_variable
 
 
 class NodesDecorators(object):

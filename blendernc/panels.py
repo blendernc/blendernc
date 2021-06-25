@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 import bpy
 
-from .python_functions import empty_item, update_animation, update_file_vars, update_res
+from blendernc.python_functions import (
+    empty_item,
+    update_animation,
+    update_file_vars,
+    update_res,
+)
 
 gui_active_panel_fin = None
 gui_active_materials = None
