@@ -3,6 +3,7 @@ import functools
 
 import bpy
 
+from .get_utils import get_input_links
 from .messages import unselected_nc_var, unselected_variable
 
 
@@ -60,7 +61,8 @@ class NodesDecorators(object):
 
     @staticmethod
     def unlink_input(node):
-        node.inputs[0].links[0].from_socket.unlink(node.inputs[0].links[0])
+        inputs_links = get_input_links(node)
+        inputs_links.from_socket.unlink(inputs_links)
 
     @staticmethod
     def unlink_output(node):
@@ -94,11 +96,10 @@ class NodesDecorators(object):
     @classmethod
     def input_connections(cls, node):
         """
-        Test only one incomming connection.
+        Test only one incoming connection.
         """
         # TODO: Add function to check for multiple connectgions
-        inputs = node.inputs[0]
-        inputs_links = inputs.links[0]
+        inputs_links = get_input_links(node)
         if node.bl_idname == "netCDFPath":
             return True
         elif node.bl_idname == "Datacube_tutorial":
@@ -129,8 +130,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def get_data_from_socket(node):
-        inputs = node.inputs[0]
-        inputs_links = inputs.links[0]
+        inputs_links = get_input_links(node)
         socket = inputs_links.from_socket
         node.blendernc_dataset_identifier = socket.unique_identifier
         if socket.unique_identifier in socket.dataset.keys():
@@ -139,8 +139,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def get_data_from_node(node):
-        inputs = node.inputs[0]
-        inputs_links = inputs.links[0]
+        inputs_links = get_input_links(node)
         node_parent = inputs_links.from_node
         node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
         if (
@@ -158,7 +157,7 @@ class NodesDecorators(object):
         blendernc_dict = node.blendernc_dict
         # If identifier exist a file has been selected.
         if identifier in blendernc_dict.keys():
-            # If var is not selected disconect and return update == False
+            # If var is not selected disconnect and return update == False
             if "selected_var" not in blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
                 bpy.context.window_manager.popup_menu(
@@ -181,8 +180,9 @@ class NodesDecorators(object):
 
     @classmethod
     def select_var_dataset(cls, node):
-        if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
-            node.blendernc_file = node.inputs[0].links[0].from_socket.text
+        inputs_links = get_input_links(node)
+        if node.blendernc_file != inputs_links.from_socket.text:
+            node.blendernc_file = inputs_links.from_socket.text
             bpy.ops.blendernc.ncload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
@@ -203,9 +203,10 @@ class NodesDecorators(object):
 
     @classmethod
     def select_grid_dataset(cls, node):
+        inputs_links = get_input_links(node)
         identifier = node.blendernc_dataset_identifier
-        if node.blendernc_file != node.inputs[0].links[0].from_socket.text:
-            node.blendernc_file = node.inputs[0].links[0].from_socket.text
+        if node.blendernc_file != inputs_links.from_socket.text:
+            node.blendernc_file = inputs_links.from_socket.text
             bpy.ops.blendernc.ncload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
@@ -233,8 +234,9 @@ class NodesDecorators(object):
     @staticmethod
     def get_blendernc_file(node):
         # TODO disconnect if not connected to proper node.
+        inputs_links = get_input_links(node)
         if not node.blendernc_file:
-            node.blendernc_file = node.inputs[0].links[0].from_node.blendernc_file
+            node.blendernc_file = inputs_links.from_node.blendernc_file
 
     @staticmethod
     def output_connections(node):

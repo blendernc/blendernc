@@ -107,8 +107,6 @@ handlers = bpy.app.handlers
 
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
-
-    # bpy.types.Scene.nc_dictionary = defaultdict(None)
     bpy.types.Scene.nc_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)

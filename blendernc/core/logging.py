@@ -23,6 +23,10 @@ class Timer:
 
                 self.tmp = []
 
+    def print_spaces(self, text_1, text_2, total_space=30):
+        empty_space = " " * (total_space - len(text_1) - len(text_2))
+        print("{}{}{}".format(text_1, empty_space, text_2))
+
     def report(self, total=False, frame=None):
         titles = ""
         times = ""
@@ -35,32 +39,17 @@ class Timer:
         print("-" * len(titles))
         print(titles)
         print(times)
+        title_length = len(titles)
         if total:
             times = np.array([item for key, item in self.timestamps.items()]).ravel()
-            print("-" * len(titles))
+            print("-" * title_length)
             total_text = "| Total = "
             total_t = "{:.2e} seconds |".format(max(times) - min(times))
-            print(
-                "{}{}{}".format(
-                    total_text,
-                    " " * (len(titles) - len(total_text) - len(total_t)),
-                    total_t,
-                )
-            )
+            self.print_spaces(total_text, total_t, title_length)
             FPS_text = "| FPS = "
             FPS = "{:.2g} |".format(1 / (max(times) - min(times)))
-            print(
-                "{}{}{}".format(
-                    FPS_text, " " * (len(titles) - len(FPS_text) - len(FPS)), FPS
-                )
-            )
+            self.print_spaces(FPS_text, FPS, title_length)
             Frame_text = "| Frame = "
             Frame = "{} |".format(frame)
-            print(
-                "{}{}{}".format(
-                    Frame_text,
-                    " " * (len(titles) - len(Frame_text) - len(Frame)),
-                    Frame,
-                )
-            )
+            self.print_spaces(Frame_text, Frame, title_length)
             print("-" * len(titles) + "\n")

@@ -4,11 +4,10 @@ from os.path import abspath
 
 import bpy
 
+from .get_utils import get_node, get_var
 from .messages import active_selection_preference, unselected_object
 from .python_functions import (
     BlenderncEngine,
-    get_node,
-    get_var,
     load_frame,
     update_colormap_interface,
     update_image,

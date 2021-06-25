@@ -5,7 +5,8 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_possible_dims, update_value_and_node_tree
+from blendernc.get_utils import get_possible_dims
+from blendernc.python_functions import update_value_and_node_tree
 
 
 class BlenderNC_NT_drop_dims(bpy.types.Node):
@@ -45,13 +46,18 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
-        layout.prop(self, "blendernc_dims", text="")
+        if (
+            self.inputs[0].is_linked
+            and self.inputs[0].links
+            and self.blendernc_dataset_identifier
+        ):
+            blendernc_dict = self.inputs[0].links[0].from_node.blendernc_dict
+            if blendernc_dict:
+                layout.prop(self, "blendernc_dims", text="")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,

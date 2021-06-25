@@ -2,13 +2,14 @@
 Import Gebco Topography
 =======================
 
-.. important:: For this first example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
+.. important::
+  For this first example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
 
-Donwload the GEBCO bathymetry dataset (`for more info click here <https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2020/>`__) or download it directly by clicking `here <https://www.bodc.ac.uk/data/open_download/gebco/gebco_2020/zip/>`__!
+Download the GEBCO bathymetry dataset (`for more info click here <https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2020/>`__) or download it directly by clicking `here <https://www.bodc.ac.uk/data/open_download/gebco/gebco_2020/zip/>`__!
 
-Open Blender (>2.83), in the 3D view open the `sidebar` by pressing "n".
+Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
-- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navegate and select a the GEBCO bathymetry netCDF.
+- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navigate and select the GEBCO bathymetry netCDF.
 
 .. image:: ../../images/gebco_example/gebco_select_file.png
   :width: 100%
@@ -22,9 +23,9 @@ Open Blender (>2.83), in the 3D view open the `sidebar` by pressing "n".
 
 
 .. important::
-    Due to the size of the GEBCO dataset, BlenderNC will raise an issue saying ``Increase resolution`` (highlighted with red below). The resolution of a dataset is logarithmic, for more information about how is the resolution defined, check resolution_description.
+  Due to the size of the GEBCO dataset, BlenderNC will raise an issue saying ``Increase resolution`` (highlighted with red below). The resolution of a dataset is logarithmic, for more information about how is the resolution defined, check resolution_description.
 
-    .. image:: ../../images/gebco_example/gebco_resolution_error.png
+  .. image:: ../../images/gebco_example/gebco_resolution_error.png
 
 
 - Let's increase the resolution to 90%:
@@ -54,7 +55,7 @@ There will be no visible change until we switch to a rendered 3D viewport (``Z``
   :width: 100%
   :alt: GEBCO rendered
 
-Press ``0`` in your numberpath to change your view to the camera view. If you are using a laptop, you can emulate a numberpath by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
+Press ``0`` in your number path to change your view to the camera view. If you are using a laptop, you can emulate a number path by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
 
 .. image:: ../../images/gebco_example/gebco_camera_view.png
   :width: 100%

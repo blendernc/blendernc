@@ -2,8 +2,6 @@
 # Imports
 import bpy
 
-from blendernc.python_functions import get_possible_files, get_possible_variables
-
 
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
@@ -18,25 +16,8 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     bl_icon = "SOUND"
     blb_type = "NETCDF"
 
-    file_name: bpy.props.EnumProperty(
-        items=get_possible_files,
-        name="",
-    )
-
-    var_name: bpy.props.EnumProperty(
-        items=get_possible_variables,
-        name="",
-    )
-
-    frame_start: bpy.props.IntProperty(
-        default=1,
-        name="Start",
-    )
-
-    frame_end: bpy.props.IntProperty(
-        default=250,
-        name="End",
-    )
+    # TODO: This node will receive a datacube as
+    # input and store all the images in disk for easier import and animation.
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
