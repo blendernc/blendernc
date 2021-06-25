@@ -5,11 +5,8 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import (
-    dict_update,
-    get_new_identifier,
-    get_possible_variables,
-)
+from blendernc.get_utils import get_new_identifier, get_possible_variables
+from blendernc.python_functions import dict_update
 
 
 class BlenderNC_NT_netcdf(bpy.types.Node):

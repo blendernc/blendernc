@@ -14,10 +14,12 @@ import bpy
 import numpy as np
 import xarray
 
-from .core.logging import Timer
-from .get_utils import get_input_links, get_unique_data_dict
-from .image import from_data_to_pixel_value, normalize_data
-from .messages import drop_dim, huge_image, increase_resolution
+# Partial import to avoid cyclic import
+import blendernc.get_utils as blnc_gutils
+from blendernc.core.logging import Timer
+from blendernc.image import from_data_to_pixel_value, normalize_data
+from blendernc.messages import drop_dim, huge_image, increase_resolution
+from blendernc.nodes.cmaps.utils_colorramp import add_splines, colorbar_material
 
 
 def build_enum_prop_list(list, icon, long_name_list=None):
@@ -31,30 +33,6 @@ def build_enum_prop_list(list, icon, long_name_list=None):
     return list
 
 
-def get_dims(ncdata, var):
-    dimensions = list(ncdata[var].coords.dims)
-    dim_names = build_enum_prop_list(dimensions, "EMPTY_DATA")
-    return dim_names
-
-
-def get_geo_coord_names(dataset):
-    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
-    lat_coords = [coord for coord in dataset.coords if ("lat" in coord or "y" in coord)]
-    return {"lon_name": lon_coords, "lat_name": lat_coords}
-
-
-def get_var(ncdata):
-    dimensions = sorted(list(ncdata.coords.dims.keys()))
-    variables = sorted(list(ncdata.variables.keys() - dimensions))
-    long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
-    if "long_name" in ncdata[variables[0]].attrs:
-        var_names = build_enum_prop_list(variables, "DISK_DRIVE", long_name_list)
-    else:
-        var_names = build_enum_prop_list(variables, "DISK_DRIVE")
-
-    return select_item() + [None] + var_names
-
-
 def empty_item():
     return [("No var", "No variable", "Empty", "CANCEL", 0)]
 
@@ -65,46 +43,6 @@ def select_item():
 
 def select_datacube():
     return [("No datacube", "Select datacube", "Empty", "NODE_SEL", 0)]
-
-
-def get_possible_variables(node, context):
-    ncfile = node.blendernc_file
-    unique_identifier = node.blendernc_dataset_identifier
-    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
-        return empty_item()
-    unique_data_dict = get_unique_data_dict(node)
-    ncdata = unique_data_dict["Dataset"]
-    items = get_var(ncdata)
-    return items
-
-
-def get_new_identifier(node):
-    if len(node.name.split(".")) == 1:
-        return "{:03}".format(0)
-    else:
-        return "{:03}".format(int(node.name.split(".")[-1]))
-
-
-# TODO Add decorator to simplify.
-def get_possible_dims(node, context):
-    if node.inputs:
-        if node.inputs[0].is_linked and node.inputs[0].links:
-            link = get_input_links(node)
-            unique_identifier = node.blendernc_dataset_identifier
-            parent_node = link.from_node
-            blendernc_dict = parent_node.blendernc_dict
-            if not blendernc_dict:
-                return []
-            else:
-                data_dictionary = parent_node.blendernc_dict[unique_identifier]
-                ncdata = data_dictionary["Dataset"]
-                var_name = data_dictionary["selected_var"]["selected_var_name"]
-                items = get_dims(ncdata, var_name)
-            return items
-        else:
-            return []
-    else:
-        return []
 
 
 def update_value(self, context):
@@ -129,7 +67,7 @@ def update_nodes(scene, context):
 
 
 def update_dict(selected_variable, node):
-    unique_data_dict = get_unique_data_dict(node)
+    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
     unique_data_dict["selected_var"] = {
         "max_value": None,
         "min_value": None,
@@ -139,17 +77,9 @@ def update_dict(selected_variable, node):
     }
 
 
-def get_selected_var(node):
-    unique_data_dict = get_unique_data_dict(node)
-    dataset = unique_data_dict["Dataset"]
-    selected_variable = unique_data_dict["selected_var"]["selected_var_name"]
-    selected_var_dataset = dataset[selected_variable]
-    return selected_var_dataset
-
-
 def update_range(node, context):
     unique_identifier = node.blendernc_dataset_identifier
-    unique_data_dict = get_unique_data_dict(node)
+    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
     try:
         max_val = node.blendernc_dataset_max
         min_val = node.blendernc_dataset_min
@@ -239,20 +169,6 @@ def update_res(scene, context):
     ).blendernc_resolution = scene.blendernc_resolution
 
 
-def get_max_timestep(self, context):
-    scene = context.scene
-    ncfile = self.file_name
-    data_dictionary = scene.nc_dictionary
-    if not ncfile or not data_dictionary:
-        return 0
-    ncdata = data_dictionary["Dataset"]
-    var_name = self.var_name
-    var_data = ncdata[var_name]
-
-    t, y, x = var_data.shape
-    return t - 1
-
-
 def dict_update(node, context):
     dataset_dict = node.blendernc_dict[node.blendernc_dataset_identifier]
     selected_var = (
@@ -274,52 +190,12 @@ def dict_update(node, context):
     update_value_and_node_tree(node, context)
 
 
-def get_node(node_group, node):
-    node_group = bpy.data.node_groups.get(node_group)
-    return node_group.nodes.get(node)
-
-
-def get_var_dict(context, node, node_tree):
-    scene = context.scene
-    node = bpy.data.node_groups[node_tree].nodes[node]
-    unique_identifier = node.blendernc_dataset_identifier
-    try:
-        scene.nc_cache[node_tree]
-    except KeyError:
-        scene.nc_cache[node_tree] = {}
-
-    # Check if dictionary entry for the variable exists
-    try:
-        scene.nc_cache[node_tree][unique_identifier]
-    except KeyError:
-        scene.nc_cache[node_tree][unique_identifier] = {}
-    return scene.nc_cache[node_tree][unique_identifier]
-
-
-def get_var_data(context, node, node_tree):
-    node = bpy.data.node_groups[node_tree].nodes[node]
-    # Get data dictionary stored at scene object
-    unique_data_dict = get_unique_data_dict(node)
-    # Get the netcdf of the selected file
-    ncdata = unique_data_dict["Dataset"]
-    # Get var name
-    var_name = unique_data_dict["selected_var"]["selected_var_name"]
-    # Get the data of the selected variable
-    # Remove Nans
-    # TODO: Add node to preserve NANs
-    # if node.keep_nan:
-    data = ncdata[var_name]
-    # else:
-    # data = ncdata[var_name].where(np.isfinite(ncdata[var_name]), 0)
-    return data
-
-
 def normalize_data_w_grid(node, node_tree, data, grid_node):
     node = bpy.data.node_groups[node_tree].nodes[node]
-    unique_data_dict = get_unique_data_dict(node)
+    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
 
     grid_node = bpy.data.node_groups[node_tree].nodes[grid_node]
-    unique_grid_dict = get_unique_data_dict(grid_node)
+    unique_grid_dict = blnc_gutils.get_unique_data_dict(grid_node)
 
     grid = unique_grid_dict["Dataset"].copy()
     x_grid_name = unique_grid_dict["Coords"]["X"]
@@ -377,51 +253,17 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     return normalize_data(new_image[::-1])
 
 
-def get_time(context, node, node_tree, frame):
-    node = bpy.data.node_groups[node_tree].nodes[node]
-    # Get data dictionary stored at scene object
-    unique_data_dict = get_unique_data_dict(node)
-    # Get the netcdf of the selected file
-    ncdata = unique_data_dict["Dataset"]
-    # Get the data of the selected variable
-    if "time" in ncdata.coords.keys():
-        time = ncdata["time"]
-        if time.size == 1:
-            return time.values
-        elif frame > time.size:
-            return time[-1].values
-        else:
-            return time[frame].values
-    else:
-        return ""
-
-
-def get_max_min_data(context, node, node_tree):
-    node = bpy.data.node_groups[node_tree].nodes[node]
-    # Get data dictionary stored at scene object
-    unique_data_dict = get_unique_data_dict(node)
-    # Get the metadata of the selected variable
-    var_metadata = unique_data_dict["selected_var"]
-    max_val = var_metadata["max_value"]
-    min_val = var_metadata["min_value"]
-    if max_val is not None and min_val is not None:
-        return var_metadata["max_value"], var_metadata["min_value"]
-    else:
-        update_range(node, context)
-        return var_metadata["max_value"], var_metadata["min_value"]
-
-
 def load_frame(context, node, node_tree, frame, grid_node=None):
     # Find netcdf file data
     # Get the data of the selected variable and grid
 
-    var_data = get_var_data(context, node, node_tree)
+    var_data = blnc_gutils.get_var_data(context, node, node_tree)
 
     # Find cache dictionary
-    var_dict = get_var_dict(context, node, node_tree)
+    var_dict = blnc_gutils.get_var_dict(context, node, node_tree)
 
     # Global max and min
-    vmax, vmin = get_max_min_data(context, node, node_tree)
+    vmax, vmin = blnc_gutils.get_max_min_data(context, node, node_tree)
 
     # TODO: Improve by using coordinates,
     # could generate issues if the first axis isn't time
@@ -470,7 +312,7 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Variable load")
     # Get the data of the selected variable and grid
 
-    var_data = get_var_data(context, node, node_tree)
+    var_data = blnc_gutils.get_var_data(context, node, node_tree)
 
     timer.tick("Variable load")
     # Get object shape
@@ -542,7 +384,7 @@ def update_datetime_text(
     If text is provided, frame is ignored.
     """
     if not time_text:
-        time = str(get_time(context, node, node_tree, frame))[:10]
+        time = str(blnc_gutils.get_time(context, node, node_tree, frame))[:10]
     else:
         time = time_text
     # TODO allow user to define format.
@@ -582,7 +424,7 @@ def ui_material():
 
 def update_colormap_interface(context, node, node_tree):
     # Get var range
-    max_val, min_val = get_max_min_data(context, node, node_tree)
+    max_val, min_val = blnc_gutils.get_max_min_data(context, node, node_tree)
 
     node = bpy.data.node_groups[node_tree].nodes[node]
 
@@ -595,7 +437,7 @@ def update_colormap_interface(context, node, node_tree):
         if items.rna_type.id_data.name == "Shader Nodetree"
     ]
     # support for multiple materials. This will generate multiple colorbars.
-    colormap = [get_colormaps_of_materials(node) for node in material_users]
+    colormap = [blnc_gutils.get_colormaps_of_materials(node) for node in material_users]
 
     width = 0.007
     height = 0.12
@@ -634,132 +476,10 @@ def update_colormap_interface(context, node, node_tree):
         for s_index in range(len(splines)):
             splines[s_index].data.body = str(np.round(labels[s_index], 2))
 
-        c_material = colorbar_material(context, node, node_tree, colormap[-1])
+        c_material = colorbar_material(node, colormap[-1])
         if c_material:
             cbar_plane.data.materials.append(c_material)
     # Get data dictionary stored at scene object
-
-
-def add_splines(n, cbar_plane, width=0.1, height=1):
-    size = 1
-    splines = []
-    step = 2 / n
-    locs = np.round(np.arange(-1, 1 + step, step), 2)
-    y_rescale = 0.12
-    for ii in range(n + 1):
-        bpy.ops.object.text_add(radius=size)
-        spline = bpy.context.object
-        spline.data.align_y = "CENTER"
-        spline.parent = cbar_plane
-        spline.location = (1.4, locs[ii], 0)
-        spline.lock_location = (True, True, True)
-        spline.scale = (1.7, y_rescale, 1.2)
-        spline.name = "text_{}".format(cbar_plane.name)
-        mat = ui_material()
-        spline.data.materials.append(mat)
-        splines.append(spline)
-    return splines
-
-
-def colorbar_material(context, node, node_tree, colormap):
-    materials = bpy.data.materials
-    blendernc_materials = [
-        material for material in materials if "" + node.name in material.name
-    ]
-
-    if len(blendernc_materials) != 0:
-        blendernc_material = blendernc_materials[-1]
-        cmap = blendernc_material.node_tree.nodes.get("Colormap")
-        if cmap.colormaps == colormap.colormaps:
-            return
-    else:
-        bpy.ops.material.new()
-        blendernc_material = bpy.data.materials[-1]
-        blendernc_material.name = "" + node.name
-
-    material_node_tree = blendernc_material.node_tree
-
-    if len(material_node_tree.nodes.keys()) == 2:
-        texcoord = material_node_tree.nodes.new("ShaderNodeTexCoord")
-        texcoord.location = (-760, 250)
-        mapping = material_node_tree.nodes.new("ShaderNodeMapping")
-        mapping.location = (-580, 250)
-        cmap = material_node_tree.nodes.new("cmapsNode")
-        cmap.location = (-290, 250)
-        emi = material_node_tree.nodes.new("ShaderNodeEmission")
-        emi.location = (-290, -50)
-        P_BSDF = material_node_tree.nodes.get("Principled BSDF")
-        material_node_tree.nodes.remove(P_BSDF)
-
-    else:
-        texcoord = material_node_tree.nodes.get("Texture Coordinate")
-        mapping = material_node_tree.nodes.get("Mapping")
-        cmap = material_node_tree.nodes.get("Colormap")
-        emi = material_node_tree.nodes.get("Emission")
-
-    output = material_node_tree.nodes.get("Material Output")
-
-    # Links
-    material_link = material_node_tree.links
-    material_link.new(mapping.inputs[0], texcoord.outputs[0])
-    material_link.new(cmap.inputs[0], mapping.outputs[0])
-    material_link.new(emi.inputs[0], cmap.outputs[0])
-    material_link.new(output.inputs[0], emi.outputs[0])
-
-    # Assign values:
-    mapping.inputs["Location"].default_value = (0, -0.6, 0)
-    mapping.inputs["Rotation"].default_value = (0, np.pi / 4, 0)
-    mapping.inputs["Scale"].default_value = (1, 2.8, 1)
-
-    cmap.n_stops = colormap.n_stops
-    cmap.fcmap = colormap.fcmap
-    cmap.colormaps = colormap.colormaps
-    cmap.fv_color = colormap.fv_color
-
-    return blendernc_material
-
-
-def get_colormaps_of_materials(node):
-    """
-    Function to find materials using the BlenderNC output node image.
-    """
-    unfind = True
-    counter = 0
-
-    links = node.outputs.get("Color").links
-    # TODO: Change this to a recursive search.
-    # Currently, only colormaps directly connected to
-    # the output will generate a colormap.
-    while unfind:
-        for link in links:
-            if link.to_node.bl_idname == "cmapsNode":
-                colormap_node = link.to_node
-                unfind = False
-                break
-            elif counter == 10:
-                unfind = False
-            else:
-                counter += 1
-
-    if counter == 10:
-        raise ValueError("Colormap not found after 10 tree node interations")
-    return colormap_node
-
-
-def get_all_nodes_using_image(image_name):
-    users = {}
-    for node_group in bpy.data.node_groups:
-        for node in node_group.nodes:
-            if node.bl_idname == "netCDFOutput":
-                users[node_group.name] = node
-
-    for material in bpy.data.materials:
-        if not material.grease_pencil:
-            for node in material.node_tree.nodes:
-                if node.bl_idname == "ShaderNodeTexImage":
-                    users[material.name] = node
-
-    return users
 
 
 def netcdf_values(
@@ -830,10 +550,10 @@ def update_animation(self, context):
 
 
 def rotate_longitude(node, context):
-    unique_data_dict = get_unique_data_dict(node)
+    unique_data_dict = blnc_gutils.get_unique_data_dict(node)
     # TODO Clear cache, otherwise the transform won't be applied.
     dataset = unique_data_dict["Dataset"]
-    lon_coords = get_geo_coord_names(dataset)["lon_name"]
+    lon_coords = blnc_gutils.get_geo_coord_names(dataset)["lon_name"]
     if len(lon_coords) == 1:
         coord = lon_coords[0]
         new_dataset = dataset.assign_coords(
@@ -853,12 +573,6 @@ def rotate_longitude(node, context):
     frame = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
     refresh_cache(NodeTree, identifier, frame)
-
-
-def get_xarray_datasets(node, context):
-    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
-    datacube_names = build_enum_prop_list(xarray_datacube, "DISK_DRIVE")
-    return select_datacube() + datacube_names
 
 
 def dict_update_tutorial_datacube(node, context):
@@ -957,19 +671,3 @@ class BlenderncEngine:
                     self.load_netcdf()
                 except RuntimeError:
                     raise ValueError("Files aren't netCDFs:", self.file_path)
-
-
-class dataset_modifiers:
-    def __init__(self):
-        self.type = None
-        self.computation = None
-
-    def update_type(self, ctype, computation):
-        self.type = ctype
-        self.computation = computation
-
-    def get_core_func(self):
-        return json_functions[self.type]
-
-
-json_functions = {"roll": xarray.core.rolling.DataArrayRolling}

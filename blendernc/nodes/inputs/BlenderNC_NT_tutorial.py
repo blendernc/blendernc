@@ -5,13 +5,12 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import (
-    dict_update,
-    dict_update_tutorial_datacube,
+from blendernc.get_utils import (
     get_new_identifier,
     get_possible_variables,
     get_xarray_datasets,
 )
+from blendernc.python_functions import dict_update, dict_update_tutorial_datacube
 
 
 class BlenderNC_NT_tutorial(bpy.types.Node):

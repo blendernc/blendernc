@@ -15,6 +15,85 @@ def update_fill_value(node, context):
     colorramp.elements[0].color = node.fv_color
 
 
+def colorbar_material(node, colormap):
+    materials = bpy.data.materials
+    blendernc_materials = [
+        material for material in materials if "" + node.name in material.name
+    ]
+
+    if len(blendernc_materials) != 0:
+        blendernc_material = blendernc_materials[-1]
+        cmap = blendernc_material.node_tree.nodes.get("Colormap")
+        if cmap.colormaps == colormap.colormaps:
+            return
+    else:
+        bpy.ops.material.new()
+        blendernc_material = bpy.data.materials[-1]
+        blendernc_material.name = "" + node.name
+
+    material_node_tree = blendernc_material.node_tree
+
+    if len(material_node_tree.nodes.keys()) == 2:
+        texcoord = material_node_tree.nodes.new("ShaderNodeTexCoord")
+        texcoord.location = (-760, 250)
+        mapping = material_node_tree.nodes.new("ShaderNodeMapping")
+        mapping.location = (-580, 250)
+        cmap = material_node_tree.nodes.new("cmapsNode")
+        cmap.location = (-290, 250)
+        emi = material_node_tree.nodes.new("ShaderNodeEmission")
+        emi.location = (-290, -50)
+        P_BSDF = material_node_tree.nodes.get("Principled BSDF")
+        material_node_tree.nodes.remove(P_BSDF)
+
+    else:
+        texcoord = material_node_tree.nodes.get("Texture Coordinate")
+        mapping = material_node_tree.nodes.get("Mapping")
+        cmap = material_node_tree.nodes.get("Colormap")
+        emi = material_node_tree.nodes.get("Emission")
+
+    output = material_node_tree.nodes.get("Material Output")
+
+    # Links
+    material_link = material_node_tree.links
+    material_link.new(mapping.inputs[0], texcoord.outputs[0])
+    material_link.new(cmap.inputs[0], mapping.outputs[0])
+    material_link.new(emi.inputs[0], cmap.outputs[0])
+    material_link.new(output.inputs[0], emi.outputs[0])
+
+    # Assign values:
+    mapping.inputs["Location"].default_value = (0, -0.6, 0)
+    mapping.inputs["Rotation"].default_value = (0, np.pi / 4, 0)
+    mapping.inputs["Scale"].default_value = (1, 2.8, 1)
+
+    cmap.n_stops = colormap.n_stops
+    cmap.fcmap = colormap.fcmap
+    cmap.colormaps = colormap.colormaps
+    cmap.fv_color = colormap.fv_color
+
+    return blendernc_material
+
+
+def add_splines(n, cbar_plane, width=0.1, height=1):
+    size = 1
+    splines = []
+    step = 2 / n
+    locs = np.round(np.arange(-1, 1 + step, step), 2)
+    y_rescale = 0.12
+    for ii in range(n + 1):
+        bpy.ops.object.text_add(radius=size)
+        spline = bpy.context.object
+        spline.data.align_y = "CENTER"
+        spline.parent = cbar_plane
+        spline.location = (1.4, locs[ii], 0)
+        spline.lock_location = (True, True, True)
+        spline.scale = (1.7, y_rescale, 1.2)
+        spline.name = "text_{}".format(cbar_plane.name)
+        mat = ui_material()
+        spline.data.materials.append(mat)
+        splines.append(spline)
+    return splines
+
+
 class ColorRamp(object):
     def __init__(self):
         self.cmaps = self.installed_cmaps()

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import bpy
+
+# Partial import to avoid cyclic import
+import blendernc.python_functions as bnc_pyfunc
 
 
 def get_unique_data_dict(node):
@@ -10,6 +14,221 @@ def get_unique_data_dict(node):
     return unique_data_dict
 
 
+def get_node(node_group, node):
+    node_group = bpy.data.node_groups.get(node_group)
+    return node_group.nodes.get(node)
+
+
 def get_input_links(node):
     inputs = node.inputs[0]
     return inputs.links[0]
+
+
+def get_var(ncdata):
+    dimensions = sorted(list(ncdata.coords.dims.keys()))
+    variables = sorted(list(ncdata.variables.keys() - dimensions))
+    long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
+    if "long_name" in ncdata[variables[0]].attrs:
+        var_names = bnc_pyfunc.build_enum_prop_list(
+            variables, "DISK_DRIVE", long_name_list
+        )
+    else:
+        var_names = bnc_pyfunc.build_enum_prop_list(variables, "DISK_DRIVE")
+
+    return bnc_pyfunc.select_item() + [None] + var_names
+
+
+def get_var_dict(context, node, node_tree):
+    scene = context.scene
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    unique_identifier = node.blendernc_dataset_identifier
+    try:
+        scene.nc_cache[node_tree]
+    except KeyError:
+        scene.nc_cache[node_tree] = {}
+
+    # Check if dictionary entry for the variable exists
+    try:
+        scene.nc_cache[node_tree][unique_identifier]
+    except KeyError:
+        scene.nc_cache[node_tree][unique_identifier] = {}
+    return scene.nc_cache[node_tree][unique_identifier]
+
+
+def get_var_data(context, node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    unique_data_dict = get_unique_data_dict(node)
+    # Get the netcdf of the selected file
+    ncdata = unique_data_dict["Dataset"]
+    # Get var name
+    var_name = unique_data_dict["selected_var"]["selected_var_name"]
+    # Get the data of the selected variable
+    # Remove Nans
+    # TODO: Add node to preserve NANs
+    # if node.keep_nan:
+    data = ncdata[var_name]
+    # else:
+    # data = ncdata[var_name].where(np.isfinite(ncdata[var_name]), 0)
+    return data
+
+
+def get_dims(ncdata, var):
+    dimensions = list(ncdata[var].coords.dims)
+    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA")
+    return dim_names
+
+
+def get_geo_coord_names(dataset):
+    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
+    lat_coords = [coord for coord in dataset.coords if ("lat" in coord or "y" in coord)]
+    return {"lon_name": lon_coords, "lat_name": lat_coords}
+
+
+def get_possible_variables(node, context):
+    ncfile = node.blendernc_file
+    unique_identifier = node.blendernc_dataset_identifier
+    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
+        return bnc_pyfunc.empty_item()
+    unique_data_dict = get_unique_data_dict(node)
+    ncdata = unique_data_dict["Dataset"]
+    items = get_var(ncdata)
+    return items
+
+
+def get_new_identifier(node):
+    if len(node.name.split(".")) == 1:
+        return "{:03}".format(0)
+    else:
+        return "{:03}".format(int(node.name.split(".")[-1]))
+
+
+# TODO Add decorator to simplify.
+def get_possible_dims(node, context):
+    if node.inputs:
+        if node.inputs[0].is_linked and node.inputs[0].links:
+            link = get_input_links(node)
+            unique_identifier = node.blendernc_dataset_identifier
+            parent_node = link.from_node
+            blendernc_dict = parent_node.blendernc_dict
+            if not blendernc_dict:
+                return []
+            else:
+                data_dictionary = parent_node.blendernc_dict[unique_identifier]
+                ncdata = data_dictionary["Dataset"]
+                var_name = data_dictionary["selected_var"]["selected_var_name"]
+                items = get_dims(ncdata, var_name)
+            return items
+        else:
+            return []
+    else:
+        return []
+
+
+def get_time(context, node, node_tree, frame):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    unique_data_dict = get_unique_data_dict(node)
+    # Get the netcdf of the selected file
+    ncdata = unique_data_dict["Dataset"]
+    # Get the data of the selected variable
+    if "time" in ncdata.coords.keys():
+        time = ncdata["time"]
+        if time.size == 1:
+            return time.values
+        elif frame > time.size:
+            return time[-1].values
+        else:
+            return time[frame].values
+    else:
+        return ""
+
+
+def get_max_min_data(context, node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    unique_data_dict = get_unique_data_dict(node)
+    # Get the metadata of the selected variable
+    var_metadata = unique_data_dict["selected_var"]
+    max_val = var_metadata["max_value"]
+    min_val = var_metadata["min_value"]
+    if max_val is not None and min_val is not None:
+        return var_metadata["max_value"], var_metadata["min_value"]
+    else:
+        bnc_pyfunc.update_range(node, context)
+        return var_metadata["max_value"], var_metadata["min_value"]
+
+
+def get_xarray_datasets(node, context):
+    import xarray
+
+    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+    datacube_names = bnc_pyfunc.build_enum_prop_list(xarray_datacube, "DISK_DRIVE")
+    return bnc_pyfunc.select_datacube() + datacube_names
+
+
+def get_colormaps_of_materials(node):
+    """
+    Function to find materials using the BlenderNC output node image.
+    """
+    unfind = True
+    counter = 0
+
+    links = node.outputs.get("Color").links
+    # TODO: Change this to a recursive search.
+    # Currently, only colormaps directly connected to
+    # the output will generate a colormap.
+    while unfind:
+        for link in links:
+            if link.to_node.bl_idname == "cmapsNode":
+                colormap_node = link.to_node
+                unfind = False
+                break
+            elif counter == 10:
+                unfind = False
+            else:
+                counter += 1
+
+    if counter == 10:
+        raise ValueError("Colormap not found after 10 tree node interations")
+    return colormap_node
+
+
+def get_all_nodes_using_image(image_name):
+    users = {}
+    for node_group in bpy.data.node_groups:
+        for node in node_group.nodes:
+            if node.bl_idname == "netCDFOutput":
+                users[node_group.name] = node
+
+    for material in bpy.data.materials:
+        if not material.grease_pencil:
+            for node in material.node_tree.nodes:
+                if node.bl_idname == "ShaderNodeTexImage":
+                    users[material.name] = node
+
+    return users
+
+
+# Delete if not use in a few months (25-Jun-2021):
+#
+# def get_selected_var(node):
+#     unique_data_dict = get_unique_data_dict(node)
+#     dataset = unique_data_dict["Dataset"]
+#     selected_variable = unique_data_dict["selected_var"]["selected_var_name"]
+#     selected_var_dataset = dataset[selected_variable]
+#     return selected_var_dataset
+
+
+# def get_max_timestep(self, context):
+#     scene = context.scene
+#     ncfile = self.file_name
+#     data_dictionary = scene.nc_dictionary
+#     if not ncfile or not data_dictionary:
+#         return 0
+#     ncdata = data_dictionary["Dataset"]
+#     var_name = self.var_name
+#     var_data = ncdata[var_name]
+
+#     t = var_data.shape[0]
+#     return t - 1
