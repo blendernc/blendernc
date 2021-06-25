@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_new_identifier, get_var
+from blendernc.get_utils import get_new_identifier, get_var
 
 
 def get_possible_grid(node, context):

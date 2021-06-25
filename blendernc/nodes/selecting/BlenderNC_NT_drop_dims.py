@@ -5,7 +5,8 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_possible_dims, update_value_and_node_tree
+from blendernc.get_utils import get_possible_dims
+from blendernc.python_functions import update_value_and_node_tree
 
 
 class BlenderNC_NT_drop_dims(bpy.types.Node):

@@ -9,7 +9,8 @@ import xarray as xr
 # TODO Fix this import
 from blendernc.cython_build import lic_internal
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_geo_coord_names, refresh_cache
+from blendernc.get_utils import get_geo_coord_names
+from blendernc.python_functions import refresh_cache
 
 
 class BlenderNC_NT_lic(bpy.types.Node):
