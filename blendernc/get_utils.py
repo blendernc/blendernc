@@ -75,7 +75,7 @@ def get_var_data(context, node, node_tree):
 
 def get_dims(ncdata, var):
     dimensions = list(ncdata[var].coords.dims)
-    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA")
+    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=0)
     return dim_names
 
 
@@ -105,24 +105,17 @@ def get_new_identifier(node):
 
 # TODO Add decorator to simplify.
 def get_possible_dims(node, context):
-    if node.inputs:
-        if node.inputs[0].is_linked and node.inputs[0].links:
-            link = get_input_links(node)
-            unique_identifier = node.blendernc_dataset_identifier
-            parent_node = link.from_node
-            blendernc_dict = parent_node.blendernc_dict
-            if not blendernc_dict:
-                return []
-            else:
-                data_dictionary = parent_node.blendernc_dict[unique_identifier]
-                ncdata = data_dictionary["Dataset"]
-                var_name = data_dictionary["selected_var"]["selected_var_name"]
-                items = get_dims(ncdata, var_name)
-            return items
-        else:
-            return []
-    else:
-        return []
+    unique_identifier = node.blendernc_dataset_identifier
+    if unique_identifier not in node.blendernc_dict.keys():
+        return bnc_pyfunc.empty_item()
+    link = get_input_links(node)
+    unique_identifier = node.blendernc_dataset_identifier
+    parent_node = link.from_node
+    data_dictionary = parent_node.blendernc_dict[unique_identifier]
+    ncdata = data_dictionary["Dataset"]
+    var_name = data_dictionary["selected_var"]["selected_var_name"]
+    items = get_dims(ncdata, var_name)
+    return items
 
 
 def get_time(context, node, node_tree, frame):
@@ -208,6 +201,30 @@ def get_all_nodes_using_image(image_name):
                     users[material.name] = node
 
     return users
+
+
+def get_items_dims(self, context):
+    if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
+        # BlenderNC dictionary
+        blendernc_dict = (
+            self.inputs[0]
+            .links[0]
+            .from_node.blendernc_dict[self.blendernc_dataset_identifier]
+            .copy()
+        )
+        # BlenderNC dataset
+        dataset = blendernc_dict["Dataset"]
+        # BlenderNC var
+        var = blendernc_dict["selected_var"]["selected_var_name"]
+        # Extract dataset axis
+        dims = dataset[var].dims
+        return dims
+
+
+def get_items_axes(self, context):
+    dims = get_items_dims(self, context)
+    dims_list = bnc_pyfunc.build_enum_prop_list(dims, "EMPTY_DATA", start=0)
+    return dims_list
 
 
 # Delete if not use in a few months (25-Jun-2021):

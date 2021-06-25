@@ -2,6 +2,9 @@
 import importlib
 
 import bpy
+import numpy as np
+
+import blendernc.python_functions as bnc_pyfunc
 
 NODE_TYPE = "ShaderNodeValToRGB"
 
@@ -88,7 +91,7 @@ def add_splines(n, cbar_plane, width=0.1, height=1):
         spline.lock_location = (True, True, True)
         spline.scale = (1.7, y_rescale, 1.2)
         spline.name = "text_{}".format(cbar_plane.name)
-        mat = ui_material()
+        mat = bnc_pyfunc.ui_material()
         spline.data.materials.append(mat)
         splines.append(spline)
     return splines
