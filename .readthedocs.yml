@@ -1,7 +1,7 @@
 build:
     image: latest
-# conda:
-#     file: docs/environment.yml
+conda:
+    file: docs/environment.yml
 python:
     version: 3.7
     install:
