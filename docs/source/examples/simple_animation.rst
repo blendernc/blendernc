@@ -13,9 +13,9 @@ Data provided
 Download your own data! (optional)
 ----------------------------------
 
-Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`__! Let's start downloading one year, for example, 2020.
+Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`_ [Dataset]_! Let's start downloading one year, for example, 2020.
 
-.. code-block:: python
+.. code-block:: bash
 
     import cdsapi
 
@@ -57,8 +57,8 @@ Let's download daily sea surface temperature data from 1981 to the present deriv
 .. important::
     You will need to create an account and follow the instructions to use the ``cdsapp``: `click here <https://cds.climate.copernicus.eu/api-how-to>`__!
 
-Load data!
-----------
+Import data!
+------------
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
@@ -78,7 +78,7 @@ There will be no visible change until we switch to a rendered 3D viewport (``Z``
 
 Press ``0`` in your number path to change your view to the camera view. If you are using a laptop, you can emulate a number path by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
 
-Once you are in the camera mode, press ``Spacebar``on your keyboard to play the animation. Voila! now we have a netCDF animation.
+Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have a netCDF animation.
 
 .. [Dataset]
     Merchant, C.J., Embury, O., Bulgin, C.E., Block, T., Corlett, G.K., Fiedler, E., Good, S.A., Mittaz, J., Rayner, N.A., Berry, D., Eastwood, S., Taylor, M., Tsushima, Y., Waterfall, A., Wilson, R. and Donlon, C. (2019), Satellite-based time-series of sea-surface temperature since 1981 for climate applications. Scientific Data 6, 223, doi:10.1038/s41597-019-0236-x

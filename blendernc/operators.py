@@ -4,9 +4,9 @@ from os.path import abspath
 
 import bpy
 
-from .get_utils import get_node, get_var
-from .messages import active_selection_preference, unselected_object
-from .python_functions import (
+from blendernc.get_utils import get_node, get_var
+from blendernc.messages import active_selection_preference, unselected_object
+from blendernc.python_functions import (
     BlenderncEngine,
     load_frame,
     update_colormap_interface,
@@ -18,6 +18,20 @@ bNCEngine = BlenderncEngine()
 
 
 class BlenderNC_OT_ncload(bpy.types.Operator):
+    """
+    BlenderNC_OT_ncload Load netCDF files within Blender.
+
+    Parameters
+    ----------
+    bpy : bpy.types.Operator
+        Blender API bpy socket to generate a new Operator.
+
+    Returns
+    -------
+    dict
+        {FINISHED} if operator exits successfully.
+    """
+
     bl_idname = "blendernc.ncload"
     bl_label = "Load netcdf file"
     bl_description = "Loads netcdf file"
@@ -29,12 +43,15 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         subtype="FILE_PATH",
         # default="",
     )
+    """An instance of the original StringProperty."""
 
     node_group: bpy.props.StringProperty(
         name="node", description="Node calling operator"
     )
+    """An instance of the original StringProperty."""
 
     node: bpy.props.StringProperty(name="node", description="Node calling operator")
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         if not self.file_path:
@@ -78,6 +95,7 @@ class BlenderNC_OT_var(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     file_path: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         if not self.file_path:
@@ -121,7 +139,9 @@ class BlenderNC_OT_compute_range(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     node: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
@@ -155,21 +175,25 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         subtype="FILE_PATH",
         # default="",
     )
+    """An instance of the original StringProperty."""
     var_name: bpy.props.StringProperty(
         name="File name",
         description="Path to the netCDF file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
+    """An instance of the original StringProperty."""
     frame_start: bpy.props.IntProperty(
         default=1,
         name="Start",
     )
+    """An instance of the original IntProperty."""
 
     frame_end: bpy.props.IntProperty(
         default=250,
         name="End",
     )
+    """An instance of the original IntProperty."""
 
     def execute(self, context):
         if not self.file_name:
@@ -202,10 +226,15 @@ class BlenderNC_OT_netcdf2img(bpy.types.Operator):
     bl_label = "From netcdf to image"
     bl_description = "Updates an image with netcdf data"
     node: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     frame: bpy.props.IntProperty()
+    """An instance of the original IntProperty."""
     flip: bpy.props.BoolProperty()
+    """An instance of the original BoolProperty."""
     image: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         update_image(context, self.node, self.node_group, self.frame, self.image)
@@ -217,8 +246,11 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
     bl_label = "Create/Update colobar"
     bl_description = "Create or updates colorbar"
     node: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     image: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         if bpy.data.images[self.image].users >= 2:

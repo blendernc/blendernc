@@ -30,30 +30,37 @@ class BlenderNC_NT_output(bpy.types.Node):
         name="Update on frame change",
         default=False,
     )
+    """An instance of the original BoolProperty."""
 
     image: bpy.props.PointerProperty(
         type=bpy.types.Image,
         name="",
         update=update_value,
     )
+    """An instance of the original PointerProperty."""
 
     frame_loaded: bpy.props.IntProperty(
         default=-1,
     )
+    """An instance of the original IntProperty."""
 
     frame: bpy.props.IntProperty(
         default=1,
     )
+    """An instance of the original IntProperty."""
 
     keep_nan: bpy.props.BoolProperty(
         name="Replace nan with zeros",
         default=True,
     )
+    """An instance of the original BoolProperty."""
 
     grid_node_name: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

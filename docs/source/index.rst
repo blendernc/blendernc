@@ -34,43 +34,30 @@ should support the load of any netCDF.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Examples
 
    examples/import_gebco_netCDF
    examples/simple_animation
+   examples/easy_tutorial_test
    examples/import_ECMWF_netCDF
    examples/import_ECMWF_grid
    examples/displacement_animation
    examples/multiple_field_animations
    examples/irregular_grid
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Nodes
-
-   modules/blendernc_nodes_cmap
-   .. TODO fix relative import for other nodes.
-   .. modules/blendernc_nodes_inputs
-
+   examples/headless_blendernc_simple_animation
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API Reference
 
-   modules/blendernc_python_functions
-   modules/blendernc_handlers
-   modules/blendernc_decorators
-   modules/blendernc_image
-   modules/blendernc_errors
-
-
+   modules/blendernc
 
 .. toctree::
    :caption: Help & References
 
    help
+   development
 
 
 Indices and tables

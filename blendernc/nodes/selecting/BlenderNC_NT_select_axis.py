@@ -31,17 +31,21 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         items=get_items_axes,
         name="Axis",
     )
+    """An instance of the original EnumProperty."""
 
     axis_selection: bpy.props.FloatProperty(
         name="Axis selection:",
         update=update_value_and_node_tree,
         options={"ANIMATABLE"},
     )
+    """An instance of the original FloatProperty."""
 
     pre_selected: bpy.props.FloatProperty()
+    """An instance of the original FloatProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

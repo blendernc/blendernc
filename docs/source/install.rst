@@ -10,7 +10,7 @@ Setting up the Blender Python environment
 
 BlenderNC requires the following python modules to be installed in Blender's Python environment:
 
-.. code-block:: python
+.. code-block:: bash
 
     xarray
     xgcm
@@ -93,24 +93,27 @@ Now you can follow the tutorials to import datacubes in Blender.
 
 Optionally, **but not recommended**, you can link or copy the blendernc folder within the repository (i.e. ``blendernc/blendernc``) to your preferred blender add-on path. You can get the exact path by running within a Blender Console:
 
-.. code-block::
+.. code-block:: python
 
     bpy.utils.user_resource("SCRIPTS", path="addons")
 
 output example on:
 
 - macOS:
-    .. code-block::
+-
+    .. code-block:: bash
 
         '/Users/{username}/Library/Application\ Support/Blender/2.9{X}/scripts/addons'
 
 - Linux:
-    .. code-block::
+
+    .. code-block:: bash
 
         '/usr/share/blender/2.9{X}/scripts/addons'
 
 - Windows 10:
-    .. code-block::
+
+    .. code-block:: bash
 
         '%USERPROFILE%\AppData\Roaming\Blender Foundation\Blender\2.9{X}\scripts\addons'
 
@@ -175,6 +178,7 @@ Compile Blender:
 Another **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
 - macOS:
+
     .. code-block:: bash
 
         cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules

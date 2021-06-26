@@ -27,9 +27,11 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
         name="Select Dimension",
         update=update_value_and_node_tree,
     )
+    """An instance of the original EnumProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

@@ -24,12 +24,15 @@ class BlenderNC_NT_range(bpy.types.Node):
     blendernc_dataset_min: bpy.props.FloatProperty(
         name="vmin", default=0, update=update_range
     )
+    """An instance of the original FloatProperty."""
     blendernc_dataset_max: bpy.props.FloatProperty(
         name="vmax", default=1, update=update_range
     )
+    """An instance of the original FloatProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

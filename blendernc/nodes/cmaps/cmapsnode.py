@@ -85,6 +85,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         name="",
         update=update_colorramp,
     )
+    """An instance of the original EnumProperty."""
 
     n_stops: bpy.props.IntProperty(
         name="# of stops",
@@ -94,12 +95,14 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         max=16,
         update=update_colorramp,
     )
+    """An instance of the original IntProperty."""
 
     fcmap: bpy.props.BoolProperty(
         default=False,
         name="Flip cmap",
         update=update_colorramp,
     )
+    """An instance of the original BoolProperty."""
 
     fv_color: bpy.props.FloatVectorProperty(
         name="Fill value color",
@@ -110,6 +113,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         default=[0.0, 0.0, 0.0, 1.0],
         update=update_fill_value,
     )
+    """An instance of the original FloatVectorProperty."""
 
     # Setup the node tree and add the group Input and Output nodes
     def init(self, context):
