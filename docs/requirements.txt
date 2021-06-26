@@ -6,4 +6,4 @@ xarray
 sphinxcontrib.yt
 sphinx-autodoc-typehints
 docutils
-numpydocs
+numpydoc
