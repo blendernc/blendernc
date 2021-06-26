@@ -47,24 +47,11 @@ should support the load of any netCDF.
    examples/irregular_grid
    examples/headless_blendernc_simple_animation
 
-
 .. toctree::
-   :maxdepth: 2
-   :caption: API Nodes
+   :maxdepth: 1
+   :caption: API Modules
 
-   modules/blendernc_nodes_cmap
-   modules/blendernc_nodes_inputs
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-
-   modules/blendernc_python_functions
-   modules/blendernc_handlers
-   modules/blendernc_decorators
-   modules/blendernc_image
-   modules/blendernc_errors
-
+   modules/modules
 
 .. toctree::
    :caption: Help & References

@@ -14,6 +14,7 @@ import os
 import sys
 
 # sys.path.append(os.path.abspath(".."))
+sys.path.append(os.path.abspath("../../"))
 sys.path.append(os.path.abspath("../../blendernc"))
 
 # -- Project information -----------------------------------------------------
@@ -24,7 +25,6 @@ author = "Josue Martinez-Moreno"
 
 # The full version, including alpha/beta/rc tags
 release = "0.3.0"
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -40,6 +40,8 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinxcontrib.yt",
     "sphinx.ext.autosectionlabel",
+    "numpydoc",
+    # "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -53,7 +55,6 @@ root_doc = "index"
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -66,6 +67,7 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# suppress_warnings = True
 
 # Mock bpy import
 autodoc_mock_imports = [
@@ -73,4 +75,13 @@ autodoc_mock_imports = [
     "nodeitems_utils",
     "nodeitems_builtins",
     "addon_utils",
+    "bpy_extras",
+    "addon_updater_ops",
 ]
+
+autosummary_generate = True
+
+numpydoc_show_class_members = False
+
+autodoc_typehints = "description"  # show type hints in doc body instead of signature
+autoclass_content = "both"  # get docstring from class level and init simultaneously

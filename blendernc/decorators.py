@@ -8,6 +8,10 @@ from blendernc.messages import unselected_nc_var, unselected_variable
 
 
 class NodesDecorators(object):
+    """
+    NodeDecorator
+    """
+
     @classmethod
     def node_connections(cls, func):
         """
@@ -249,4 +253,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def dummy_update(node):
+        """
+        Dummy update
+        """
         return

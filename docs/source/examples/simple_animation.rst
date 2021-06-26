@@ -78,7 +78,7 @@ There will be no visible change until we switch to a rendered 3D viewport (``Z``
 
 Press ``0`` in your number path to change your view to the camera view. If you are using a laptop, you can emulate a number path by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
 
-Once you are in the camera mode, press ``Spacebar``on your keyboard to play the animation. Voila! now we have a netCDF animation.
+Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have a netCDF animation.
 
 .. [Dataset]
     Merchant, C.J., Embury, O., Bulgin, C.E., Block, T., Corlett, G.K., Fiedler, E., Good, S.A., Mittaz, J., Rayner, N.A., Berry, D., Eastwood, S., Taylor, M., Tsushima, Y., Waterfall, A., Wilson, R. and Donlon, C. (2019), Satellite-based time-series of sea-surface temperature since 1981 for climate applications. Scientific Data 6, 223, doi:10.1038/s41597-019-0236-x

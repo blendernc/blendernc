@@ -24,6 +24,9 @@ bl_info = {
 
 
 def register():
+    """
+    register Register all BlenderNC functions into Blender
+    """
     # Update addon by CGCookie
     addon_updater_ops.register(bl_info)
     registerBlenderNC()
@@ -35,6 +38,9 @@ def register():
 
 
 def unregister():
+    """
+    unregister Unregister all BlenderNC functions into Blender
+    """
     # Update addon by CGCookie
     addon_updater_ops.unregister()
     unregisterBlenderNC()

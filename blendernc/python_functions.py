@@ -616,7 +616,7 @@ class BlenderncEngine:
 
     def check_files_netcdf(self, file_path):
         """
-        Check if file exists and it's format.
+        check_files_netcdf Check if file exists and it's format.
 
         Parameters
         ----------
@@ -633,6 +633,7 @@ class BlenderncEngine:
         NameError:
             when datafile doesn't exist.
         """
+
         # file_folder = os.path.dirname(file_path)
         if "*" in file_path:
             self.file_path = glob.glob(file_path)

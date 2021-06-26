@@ -24,11 +24,23 @@ class bNCSocketDefault:
 
 
 class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
+    """
+    bNCnetcdfSocket netCDF socket for file import
+
+    Parameters
+    ----------
+    NodeSocket : bpy.type.NodeSocket
+        Blender API bpy socket to generate a new socket
+    bNCSocketDefault : object
+        Base class for all sockets
+    """
+
     bl_idname = "bNCnetcdfSocket"
     bl_label = "netCDF Socket"
 
     dataset = defaultdict()
     unique_identifier: StringProperty()
+    """An instance of the original StringProperty."""
 
     def draw(self, context, layout, node, text):
         layout.label(text=text)
@@ -38,10 +50,22 @@ class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
 
 
 class bNCstringSocket(NodeSocket, bNCSocketDefault):
+    """
+    bNCstringSocket String socket for file import
+
+    Parameters
+    ----------
+    NodeSocket : bpy.type.NodeSocket
+        Blender API bpy socket to generate a new socket
+    bNCSocketDefault : object
+        Base class for all sockets
+    """
+
     bl_idname = "bNCstringSocket"
     bl_label = "String Socket"
 
     text: StringProperty()
+    """An instance of the original StringProperty."""
 
     def draw(self, context, layout, node, text):
         layout.label(text=text)
@@ -54,10 +78,22 @@ class bNCstringSocket(NodeSocket, bNCSocketDefault):
 
 
 class bNCfloatSocket(NodeSocket, bNCSocketDefault):
+    """
+    bNCstringSocket Float socket for file import
+
+    Parameters
+    ----------
+    NodeSocket : bpy.type.NodeSocket
+        Blender API bpy socket to generate a new socket
+    bNCSocketDefault : object
+        Base class for all sockets
+    """
+
     bl_idname = "bNCfloatSocket"
     bl_label = "Float Socket"
 
     Float: FloatProperty(default=1)
+    """An instance of the original FloatProperty."""
 
     def draw(self, context, layout, node, text):
         # layout.label(text=text)
