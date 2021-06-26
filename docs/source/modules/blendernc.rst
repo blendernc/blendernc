@@ -1,117 +1,56 @@
-blendernc package
-=================
+BlenderNC Add-on API
+====================
 
-Subpackages
------------
+**Release:** |release|
+**Date:**    |today|
 
-.. toctree::
-   :maxdepth: 4
+This reference manual details functions, modules, and objects included in **BlenderNC**. For learning how to use **BlenderNC**, see the complete documentation and examples.
 
-   blendernc.core
-..    blendernc.nodes
+
+**BlenderNC** API is structured in
+
+
 
 Submodules
 ----------
 
-.. blendernc.UI\_operators module
-.. ------------------------------
+.. toctree::
+   :maxdepth: 2
 
-.. .. automodule:: blendernc.UI_operators
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
-
-blendernc.blendernc module
---------------------------
-
-.. automodule:: blendernc.blendernc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.decorators module
----------------------------
-
-.. automodule:: blendernc.decorators
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.get\_utils module
----------------------------
-
-.. automodule:: blendernc.get_utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.handlers module
--------------------------
-
-.. automodule:: blendernc.handlers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.image module
-----------------------
-
-.. automodule:: blendernc.image
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.messages module
--------------------------
-
-.. automodule:: blendernc.messages
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. blendernc.operators module
-.. --------------------------
-
-.. .. automodule:: blendernc.operators
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
-
-.. blendernc.panels module
-.. -----------------------
-
-.. .. automodule:: blendernc.panels
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
-
-blendernc.preferences module
-----------------------------
-
-.. automodule:: blendernc.preferences
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.python\_functions module
-----------------------------------
-
-.. automodule:: blendernc.python_functions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-blendernc.sockets module
-------------------------
-
-.. automodule:: blendernc.sockets
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   blendernc.python_functions
+   blendernc.get_utils
+   blendernc.blendernc
+   blendernc.decorators
+   blendernc.handlers
+   blendernc.preferences
+   blendernc.image
+   blendernc.messages
+   blendernc.operators
+   blendernc.panels
+   blendernc.UI_operators
+   blendernc.sockets
 
 
-Module contents
----------------
+Core
+----
+
+.. toctree::
+   :maxdepth: 2
+
+   blendernc.core
+
+
+Nodes
+-----
+
+.. toctree::
+   :maxdepth: 2
+
+   blendernc.nodes
+
+
+Module
+------
 
 .. automodule:: blendernc
    :members:

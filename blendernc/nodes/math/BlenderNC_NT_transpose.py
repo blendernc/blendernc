@@ -17,6 +17,7 @@ class BlenderNC_NT_transpose(bpy.types.Node):
     blb_type = "NETCDF"
 
     axis: bpy.props.EnumProperty(items=(""), name="")
+    """An instance of the original EnumProperty."""
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.

@@ -38,34 +38,42 @@ class BlenderNC_NT_select_time(bpy.types.Node):
         name="Time",
         update=update_date,
     )
+    """An instance of the original EnumProperty."""
 
     selected_time: bpy.props.StringProperty(name="")
+    """An instance of the original StringProperty."""
 
     year: bpy.props.EnumProperty(
         items=get_item_year,
         name="Year",
         update=update_date,
     )
+    """An instance of the original EnumProperty."""
     month: bpy.props.EnumProperty(
         items=get_item_month,
         name="Month",
         update=update_date,
     )
+    """An instance of the original EnumProperty."""
     day: bpy.props.EnumProperty(
         items=get_item_days,
         name="Day",
         update=update_date,
     )
+    """An instance of the original EnumProperty."""
     hour: bpy.props.EnumProperty(
         items=[],
         name="Hour",
         update=update_date,
     )
+    """An instance of the original EnumProperty."""
 
     pre_selected: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

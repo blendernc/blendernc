@@ -49,14 +49,15 @@ should support the load of any netCDF.
 
 .. toctree::
    :maxdepth: 1
-   :caption: API Modules
+   :caption: API Reference
 
-   modules/modules
+   modules/blendernc
 
 .. toctree::
    :caption: Help & References
 
    help
+   development
 
 
 Indices and tables

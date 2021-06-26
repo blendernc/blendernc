@@ -28,6 +28,7 @@ class BlenderNC_NT_lic(bpy.types.Node):
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

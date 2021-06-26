@@ -59,9 +59,11 @@ class BlenderNC_NT_math(bpy.types.Node):
         name="Select operation",
         update=update_value_and_node_tree,
     )
+    """An instance of the original EnumProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
