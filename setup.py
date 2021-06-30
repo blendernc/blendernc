@@ -46,7 +46,7 @@ long_description = long_description.replace(
 
 setup(
     name="blendernc",
-    version="0.3.2",
+    version="0.3.3",
     description="Blender add-on to import netCDF",
     long_description=long_description,
     url="https://github.com/blendernc/blendernc",
