@@ -34,9 +34,15 @@ with open(path.join(repository_root, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 long_description = long_description.replace(
-    "./docs/images",
+    "./docs/images/",
     "https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/",
 )
+
+long_description = long_description.replace(
+    "quick_load_gif.gif",
+    "gebco_example/gebco_camera_view.png",
+)
+
 
 setup(
     name="blendernc",
