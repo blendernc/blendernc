@@ -20,3 +20,7 @@ Underlying Python technologies
 
 - `xarray <http://xarray.pydata.org/en/stable/#>`_
 
+Relevant Blender Addons
+#######################
+
+- `blender-addon-updater <https://github.com/CGCookie/blender-addon-updater>`_ to allow the user to update the addon within Blender.
