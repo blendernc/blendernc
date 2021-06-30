@@ -1,3 +1,5 @@
+.. _install_blendernc:
+
 =================
 Install BlenderNC
 =================
@@ -48,6 +50,26 @@ Windows
     python.exe -m ensurepip
     python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
 
+
+Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
+
+- macOS:
+
+    .. code-block:: bash
+
+        cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
+
+- Linux and Windows:
+    Go to the directory where Blender is installed and look for the ``modules`` folder
+
+
+Then link all the packages from your python environment folder:
+
+.. code-block:: bash
+
+    ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
+
+
 Install Addon
 =============
 
@@ -97,7 +119,7 @@ Optionally, **but not recommended**, you can link or copy the blendernc folder w
 output example on:
 
 - macOS:
--
+
     .. code-block:: bash
 
         '/Users/{username}/Library/Application\ Support/Blender/2.9{X}/scripts/addons'
@@ -171,21 +193,3 @@ Compile Blender:
 
 .. note::
     Make sure to use the same python version.
-
-Another **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
-
-- macOS:
-
-    .. code-block:: bash
-
-        cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
-
-- Linux and Windows:
-    Go to the directory where Blender is installed and look for the ``modules`` folder
-
-
-Then link all the packages from your python environment folder:
-
-.. code-block:: bash
-
-    ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
