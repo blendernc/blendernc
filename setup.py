@@ -40,7 +40,7 @@ long_description = long_description.replace(
 
 setup(
     name="blendernc",
-    version="0.3.1",
+    version="0.3.2",
     description="Blender add-on to import netCDF",
     long_description=long_description,
     url="https://github.com/blendernc/blendernc",
@@ -51,6 +51,7 @@ setup(
     packages=["blendernc"],
     install_requires=["cython", "numpy"],
     zip_safe=False,
+    long_description_content_type="text/markdown",
     # cmdclass={"build_ext": CustomBuildExtCommand},
     # TODO: Fix issue with blender not having python headers.
     # ext_modules=cythonize([extensions], build_dir="cython_build"),
