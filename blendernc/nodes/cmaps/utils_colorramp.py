@@ -97,6 +97,22 @@ def add_splines(n, cbar_plane, width=0.1, height=1):
     return splines
 
 
+def add_units(cbar_plane):
+    size = 1.5
+    y_rescale = 0.12
+    bpy.ops.object.text_add(radius=size)
+    units = bpy.context.object
+    units.data.align_y = "CENTER"
+    units.data.align_x = "CENTER"
+    units.parent = cbar_plane
+    units.location = (0, 1.18, 0)
+    units.scale = (1.7, y_rescale, 1.2)
+    mat = bnc_pyfunc.ui_material()
+    units.name = "text_units_{}".format(cbar_plane.name)
+    units.data.materials.append(mat)
+    return units
+
+
 class ColorRamp(object):
     def __init__(self):
         self.cmaps = self.installed_cmaps()

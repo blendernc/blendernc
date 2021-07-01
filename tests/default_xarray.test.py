@@ -20,7 +20,6 @@ def capture_render_log(func):
     return wrapper
 
 
-@capture_render_log
 def render_image(datacube="air_temperature", var="air"):
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
@@ -92,6 +91,15 @@ def render_image(datacube="air_temperature", var="air"):
 
     bpy.ops.blendernc.apply_material()
 
+    bpy.ops.blendernc.colorbar(
+        node=out.bl_label, node_group="BlenderNC", image="BlenderNC_default"
+    )
+
+    blender_render_image(var)
+
+
+@capture_render_log
+def blender_render_image(var):
     scene = bpy.context.scene
     render = scene.render
     directory = bpy.path.abspath("//")
