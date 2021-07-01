@@ -30,6 +30,7 @@ jobs:
 
       - name: Report coverage
         run: |
+          cd ./tests/
           coverage combine
           coverage report
           coverage xml
