@@ -18,8 +18,13 @@ jobs:
         run: |
           docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
 
+          docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:2.92-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+
           docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
 
+          coverage combine
+          coverage report
+          coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:

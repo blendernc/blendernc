@@ -1,26 +1,15 @@
-import os
-import sys
-import unittest
+==========================
+Background render tutorial
+==========================
 
-import bpy
+Follow the next script to create one of the simplest animation using the data provided within **BlenderNC**.
 
+.. code-block:: python
 
-def capture_render_log(func):
-    def wrapper(*args, **kwargs):
-        logfile = "blender_render.log"
-        open(logfile, "a").close()
-        old = os.dup(1)
-        sys.stdout.flush()
-        os.close(1)
-        os.open(logfile, os.O_WRONLY)
-        func(*args, **kwargs)
-        os.close(1)
-        os.dup(old)
+    import bpy
+    file = /path/2/file/ # Replace this line with the path to the datacube
+    var = var_name # Replace this line with the variable name (str)
 
-    return wrapper
-
-
-def render_image(datacube="air_temperature", var="air"):
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
 
@@ -34,17 +23,21 @@ def render_image(datacube="air_temperature", var="air"):
     node_tree.use_fake_user = True
 
     # Create nodes
-    inp = node_tree.nodes.new("Datacube_tutorial")
-    inp.location = (-300, 0)
+    path = node_tree.nodes.new("netCDFPath")
+    path.location = (-350, 0)
+    inp = node_tree.nodes.new("netCDFNode")
+    inp.location = (-125, 0)
     res = node_tree.nodes.new("netCDFResolution")
-    res.location = (0, 0)
+    res.location = (125, 0)
     out = node_tree.nodes.new("netCDFOutput")
-    out.location = (300, 0)
+    out.location = (350, 0)
 
     # Select variable
-    inp.blendernc_xarray_datacube = datacube
+    path.blendernc_file = file
+    # Connect path node to datacube node
+    node_tree.links.new(inp.inputs[0], path.outputs[0])
+    # Select variable
     inp.blendernc_netcdf_vars = var
-
     # Change resolution
     res.blendernc_resolution = 100
 
@@ -91,40 +84,12 @@ def render_image(datacube="air_temperature", var="air"):
 
     bpy.ops.blendernc.apply_material()
 
-    bpy.ops.blendernc.colorbar(
-        node=out.bl_label, node_group="BlenderNC", image="BlenderNC_default"
-    )
-
-    blender_render_image(var)
-
-
-@capture_render_log
-def blender_render_image(var):
     scene = bpy.context.scene
     render = scene.render
     directory = bpy.path.abspath("//")
 
-    render.filepath = f"{directory}" + "{0}_image.png".format(var)
+    format = file.split(".")[-1]
+    render.filepath = f"{directory}" + "{0}_image_{1}.png".format(var, format)
     bpy.ops.render.render(write_still=True)
 
     render.filepath = directory
-
-
-class Test_simple_render(unittest.TestCase):
-    def test_air_tutorial_data(self):
-        datacube = "air_temperature"
-        var = "air"
-        render_image(datacube, var)
-        file_exist = os.path.isfile("./{0}_image.png".format(var))
-        self.assertTrue(file_exist)
-
-    def test_ROMS_tutorial_data(self):
-        datacube = "ROMS_example"
-        var = "zeta"
-        render_image(datacube, var)
-        file_exist = os.path.isfile("./{0}_image.png".format(var))
-        self.assertTrue(file_exist)
-
-
-suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_simple_render)
-unittest.TextTestRunner().run(suite)

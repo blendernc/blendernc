@@ -8,8 +8,8 @@ BlenderNC allows the user to set up some preferences while using this add-on:
  :width: 100%
  :alt: BlenderNC editor
 
-Workspace:
-##########
+Workspace
+#########
 
 BlenderNC can create a workspace for the user, the following options:
 
@@ -26,8 +26,9 @@ Select your preferred option by clicking over it.
  :width: 100%
  :alt: BlenderNC editor
 
-Shading:
-########
+Shading
+#######
+
 BlenderNC allows the user to select their preferred shading:
 
 - Solid (Default):

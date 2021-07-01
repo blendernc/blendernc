@@ -27,6 +27,7 @@ should support the load of any netCDF.
    install
    howtouse
    preferences
+   remote_render
 
 .. toctree::
    :maxdepth: 2
