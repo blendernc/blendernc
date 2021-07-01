@@ -2,6 +2,7 @@
 [run]
 branch = True
 parallel = True
+append = True
 source_pkgs = blendernc
 # Ignore addon_updater in coverage.
 omit =
