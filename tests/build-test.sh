@@ -26,6 +26,3 @@ export PYTHONPATH=$PYTHONPATH:${PWD}
 $BLENDERPY run_tests.py
 
 rm *.png
-
-coverage combine
-coverage report
