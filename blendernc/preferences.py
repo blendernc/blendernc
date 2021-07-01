@@ -4,7 +4,7 @@ import os
 import bpy
 from bpy.app.handlers import persistent
 
-from blendernc.messages import load_after_restart
+from blendernc.messages import PrintMessage, load_after_restart
 
 # Import auto updater
 from . import addon_updater_ops
@@ -88,19 +88,8 @@ def update_message(self, context):
     # source/blender/blenkernel/intern/icons.cc:889 BKE_icon_get:
     # no icon for icon ID: 110,101,101
     # TODO: Report issue to Blender.
-    if not bpy.app.background:
-        bpy.context.window_manager.popup_menu(
-            load_after_restart, title="Info", icon="INFO"
-        )
-    else:
-        import warnings
 
-        warnings.warn(
-            """
-            Running in background mode,
-            this option will be loaded after restarting Blender.
-            """
-        )
+    PrintMessage(load_after_restart, "Info", "INFO")
 
 
 class BlenderNC_Preferences(bpy.types.AddonPreferences):

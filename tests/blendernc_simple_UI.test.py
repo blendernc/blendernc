@@ -66,7 +66,7 @@ def blender_render_image(file, var):
     directory = bpy.path.abspath("//")
 
     format = file.split(".")[-1]
-    render.filepath = f"{directory}" + "{0}_image_{1}.png".format(var, format)
+    render.filepath = f"{directory}" + "UI_{0}_image_{1}.png".format(var, format)
     bpy.ops.render.render(write_still=True)
 
     render.filepath = directory
