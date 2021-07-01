@@ -17,6 +17,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         description="Path to the netCDF file that will be loaded.",
         subtype="FILE_PATH",
     )
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         scene = context.scene
@@ -60,6 +61,7 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
         maxlen=1024,
         subtype="FILE_PATH",
     )
+    """An instance of the original StringProperty."""
 
 
 class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
@@ -74,14 +76,18 @@ class Import_OT_mfnetCDF(bpy.types.Operator, ImportHelper):
         default="*.nc",
         options={"HIDDEN"},
     )
+    """An instance of the original StringProperty."""
 
     files: bpy.props.CollectionProperty(type=ImportnetCDFCollection)
+    """An instance of the original CollectionProperty."""
 
     node_group: bpy.props.StringProperty(
         name="node_group", description="Node calling operator"
     )
+    """An instance of the original StringProperty."""
 
     node: bpy.props.StringProperty(name="node", description="Node calling operator")
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         fdir = dirname(self.properties.filepath)
@@ -130,7 +136,9 @@ class BlenderNC_OT_purge_all(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     node: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         pass

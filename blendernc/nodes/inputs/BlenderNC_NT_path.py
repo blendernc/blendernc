@@ -25,12 +25,14 @@ class BlenderNC_NT_path(bpy.types.Node):
         maxlen=1024,
         update=update_value_and_node_tree,
     )
+    """An instance of the original StringProperty."""
 
     use_dask: bpy.props.BoolProperty(
         name="",
         description="Use dask",
         default=False,
     )
+    """An instance of the original BoolProperty."""
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.

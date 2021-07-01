@@ -5,11 +5,8 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import (
-    dict_update,
-    get_new_identifier,
-    get_possible_variables,
-)
+from blendernc.get_utils import get_new_identifier, get_possible_variables
+from blendernc.python_functions import dict_update
 
 
 class BlenderNC_NT_netcdf(bpy.types.Node):
@@ -26,16 +23,19 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     bl_type = "NETCDF"
 
     blendernc_file: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     blendernc_netcdf_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
         update=dict_update,
     )
+    """An instance of the original EnumProperty."""
 
     # Note that this dictionary is in shared memory.
     blendernc_dict = defaultdict()
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     # === Optional Functions ===
     # Initialization function, called when a new node is created.

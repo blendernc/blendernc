@@ -5,13 +5,12 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import (
-    dict_update,
-    dict_update_tutorial_datacube,
+from blendernc.get_utils import (
     get_new_identifier,
     get_possible_variables,
     get_xarray_datasets,
 )
+from blendernc.python_functions import dict_update, dict_update_tutorial_datacube
 
 
 class BlenderNC_NT_tutorial(bpy.types.Node):
@@ -28,21 +27,25 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     blb_type = "NETCDF"
 
     blendernc_file: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     blendernc_xarray_datacube: bpy.props.EnumProperty(
         items=get_xarray_datasets,
         name="Select Variable",
         update=dict_update_tutorial_datacube,
     )
+    """An instance of the original EnumProperty."""
 
     blendernc_netcdf_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
         update=dict_update,
     )
+    """An instance of the original EnumProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===

@@ -9,7 +9,8 @@ import xarray as xr
 # TODO Fix this import
 from blendernc.cython_build import lic_internal
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_geo_coord_names, refresh_cache
+from blendernc.get_utils import get_geo_coord_names
+from blendernc.python_functions import refresh_cache
 
 
 class BlenderNC_NT_lic(bpy.types.Node):
@@ -27,6 +28,7 @@ class BlenderNC_NT_lic(bpy.types.Node):
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
@@ -44,8 +46,6 @@ class BlenderNC_NT_lic(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.

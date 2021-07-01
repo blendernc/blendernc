@@ -31,9 +31,11 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         precision=0,
         options={"ANIMATABLE"},
     )
+    """An instance of the original FloatProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
@@ -52,8 +54,6 @@ class BlenderNC_NT_resolution(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.

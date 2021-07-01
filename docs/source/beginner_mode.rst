@@ -61,7 +61,7 @@ in your keyboard to visualize animation.
 
 .. note:: The material will be applied to the selected object.
 
-The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To acces it,
+The `Beginner mode` creates the basic nodes in the BlenderNC Editor. To access it,
 divide the workspace and select **BlenderNC** node editor:
 
 .. image:: ../images/blender_nodetree_gebco.png

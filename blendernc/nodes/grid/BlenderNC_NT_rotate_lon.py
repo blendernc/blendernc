@@ -28,9 +28,11 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
         precision=0,
         update=update_value_and_node_tree,
     )
+    """An instance of the original FloatProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
