@@ -63,8 +63,12 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # TODO: allow xarray.open_mfdataset if wildcard "*" use in name.
         # Useful for large datasets. Implement node with chunks if file is huge.
 
+        # TODO: allow handling of multiple formats using "*.nc" or "*.grib"
+
         unique_identifier = node.blendernc_dataset_identifier
-        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_netcdf(file_path)
+        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(
+            file_path
+        )
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
         # If quick import, define global variable.
         if self.node_group == "BlenderNC":
@@ -202,7 +206,7 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         file_path = abspath(self.file_name)
 
         scene = context.scene
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_netcdf(file_path)
+        scene.nc_dictionary[file_path] = bNCEngine.check_files_datacube(file_path)
 
         var_name = self.var_name
         if not var_name:
@@ -342,3 +346,12 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
 
         return {"FINISHED"}
+
+
+class ImportnetCDFCollection(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(
+        name="File Path",
+        description="Filepath used for importing the file",
+        maxlen=1024,
+        subtype="FILE_PATH",
+    )

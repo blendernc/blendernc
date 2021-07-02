@@ -602,7 +602,7 @@ class BlenderncEngine:
     Returns
     -------
     Datacube
-        If datacubes have the expected format (netCDF, cgrid, and zar)
+        If datacubes have the expected format (netCDF, cfgrib, and zarr)
         then the dataset is returned.
 
     Raises
@@ -614,9 +614,9 @@ class BlenderncEngine:
     def __init__(self):
         pass
 
-    def check_files_netcdf(self, file_path):
+    def check_files_datacube(self, file_path):
         """
-        check_files_netcdf Check if file exists and it's format.
+        Check that file(s) exist and they are xarray datacube compatible.
 
         Parameters
         ----------
@@ -637,41 +637,70 @@ class BlenderncEngine:
         # file_folder = os.path.dirname(file_path)
         if "*" in file_path:
             self.file_path = glob.glob(file_path)
-            self.check_netcdf()
+            self.check_datacube()
         elif os.path.isfile(file_path):
             self.file_path = [file_path]
-            self.check_netcdf()
+            self.check_datacube()
         else:
             raise NameError("File doesn't exist:", file_path)
 
         return {"Dataset": self.dataset}
 
-    def load_netcdf(self):
+    def check_datacube(self):
         """
-        Load netcdf using xarray.
+        Check if file(s) are xarray compatible and contain at least one variable.
         """
-        filepath = self.file_path
-        self.dataset = xarray.open_mfdataset(filepath, combine="by_coords")
+        extension = os.path.splitext(self.file_path[0])
+        print(f"Attempting to load {extension} format files")
+        try:
+            self.load_datacube()
+        except RuntimeError:
+            raise ValueError("File isn't supported by Xarray install:", self.file_path)
 
-    def check_netcdf(self):
+    def load_datacube(self):
         """
-        Check if file is a netcdf and contain at least one variable.
+        Detect format and load datacube using appropriate Xarray Driver
+        - NetCDF is the existing implementation
+        - CFGrib support is being implemented as part of ECMWC
+        - Zarr support will give true scalable cloud-native usage and on the roadmap
+        Engine detection by extension :
+        http://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray.open_mfdataset
         """
-        if len(self.file_path) == 1:
-            extension = self.file_path[0].split(".")[-1]
-            if extension == ".nc":
-                self.load_netcd()
-            else:
-                try:
-                    self.load_netcdf()
-                except RuntimeError:
-                    raise ValueError("File isn't a netCDF:", self.file_path)
+        # Determine engine to use based on extension of first file
+        basename = os.path.basename(self.file_path[0])
+        ext = os.path.splitext(basename)
+        if ext[1] == ".nc":
+            self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
+            return
+        elif ext[1] == ".grib":
+            self.dataset = xarray.open_mfdataset(
+                self.file_path, engine="cfgrib", combine="by_coords"
+            )
+            return
+        elif ext[1] == ".zarr":
+            self.dataset = xarray.open_mfdataset(
+                self.file_path, engine="zarr", combine="by_coords"
+            )
+            return
         else:
-            extension = self.file_path[0].split(".")[-1]
-            if extension == ".nc":
-                self.load_netcd()
-            else:
-                try:
-                    self.load_netcdf()
-                except RuntimeError:
-                    raise ValueError("Files aren't netCDFs:", self.file_path)
+            raise ValueError(
+                """File extension is not supported,
+                make sure you select a supported file ('.nc' or '.grib')""",
+                self.file_path,
+            )
+
+
+class dataset_modifiers:
+    def __init__(self):
+        self.type = None
+        self.computation = None
+
+    def update_type(self, ctype, computation):
+        self.type = ctype
+        self.computation = computation
+
+    def get_core_func(self):
+        return json_functions[self.type]
+
+
+json_functions = {"roll": xarray.core.rolling.DataArrayRolling}

@@ -125,6 +125,14 @@ class Test_format_import(unittest.TestCase):
     #     file_exist = os.path.isfile("./{0}_image_{1}.png".format(var,format))
     #     self.assertTrue(file_exist)
 
+    # def test_import_netCDF(self):
+    #     file = os.path.abspath("./dataset/ssh_1995-01.grib")
+    #     var = "adt"
+    #     format = file.split(".")[-1]
+    #     render_image(file, var)
+    #     file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
+    #     self.assertTrue(file_exist)
+
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
 unittest.TextTestRunner().run(suite)
