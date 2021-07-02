@@ -5,7 +5,12 @@ from os.path import abspath
 import bpy
 
 from blendernc.get_utils import get_node, get_var
-from blendernc.messages import active_selection_preference, unselected_object
+from blendernc.messages import (
+    PrintMessage,
+    active_selection_preference,
+    asign_material,
+    unselected_object,
+)
 from blendernc.python_functions import (
     BlenderncEngine,
     load_frame,
@@ -253,10 +258,10 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
     """An instance of the original StringProperty."""
 
     def execute(self, context):
-        if bpy.data.images[self.image].users >= 2:
+        if bpy.data.images[self.image].users > 2:
             update_colormap_interface(context, self.node, self.node_group)
         else:
-            self.report({"ERROR"}, "Assigned material to object!")
+            PrintMessage(asign_material, "Error", "ERROR")
         return {"FINISHED"}
 
 
@@ -282,14 +287,10 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             pass
         elif sel_obj and act_obj:
             if sel_obj.name != act_obj.name:
-                bpy.context.window_manager.popup_menu(
-                    active_selection_preference, title="Warning", icon="INFO"
-                )
+                PrintMessage(active_selection_preference, "Warning", "INFO")
                 sel_obj = act_obj
         else:
-            bpy.context.window_manager.popup_menu(
-                unselected_object, title="Error", icon="ERROR"
-            )
+            PrintMessage(unselected_object, "Error", "ERROR")
             return {"FINISHED"}
 
         blendernc_materials = [

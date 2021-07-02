@@ -9,16 +9,28 @@ jobs:
       - uses: actions/checkout@v2
       - uses: codecov/codecov-action@v1
 
+      - name: Install coverage
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage
+
       - name: Pull Blender Docker Image
         run: |
           docker pull nytimes/blender:latest
+          docker pull nytimes/blender:2.92-cpu-ubuntu18.04
           docker pull nytimes/blender:2.83-cpu-ubuntu18.04
 
       - name: Test addon
         run: |
-          docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
 
-          docker run -w /addon/blendernc --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.92-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+
+      - name: Coverage combine and report
+        run: |
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/coverage-combine.sh"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

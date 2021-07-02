@@ -4,7 +4,7 @@ import os
 import bpy
 from bpy.app.handlers import persistent
 
-from blendernc.messages import load_after_restart
+from blendernc.messages import PrintMessage, load_after_restart
 
 # Import auto updater
 from . import addon_updater_ops
@@ -88,19 +88,8 @@ def update_message(self, context):
     # source/blender/blenkernel/intern/icons.cc:889 BKE_icon_get:
     # no icon for icon ID: 110,101,101
     # TODO: Report issue to Blender.
-    if not bpy.app.background:
-        bpy.context.window_manager.popup_menu(
-            load_after_restart, title="Info", icon="INFO"
-        )
-    else:
-        import warnings
 
-        warnings.warn(
-            """
-            Running in background mode,
-            this option will be loaded after restarting Blender.
-            """
-        )
+    PrintMessage(load_after_restart, "Info", "INFO")
 
 
 class BlenderNC_Preferences(bpy.types.AddonPreferences):
@@ -115,11 +104,11 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
 
     bl_idname = "blendernc"
 
-    def item_shadings(self, context):
+    def item_shadings():
         shadings = ["SOLID", "RENDERED", "MATERIAL"]
         return [(shadings[ii], shadings[ii], "", ii) for ii in range(len(shadings))]
 
-    def item_workspace_option(self, context):
+    def item_workspace_option():
         shadings = ["NONE", "ONLY CREATE WORKSPACE", "INITIATE WITH WORKSPACE"]
         return [
             (shadings[ii], shadings[ii].capitalize(), "", "", ii)
@@ -127,16 +116,16 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         ]
 
     blendernc_workspace: bpy.props.EnumProperty(
-        items=item_workspace_option,
-        default=1,
+        items=item_workspace_option(),
+        default="ONLY CREATE WORKSPACE",
         name="",
         update=update_workspace,
     )
     """An instance of the original EnumProperty."""
 
     blendernc_workspace_shading: bpy.props.EnumProperty(
-        items=item_shadings,
-        default=0,
+        items=item_shadings(),
+        default="SOLID",
         name="Default load shading:",
         update=update_message,
     )

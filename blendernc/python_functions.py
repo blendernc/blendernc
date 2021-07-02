@@ -71,12 +71,18 @@ def update_nodes(scene, context):
 
 def update_dict(selected_variable, node):
     unique_data_dict = bnc_gutils.get_unique_data_dict(node)
+    if hasattr(unique_data_dict["Dataset"][selected_variable], "units"):
+        units = unique_data_dict["Dataset"][selected_variable].units
+    else:
+        units = None
+
     unique_data_dict["selected_var"] = {
         "max_value": None,
         "min_value": None,
         "selected_var_name": selected_variable,
         "resolution": 50,
         "path": node.blendernc_file,
+        "units": units,
     }
 
 
@@ -428,6 +434,7 @@ def ui_material():
 def update_colormap_interface(context, node, node_tree):
     # Get var range
     max_val, min_val = bnc_gutils.get_max_min_data(context, node, node_tree)
+    units = bnc_gutils.get_units_data(node, node_tree)
 
     node = bpy.data.node_groups[node_tree].nodes[node]
 
@@ -478,6 +485,20 @@ def update_colormap_interface(context, node, node_tree):
         labels = np.arange(min_val, max_val + step, step)
         for s_index in range(len(splines)):
             splines[s_index].data.body = str(np.round(labels[s_index], 2))
+
+        # TODO: Make the text pattern search more generic. i.e, include
+        unit_objs = [
+            child
+            for child in cbar_plane.children
+            if "text_units_{}".format(cbar_plane.name) in child.name
+        ]
+
+        if units and not unit_objs:
+            unit_obj = bnc_cramputils.add_units(cbar_plane)
+        else:
+            unit_obj = unit_objs[0]
+
+        unit_obj.data.body = units
 
         c_material = bnc_cramputils.colorbar_material(node, colormap[-1])
         if c_material:
