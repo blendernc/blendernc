@@ -24,6 +24,7 @@ from .nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
 from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
 from .nodes.selecting.BlenderNC_NT_select_axis import BlenderNC_NT_select_axis
 from .nodes.selecting.BlenderNC_NT_select_time import BlenderNC_NT_select_time
+from .nodes.selecting.BlenderNC_NT_sort import BlenderNC_NT_sort
 from .nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
 
 # TODO: Uncomment after fixing issue with Python header.
@@ -67,6 +68,7 @@ classes = [
     BlenderNC_NT_select_axis,
     BlenderNC_NT_select_time,
     BlenderNC_NT_drop_dims,
+    BlenderNC_NT_sort,
     BlenderNC_NT_math,
     BlenderNC_NT_transpose,
     BlenderNC_NT_derivatives,

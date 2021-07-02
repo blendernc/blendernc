@@ -22,7 +22,7 @@ node_dicts = {
     },
     "Dimensions": {
         "name": "Dimensions",
-        "items": ["netCDFdims"],
+        "items": ["netCDFdims", "netCDFsort"],
     },
     "Math": {
         "name": "Math",
