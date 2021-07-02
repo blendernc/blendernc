@@ -24,39 +24,7 @@ class PrintMessage(object):
             warnings.warn(message)
 
     def message_contructor(self, wm_self, context):
-        # TODO improve this function.
-        n = 60
-        if len(self.message) > n:
-            constructing_text = True
-            line = 0
-            counter = -1
-            text = {}
-            while constructing_text:
-                if line == 0 and counter == -1:
-                    text[line] = ""
-                if counter == (n - 1) * (line + 1) and self.message[counter] == " ":
-                    line += 1
-                    text[line] = ""
-                    counter += 1
-                elif counter == (n - 1) * (line + 1) and self.message[counter] != " ":
-                    split_text = self.message[line * n : (line + 1) * n].split(" ")[-1]
-                    counter -= len(split_text)
-                    text[line] = text[line].replace(split_text, "")
-                    line += 1
-                    text[line] = ""
-                    counter += 1
-                elif counter < len(self.message) - 1:
-                    counter += 1
-                else:
-                    break
-
-                text[line] = text[line] + self.message[counter]
-
-            for key, line in text.items():
-                wm_self.layout.label(text=line)
-
-        else:
-            wm_self.layout.label(text=self.message)
+        wm_self.layout.label(text=self.message)
 
 
 def asign_material():
