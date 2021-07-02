@@ -3,7 +3,7 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,17 +17,26 @@ jobs:
       - name: Pull Blender Docker Image
         run: |
           docker pull nytimes/blender:latest
-          docker pull nytimes/blender:2.92-cpu-ubuntu18.04
-          docker pull nytimes/blender:2.83-cpu-ubuntu18.04
+          docker pull nytimes/blender:blender:2.92-cpu-ubuntu18.04
+          docker pull nytimes/blender:blender:2.83-cpu-ubuntu18.04
 
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Test addon
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest
+           /bin/sh -c "bash ./tests/build-test.sh"
 
           docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.92-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
 
           docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
 
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
       - name: Coverage combine and report
         run: |
           docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/coverage-combine.sh"
@@ -38,3 +47,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./tests/coverage.xml
           flags: unittests
+
