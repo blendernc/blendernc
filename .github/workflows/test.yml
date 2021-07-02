@@ -21,7 +21,7 @@ jobs:
       - name: Upload math coverage results
         uses: actions/upload-artifact@v2
         with:
-          name: coverage_${{ matrix.blender }}
+          name: .coverage_${{ matrix.blender }}
           path: ./tests/.coverage_*
 
 
