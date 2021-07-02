@@ -161,8 +161,8 @@ def render_image(file, var, node_list=[], node_args=None):
 
     directory = bpy.path.abspath("//")
     name_dataset = os.path.basename(file).split(".")
-    image_path = f"{directory}" + "{0}_{1}_image_{2}.png".format(
-        name_dataset[0], var, name_dataset[-1]
+    image_path = f"{directory}" + "{0}_{1}_image_{2}_{3}.png".format(
+        name_dataset[0], var, format[-1], "_".join(node_list)
     )
     existing_nodes[-1].image.filepath_raw = image_path
     existing_nodes[-1].image.file_format = "PNG"
@@ -177,7 +177,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFmath"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -188,7 +190,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFtime", "netCDFmath"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -199,7 +203,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFmath", "netCDFtime"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -210,7 +216,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFRange"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -221,7 +229,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFRange", "netCDFmath"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -232,7 +242,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFrotatelon"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -243,7 +255,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFrotatelon", "netCDFRange"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -254,7 +268,9 @@ class Test_use_nodes(unittest.TestCase):
         nodes = ["netCDFtime"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 
@@ -267,7 +283,23 @@ class Test_use_nodes(unittest.TestCase):
         dims_args = {"Drop Dimension": {"blendernc_dims": "time"}}
         render_image(file, var, nodes, node_args=dims_args)
         file_exist = os.path.isfile(
-            "./{0}_{1}_image_{2}.png".format(format[0], var, format[-1])
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
+
+    def test_sortby(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFsort"]
+        dims_args = {"Sortby Dimension": {"blendernc_dims": "time"}}
+        render_image(file, var, nodes, node_args=dims_args)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
         )
         self.assertTrue(file_exist)
 

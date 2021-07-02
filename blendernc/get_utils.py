@@ -73,6 +73,16 @@ def get_var_data(context, node, node_tree):
     return data
 
 
+def get_units_data(node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    unique_data_dict = get_unique_data_dict(node)
+    # Get the metadata of the selected variable
+    var_metadata = unique_data_dict["selected_var"]
+    unit = var_metadata["units"]
+    return unit
+
+
 def get_dims(ncdata, var):
     dimensions = list(ncdata[var].coords.dims)
     dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=0)

@@ -8,3 +8,4 @@ scipy
 netCDF4
 toolz
 pooch
+typing-extensions

@@ -2,6 +2,8 @@
 import unittest
 from subprocess import PIPE, Popen
 
+import bpy
+
 blenderExecutable = "blender"
 
 
@@ -33,8 +35,13 @@ class Test_blender_startup(unittest.TestCase):
 
         p = Popen(cmd, stdout=PIPE)
         stdout, _ = p.communicate()
+        print(stdout)
         expected_lines_stdout = len(self.is_stdout_expected(stdout))
-        self.assertEqual(3, expected_lines_stdout)
+        # Blender < 2.91 doesn't unregister classes when closing.
+        if bpy.app.version < (2, 91, 0):
+            self.assertEqual(2, expected_lines_stdout)
+        else:
+            self.assertEqual(3, expected_lines_stdout)
         self.assertEqual(None, _)
 
 
