@@ -180,112 +180,112 @@ class Test_use_nodes(unittest.TestCase):
         )
         self.assertTrue(file_exist)
 
-    # def test_math_time_flipped(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFmath", "netCDFtime"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_math_time_flipped(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFmath", "netCDFtime"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_range(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFRange"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_range(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFRange"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_range_math(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFRange", "netCDFmath"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_range_math(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFRange", "netCDFmath"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_rotatelon(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFrotatelon"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_rotatelon(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFrotatelon"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_rotatelon_range(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFrotatelon", "netCDFRange"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_rotatelon_range(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFrotatelon", "netCDFRange"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_time(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFtime"]
-    #     render_image(file, var, nodes)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_time(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFtime"]
+        render_image(file, var, nodes)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_dropdims(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFdims"]
-    #     # blendernc_dims
-    #     dims_args = {"Drop Dimension": {"blendernc_dims": "time"}}
-    #     render_image(file, var, nodes, node_args=dims_args)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_dropdims(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFdims"]
+        # blendernc_dims
+        dims_args = {"Drop Dimension": {"blendernc_dims": "time"}}
+        render_image(file, var, nodes, node_args=dims_args)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
-    # def test_sortby(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.nc")
-    #     var = "adt"
-    #     format = os.path.basename(file).split(".")
-    #     nodes = ["netCDFsort"]
-    #     dims_args = {"Sortby Dimension": {"blendernc_dims": "time"}}
-    #     render_image(file, var, nodes, node_args=dims_args)
-    #     file_exist = os.path.isfile(
-    #         "./{0}_{1}_image_{2}_{3}.png".format(
-    #             format[0], var, format[-1], "_".join(nodes)
-    #         )
-    #     )
-    #     self.assertTrue(file_exist)
+    def test_sortby(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["netCDFsort"]
+        dims_args = {"Sortby Dimension": {"blendernc_dims": "time"}}
+        render_image(file, var, nodes, node_args=dims_args)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_use_nodes)
