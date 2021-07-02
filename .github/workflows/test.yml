@@ -17,21 +17,20 @@ jobs:
       - name: Pull Blender Docker Image
         run: |
           docker pull nytimes/blender:latest
-          docker pull nytimes/blender:blender:2.92-cpu-ubuntu18.04
-          docker pull nytimes/blender:blender:2.83-cpu-ubuntu18.04
+          docker pull nytimes/blender:2.92-cpu-ubuntu18.04
+          docker pull nytimes/blender:2.83-cpu-ubuntu18.04
 
   test:
     needs: setup
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        blender: [latest, blender:2.92-cpu-ubuntu18.04, blender:2.83-cpu-ubuntu18.04]
     steps:
       - name: Test addon
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:${{ matrix.blender }}
            /bin/sh -c "bash ./tests/build-test.sh"
-
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.92-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
-
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
 
   coverage:
     needs: test
