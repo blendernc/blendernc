@@ -3,18 +3,25 @@ name: Test
 on: [push, pull_request]
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        blender: [2.93, 2.92, 2.83]
+    steps:
+      - name: Pull Blender Docker Image
+        run: |
+          docker pull nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
+
+
   test:
+    needs: setup
     runs-on: ubuntu-latest
     strategy:
       matrix:
         blender: [2.93, 2.92, 2.83]
     steps:
       - uses: actions/checkout@v2
-
-      - name: Pull Blender Docker Image
-        run: |
-          docker pull nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
-
       - name: Test addon
         run: |
           docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
@@ -24,6 +31,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - uses: codecov/codecov-action@v1
       - name: Install coverage
         run: |
