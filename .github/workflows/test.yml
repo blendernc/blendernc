@@ -10,7 +10,6 @@ jobs:
         blender: [2.93, 2.92, 2.83]
     steps:
       - uses: actions/checkout@v2
-      - uses: codecov/codecov-action@v1
 
       - name: Pull Blender Docker Image
         run: |
@@ -25,6 +24,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - uses: codecov/codecov-action@v1
       - name: Install coverage
         run: |
           python -m pip install --upgrade pip
