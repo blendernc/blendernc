@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        blender: [2.93, 2.92, 2.83]
+        blender: [2.93, 2.92, 2.90, 2.83]
     steps:
       - uses: actions/checkout@v2
       - name: Pull Blender Docker Image
