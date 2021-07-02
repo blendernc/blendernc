@@ -44,6 +44,7 @@ jobs:
         run: |
           ls .
           ls ./tests/
+          pwd
           docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/coverage-combine.sh"
 
       - name: Upload coverage to Codecov
