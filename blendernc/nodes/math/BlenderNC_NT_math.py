@@ -27,6 +27,8 @@ operation_items = [
 
 operation_types = {
     "float": (
+        "Add",
+        "Subtract",
         "Multiply",
         "Divide",
         "SymLog",
@@ -35,7 +37,7 @@ operation_types = {
         "Smaller than",
     ),
     "unique": ("Logarithm"),
-    "dataset": ("Add", "Subtract"),
+    "dataset": (""),
 }
 
 
@@ -57,9 +59,11 @@ class BlenderNC_NT_math(bpy.types.Node):
         name="Select operation",
         update=update_value_and_node_tree,
     )
+    """An instance of the original EnumProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
 
     # === Optional Functions ===
@@ -76,34 +80,11 @@ class BlenderNC_NT_math(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         layout.prop(self, "blendernc_operation", text="")
-        operation = self.blendernc_operation
-        if operation in operation_types["float"] and "Float" not in self.inputs.keys():
-            if len(self.inputs.keys()) == 2:
-                self.inputs.remove(self.inputs[-1])
-            self.inputs.new("bNCfloatSocket", "Float")
-        elif operation in operation_types["unique"] and "Float" in self.inputs.keys():
-            if len(self.inputs.keys()) == 2:
-                # self.inputs.remove(self.inputs[-1])
-                self.inputs.remove(self.inputs.get("Float"))
-        elif (
-            operation in operation_types["unique"] and "Float" not in self.inputs.keys()
-        ):
-            if len(self.inputs.keys()) == 2:
-                self.inputs.remove(self.inputs[-1])
-        elif operation in operation_types["dataset"] and "Float" in self.inputs.keys():
-            self.inputs.remove(self.inputs.get("Float"))
-            self.inputs.new("bNCnetcdfSocket", "Dataset")
-        elif operation in operation_types["dataset"] and len(self.inputs.keys()) == 1:
-            self.inputs.new("bNCnetcdfSocket", "Dataset")
-        else:
-            pass
 
     # Detail buttons in the sidebar.
     # If this function is not defined,
@@ -117,12 +98,30 @@ class BlenderNC_NT_math(bpy.types.Node):
     def draw_label(self):
         return "Math"
 
+    def create_sockets(self):
+        operation = self.blendernc_operation
+
+        for input in self.inputs[1::]:
+            self.inputs.remove(input)
+
+        if operation in operation_types["float"] and "Float" not in self.inputs.keys():
+            self.inputs.new("bNCfloatSocket", "Float")
+        elif operation in operation_types["dataset"] and "Float" in self.inputs.keys():
+            self.inputs.new("bNCnetcdfSocket", "Dataset")
+        elif operation in operation_types["dataset"] and len(self.inputs.keys()) == 1:
+            self.inputs.new("bNCnetcdfSocket", "Dataset")
+        else:
+            pass
+
     @NodesDecorators.node_connections
     def update(self):
         unique_identifier = self.blendernc_dataset_identifier
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
         parent_node = self.inputs[0].links[0].from_node
         dataset = parent_node.blendernc_dict[unique_identifier]["Dataset"].copy()
+
+        self.create_sockets()
+
         # print(dataset.isel(latitude=0).isel(time=0).values)
         if self.blendernc_operation == "Multiply":
             dataset = dataset * self.inputs.get("Float").Float

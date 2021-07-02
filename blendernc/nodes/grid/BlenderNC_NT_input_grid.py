@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import get_new_identifier, get_var
+from blendernc.get_utils import get_new_identifier, get_var
 
 
 def get_possible_grid(node, context):
@@ -31,19 +31,23 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     blb_type = "NETCDF"
 
     blendernc_file: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
 
     blendernc_grid_x: bpy.props.EnumProperty(
         items=get_possible_grid,
         name="Select X grid",
         # update=dict_update,
     )
+    """An instance of the original EnumProperty."""
 
     blendernc_grid_y: bpy.props.EnumProperty(
         items=get_possible_grid, name="Select Y grid"
     )
+    """An instance of the original EnumProperty."""
 
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
     blendernc_dict = defaultdict(None)
     # Deep copy of blender dict to extract variables.
     persistent_dict = defaultdict(None)

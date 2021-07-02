@@ -1,4 +1,9 @@
-sphinx==3.5.4
+sphinx
 sphinx-gallery
 sphinx_rtd_theme
+numpy
+xarray
 sphinxcontrib.yt
+sphinx-autodoc-typehints
+docutils
+numpydoc

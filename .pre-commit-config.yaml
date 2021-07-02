@@ -21,3 +21,4 @@ repos:
     hooks:
     - id: flake8
       args: ["--ignore", "F722,F821,E203,W503,F405", "--max-line-length", "88"]
+      exclude: ^blendernc/addon_updater.*.py

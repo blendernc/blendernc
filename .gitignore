@@ -1,6 +1,4 @@
 *__pycache__*
-./docs/build*
-./docs/build/*
 docs/build/
 docs/source/_build/
 *.old
@@ -9,6 +7,8 @@ docs/source/_build/
 .vscode/
 cython_build/*
 cython_build
+blendernc/blendernc_updater/*
+blendernc/blendernc_updater
 
 # Test
 tests/*.png

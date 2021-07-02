@@ -4,13 +4,20 @@ on:
     branches:
       - master
       - dev
+      - distribution
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: creates release
-      run:  rsync -arv  ./blendernc/ ./release
+    - name: copy README.md
+      run: rsync -av ./README.md ./release/
+    - name: creates zip release
+      run: zip -r ./release/blendernc.zip ./blendernc -x "*__pycache__*"
+    - name: modify README.md
+      run: awk '{sub("<!--INFO-->","\#\#\# This is an automated repository.\n\n> \#\#\#\# Important:\n> **BlenderNC** can be installed using the zip file provided in this repository. .")}1' ./release/README.md > ./release/tmp.md ;mv ./release/tmp.md ./release/README.md
+    - name: Change images path
+      run: awk -v branch=${GITHUB_REF##*/} '{sub("./docs/images/","https://raw.githubusercontent.com/blendernc/blendernc/"'branch'"/docs/images/")}1' ./release/README.md > ./release/tmp.md; mv ./release/tmp.md ./release/README.md
     - name: Extract branch name
       shell: bash
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
@@ -20,7 +27,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source-directory: 'blendernc'
+        source-directory: 'release'
         destination-github-username: 'blendernc'
         destination-repository-name: 'blendernc-zip-install'
         user-email: josue.martinezmoreno@anu.edu.au
