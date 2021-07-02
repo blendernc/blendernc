@@ -27,8 +27,8 @@ def get_input_links(node):
 def get_var(ncdata):
     dimensions = sorted(list(ncdata.coords.dims.keys()))
     variables = sorted(list(ncdata.variables.keys() - dimensions))
-    long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
     if "long_name" in ncdata[variables[0]].attrs:
+        long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
         var_names = bnc_pyfunc.build_enum_prop_list(
             variables, "DISK_DRIVE", long_name_list
         )
