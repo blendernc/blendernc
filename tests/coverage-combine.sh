@@ -3,6 +3,6 @@
 $BLENDERPY -m pip install coverage --progress-bar off
 
 cd ./tests/
-coverage combine .coverage_Blender*
+coverage combine .coverage_*
 coverage report
 coverage xml
