@@ -29,7 +29,7 @@ jobs:
     steps:
       - name: Test addon
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:blender:${{ matrix.blender }}-cpu-ubuntu18.04
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
            /bin/sh -c "bash ./tests/build-test.sh"
 
   coverage:
