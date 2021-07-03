@@ -5,6 +5,7 @@ import bpy
 from bpy.app.handlers import persistent
 
 from blendernc.messages import PrintMessage, load_after_restart
+from blendernc.python_functions import build_enum_prop_list
 
 # Import auto updater
 from . import addon_updater_ops
@@ -106,14 +107,11 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
 
     def item_shadings():
         shadings = ["SOLID", "RENDERED", "MATERIAL"]
-        return [(shadings[ii], shadings[ii], "", ii) for ii in range(len(shadings))]
+        return build_enum_prop_list(shadings)
 
     def item_workspace_option():
-        shadings = ["NONE", "ONLY CREATE WORKSPACE", "INITIATE WITH WORKSPACE"]
-        return [
-            (shadings[ii], shadings[ii].capitalize(), "", "", ii)
-            for ii in range(len(shadings))
-        ]
+        workspace = ["NONE", "ONLY CREATE WORKSPACE", "INITIATE WITH WORKSPACE"]
+        return build_enum_prop_list(workspace)
 
     blendernc_workspace: bpy.props.EnumProperty(
         items=item_workspace_option(),

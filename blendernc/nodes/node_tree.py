@@ -6,7 +6,7 @@ from nodeitems_utils import NodeCategory
 # Blender Classes
 node_tree_name = "BlenderNC"
 create_new_node_tree = node_tree_name != "ShaderNodeTree"
-
+gui_active_panel_fin = None
 
 if create_new_node_tree:
     # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
@@ -20,10 +20,6 @@ if create_new_node_tree:
         bl_label = "BlenderNC"
         # Icon identifier
         bl_icon = "WORLD"
-
-        # for area in bpy.context.screen.areas:
-        #     if area.type == 'SpaceNodeEditor':
-        #         space_data = area.spaces.active
 
 
 class BlenderNCCustomTreeNode:
