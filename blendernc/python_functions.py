@@ -22,7 +22,7 @@ from blendernc.image import from_data_to_pixel_value, normalize_data
 from blendernc.messages import drop_dim, huge_image, increase_resolution
 
 
-def build_enum_prop_list(list, icon="", long_name_list=None, start=1):
+def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
     if long_name_list:
         list = [
             (str(list[ii]), str(list[ii]), long_name_list[ii], icon, ii + start)
@@ -340,6 +340,8 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     if not isinstance(image, bpy.types.Image):
         images = bpy.data.images
         image = images[image]
+        image.colorspace_settings.name = "Non-Color"
+
     timer.tick("Image dimensions")
     # Ensure that the image and the data have the same size.
     img_x, img_y = list(image.size)

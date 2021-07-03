@@ -2,40 +2,12 @@
 import bpy
 
 from blendernc.python_functions import (
+    build_enum_prop_list,
     empty_item,
     update_animation,
     update_file_vars,
     update_res,
 )
-
-gui_active_panel_fin = None
-gui_active_materials = None
-
-
-class BlenderNC_LOAD_OT_On(bpy.types.Operator):
-    bl_label = "Load netCDF"
-    bl_idname = "blendernc.button_file_on"
-    bl_description = "Open file and netCDF panel"
-    bl_context = "objectmode"
-    bl_options = {"REGISTER", "INTERNAL"}
-
-    def execute(self, context):
-        global gui_active_panel_fin
-        gui_active_panel_fin = "Files"
-        return {"FINISHED"}
-
-
-class BlenderNC_LOAD_OT_Off(bpy.types.Operator):
-    bl_label = "Load netCDF"
-    bl_idname = "blendernc.button_file_off"
-    bl_description = "Close file and netCDF panel"
-    bl_context = "objectmode"
-    bl_options = {"REGISTER", "INTERNAL"}
-
-    def execute(self, context):
-        global gui_active_panel_fin
-        gui_active_panel_fin = None
-        return {"FINISHED"}
 
 
 def select_only_meshes(self, object):
@@ -75,47 +47,47 @@ bpy.types.Scene.blendernc_animate = bpy.props.BoolProperty(
 )
 
 
-class BlenderNC_UI_PT_3dview(bpy.types.Panel):
-    bl_idname = "NCLOAD_PT_Panel"
+class BlenderNC_UI_PT_parent(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_3Dview_PARENT"
     bl_label = "BlenderNC"
     bl_category = "BlenderNC"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
+        self.layout.label(text="Import *.nc and *.grib files.", icon="INFO")
 
-        icon_expand = "DISCLOSURE_TRI_RIGHT"
-        icon_collapse = "DISCLOSURE_TRI_DOWN"
 
-        box_post_opt = self.layout.box()
+class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_3Dview_SELECTION"
+    bl_label = "Datacube file selection"
+    bl_category = "BlenderNC"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = "BLENDERNC_PT_3Dview_PARENT"
+
+    def draw(self, context):
+        box_asts = self.layout.box()
         scn = context.scene
 
-        box_post_opt.label(text="netCDF file selection", icon="MODIFIER_ON")
-        if gui_active_panel_fin != "Files":
-            box_post_opt.operator("blendernc.button_file_on", icon=icon_expand)
-        else:
-            box_post_opt.operator("blendernc.button_file_off", icon=icon_collapse)
-            # Box containing pop up menu.
-            box_asts = box_post_opt.box()
+        # Open blender file selection
+        box_asts.label(text="Datacube path", icon="OUTLINER_OB_GROUP_INSTANCE")
+        # box_asts.prop(scn, 'blendernc_file')
+        row = box_asts.row(align=True)
+        split = row.split(factor=0.85, align=True)
 
-            # Open blender file selection
-            box_asts.label(text="netCDF File", icon="OUTLINER_OB_GROUP_INSTANCE")
-            # box_asts.prop(scn, 'blendernc_file')
-            row = box_asts.row(align=True)
-            split = row.split(factor=0.85, align=True)
-
-            split.prop(scn, "blendernc_file")
-            split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
-            # Select variables menu
-            box_asts.label(text="Select variable:", icon="WORLD_DATA")
-            box_asts.prop(scn, "blendernc_netcdf_vars", text="")
-            box_asts.prop(scn, "blendernc_animate")
-            row = box_asts.row(align=True)
-            split = row.split(factor=0.9)
-            split.prop(scn, "blendernc_resolution")
-            split.label(text=str("%"))
-            # TO DO: Add info?
-            # box_asts.label(text="INFO", icon='INFO')
+        split.prop(scn, "blendernc_file")
+        split.operator("blendernc.import_mfnetcdf", text="", icon="FILEBROWSER")
+        # Select variables menu
+        box_asts.label(text="Select variable:", icon="WORLD_DATA")
+        box_asts.prop(scn, "blendernc_netcdf_vars", text="")
+        box_asts.prop(scn, "blendernc_animate")
+        row = box_asts.row(align=True)
+        split = row.split(factor=0.9)
+        split.prop(scn, "blendernc_resolution")
+        split.label(text=str("%"))
+        # TO DO: Add info?
+        # box_asts.label(text="INFO", icon='INFO')
 
         if scn.blendernc_netcdf_vars != "NONE" and [
             True
@@ -125,3 +97,73 @@ class BlenderNC_UI_PT_3dview(bpy.types.Panel):
             self.layout.prop(scn, "blendernc_meshes")
             # self.layout.prop_search(scn, "theChosenObject", scn, "objects")
             self.layout.operator("blendernc.apply_material", text="Apply Material")
+
+
+# # TODO: Dask client:
+# class BlenderNC_UI_PT_dask_client(bpy.types.Panel):
+#     bl_idname = "BLENDERNC_PT_DASK"
+#     bl_label = "Dask Client"
+#     bl_category = "BlenderNC"
+#     bl_space_type = "VIEW_3D"
+#     bl_region_type = "UI"
+#     bl_parent_id = "BLENDERNC_PT_PANEL_PARENT"
+
+#     def draw(self, context):
+#         pass
+
+
+class BlenderNC_workspace_panel(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_workspace_parent"
+    bl_label = "BlenderNC"
+    bl_category = "BlenderNC"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+
+    @classmethod
+    def poll(self, context):
+        return context.area.ui_type == "BlenderNC"
+
+    def draw(self, context):
+        self.layout.label(text="Animation and memory handeling", icon="INFO")
+
+
+def item_animation():
+    animation_type = ["NONE", "EXTEND", "LOOP"]
+    return build_enum_prop_list(animation_type)
+
+
+bpy.types.Scene.blendernc_animation_type = bpy.props.EnumProperty(
+    items=item_animation(),
+    default="EXTEND",
+    name="",
+    # update=update_workspace,
+)
+
+
+class BlenderNC_workspace_animation(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_workspace_animation"
+    bl_label = "Animation settings"
+    bl_category = "BlenderNC"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+    bl_parent_id = "BLENDERNC_PT_workspace_parent"
+
+    def draw(self, context):
+        row = self.layout.row()
+        scn = context.scene
+        row.label(text="Default load shading:")
+        row = self.layout.row()
+        row.prop(scn, "blendernc_animation_type")
+
+
+class BlenderNC_workspace_memory(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_workspace_memory"
+    bl_label = "Memory settings"
+    bl_category = "BlenderNC"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+    bl_parent_id = "BLENDERNC_PT_workspace_parent"
+
+    def draw(self, context):
+        row = self.layout.row()
+        row.label(text="Experimental!", icon="EXPERIMENTAL")

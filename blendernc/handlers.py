@@ -2,17 +2,12 @@
 import bpy
 from bpy.app.handlers import persistent
 
-from .nodes.node_tree import create_new_node_tree
-
 
 @persistent
 def update_all_images(scene):
     nodes = []
-    if create_new_node_tree:
-        node_trees = [ii for ii in bpy.data.node_groups if ii.bl_idname == "BlenderNC"]
-    else:
-        materials = bpy.data.materials
-        node_trees = [material.node_tree for material in materials]
+
+    node_trees = [ii for ii in bpy.data.node_groups if ii.bl_idname == "BlenderNC"]
 
     # Find all nodes
     for nt in node_trees:
