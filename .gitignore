@@ -14,7 +14,7 @@ blendernc/blendernc_updater
 tests/*.png
 tests/sitecustomize.py
 tests/blender_render.log
-
+tests/.coverage*
 
 # Distribution / packaging
 .Python

@@ -5,28 +5,40 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        blender: ['2.93', '2.92', '2.90', '2.83']
     steps:
       - uses: actions/checkout@v2
-      - uses: codecov/codecov-action@v1
+      - name: Pull Blender Docker Image
+        run: |
+          docker pull nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
 
+      - name: Test addon
+        run: |
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+
+      - name: Upload math coverage results
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_${{ matrix.blender }}
+          path: ./tests/.coverage_*
+
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
       - name: Install coverage
         run: |
           python -m pip install --upgrade pip
           pip install coverage
 
-      - name: Pull Blender Docker Image
-        run: |
-          docker pull nytimes/blender:latest
-          docker pull nytimes/blender:2.92-cpu-ubuntu18.04
-          docker pull nytimes/blender:2.83-cpu-ubuntu18.04
-
-      - name: Test addon
-        run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/build-test.sh"
-
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.92-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
-
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:2.83-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+      - name: Download coverage
+        uses: actions/download-artifact@v2
+        with:
+          path: ./tests/
 
       - name: Coverage combine and report
         run: |
@@ -38,3 +50,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./tests/coverage.xml
           flags: unittests
+
