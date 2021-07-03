@@ -340,6 +340,8 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     if not isinstance(image, bpy.types.Image):
         images = bpy.data.images
         image = images[image]
+        image.colorspace_settings.name = "Non-Color"
+
     timer.tick("Image dimensions")
     # Ensure that the image and the data have the same size.
     img_x, img_y = list(image.size)

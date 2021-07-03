@@ -314,6 +314,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             cmap = blendernc_material.node_tree.nodes.new("cmapsNode")
             cmap.location = (-290, 250)
             bump = blendernc_material.node_tree.nodes.new("ShaderNodeBump")
+            bump.inputs[0].default_value = 0.3
             bump.location = (-290, -50)
 
         else:
