@@ -29,6 +29,7 @@ Learn more about BlenderNC in the official documentation at [https://blendernc.r
 
 Contributing
 ------------
+
 All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. More information about contributing to BlenderNC can be found at our [Contribution page](https://blendernc.readthedocs.io/contribute).
 
 Use Github to:
