@@ -18,7 +18,7 @@ from .nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
 from .nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 from .nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
 from .nodes.node_categories import node_categories
-from .nodes.node_tree import BlenderNCNodeTree, create_new_node_tree, node_tree_name
+from .nodes.node_tree import BlenderNCNodeTree, node_tree_name
 from .nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
 from .nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
 from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
@@ -109,8 +109,8 @@ classes = [
     bNCfloatSocket,
 ]
 
-if create_new_node_tree:
-    classes.append(BlenderNCNodeTree)
+
+classes.append(BlenderNCNodeTree)
 
 handlers = bpy.app.handlers
 
