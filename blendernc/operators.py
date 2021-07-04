@@ -4,11 +4,12 @@ from os.path import abspath
 
 import bpy
 
-from blendernc.get_utils import get_node, get_var
+from blendernc.get_utils import get_blendernc_nodetrees, get_node, get_var
 from blendernc.messages import (
     PrintMessage,
     active_selection_preference,
     asign_material,
+    select_file,
     unselected_object,
 )
 from blendernc.python_functions import (
@@ -60,15 +61,13 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
+            PrintMessage(select_file, "Error", "ERROR")
             return {"FINISHED"}
         file_path = abspath(self.file_path)
 
         node = get_node(self.node_group, self.node)
-        # TODO: allow xarray.open_mfdataset if wildcard "*" use in name.
-        # Useful for large datasets. Implement node with chunks if file is huge.
 
-        # TODO: allow handling of multiple formats using "*.nc" or "*.grib"
+        # TODO: Implement node with chunks if file is huge.
 
         unique_identifier = node.blendernc_dataset_identifier
         node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(
@@ -81,18 +80,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
             bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
                 items=var_names, name="Select Variable", update=update_nodes
             )
-        # Create new node in BlenderNC node
-        blendernc_nodes = [
-            keys
-            for keys in bpy.data.node_groups.keys()
-            if ("BlenderNC" in keys or "NodeTree" in keys)
-        ]
-        if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-            bpy.data.node_groups["BlenderNC"].use_fake_user = True
-
-        if not bpy.data.node_groups[-1].nodes:
-            bpy.data.node_groups[-1].nodes.new("netCDFNode")
 
         return {"FINISHED"}
 
@@ -108,17 +95,11 @@ class BlenderNC_OT_var(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
-            return {"FINISHED"}
+            PrintMessage(select_file, "Error", "ERROR")
+            return {"CANCELLED"}
 
-        blendernc_nodes = [
-            bpy.data.node_groups[keys]
-            for keys in bpy.data.node_groups.keys()
-            if (
-                bpy.data.node_groups[keys].bl_label == "BlenderNC"
-                and keys == "BlenderNC"
-            )
-        ]
+        blendernc_nodes = get_blendernc_nodetrees()
+
         if not blendernc_nodes:
             bpy.data.node_groups.new("BlenderNC", "BlenderNC")
             bpy.data.node_groups["BlenderNC"].use_fake_user = True

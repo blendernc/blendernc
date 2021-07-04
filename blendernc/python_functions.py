@@ -179,24 +179,27 @@ def update_res(scene, context):
 
 
 def dict_update(node, context):
-    dataset_dict = node.blendernc_dict[node.blendernc_dataset_identifier]
-    selected_var = (
-        dataset_dict["selected_var"]["selected_var_name"]
-        if "selected_var" in dataset_dict.keys()
-        else ""
-    )
-    node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
+    data_dictionary = node.blendernc_dict
+    if unique_identifier in data_dictionary:
+        dataset_dict = data_dictionary[unique_identifier]
+        selected_var = (
+            dataset_dict["selected_var"]["selected_var_name"]
+            if "selected_var" in dataset_dict.keys()
+            else ""
+        )
+        node_tree = node.rna_type.id_data.name
+        unique_identifier = node.blendernc_dataset_identifier
 
-    update_dict(node.blendernc_netcdf_vars, node)
+        update_dict(node.blendernc_netcdf_vars, node)
 
-    if (
-        is_cached(node_tree, unique_identifier)
-        and selected_var != node.blendernc_netcdf_vars
-    ):
-        del_cache(node_tree, unique_identifier)
+        if (
+            is_cached(node_tree, unique_identifier)
+            and selected_var != node.blendernc_netcdf_vars
+        ):
+            del_cache(node_tree, unique_identifier)
 
-    update_value_and_node_tree(node, context)
+        update_value_and_node_tree(node, context)
 
 
 def normalize_data_w_grid(node, node_tree, data, grid_node):

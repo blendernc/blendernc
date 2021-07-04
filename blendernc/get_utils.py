@@ -237,6 +237,15 @@ def get_items_axes(self, context):
     return dims_list
 
 
+def get_blendernc_nodetrees():
+    blendernc_nodetrees = [
+        items
+        for keys, items in bpy.data.node_groups.items()
+        if "BlenderNC" == items.bl_label
+    ]
+    return blendernc_nodetrees
+
+
 # Delete if not use in a few months (25-Jun-2021):
 #
 # def get_selected_var(node):
