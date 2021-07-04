@@ -50,6 +50,11 @@ def unselected_object():
     return text
 
 
+def select_file():
+    text = "Select a file!"
+    return text
+
+
 def increase_resolution(self, context):
     self.layout.label(text="Increase resolution.")
 
