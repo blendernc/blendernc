@@ -43,9 +43,24 @@ class Test_operators(unittest.TestCase):
         inp = blendernc_nodes[0].nodes.get("netCDF input")
         inp.blendernc_netcdf_vars = "adt"
         bpy.ops.blendernc.ncload_sui()
+        out = blendernc_nodes[0].nodes.get("Output")
+        out.update_on_frame_change = False
         nodetree_name = blendernc_nodes[0].bl_idname
         cache_nodetree = bpy.context.scene.nc_cache[nodetree_name]
         [cache_nodetree.pop(key) for key in list(cache_nodetree.keys())]
+        bpy.ops.blendernc.purge_all()
+
+    def test_ui_remove_cache_with_cache_animate(self):
+        # Node tree exists,
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        bpy.ops.blendernc.var(file_path=file)
+        blendernc_nodes = get_blendernc_nodetrees()
+        inp = blendernc_nodes[0].nodes.get("netCDF input")
+        inp.blendernc_netcdf_vars = "adt"
+        bpy.ops.blendernc.ncload_sui()
+        out = blendernc_nodes[0].nodes.get("Output")
+        out.update_on_frame_change = True
+        bpy.context.scene.frame_set(2)
         bpy.ops.blendernc.purge_all()
 
 
