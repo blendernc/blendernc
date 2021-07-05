@@ -5,19 +5,15 @@ from os.path import dirname, join
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
+from blendernc.get_utils import get_blendernc_nodetrees
+from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
+
 
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
     bl_idname = "blendernc.ncload_sui"
     bl_label = "Load netcdf file"
     bl_description = "Loads netcdf file"
     bl_options = {"REGISTER", "UNDO"}
-
-    file_path: bpy.props.StringProperty(
-        name="File path",
-        description="Path to the netCDF file that will be loaded.",
-        subtype="FILE_PATH",
-    )
-    """An instance of the original StringProperty."""
 
     def execute(self, context):
         scene = context.scene
@@ -132,15 +128,24 @@ def findCommonName(filenames):
 class BlenderNC_OT_purge_all(bpy.types.Operator):
     bl_idname = "blendernc.purge_all"
     bl_label = "Purge all frames"
-    bl_description = "Purge all frames"
+    bl_description = "Purge all frames except current"
     bl_options = {"REGISTER", "UNDO"}
 
-    node: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    node_group: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-
     def execute(self, context):
-        pass
-
+        NodeTrees = get_blendernc_nodetrees()
+        cache = bpy.context.scene.nc_cache
+        if cache.keys():
+            for NodeTree in NodeTrees:
+                NodeTree_name = NodeTree.bl_idname
+                if not cache[NodeTree_name].keys():
+                    PrintMessage(no_cached_image, "Info", "INFO")
+                else:
+                    self.report(
+                        {"INFO"}, "Removed cache from node {0}".format(NodeTree_name)
+                    )
+                    identifiers = list(cache[NodeTree_name].keys())
+                    for identifier in identifiers[:-1]:
+                        cache[NodeTree_name].pop(identifier)
+        else:
+            PrintMessage(no_cached_nodes, "Info", "INFO")
         return {"FINISHED"}

@@ -55,6 +55,16 @@ def select_file():
     return text
 
 
+def no_cached_image():
+    text = "Images haven't been cached."
+    return text
+
+
+def no_cached_nodes():
+    text = "NodeTree hasn't been cached."
+    return text
+
+
 def increase_resolution(self, context):
     self.layout.label(text="Increase resolution.")
 

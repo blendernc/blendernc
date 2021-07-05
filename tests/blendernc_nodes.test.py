@@ -133,6 +133,7 @@ class Test_use_nodes(unittest.TestCase):
         format = os.path.basename(file).split(".")
         nodes = ["netCDFRange"]
         render_image(file, var, nodes)
+        # TODO Force compute range here!
         file_exist = os.path.isfile(
             "./{0}_{1}_image_{2}_{3}.png".format(
                 format[0], var, format[-1], "_".join(nodes)

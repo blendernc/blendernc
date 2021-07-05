@@ -167,3 +167,5 @@ class BlenderNC_workspace_memory(bpy.types.Panel):
     def draw(self, context):
         row = self.layout.row()
         row.label(text="Experimental!", icon="EXPERIMENTAL")
+
+        self.layout.operator("blendernc.purge_all", text="Purge cache")

@@ -557,7 +557,7 @@ def update_proxy_file(self, context):
         -   Checks if netCDF file exists
         -   Extracts variable names using netCDF4 conventions.
     """
-    bpy.ops.blendernc.ncload_sui(file_path=bpy.context.scene.blendernc_file)
+    bpy.ops.blendernc.ncload_sui()
 
 
 def update_file_vars(node, context):
