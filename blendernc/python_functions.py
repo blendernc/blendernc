@@ -74,7 +74,7 @@ def update_dict(selected_variable, node):
     if hasattr(unique_data_dict["Dataset"][selected_variable], "units"):
         units = unique_data_dict["Dataset"][selected_variable].units
     else:
-        units = None
+        units = ""
 
     unique_data_dict["selected_var"] = {
         "max_value": None,
@@ -498,7 +498,7 @@ def update_colormap_interface(context, node, node_tree):
             if "text_units_{}".format(cbar_plane.name) in child.name
         ]
 
-        if units and not unit_objs:
+        if not unit_objs:
             unit_obj = bnc_cramputils.add_units(cbar_plane)
         else:
             unit_obj = unit_objs[0]
