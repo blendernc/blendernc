@@ -71,3 +71,15 @@ and then run the following code in sections:
 
 .. important::
     Note the flag ``--mount type=bind,source="$(pwd)"`` when using the ``docker run`` command. The source path will be the current working directory. Make sure it corresponds to the root of the cloned repository (i.e. ``/parent/path/to/blendernc/blendernc``, where ``/parent/path/to/blendernc`` is the parent directory where ``github clone`` created the repository.
+
+Linting
+#######
+
+BlenderNC currently uses `Black <https://github.com/psf/black>`_ , `Flake8 <https://flake8.pycqa.org/en/latest/>`_ and `Isort <https://isort.readthedocs.io/en/latest/>`_ for linting and formatting conformance. These can be applied
+before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`. Follow these steps to set up your development environment.
+
+.. code-block:: bash
+    pip install pre-commit
+    pre-commit install
+
+Git commits after this trigger `git hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>` and perform necessary code-quality checks.
