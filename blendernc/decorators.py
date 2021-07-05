@@ -53,16 +53,6 @@ class NodesDecorators(object):
         # over the place.
         return wrapper_update
 
-    # Example of dummy decorator.
-    @staticmethod
-    def dummy(func):
-        @functools.wraps(func)
-        def wrapper_dummy(self, *args, **kwargs):
-            # Do something here
-            return func(self, *args, **kwargs)
-
-        return wrapper_dummy
-
     @staticmethod
     def unlink_input(node):
         inputs_links = get_input_links(node)

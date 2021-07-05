@@ -714,19 +714,3 @@ class BlenderncEngine:
                 make sure you select a supported file ('.nc' or '.grib')""",
                 self.file_path,
             )
-
-
-class dataset_modifiers:
-    def __init__(self):
-        self.type = None
-        self.computation = None
-
-    def update_type(self, ctype, computation):
-        self.type = ctype
-        self.computation = computation
-
-    def get_core_func(self):
-        return json_functions[self.type]
-
-
-json_functions = {"roll": xarray.core.rolling.DataArrayRolling}
