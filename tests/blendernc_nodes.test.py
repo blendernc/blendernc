@@ -4,8 +4,6 @@ import unittest
 import bpy
 import test_utils as tutils
 
-from blendernc.get_utils import get_blendernc_nodetrees
-
 
 @tutils.refresh_state
 def render_image(file, var, node_list=[], node_args=None):
@@ -135,10 +133,6 @@ class Test_use_nodes(unittest.TestCase):
         format = os.path.basename(file).split(".")
         nodes = ["netCDFRange"]
         render_image(file, var, nodes)
-        blendernc_nodes = get_blendernc_nodetrees()
-        node_tree = blendernc_nodes[0].bl_idname
-        # TODO Force compute range here!
-        bpy.ops.blendernc.compute_range(node_group=node_tree, node="netCDF Range")
         file_exist = os.path.isfile(
             "./{0}_{1}_image_{2}_{3}.png".format(
                 format[0], var, format[-1], "_".join(nodes)

@@ -7,13 +7,30 @@ from blendernc.get_utils import get_blendernc_nodetrees
 
 
 class Test_operators(unittest.TestCase):
-    def test_ui_no_file(self):
-        bpy.ops.blendernc.var(file_path="")
+    def test_compute_range(self):
+        # Node tree exists,
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        bpy.ops.blendernc.var(file_path=file)
+        blendernc_nodes = get_blendernc_nodetrees()
+        node_tree = blendernc_nodes[0]
+        inp = node_tree.nodes.get("netCDF input")
+        inp.blendernc_netcdf_vars = "adt"
+        ran = node_tree.nodes.new("netCDFRange")
+        node_tree.links.new(ran.inputs[0], inp.outputs[0])
+        # TODO Force compute range here!
+        node_tree_name = node_tree.bl_idname
+        bpy.ops.blendernc.compute_range(node_group=node_tree_name, node="netCDF Range")
+        # Delete node tree
+        node_groups = bpy.data.node_groups
+        node_groups.remove(node_groups["BlenderNC"])
 
     def test_ui_file(self):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         bpy.ops.blendernc.var(file_path=file)
         # self.assertRaises(ExpectedException, test_no_selected_file, nodes)
+
+    def test_ui_no_file(self):
+        bpy.ops.blendernc.var(file_path="")
 
     def test_ui_remove_cache_no_nodetree(self):
         # No nodetree:
