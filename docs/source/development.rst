@@ -76,10 +76,10 @@ Linting
 #######
 
 BlenderNC currently uses `Black <https://github.com/psf/black>`_ , `Flake8 <https://flake8.pycqa.org/en/latest/>`_ and `Isort <https://isort.readthedocs.io/en/latest/>`_ for linting and formatting conformance. These can be applied
-before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`. Follow these steps to set up your development environment.
+before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`_. Follow these steps to set up your development environment.
 
 .. code-block:: bash
     pip install pre-commit
     pre-commit install
 
-Git commits after this trigger `git hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>` and perform necessary code-quality checks.
+Git commits after this trigger `git hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>`_ and perform necessary code-quality checks.
