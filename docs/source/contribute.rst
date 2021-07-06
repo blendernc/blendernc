@@ -1,6 +1,6 @@
-===========
-Development
-===========
+==========
+Contribute
+==========
 
 If you want to contribute to the development of BlenderNC, please submit a pull request to the `master branch or dev branch <https://github.com/josuemtzmo/blendernc/pulls>`_.
 
