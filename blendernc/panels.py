@@ -72,7 +72,6 @@ class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
 
         # Open blender file selection
         box_asts.label(text="Datacube path", icon="OUTLINER_OB_GROUP_INSTANCE")
-        # box_asts.prop(scn, 'blendernc_file')
         row = box_asts.row(align=True)
         split = row.split(factor=0.85, align=True)
 
@@ -132,9 +131,21 @@ def item_animation():
     return build_enum_prop_list(animation_type)
 
 
+def item_memory_handle():
+    animation_type = ["FRAMES", "DYNAMIC"]
+    return build_enum_prop_list(animation_type)
+
+
 bpy.types.Scene.blendernc_animation_type = bpy.props.EnumProperty(
     items=item_animation(),
     default="EXTEND",
+    name="",
+    # update=update_workspace,
+)
+
+bpy.types.Scene.blendernc_memory_handle = bpy.props.EnumProperty(
+    items=item_memory_handle(),
+    default="FRAMES",
     name="",
     # update=update_workspace,
 )
@@ -149,11 +160,12 @@ class BlenderNC_workspace_animation(bpy.types.Panel):
     bl_parent_id = "BLENDERNC_PT_workspace_parent"
 
     def draw(self, context):
-        row = self.layout.row()
         scn = context.scene
+        box_asts = self.layout.box()
+        row = box_asts.row()
         row.label(text="Default load shading:")
-        row = self.layout.row()
-        row.prop(scn, "blendernc_animation_type")
+        col = box_asts.column()
+        col.prop(scn, "blendernc_animation_type", text=" ", expand=True)
 
 
 class BlenderNC_workspace_memory(bpy.types.Panel):
@@ -165,7 +177,16 @@ class BlenderNC_workspace_memory(bpy.types.Panel):
     bl_parent_id = "BLENDERNC_PT_workspace_parent"
 
     def draw(self, context):
-        row = self.layout.row()
+        scn = context.scene
+        box_asts = self.layout.box()
+        row = box_asts.row()
         row.label(text="Experimental!", icon="EXPERIMENTAL")
-
-        self.layout.operator("blendernc.purge_all", text="Purge cache")
+        row = box_asts.row()
+        row.label(text="Memory handler!", icon="DISK_DRIVE")
+        col = box_asts.column()
+        col.prop(scn, "blendernc_memory_handle", text=" ", expand=True)
+        box_asts = self.layout.box()
+        row = box_asts.row()
+        row.label(text="Remove all cache!", icon="CANCEL")
+        row = box_asts.row()
+        row.operator("blendernc.purge_all", text="Purge")
