@@ -115,13 +115,6 @@ def get_possible_variables(node, context):
     return items
 
 
-def infinite_sequence():
-    num = 0
-    while True:
-        yield num
-        num += 1
-
-
 def get_new_identifier(node):
     nodetrees = get_blendernc_nodetrees()
     counter = 0
