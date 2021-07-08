@@ -163,7 +163,7 @@ class BlenderNC_workspace_animation(bpy.types.Panel):
         scn = context.scene
         box_asts = self.layout.box()
         row = box_asts.row()
-        row.label(text="Default load shading:")
+        row.label(text="Default image load:")
         col = box_asts.column()
         col.prop(scn, "blendernc_animation_type", text=" ", expand=True)
 
