@@ -140,7 +140,8 @@ def purge_cache(NodeTree, identifier):
     # 300 frames at 1440*720 use ~ 6GB of ram.
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data?
-    cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
+    scene = bpy.context.scene
+    cached_nodetree = scene.nc_cache[NodeTree][identifier]
     if len(cached_nodetree) > 10:
         frames_loaded = list(cached_nodetree.keys())
         cached_nodetree.pop(frames_loaded[0])
@@ -311,9 +312,6 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     # it seems quite random.
     timer = Timer()
 
-    # timer.tick('Update time')
-    update_datetime_text(context, node, node_tree, frame)
-    # timer.tick('Update time')
     node_ = bpy.data.node_groups[node_tree].nodes[node]
     unique_identifier = node_.blendernc_dataset_identifier
     scene = context.scene
@@ -357,7 +355,19 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Load Frame")
     # IF timestep is larger, use the last time value
     if frame >= var_data.shape[0]:
-        frame = var_data.shape[0] - 1
+        if scene.blendernc_animation_type == "EXTEND":
+            frame = var_data.shape[0] - 1
+        elif scene.blendernc_animation_type == "LOOP":
+            current_frame = scene.frame_current
+            n_repeat = current_frame // var_data.shape[0]
+            frame = current_frame - n_repeat * var_data.shape[0]
+        else:
+            return False
+
+    # timer.tick('Update time')
+    update_datetime_text(context, node, node_tree, frame)
+    # timer.tick('Update time')
+
     try:
         # TODO:Use time coordinate, not index.
         pixels_cache = scene.nc_cache[node_tree][unique_identifier][frame]

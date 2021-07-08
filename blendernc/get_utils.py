@@ -134,7 +134,6 @@ def get_new_identifier(node):
                 counter = res[0]
             else:
                 counter += 1
-    print(counter, node.bl_idname)
     return "{:03}".format(counter)
 
 
