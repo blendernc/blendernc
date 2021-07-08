@@ -141,10 +141,31 @@ def purge_cache(NodeTree, identifier):
     # Make this value dynamic to support computer with more or less ram.
     # Perhaps compress and uncompress data?
     scene = bpy.context.scene
-    cached_nodetree = scene.nc_cache[NodeTree][identifier]
-    if len(cached_nodetree) > 10:
-        frames_loaded = list(cached_nodetree.keys())
-        cached_nodetree.pop(frames_loaded[0])
+    nodetrees = bnc_gutils.get_blendernc_nodetrees()
+    n = 0
+    for node in nodetrees:
+        cache = scene.nc_cache[node.bl_idname]
+        for key, item in cache.items():
+            n += len(item)
+
+    if scene.blendernc_memory_handle == "FRAMES":
+        if n > scene.blendernc_frames:
+            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            frames_loaded = list(cached_nodetree.keys())
+            cached_nodetree.pop(frames_loaded[0])
+    else:
+        import psutil
+
+        mem = psutil.virtual_memory()
+        mem_avail_percent = (mem.available / mem.total) * 100
+        if mem_avail_percent < scene.blendernc_avail_mem_purge:
+            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            frames_loaded = list(cached_nodetree.keys())
+            cached_nodetree.pop(frames_loaded[0])
+        # from blendernc.core.sys_utils import get_size
+        # cache_dict_size = get_size(scene.nc_cache)
+        # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
+        # print(scene.nc_cache['BlenderNC']['001'].keys() )
 
 
 def refresh_cache(NodeTree, identifier, frame):

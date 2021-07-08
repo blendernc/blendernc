@@ -11,4 +11,5 @@ scipy
 netCDF4
 toolz
 pooch
+psutil
 typing-extensions

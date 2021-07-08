@@ -150,6 +150,14 @@ bpy.types.Scene.blendernc_memory_handle = bpy.props.EnumProperty(
     # update=update_workspace,
 )
 
+bpy.types.Scene.blendernc_frames = bpy.props.IntProperty(
+    name="# of stored frames", min=0, max=1000, default=10
+)
+
+bpy.types.Scene.blendernc_avail_mem_purge = bpy.props.FloatProperty(
+    name="Min percentage of avail memory", min=0, max=30, default=10
+)
+
 
 class BlenderNC_workspace_animation(bpy.types.Panel):
     bl_idname = "BLENDERNC_PT_workspace_animation"
@@ -176,6 +184,8 @@ class BlenderNC_workspace_memory(bpy.types.Panel):
     bl_region_type = "UI"
     bl_parent_id = "BLENDERNC_PT_workspace_parent"
 
+    """An instance of the original EnumProperty."""
+
     def draw(self, context):
         scn = context.scene
         box_asts = self.layout.box()
@@ -185,8 +195,20 @@ class BlenderNC_workspace_memory(bpy.types.Panel):
         row.label(text="Memory handler!", icon="DISK_DRIVE")
         col = box_asts.column()
         col.prop(scn, "blendernc_memory_handle", text=" ", expand=True)
+        if scn.blendernc_memory_handle == "FRAMES":
+            row = box_asts.row()
+            row.label(text="Number of stored frames:")
+            row = box_asts.row()
+            row.prop(scn, "blendernc_frames")
+        else:
+            row = box_asts.row()
+            row.label(text="Minimum available memory:")
+            row = box_asts.row()
+            row.prop(scn, "blendernc_avail_mem_purge", text="")
+
         box_asts = self.layout.box()
         row = box_asts.row()
         row.label(text="Remove all cache!", icon="CANCEL")
         row = box_asts.row()
         row.operator("blendernc.purge_all", text="Purge")
+        scn = context.scene
