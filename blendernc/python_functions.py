@@ -135,25 +135,27 @@ def dataarray_random_sampling(dataarray, n):
 
 
 def purge_cache(NodeTree, identifier):
-    # TODO: Test number of total loaded frames for
-    # multiple nodetrees and node outputs.
-    # 300 frames at 1440*720 use ~ 6GB of ram.
-    # Make this value dynamic to support computer with more or less ram.
-    # Perhaps compress and uncompress data?
+
     scene = bpy.context.scene
     nodetrees = bnc_gutils.get_blendernc_nodetrees()
     n = 0
     for node in nodetrees:
-        cache = scene.nc_cache[node.bl_idname]
-        for key, item in cache.items():
-            n += len(item)
+        # Make sure the nc_cache is loaded.
+        if node.name in scene.nc_cache.keys():
+            cache = scene.nc_cache[node.name]
+            for key, item in cache.items():
+                n += len(item)
 
     if scene.blendernc_memory_handle == "FRAMES":
-        if n > scene.blendernc_frames:
+        while n > scene.blendernc_frames:
             cached_nodetree = scene.nc_cache[NodeTree][identifier]
             frames_loaded = list(cached_nodetree.keys())
             cached_nodetree.pop(frames_loaded[0])
+            n -= 1
+            print("Removed frame: {0}".format(frames_loaded[0]))
     else:
+        import warnings
+
         import psutil
 
         mem = psutil.virtual_memory()
@@ -162,8 +164,14 @@ def purge_cache(NodeTree, identifier):
             cached_nodetree = scene.nc_cache[NodeTree][identifier]
             frames_loaded = list(cached_nodetree.keys())
             cached_nodetree.pop(frames_loaded[0])
-        # from blendernc.core.sys_utils import get_size
-        # cache_dict_size = get_size(scene.nc_cache)
+            print("Removed frame: {0}".format(frames_loaded[0]))
+            from blendernc.core.sys_utils import get_size
+
+            cache_dict_size = get_size(scene.nc_cache)
+            message = "Dynamic cache: \n Total dict cache - {0} \n"
+            message += "Available percentage - {1}"
+            warnings.warn(message.format(cache_dict_size, mem_avail_percent))
+
         # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
         # print(scene.nc_cache['BlenderNC']['001'].keys() )
 
