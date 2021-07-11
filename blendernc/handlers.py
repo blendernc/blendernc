@@ -2,6 +2,8 @@
 import bpy
 from bpy.app.handlers import persistent
 
+from blendernc.translations import output_transation
+
 
 @persistent
 def update_all_images(scene):
@@ -16,7 +18,7 @@ def update_all_images(scene):
 
     operator = bpy.ops.BlenderNC.nc2img
     for node in nodes:
-        if not node.name.count("Output"):
+        if not node.name.count(output_transation):
             continue
         if not node.update_on_frame_change:
             continue

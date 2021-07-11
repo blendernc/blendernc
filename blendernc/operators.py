@@ -19,6 +19,7 @@ from blendernc.python_functions import (
     update_image,
     update_nodes,
 )
+from blendernc.translations import UV_translation
 
 bNCEngine = BlenderncEngine()
 
@@ -314,7 +315,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             texcoord_link = texcoord.outputs.get("Generated")
             imagetex.projection = "SPHERE"
         else:
-            texcoord_link = texcoord.outputs.get("UV")
+            texcoord_link = texcoord.outputs.get(UV_translation)
             imagetex.projection = "FLAT"
 
         blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)

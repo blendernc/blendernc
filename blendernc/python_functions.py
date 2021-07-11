@@ -20,6 +20,7 @@ import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 from blendernc.core.logging import Timer
 from blendernc.image import from_data_to_pixel_value, normalize_data
 from blendernc.messages import drop_dim, huge_image, increase_resolution
+from blendernc.translations import output_transation
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -203,8 +204,9 @@ def update_res(scene, context):
     """
     Simple UI function to update BlenderNC node tree.
     """
+    resol_transation = bpy.app.translations.pgettext("Resolution")
     bpy.data.node_groups.get("BlenderNC").nodes.get(
-        "Resolution"
+        resol_transation
     ).blendernc_resolution = scene.blendernc_resolution
 
 
@@ -611,7 +613,7 @@ def update_file_vars(node, context):
 def update_animation(self, context):
     try:
         bpy.data.node_groups["BlenderNC"].nodes[
-            "Output"
+            output_transation
         ].update_on_frame_change = self.blendernc_animate
     except KeyError:
         pass
