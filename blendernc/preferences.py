@@ -20,6 +20,8 @@ def get_addon_preference():
     bpy_struct
         bpy structure containing BlenderNC preferences.
     """
+    if "blendernc" not in bpy.context.preferences.addons.keys():
+        bpy.ops.preferences.addon_enable(module="blendernc")
     addon = bpy.context.preferences.addons.get("blendernc")
     # Check if addon is defined
     if addon is not None:
@@ -39,7 +41,6 @@ def import_workspace(_):
     _ : NoneType
         Dummy argument
     """
-    import bpy
 
     prefs = get_addon_preference()
     # Make sure the BlenderNC has the right preferences.

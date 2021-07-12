@@ -20,7 +20,7 @@ import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 from blendernc.core.logging import Timer
 from blendernc.image import from_data_to_pixel_value, normalize_data
 from blendernc.messages import drop_dim, huge_image, increase_resolution
-from blendernc.translations import output_transation
+from blendernc.translations import translate
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -161,7 +161,7 @@ def purge_cache(NodeTree, identifier):
 
         mem = psutil.virtual_memory()
         mem_avail_percent = (mem.available / mem.total) * 100
-        if mem_avail_percent < scene.blendernc_avail_mem_purge:
+        while mem_avail_percent < scene.blendernc_avail_mem_purge and n > 1:
             cached_nodetree = scene.nc_cache[NodeTree][identifier]
             frames_loaded = list(cached_nodetree.keys())
             cached_nodetree.pop(frames_loaded[0])
@@ -172,6 +172,7 @@ def purge_cache(NodeTree, identifier):
             message = "Dynamic cache: \n Total dict cache - {0} \n"
             message += "Available percentage - {1}"
             warnings.warn(message.format(cache_dict_size, mem_avail_percent))
+            n -= 1
 
         # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
         # print(scene.nc_cache['BlenderNC']['001'].keys() )
@@ -204,9 +205,8 @@ def update_res(scene, context):
     """
     Simple UI function to update BlenderNC node tree.
     """
-    resol_transation = bpy.app.translations.pgettext("Resolution")
     bpy.data.node_groups.get("BlenderNC").nodes.get(
-        resol_transation
+        translate("Resolution")
     ).blendernc_resolution = scene.blendernc_resolution
 
 
@@ -613,7 +613,7 @@ def update_file_vars(node, context):
 def update_animation(self, context):
     try:
         bpy.data.node_groups["BlenderNC"].nodes[
-            output_transation
+            translate("Output")
         ].update_on_frame_change = self.blendernc_animate
     except KeyError:
         pass

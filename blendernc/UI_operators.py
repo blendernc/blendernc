@@ -7,7 +7,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from blendernc.get_utils import get_blendernc_nodetrees
 from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
-from blendernc.translations import output_transation, resol_transation
+from blendernc.translations import translate
 
 
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
@@ -20,15 +20,15 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         scene = context.scene
         netcdf = bpy.data.node_groups.get("BlenderNC").nodes.get("netCDF input")
         node_group = bpy.data.node_groups.get("BlenderNC")
-        if not node_group.nodes.get(resol_transation):
+        if not node_group.nodes.get(translate("Resolution")):
             ####################
             resol = node_group.nodes.new("netCDFResolution")
             resol.location[0] = 30
             output = node_group.nodes.new("netCDFOutput")
             output.location[0] = 190
         else:
-            resol = node_group.nodes.get(resol_transation)
-            output = node_group.nodes.get(output_transation)
+            resol = node_group.nodes.get(translate("Resolution"))
+            output = node_group.nodes.get(translate("Output"))
         # LINK
         node_group.links.new(resol.inputs[0], netcdf.outputs[0])
 

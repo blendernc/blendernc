@@ -19,7 +19,7 @@ from blendernc.python_functions import (
     update_image,
     update_nodes,
 )
-from blendernc.translations import UV_translation
+from blendernc.translations import translate
 
 bNCEngine = BlenderncEngine()
 
@@ -304,18 +304,26 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             bump.location = (-290, -50)
 
         else:
-            texcoord = blendernc_material.node_tree.nodes.get("Texture Coordinate")
-            imagetex = blendernc_material.node_tree.nodes.get("Image Texture")
+            texcoord = blendernc_material.node_tree.nodes.get(
+                translate("Texture Coordinate")
+            )
+            imagetex = blendernc_material.node_tree.nodes.get(
+                translate("Image Texture")
+            )
             cmap = blendernc_material.node_tree.nodes.get("Colormap")
-            bump = blendernc_material.node_tree.nodes.get("Bump")
+            bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
 
-        P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
+        P_BSDF = blendernc_material.node_tree.nodes.get(translate("Principled BSDF"))
+        # This line is executed when a different language is selected. By
+        # default a new blender file will create a node named "Principled BSDF"
+        if not P_BSDF:
+            P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
 
         if sel_obj.name == "Icosphere":
-            texcoord_link = texcoord.outputs.get("Generated")
+            texcoord_link = texcoord.outputs.get(translate("Generated"))
             imagetex.projection = "SPHERE"
         else:
-            texcoord_link = texcoord.outputs.get(UV_translation)
+            texcoord_link = texcoord.outputs.get(translate("UV"))
             imagetex.projection = "FLAT"
 
         blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)
