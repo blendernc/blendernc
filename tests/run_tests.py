@@ -15,6 +15,8 @@ if len(sys.argv) > 1:
 # and open up blender with the .test.blend
 # file and the corresponding .test.py python script
 
+errors = {}
+
 for file in glob.glob("./*.test.py"):
     # change 'blendernc' to match your addon
     print("Running file: {0}".format(file))
@@ -35,3 +37,13 @@ for file in glob.glob("./*.test.py"):
             file,
         ],
     )
+
+    if proc.returncode != 0:
+        errors[proc.args[-1]] = proc.returncode
+
+# Catch errors
+if errors:
+    message = ""
+    for keys, code in errors.items():
+        message += "Test file: {0} failed (Code={1}).".format(keys, code)
+    raise RuntimeError(message)

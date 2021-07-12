@@ -155,7 +155,7 @@ bpy.types.Scene.blendernc_frames = bpy.props.IntProperty(
 )
 
 bpy.types.Scene.blendernc_avail_mem_purge = bpy.props.FloatProperty(
-    name="Min percentage of avail memory", min=0, max=70, default=10
+    name="Min percentage of avail memory", min=0, max=100, default=10
 )
 
 

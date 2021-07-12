@@ -84,4 +84,7 @@ class Test_format_import(unittest.TestCase):
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

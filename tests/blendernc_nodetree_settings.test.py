@@ -59,7 +59,7 @@ class Capturing(list):
         sys.stdout = self._stdout
 
 
-class Test_translation(unittest.TestCase):
+class Test_settings(unittest.TestCase):
     def setUp(self) -> None:
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
@@ -129,5 +129,8 @@ class Test_translation(unittest.TestCase):
         self.assertEqual(removed_frames, [2, 3])
 
 
-suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_translation)
-unittest.TextTestRunner().run(suite)
+suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_settings)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

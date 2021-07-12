@@ -223,4 +223,7 @@ class Test_use_nodes(unittest.TestCase):
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_use_nodes)
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

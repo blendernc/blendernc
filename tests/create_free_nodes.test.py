@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 import bpy
@@ -110,4 +111,7 @@ def suite():
 
 
 suite = suite()
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)
