@@ -4,6 +4,8 @@ import unittest
 
 import bpy
 
+from blendernc.translations import translate
+
 
 def capture_render_log(func):
     def wrapper(*args, **kwargs):
@@ -22,6 +24,7 @@ def capture_render_log(func):
 
 @capture_render_log
 def render_image(file, var):
+
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
 
@@ -74,14 +77,14 @@ def render_image(file, var):
     # Delete cube
     object_keys = bpy.data.objects.keys()
 
-    if "Cube" in object_keys:
-        bpy.data.objects["Cube"].select_set(True)  # Blender 2.8x
+    if translate("Cube") in object_keys:
+        bpy.data.objects[translate("Cube")].select_set(True)  # Blender 2.8x
         bpy.ops.object.delete()
 
-    if "Plane" not in object_keys:
+    if translate("Plane") not in object_keys:
         bpy.ops.mesh.primitive_plane_add()
 
-    plane = bpy.data.objects["Plane"]
+    plane = bpy.data.objects[translate("Plane")]
     plane.select_set(True)
 
     image_size_x = out.image.pixels.data.size[0]
@@ -125,14 +128,17 @@ class Test_format_import(unittest.TestCase):
     #     file_exist = os.path.isfile("./{0}_image_{1}.png".format(var,format))
     #     self.assertTrue(file_exist)
 
-    # def test_import_netCDF(self):
-    #     file = os.path.abspath("./dataset/ssh_1995-01.grib")
-    #     var = "adt"
-    #     format = file.split(".")[-1]
-    #     render_image(file, var)
-    #     file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
-    #     self.assertTrue(file_exist)
+    def test_import_grib(self):
+        file = os.path.abspath("./dataset/ECMWF_data.grib")
+        var = "t2m"
+        format = file.split(".")[-1]
+        render_image(file, var)
+        file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
+        self.assertTrue(file_exist)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

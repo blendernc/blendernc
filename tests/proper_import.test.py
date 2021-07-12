@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 import bpy
@@ -7,16 +8,14 @@ from blendernc.preferences import get_addon_preference
 
 class Test_Addon(unittest.TestCase):
     def test_addon_enabled(self):
-
         bpy.ops.preferences.addon_enable(module="blendernc")
         blendernc_preferences = get_addon_preference()
         self.assertIsNotNone(blendernc_preferences)
 
     def test_addon_disable(self):
-
         bpy.ops.preferences.addon_disable(module="blendernc")
-        blendernc_preferences = get_addon_preference()
-        self.assertIsNone(blendernc_preferences)
+        isenabled = "blendernc" not in bpy.context.preferences.addons.keys()
+        self.assertTrue(isenabled)
 
     def test_change_preferences_workspace(self):
         bpy.ops.preferences.addon_enable(module="blendernc")
@@ -67,4 +66,7 @@ class Test_Addon(unittest.TestCase):
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(
     Test_Addon,
 )
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

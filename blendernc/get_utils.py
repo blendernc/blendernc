@@ -5,6 +5,15 @@ import bpy
 import blendernc.python_functions as bnc_pyfunc
 
 
+def get_blendernc_nodetrees():
+    blendernc_nodetrees = [
+        items
+        for keys, items in bpy.data.node_groups.items()
+        if "BlenderNC" == items.bl_label
+    ]
+    return blendernc_nodetrees
+
+
 def get_unique_data_dict(node):
     # Replaces all node.blendernc_dict[unique_identifier]
     # TODO: Make sure to replace all the unique data dicts
@@ -107,10 +116,25 @@ def get_possible_variables(node, context):
 
 
 def get_new_identifier(node):
-    if len(node.name.split(".")) == 1:
-        return "{:03}".format(0)
-    else:
-        return "{:03}".format(int(node.name.split(".")[-1]))
+    nodetrees = get_blendernc_nodetrees()
+    counter = 0
+    identif_list = [0]
+    for nodetree in nodetrees:
+        same_nodes_idname = [n for n in nodetree.nodes if n.bl_idname == node.bl_idname]
+        for same_node in same_nodes_idname:
+            assigned_identifiers = same_node.blendernc_dataset_identifier.split("_")[0]
+            if assigned_identifiers:
+                identif_list.append(int(assigned_identifiers))
+            res = [
+                ele
+                for ele in range(1, max(identif_list) + 1)
+                if ele not in identif_list
+            ]
+            if res:
+                counter = res[0]
+            else:
+                counter += 1
+    return "{:03}".format(counter)
 
 
 # TODO Add decorator to simplify.

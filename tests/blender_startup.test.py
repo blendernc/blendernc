@@ -49,4 +49,7 @@ class Test_blender_startup(unittest.TestCase):
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(
     Test_blender_startup,
 )
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

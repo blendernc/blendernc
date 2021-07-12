@@ -58,7 +58,7 @@ should support the load of any netCDF.
    :caption: Help & References
 
    help
-   development
+   contribute
 
 
 Indices and tables

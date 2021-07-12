@@ -18,7 +18,7 @@ from .nodes.math.BlenderNC_NT_derivatives import BlenderNC_NT_derivatives
 from .nodes.math.BlenderNC_NT_math import BlenderNC_NT_math
 from .nodes.math.BlenderNC_NT_transpose import BlenderNC_NT_transpose
 from .nodes.node_categories import node_categories
-from .nodes.node_tree import BlenderNCNodeTree, create_new_node_tree, node_tree_name
+from .nodes.node_tree import BlenderNCNodeTree, node_tree_name
 from .nodes.outputs.BlenderNC_NT_output import BlenderNC_NT_output
 from .nodes.outputs.BlenderNC_NT_preloader import BlenderNC_NT_preloader
 from .nodes.selecting.BlenderNC_NT_drop_dims import BlenderNC_NT_drop_dims
@@ -38,7 +38,13 @@ from .operators import (
     BlenderNC_OT_preloader,
     BlenderNC_OT_var,
 )
-from .panels import BlenderNC_LOAD_OT_Off, BlenderNC_LOAD_OT_On, BlenderNC_UI_PT_3dview
+from .panels import (
+    BlenderNC_UI_PT_file_selection,
+    BlenderNC_UI_PT_parent,
+    BlenderNC_workspace_animation,
+    BlenderNC_workspace_memory,
+    BlenderNC_workspace_panel,
+)
 from .sockets import bNCfloatSocket, bNCnetcdfSocket, bNCstringSocket
 from .UI_operators import (
     BlenderNC_OT_purge_all,
@@ -54,9 +60,11 @@ from .UI_operators import (
 
 classes = [
     # Panels
-    BlenderNC_UI_PT_3dview,
-    BlenderNC_LOAD_OT_On,
-    BlenderNC_LOAD_OT_Off,
+    BlenderNC_UI_PT_parent,
+    BlenderNC_UI_PT_file_selection,
+    BlenderNC_workspace_panel,
+    BlenderNC_workspace_animation,
+    BlenderNC_workspace_memory,
     # Nodes
     BlenderNC_NT_path,
     BlenderNC_NT_netcdf,
@@ -101,8 +109,8 @@ classes = [
     bNCfloatSocket,
 ]
 
-if create_new_node_tree:
-    classes.append(BlenderNCNodeTree)
+
+classes.append(BlenderNCNodeTree)
 
 handlers = bpy.app.handlers
 

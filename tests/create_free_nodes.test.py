@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 import bpy
@@ -88,6 +89,14 @@ class Test_simple_render(unittest.TestCase):
         # Existing list should be empty
         self.assertFalse(e_n)
 
+    def test_two_netCDFNode_creation(self):
+        node_manipulation("create")
+        node_tree = bpy.data.node_groups.new("BlenderNC", "test")
+        node = node_tree.nodes.new("netCDFNode")
+        unique_identifier = node.blendernc_dataset_identifier
+        # unique identifier must be equal to two.
+        self.assertEqual(unique_identifier, "002")
+
 
 # Stop unittest from sorting tests, as we expect tests to run:
 # First: Create.
@@ -102,4 +111,7 @@ def suite():
 
 
 suite = suite()
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

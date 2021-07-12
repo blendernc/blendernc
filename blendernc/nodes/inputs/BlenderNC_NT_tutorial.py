@@ -53,14 +53,14 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.blendernc_dataset_identifier = get_new_identifier(self)
+        self.blendernc_dataset_identifier = get_new_identifier(self) + "_t"
         self.outputs.new("bNCnetcdfSocket", "Dataset")
         self.color = (0.4, 0.8, 0.4)
         self.use_custom_color = True
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
-        self.blendernc_dataset_identifier = get_new_identifier(self)
+        self.blendernc_dataset_identifier = get_new_identifier(self) + "_t"
         print("Copying from node ", node)
 
     # Free function to clean up on removal.

@@ -20,9 +20,10 @@ import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 from blendernc.core.logging import Timer
 from blendernc.image import from_data_to_pixel_value, normalize_data
 from blendernc.messages import drop_dim, huge_image, increase_resolution
+from blendernc.translations import translate
 
 
-def build_enum_prop_list(list, icon="", long_name_list=None, start=1):
+def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
     if long_name_list:
         list = [
             (str(list[ii]), str(list[ii]), long_name_list[ii], icon, ii + start)
@@ -74,7 +75,7 @@ def update_dict(selected_variable, node):
     if hasattr(unique_data_dict["Dataset"][selected_variable], "units"):
         units = unique_data_dict["Dataset"][selected_variable].units
     else:
-        units = None
+        units = ""
 
     unique_data_dict["selected_var"] = {
         "max_value": None,
@@ -135,15 +136,46 @@ def dataarray_random_sampling(dataarray, n):
 
 
 def purge_cache(NodeTree, identifier):
-    # TODO: Test number of total loaded frames for
-    # multiple nodetrees and node outputs.
-    # 300 frames at 1440*720 use ~ 6GB of ram.
-    # Make this value dynamic to support computer with more or less ram.
-    # Perhaps compress and uncompress data?
-    cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
-    if len(cached_nodetree) > 10:
-        frames_loaded = list(cached_nodetree.keys())
-        cached_nodetree.pop(frames_loaded[0])
+
+    scene = bpy.context.scene
+    nodetrees = bnc_gutils.get_blendernc_nodetrees()
+    n = 0
+    for node in nodetrees:
+        # Make sure the nc_cache is loaded.
+        if node.name in scene.nc_cache.keys():
+            cache = scene.nc_cache[node.name]
+            for key, item in cache.items():
+                n += len(item)
+
+    if scene.blendernc_memory_handle == "FRAMES":
+        while n > scene.blendernc_frames:
+            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            frames_loaded = list(cached_nodetree.keys())
+            cached_nodetree.pop(frames_loaded[0])
+            n -= 1
+            print("Removed frame: {0}".format(frames_loaded[0]))
+    else:
+        import warnings
+
+        import psutil
+
+        mem = psutil.virtual_memory()
+        mem_avail_percent = (mem.available / mem.total) * 100
+        while mem_avail_percent < scene.blendernc_avail_mem_purge and n > 1:
+            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            frames_loaded = list(cached_nodetree.keys())
+            cached_nodetree.pop(frames_loaded[0])
+            print("Removed frame: {0}".format(frames_loaded[0]))
+            from blendernc.core.sys_utils import get_size
+
+            cache_dict_size = get_size(scene.nc_cache)
+            message = "Dynamic cache: \n Total dict cache - {0} \n"
+            message += "Available percentage - {1}"
+            warnings.warn(message.format(cache_dict_size, mem_avail_percent))
+            n -= 1
+
+        # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
+        # print(scene.nc_cache['BlenderNC']['001'].keys() )
 
 
 def refresh_cache(NodeTree, identifier, frame):
@@ -174,29 +206,32 @@ def update_res(scene, context):
     Simple UI function to update BlenderNC node tree.
     """
     bpy.data.node_groups.get("BlenderNC").nodes.get(
-        "Resolution"
+        translate("Resolution")
     ).blendernc_resolution = scene.blendernc_resolution
 
 
 def dict_update(node, context):
-    dataset_dict = node.blendernc_dict[node.blendernc_dataset_identifier]
-    selected_var = (
-        dataset_dict["selected_var"]["selected_var_name"]
-        if "selected_var" in dataset_dict.keys()
-        else ""
-    )
-    node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
+    data_dictionary = node.blendernc_dict
+    if unique_identifier in data_dictionary:
+        dataset_dict = data_dictionary[unique_identifier]
+        selected_var = (
+            dataset_dict["selected_var"]["selected_var_name"]
+            if "selected_var" in dataset_dict.keys()
+            else ""
+        )
+        node_tree = node.rna_type.id_data.name
+        unique_identifier = node.blendernc_dataset_identifier
 
-    update_dict(node.blendernc_netcdf_vars, node)
+        update_dict(node.blendernc_netcdf_vars, node)
 
-    if (
-        is_cached(node_tree, unique_identifier)
-        and selected_var != node.blendernc_netcdf_vars
-    ):
-        del_cache(node_tree, unique_identifier)
+        if (
+            is_cached(node_tree, unique_identifier)
+            and selected_var != node.blendernc_netcdf_vars
+        ):
+            del_cache(node_tree, unique_identifier)
 
-    update_value_and_node_tree(node, context)
+        update_value_and_node_tree(node, context)
 
 
 def normalize_data_w_grid(node, node_tree, data, grid_node):
@@ -308,9 +343,6 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     # it seems quite random.
     timer = Timer()
 
-    # timer.tick('Update time')
-    update_datetime_text(context, node, node_tree, frame)
-    # timer.tick('Update time')
     node_ = bpy.data.node_groups[node_tree].nodes[node]
     unique_identifier = node_.blendernc_dataset_identifier
     scene = context.scene
@@ -340,6 +372,8 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     if not isinstance(image, bpy.types.Image):
         images = bpy.data.images
         image = images[image]
+        image.colorspace_settings.name = "Non-Color"
+
     timer.tick("Image dimensions")
     # Ensure that the image and the data have the same size.
     img_x, img_y = list(image.size)
@@ -352,7 +386,19 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Load Frame")
     # IF timestep is larger, use the last time value
     if frame >= var_data.shape[0]:
-        frame = var_data.shape[0] - 1
+        if scene.blendernc_animation_type == "EXTEND":
+            frame = var_data.shape[0] - 1
+        elif scene.blendernc_animation_type == "LOOP":
+            current_frame = scene.frame_current
+            n_repeat = current_frame // var_data.shape[0]
+            frame = current_frame - n_repeat * var_data.shape[0]
+        else:
+            return False
+
+    # timer.tick('Update time')
+    update_datetime_text(context, node, node_tree, frame)
+    # timer.tick('Update time')
+
     try:
         # TODO:Use time coordinate, not index.
         pixels_cache = scene.nc_cache[node_tree][unique_identifier][frame]
@@ -493,7 +539,7 @@ def update_colormap_interface(context, node, node_tree):
             if "text_units_{}".format(cbar_plane.name) in child.name
         ]
 
-        if units and not unit_objs:
+        if not unit_objs:
             unit_obj = bnc_cramputils.add_units(cbar_plane)
         else:
             unit_obj = unit_objs[0]
@@ -552,7 +598,7 @@ def update_proxy_file(self, context):
         -   Checks if netCDF file exists
         -   Extracts variable names using netCDF4 conventions.
     """
-    bpy.ops.blendernc.ncload_sui(file_path=bpy.context.scene.blendernc_file)
+    bpy.ops.blendernc.ncload_sui()
 
 
 def update_file_vars(node, context):
@@ -567,7 +613,7 @@ def update_file_vars(node, context):
 def update_animation(self, context):
     try:
         bpy.data.node_groups["BlenderNC"].nodes[
-            "Output"
+            translate("Output")
         ].update_on_frame_change = self.blendernc_animate
     except KeyError:
         pass
@@ -709,19 +755,3 @@ class BlenderncEngine:
                 make sure you select a supported file ('.nc' or '.grib')""",
                 self.file_path,
             )
-
-
-class dataset_modifiers:
-    def __init__(self):
-        self.type = None
-        self.computation = None
-
-    def update_type(self, ctype, computation):
-        self.type = ctype
-        self.computation = computation
-
-    def get_core_func(self):
-        return json_functions[self.type]
-
-
-json_functions = {"roll": xarray.core.rolling.DataArrayRolling}

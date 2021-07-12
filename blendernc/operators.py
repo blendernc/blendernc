@@ -4,11 +4,12 @@ from os.path import abspath
 
 import bpy
 
-from blendernc.get_utils import get_node, get_var
+from blendernc.get_utils import get_blendernc_nodetrees, get_node, get_var
 from blendernc.messages import (
     PrintMessage,
     active_selection_preference,
     asign_material,
+    select_file,
     unselected_object,
 )
 from blendernc.python_functions import (
@@ -18,6 +19,7 @@ from blendernc.python_functions import (
     update_image,
     update_nodes,
 )
+from blendernc.translations import translate
 
 bNCEngine = BlenderncEngine()
 
@@ -60,15 +62,13 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
+            PrintMessage(select_file, "Error", "ERROR")
             return {"FINISHED"}
         file_path = abspath(self.file_path)
 
         node = get_node(self.node_group, self.node)
-        # TODO: allow xarray.open_mfdataset if wildcard "*" use in name.
-        # Useful for large datasets. Implement node with chunks if file is huge.
 
-        # TODO: allow handling of multiple formats using "*.nc" or "*.grib"
+        # TODO: Implement node with chunks if file is huge.
 
         unique_identifier = node.blendernc_dataset_identifier
         node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(
@@ -81,18 +81,6 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
             bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
                 items=var_names, name="Select Variable", update=update_nodes
             )
-        # Create new node in BlenderNC node
-        blendernc_nodes = [
-            keys
-            for keys in bpy.data.node_groups.keys()
-            if ("BlenderNC" in keys or "NodeTree" in keys)
-        ]
-        if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-            bpy.data.node_groups["BlenderNC"].use_fake_user = True
-
-        if not bpy.data.node_groups[-1].nodes:
-            bpy.data.node_groups[-1].nodes.new("netCDFNode")
 
         return {"FINISHED"}
 
@@ -108,17 +96,11 @@ class BlenderNC_OT_var(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
-            return {"FINISHED"}
+            PrintMessage(select_file, "Error", "ERROR")
+            return {"CANCELLED"}
 
-        blendernc_nodes = [
-            bpy.data.node_groups[keys]
-            for keys in bpy.data.node_groups.keys()
-            if (
-                bpy.data.node_groups[keys].bl_label == "BlenderNC"
-                and keys == "BlenderNC"
-            )
-        ]
+        blendernc_nodes = get_blendernc_nodetrees()
+
         if not blendernc_nodes:
             bpy.data.node_groups.new("BlenderNC", "BlenderNC")
             bpy.data.node_groups["BlenderNC"].use_fake_user = True
@@ -318,21 +300,30 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             cmap = blendernc_material.node_tree.nodes.new("cmapsNode")
             cmap.location = (-290, 250)
             bump = blendernc_material.node_tree.nodes.new("ShaderNodeBump")
+            bump.inputs[0].default_value = 0.3
             bump.location = (-290, -50)
 
         else:
-            texcoord = blendernc_material.node_tree.nodes.get("Texture Coordinate")
-            imagetex = blendernc_material.node_tree.nodes.get("Image Texture")
+            texcoord = blendernc_material.node_tree.nodes.get(
+                translate("Texture Coordinate")
+            )
+            imagetex = blendernc_material.node_tree.nodes.get(
+                translate("Image Texture")
+            )
             cmap = blendernc_material.node_tree.nodes.get("Colormap")
-            bump = blendernc_material.node_tree.nodes.get("Bump")
+            bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
 
-        P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
+        P_BSDF = blendernc_material.node_tree.nodes.get(translate("Principled BSDF"))
+        # This line is executed when a different language is selected. By
+        # default a new blender file will create a node named "Principled BSDF"
+        if not P_BSDF:
+            P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
 
         if sel_obj.name == "Icosphere":
-            texcoord_link = texcoord.outputs.get("Generated")
+            texcoord_link = texcoord.outputs.get(translate("Generated"))
             imagetex.projection = "SPHERE"
         else:
-            texcoord_link = texcoord.outputs.get("UV")
+            texcoord_link = texcoord.outputs.get(translate("UV"))
             imagetex.projection = "FLAT"
 
         blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)

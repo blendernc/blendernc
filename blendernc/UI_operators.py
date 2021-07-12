@@ -5,6 +5,10 @@ from os.path import dirname, join
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
+from blendernc.get_utils import get_blendernc_nodetrees
+from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
+from blendernc.translations import translate
+
 
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
     bl_idname = "blendernc.ncload_sui"
@@ -12,26 +16,19 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
     bl_description = "Loads netcdf file"
     bl_options = {"REGISTER", "UNDO"}
 
-    file_path: bpy.props.StringProperty(
-        name="File path",
-        description="Path to the netCDF file that will be loaded.",
-        subtype="FILE_PATH",
-    )
-    """An instance of the original StringProperty."""
-
     def execute(self, context):
         scene = context.scene
         netcdf = bpy.data.node_groups.get("BlenderNC").nodes.get("netCDF input")
         node_group = bpy.data.node_groups.get("BlenderNC")
-        if not node_group.nodes.get("Resolution"):
+        if not node_group.nodes.get(translate("Resolution")):
             ####################
             resol = node_group.nodes.new("netCDFResolution")
             resol.location[0] = 30
             output = node_group.nodes.new("netCDFOutput")
             output.location[0] = 190
         else:
-            resol = node_group.nodes.get("Resolution")
-            output = node_group.nodes.get("Output")
+            resol = node_group.nodes.get(translate("Resolution"))
+            output = node_group.nodes.get(translate("Output"))
         # LINK
         node_group.links.new(resol.inputs[0], netcdf.outputs[0])
 
@@ -132,15 +129,24 @@ def findCommonName(filenames):
 class BlenderNC_OT_purge_all(bpy.types.Operator):
     bl_idname = "blendernc.purge_all"
     bl_label = "Purge all frames"
-    bl_description = "Purge all frames"
+    bl_description = "Purge all frames except current"
     bl_options = {"REGISTER", "UNDO"}
 
-    node: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    node_group: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-
     def execute(self, context):
-        pass
-
+        NodeTrees = get_blendernc_nodetrees()
+        cache = bpy.context.scene.nc_cache
+        if cache.keys():
+            for NodeTree in NodeTrees:
+                NodeTree_name = NodeTree.bl_idname
+                if not cache[NodeTree_name].keys():
+                    PrintMessage(no_cached_image, "Info", "INFO")
+                else:
+                    self.report(
+                        {"INFO"}, "Removed cache from node {0}".format(NodeTree_name)
+                    )
+                    identifiers = list(cache[NodeTree_name].keys())
+                    for identifier in identifiers[:-1]:
+                        cache[NodeTree_name].pop(identifier)
+        else:
+            PrintMessage(no_cached_nodes, "Info", "INFO")
         return {"FINISHED"}
