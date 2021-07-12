@@ -45,5 +45,5 @@ for file in glob.glob("./*.test.py"):
 if errors:
     message = ""
     for keys, code in errors.items():
-        message += "Test file: {0} failed (Code={1}).".format(keys, code)
+        message += "Test file: {0} failed (Code={1}).\n".format(keys, code)
     raise RuntimeError(message)
