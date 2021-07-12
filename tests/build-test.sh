@@ -26,6 +26,7 @@ echo -e "print(cov)" >> sitecustomize.py
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
 $BLENDERPY run_tests.py
+test_exit=$?
 
 rm *.png
 
@@ -33,3 +34,8 @@ coverage combine
 coverage report
 
 mv ".coverage" ".coverage_${blender_version}"
+
+if [ "$test_exit" -ne 0 ] ; then
+  echo "Tests failed!"
+  exit 1
+fi

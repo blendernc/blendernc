@@ -117,7 +117,7 @@ class Test_settings(unittest.TestCase):
 
     def test_memory_dynamic(self):
         bpy.context.scene.blendernc_memory_handle = "DYNAMIC"
-        bpy.context.scene.blendernc_avail_mem_purge = 100
+        bpy.context.scene.blendernc_avail_mem_purge = 10
         frames = [2, 3, 4]
         removed_frames = []
         for frame in frames:
