@@ -1,3 +1,5 @@
+.. _pro_mode:
+
 PRO mode!
 #########
 

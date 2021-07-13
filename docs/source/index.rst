@@ -40,8 +40,8 @@ should support the load of any netCDF.
 
    examples/import_gebco_netCDF
    examples/simple_animation
-   examples/easy_tutorial_test
    examples/import_ECMWF_netCDF
+   examples/node_tree_editor
    examples/import_ECMWF_grid
    examples/displacement_animation
    examples/multiple_field_animations
