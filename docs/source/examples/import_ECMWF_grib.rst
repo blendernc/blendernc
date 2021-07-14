@@ -1,5 +1,5 @@
 ==================
-Import ECMWF cGrid
+Import ECMWF cGrib
 ==================
 
 .. important::

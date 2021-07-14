@@ -6,10 +6,12 @@ Import ECMWF netCDF
 
     <style>
         .purple {color:purple}
+        .cyan {color:cyan}
     </style>
 
 
 .. role:: purple
+.. role:: cyan
 
 .. important::
     It is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`) to follow this tutorial.
@@ -87,12 +89,53 @@ Let's switch to the BlenderNC nodetree, we have two options:
   :width: 100%
   :class: with-shadow float-left
 
-By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path, netCDF input, Resolution, Output``, as seen below:
+By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path, netCDF input, Resolution, Image Output``, as seen below:
 
 .. image:: ../../images/ecmwf_example/selected_nodetree.png
   :width: 100%
   :class: with-shadow float-left
 
+
 .. note::
   The node ``netCDF input`` changes name to the current loaded filename.
+
+Let's fix some of the issues:
+
+1. Fix washed out colormap:
+
+   -  Import netCDF range by pressing ``shift+a`` and then navegate to ``Datacube``, then select ``netCDF Range``.
+
+   .. image:: ../../images/ecmwf_example/add_range_node.png
+    :width: 100%
+    :class: with-shadow float-left
+
+   -  This will add a new node. The node will automatically connect if you place it between the ``resolution`` and ``Image Output`` nodes.
+
+   .. image:: ../../images/ecmwf_example/connect_range_node.png
+    :width: 100%
+    :class: with-shadow float-left
+
+   .. note::
+    The previous step created a colorbar, as you can see, the values are rely low, and that's why the render preview is awful.
+
+   -  To fix this, lets first connect the ``Range`` to the ``Image Output`` node. You can do this by draging the :cyan:`cyan dot` on the top-right of the ``Range`` node to the bottom-left :cyan:`cyan dot` on the ``Image Output``.
+   -  Once connected, we can compute the range of the dataset by clicking over the ``Compute vmin & vmax`` button or directly change the vmin and vmax, this will automatically update the colorbar too. The range of this dataset is [204.11 - 312.75] Kelvins.
+
+   .. image:: ../../images/ecmwf_example/output_range_node.png
+    :width: 100%
+    :class: with-shadow float-left
+
+2. Fix Earth upside-down:
+
+  .. note::
+    Now that we can actually see the data, it's obvious that the Earth is upside-down. This will be fixed in a future release, but in the meantime there are two hacks to fix it.
+
+  - Easy fix:
+
+    - Select the Sphere.
+    - Rotate 180 degrees in the X or Y axis by pressing ``r + x + 180`` on your keyboard.
+
+  - Fix using BlenderNC nodetrees:
+
+    -
 

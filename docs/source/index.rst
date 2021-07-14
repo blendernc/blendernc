@@ -42,7 +42,7 @@ should support the load of any netCDF.
    examples/simple_animation
    examples/import_ECMWF_netCDF
    examples/node_tree_editor
-   examples/import_ECMWF_grid
+   examples/import_ECMWF_grib
    examples/displacement_animation
    examples/multiple_field_animations
    examples/irregular_grid
