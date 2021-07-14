@@ -64,7 +64,8 @@ def update_node_tree(self, context):
 
 def update_nodes(scene, context):
     selected_variable = scene.blendernc_netcdf_vars
-    bpy.data.node_groups.get("BlenderNC").nodes.get(
+    default_node_group_name = scene.default_nodegroup
+    bpy.data.node_groups.get(default_node_group_name).nodes.get(
         "netCDF input"
     ).blendernc_netcdf_vars = selected_variable
     update_proxy_file(scene, context)
@@ -706,6 +707,9 @@ class BlenderncEngine:
             self.file_path = glob.glob(file_path)
             self.check_datacube()
         elif os.path.isfile(file_path):
+            self.file_path = [file_path]
+            self.check_datacube()
+        elif os.path.isdir(file_path) and os.path.splitext(file_path)[-1] == ".zarr":
             self.file_path = [file_path]
             self.check_datacube()
         else:

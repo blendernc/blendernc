@@ -75,8 +75,10 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
             file_path
         )
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
+        scn = context.scene
+        default_node_group_name = scn.default_nodegroup
         # If quick import, define global variable.
-        if self.node_group == "BlenderNC":
+        if self.node_group == default_node_group_name:
             var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
             bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
                 items=var_names, name="Select Variable", update=update_nodes
@@ -100,12 +102,14 @@ class BlenderNC_OT_var(bpy.types.Operator):
             return {"CANCELLED"}
 
         blendernc_nodes = get_blendernc_nodetrees()
+        scn = context.scene
+        default_node_group_name = scn.default_nodegroup
 
         if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-            bpy.data.node_groups["BlenderNC"].use_fake_user = True
+            bpy.data.node_groups.new(default_node_group_name, "BlenderNC")
+            bpy.data.node_groups[default_node_group_name].use_fake_user = True
 
-        node_group = bpy.data.node_groups.get("BlenderNC")
+        node_group = bpy.data.node_groups.get(default_node_group_name)
         if not node_group.nodes:
             path = node_group.nodes.new("netCDFPath")
             path.location[0] = -300

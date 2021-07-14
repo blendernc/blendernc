@@ -9,6 +9,14 @@ from blendernc.get_utils import get_blendernc_nodetrees
 from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
 from blendernc.translations import translate
 
+# TODO use this across all the add-on.
+bpy.types.Scene.default_nodegroup = bpy.props.StringProperty(
+    name="BlenderNC",
+    description="Default nodegroup name",
+    default="BlenderNC",
+    maxlen=1024,
+)
+
 
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
     bl_idname = "blendernc.ncload_sui"
@@ -18,8 +26,11 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        netcdf = bpy.data.node_groups.get("BlenderNC").nodes.get("netCDF input")
-        node_group = bpy.data.node_groups.get("BlenderNC")
+        default_node_group_name = scene.default_nodegroup
+
+        node_group = bpy.data.node_groups.get(default_node_group_name)
+        netcdf = node_group.nodes.get("netCDF input")
+
         if not node_group.nodes.get(translate("Resolution")):
             ####################
             resol = node_group.nodes.new("netCDFResolution")
@@ -37,7 +48,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         # LINK
         node_group.links.new(output.inputs[0], resol.outputs[0])
         bpy.ops.image.new(
-            name="BlenderNC_default",
+            name=default_node_group_name + "_default",
             width=1024,
             height=1024,
             color=(0.0, 0.0, 0.0, 1.0),
@@ -45,7 +56,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
             generated_type="BLANK",
             float=True,
         )
-        output.image = bpy.data.images.get("BlenderNC_default")
+        output.image = bpy.data.images.get(default_node_group_name + "_default")
         output.update_on_frame_change = scene.blendernc_animate
         output.update()
         return {"FINISHED"}
@@ -56,7 +67,7 @@ class ImportnetCDFCollection(bpy.types.PropertyGroup):
         name="File Path",
         description="Filepath used for importing the file",
         maxlen=1024,
-        subtype="FILE_PATH",
+        subtype="DIR_PATH",
     )
     """An instance of the original StringProperty."""
 
@@ -79,11 +90,8 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     """An instance of the original CollectionProperty."""
 
     node_group: bpy.props.StringProperty(
-        name="node_group", description="Node calling operator"
+        name="Node group name", description="Change default node group name"
     )
-    """An instance of the original StringProperty."""
-
-    node: bpy.props.StringProperty(name="node", description="Node calling operator")
     """An instance of the original StringProperty."""
 
     def execute(self, context):
@@ -95,12 +103,10 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
             common_name = findCommonName([f.name for f in self.files])
             path = join(fdir, common_name)
 
-        if self.node_group != "" and self.node != "":
-            bpy.data.node_groups.get(self.node_group).nodes.get(
-                self.node
-            ).blendernc_file = path
-        else:
-            context.scene.blendernc_file = path
+        if self.node_group != "":
+            context.scene.default_nodegroup = self.node_group
+
+        context.scene.blendernc_file = path
 
         return {"FINISHED"}
 

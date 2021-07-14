@@ -70,6 +70,9 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 .. note::
     So far there is noting new, but the render preview looks awful, we will fix it using the BlenderNC nodetree.
 
+BlenderNC nodetree
+------------------
+
 Let's switch to the BlenderNC nodetree, we have two options:
 
 - Switch to :purple:`BlenderNC workspace` (recomended):
@@ -83,4 +86,13 @@ Let's switch to the BlenderNC nodetree, we have two options:
 .. image:: ../../images/ecmwf_example/change_nodetree.png
   :width: 100%
   :class: with-shadow float-left
+
+By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path, netCDF input, Resolution, Output``, as seen below:
+
+.. image:: ../../images/ecmwf_example/selected_nodetree.png
+  :width: 100%
+  :class: with-shadow float-left
+
+.. note::
+  The node ``netCDF input`` changes name to the current loaded filename.
 

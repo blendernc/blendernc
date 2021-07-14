@@ -27,13 +27,6 @@ class BlenderNC_NT_path(bpy.types.Node):
     )
     """An instance of the original StringProperty."""
 
-    use_dask: bpy.props.BoolProperty(
-        name="",
-        description="Use dask",
-        default=False,
-    )
-    """An instance of the original BoolProperty."""
-
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node,
