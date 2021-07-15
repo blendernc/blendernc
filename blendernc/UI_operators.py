@@ -94,6 +94,9 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
     """An instance of the original StringProperty."""
 
+    node: bpy.props.StringProperty(name="node", description="Node calling operator")
+    """An instance of the original StringProperty."""
+
     def execute(self, context):
         fdir = dirname(self.properties.filepath)
 
@@ -103,10 +106,17 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
             common_name = findCommonName([f.name for f in self.files])
             path = join(fdir, common_name)
 
-        if self.node_group != "":
+        # Allows user to define a new default nodegroup, other than "BlenderNC"
+        if self.node_group != "" and self.node == "":
             context.scene.default_nodegroup = self.node_group
-
-        context.scene.blendernc_file = path
+        # Supports nodes when the nodetree and node have been created manually
+        elif self.node_group != "" and self.node != "":
+            bpy.data.node_groups.get(self.node_group).nodes.get(
+                self.node
+            ).blendernc_file = path
+        # Default mode, where "BlenderNC" node is created.
+        else:
+            context.scene.blendernc_file = path
 
         return {"FINISHED"}
 

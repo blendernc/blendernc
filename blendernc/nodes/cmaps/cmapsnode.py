@@ -82,7 +82,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     colormaps: bpy.props.EnumProperty(
         items=core_colorramp.get_colormaps(),
-        name="",
+        name="cmocean",
         update=update_colorramp,
     )
     """An instance of the original EnumProperty."""

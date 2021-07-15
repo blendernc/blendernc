@@ -121,7 +121,7 @@ Let's fix some of the issues:
    -  To fix this, lets first connect the ``Range`` to the ``Image Output`` node. You can do this by draging the :cyan:`cyan dot` on the top-right of the ``Range`` node to the bottom-left :cyan:`cyan dot` on the ``Image Output``.
    -  Once connected, we can compute the range of the dataset by clicking over the ``Compute vmin & vmax`` button or directly change the vmin and vmax, this will automatically update the colorbar too. The range of this dataset is [204.11 - 312.75] Kelvins.
 
-   .. image:: ../../images/ecmwf_example/output_range_node.png
+  .. image:: ../../images/ecmwf_example/output_range_node.png
     :width: 100%
     :class: with-shadow float-left
 
@@ -137,5 +137,42 @@ Let's fix some of the issues:
 
   - Fix using BlenderNC nodetrees:
 
-    -
+    - Let's add a ``Sortby Dimension`` node by pressing ``shift+a`` and then navegate to ``Dimensions``, then select ``Sortby Dimension``.
 
+    .. image:: ../../images/ecmwf_example/add_sortby_node.png
+      :width: 100%
+      :class: with-shadow float-left
+
+    - Connect the new created node, select the dimension ``latitude``, and connect the ``Sortby Dimension`` and the ``Image output`` nodes.
+
+    .. image:: ../../images/ecmwf_example/connect_sortby.png
+      :width: 100%
+      :class: with-shadow float-left
+
+    .. note:: Any of this fixes will orientate the sphere correctly.
+
+After fixing the render preview:
+
+- Let's change the ``vmin`` and ``vmax`` values within the ``Range`` node, to higlight temperatures within the range of [270.00, 310.00] Kelvins.
+
+.. image:: ../../images/ecmwf_example/change_min_max_values.png
+  :width: 100%
+  :class: with-shadow float-left
+
+- Select the ``Sphere`` by clicking over it, this will automatically show the material applied to the ``Sphere``, by the default the name will be ``BlenderNC_default``.
+
+.. image:: ../../images/ecmwf_example/change_material.png
+  :width: 100%
+  :class: with-shadow float-left
+
+- After selecting the image or changing material (changing material will assing the selected material to the selected object), the material nodetree will be displayed:
+
+.. image:: ../../images/ecmwf_example/zoom_colormap_node.png
+  :width: 100%
+  :class: with-shadow float-left
+
+- Within the material nodetree, you will find a node titled ``Colormap``, in this node, you can change the colormap used for the preview and render. Currently, BlenderNC supports `cmocean <https://matplotlib.org/cmocean/>`_ and `matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_ colormaps.
+
+.. image:: ../../images/ecmwf_example/supported_colorbar.png
+  :width: 100%
+  :class: with-shadow float-left
