@@ -17,6 +17,11 @@ core_colorramp = ColorRamp()
 
 
 def update_colorramp(self, context):
+    update_operator(self, context)
+
+    if not self.colormaps:
+        return
+
     cmap_steps = self.n_stops
     selected_cmap = self.colormaps.split(":")
     if self.fcmap:
@@ -60,6 +65,12 @@ class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
                 operator.colormap = map_name + ":" + colormap
                 counter += 1
             #
+
+
+# Chosen operator has changed - update the nodes and links
+def update_operator(self, context):
+    self.__nodeinterface_setup__()
+    self.__nodetree_setup__()
 
 
 class BlenderNC_OT_select_colormap(bpy.types.Operator):
