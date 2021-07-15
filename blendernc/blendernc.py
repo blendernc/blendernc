@@ -6,7 +6,11 @@ import bpy
 import nodeitems_utils
 
 from .handlers import update_all_images
-from .nodes.cmaps.cmapsnode import BLENDERNC_CMAPS_NT_node
+from .nodes.cmaps.cmapsnode import (
+    BLENDERNC_CMAPS_NT_node,
+    BlenderNC_MT_avail_colormaps,
+    BlenderNC_OT_select_colormap,
+)
 from .nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from .nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from .nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
@@ -88,6 +92,8 @@ classes = [
     # Nodes shortcuts
     BlenderNC_NT_basic_nodes,
     # Shader Nodes
+    BlenderNC_MT_avail_colormaps,
+    BlenderNC_OT_select_colormap,
     BLENDERNC_CMAPS_NT_node,
     # Operators
     BlenderNC_OT_ncload,

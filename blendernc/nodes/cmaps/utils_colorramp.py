@@ -150,7 +150,6 @@ class ColorRamp(object):
                 cmap_names.append((element_1, element_2, "", counter))
                 counter += 1
         return cmap_names
-        # [(cmaps[ii],cmaps[ii],"",ii) for ii in range(len(cmaps))]
 
     def get_cmaps(self):
         import importlib

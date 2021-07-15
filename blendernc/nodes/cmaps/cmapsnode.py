@@ -17,7 +17,6 @@ core_colorramp = ColorRamp()
 
 
 def update_colorramp(self, context):
-    update_operator(self, context)
     cmap_steps = self.n_stops
     selected_cmap = self.colormaps.split(":")
     if self.fcmap:
@@ -30,16 +29,69 @@ def update_colorramp(self, context):
     core_colorramp.update_colormap(colorramp, selected_cmap, cmap_steps)
 
 
-# Chosen operator has changed - update the nodes and links
-def update_operator(self, context):
-    self.__nodeinterface_setup__()
-    self.__nodetree_setup__()
+class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
+    bl_label = "Select Colormap"
+    bl_idname = "COLORMAP_MT_menu"
+
+    def draw(self, context):
+        avail_colormaps = core_colorramp.get_cmaps()
+        layout = self.layout
+        split = layout.split()
+        for colormap, map_names in avail_colormaps.items():
+            col = split.column()
+            col.scale_x = 1
+            col.scale_y = 0.8
+            col.label(text=colormap)
+            col.separator()
+            counter = 0
+            for map_name in map_names:
+                if counter > 15:
+                    col = split.column()
+                    col.scale_x = 1
+                    col.scale_y = 0.8
+                    col.label(text="")
+                    col.separator()
+                    counter = 0
+                operator = col.operator(
+                    "blendernc.select_colormap", text=map_name, icon="NONE"
+                )
+                operator.material = context.material.name
+                operator.node = context.node.name
+                operator.colormap = map_name + ":" + colormap
+                counter += 1
+            #
 
 
-# Number of inputs has changed - update the nodes and links
-def update_inpSockets(self, context):
-    self.__nodeinterface_setup__()
-    self.__nodetree_setup__()
+class BlenderNC_OT_select_colormap(bpy.types.Operator):
+    bl_idname = "blendernc.select_colormap"
+    bl_label = "Select colormap"
+    bl_description = "Select colormap"
+    bl_options = {"REGISTER", "UNDO"}
+
+    colormap: bpy.props.StringProperty(
+        name="",
+        default="",
+    )
+    """An instance of the original StringProperty."""
+
+    material: bpy.props.StringProperty(
+        name="",
+        default="",
+    )
+    """An instance of the original StringProperty."""
+
+    node: bpy.props.StringProperty(
+        name="",
+        default="",
+    )
+    """An instance of the original StringProperty."""
+
+    def execute(self, context):
+        material = bpy.data.materials.get(self.material)
+        colormap_node = material.node_tree.nodes.get(self.node)
+        colormap_node.colormaps = self.colormap
+        self.bl_label = self.colormap
+        return {"FINISHED"}
 
 
 # for blender2.80 we should derive the class from
@@ -80,12 +132,12 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         self.node_tree.links.new(input_node.outputs[0], cmap.inputs[0])
         self.node_tree.links.new(cmap.outputs[0], output_node.inputs[0])
 
-    colormaps: bpy.props.EnumProperty(
-        items=core_colorramp.get_colormaps(),
-        name="cmocean",
+    colormaps: bpy.props.StringProperty(
+        default="",
+        name="",
         update=update_colorramp,
     )
-    """An instance of the original EnumProperty."""
+    """An instance of the original StringProperty."""
 
     n_stops: bpy.props.IntProperty(
         name="# of stops",
@@ -135,8 +187,14 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Draw the node components
     def draw_buttons(self, context, layout):
+        # Display name of colomap.
+        if self.colormaps != "":
+            change_name = self.colormaps.split(":")[0]
+        else:
+            change_name = None
         row = layout.row()
-        row.prop(self, "colormaps", text="")
+        row.menu("COLORMAP_MT_menu", text=change_name)
+
         layout.prop(self, "n_stops")
         layout.prop(self, "fcmap")
 

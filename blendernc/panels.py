@@ -14,6 +14,8 @@ def select_only_meshes(self, object):
     return object.type == "MESH"
 
 
+# TODO: Change all this settings into a PropertyGroup,
+# see: https://docs.blender.org/api/current/bpy.props.html
 # Scene globals
 bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(
     name="Resolution",
