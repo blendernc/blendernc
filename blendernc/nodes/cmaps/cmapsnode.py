@@ -18,20 +18,19 @@ core_colorramp = ColorRamp()
 
 def update_colorramp(self, context):
     update_operator(self, context)
-
     if not self.colormaps:
         return
-
-    cmap_steps = self.n_stops
-    selected_cmap = self.colormaps.split(":")
-    if self.fcmap:
-        selected_cmap[0] = selected_cmap[0] + "_r"
     else:
-        if selected_cmap[0].split("_")[-1] == "_r":
-            selected_cmap[0] = selected_cmap[0].replace("_r", "")
+        cmap_steps = self.n_stops
+        selected_cmap = self.colormaps.split(":")
+        if self.fcmap:
+            selected_cmap[0] = selected_cmap[0] + "_r"
+        else:
+            if selected_cmap[0].split("_")[-1] == "_r":
+                selected_cmap[0] = selected_cmap[0].replace("_r", "")
 
-    colorramp = self.node_tree.nodes[self._get_name("Color_Ramp")].color_ramp
-    core_colorramp.update_colormap(colorramp, selected_cmap, cmap_steps)
+        colorramp = self.node_tree.nodes[self._get_name("Color_Ramp")].color_ramp
+        core_colorramp.update_colormap(colorramp, selected_cmap, cmap_steps)
 
 
 class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
@@ -193,6 +192,10 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         core_colorramp.create_colorramp(self._get_name("Color_Ramp"))
         # Set width of node
         self.width = 250
+        colormaps = core_colorramp.get_cmaps()
+        first_colormap = next(iter(colormaps.values()))[0]
+        first_colorlib = next(iter(colormaps))
+        self.colormaps = first_colormap + ":" + first_colorlib
         # Update node
         update_colorramp(self, context)
 
