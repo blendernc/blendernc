@@ -1,3 +1,6 @@
+.. _ECMWF_netcdf:
+
+
 ===================
 Import ECMWF netCDF
 ===================
@@ -7,11 +10,13 @@ Import ECMWF netCDF
     <style>
         .purple {color:purple}
         .cyan {color:cyan}
+        .orange {color:orange}
     </style>
 
 
 .. role:: purple
 .. role:: cyan
+.. role:: orange
 
 .. important::
     It is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`) to follow this tutorial.
@@ -174,5 +179,26 @@ After fixing the render preview:
 - Within the material nodetree, you will find a node titled ``Colormap``, in this node, you can change the colormap used for the preview and render. Currently, BlenderNC supports `cmocean <https://matplotlib.org/cmocean/>`_ and `matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_ colormaps.
 
 .. image:: ../../images/ecmwf_example/supported_colorbar.png
+  :width: 100%
+  :class: with-shadow float-left
+
+- Select a different colormap, for example ``gist_heat``
+
+.. image:: ../../images/ecmwf_example/updated_colormap.png
+  :width: 100%
+  :class: with-shadow float-left
+
+.. note::
+  Changing the colormap, doesn't change the colorbar material. This will be autimatically handle in a future release of BlenderNC.
+
+- To update the colorbar, click over the ``Create/Update colorbar`` in the BlenderNC nodetree ``Image output`` node highlighted in :orange:`orange`.
+
+.. image:: ../../images/ecmwf_example/update_colorbar.png
+  :width: 100%
+  :class: with-shadow float-left
+
+This concludes this tutorial:
+
+.. image:: ../../images/ecmwf_example/end_tutorial.png
   :width: 100%
   :class: with-shadow float-left
