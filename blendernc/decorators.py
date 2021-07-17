@@ -36,8 +36,26 @@ class NodesDecorators(object):
             elif connections["input"]:
                 update = cls.input_connections(node)
             elif connections["output"]:
+                outn = node.outputs[0].links[0].to_node
+                node_out_list = [node]
+                # Make sure to disconnect all nodes follwoing,
+                # as well as to clear dataset.
+                while outn:
+                    node_out_list.append(outn)
+                    # Exit while if output node is encounter.
+                    if not outn.outputs.keys():
+                        outn = ""
+                        node_out_list.pop()
+                    # Exit while if node is not linked.
+                    elif not outn.outputs[0].is_linked:
+                        outn = ""
+                    # Change outn to append in list.
+                    else:
+                        outn = outn.outputs[0].links[0].to_node
                 # If only output is connected, disconnect it.
-                cls.unlink_output(node)
+                for node_out in node_out_list:
+                    cls.unlink_output(node_out)
+                    node_out.blendernc_dict.clear()
             else:
                 raise AttributeError("Fail to find connections!")
 
@@ -78,13 +96,11 @@ class NodesDecorators(object):
         outputs = [ii for ii in node.outputs] if node.outputs else node.outputs
         # This condition is to avoid errors after init each node.
         for output in outputs:
-            if output.keys():
-                if output.is_linked and output.links:
-                    output_links = output.links
-                    connections["output"].append(
-                        [link.from_node.bl_idname for link in output_links]
-                    )
-        # print(connections)
+            if output.is_linked and output.links:
+                output_links = output.links
+                connections["output"].append(
+                    [link.from_node.bl_idname for link in output_links]
+                )
         return connections
 
     @classmethod

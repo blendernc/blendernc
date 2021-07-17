@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 
 import bpy
@@ -220,6 +221,22 @@ class Test_use_nodes(unittest.TestCase):
             )
         )
         self.assertTrue(file_exist)
+
+    def unlink_inputnode(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        nodes = ["netCDFRange"]
+        dims_args = {
+            "netCDF Range": {"blendernc_dataset_min": -1, "blendernc_dataset_max": 1}
+        }
+        render_image(file, var, nodes, node_args=dims_args)
+        node_tree = bpy.data.node_groups["BlenderNC"]
+        node = node_tree.nodes.get("netCDF input")
+        links = node.outputs[0].links
+        for link in links:
+            link.from_socket.unlink(link)
+        output = node_tree.nodes.get("Output")
+        self.assertFalse(output.blendernc_dict)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_use_nodes)

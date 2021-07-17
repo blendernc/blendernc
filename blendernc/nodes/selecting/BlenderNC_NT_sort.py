@@ -6,7 +6,7 @@ import bpy
 
 from blendernc.decorators import NodesDecorators
 from blendernc.get_utils import get_possible_dims
-from blendernc.python_functions import update_value_and_node_tree
+from blendernc.python_functions import update_node_tree, update_value_and_node_tree
 
 
 class BlenderNC_NT_sort(bpy.types.Node):
@@ -81,3 +81,4 @@ class BlenderNC_NT_sort(bpy.types.Node):
             dataset = blendernc_dict["Dataset"].sortby(self.blendernc_dims)
 
         blendernc_dict["Dataset"] = dataset
+        update_node_tree(self, bpy.context)

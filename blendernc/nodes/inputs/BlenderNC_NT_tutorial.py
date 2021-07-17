@@ -4,7 +4,6 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.decorators import NodesDecorators
 from blendernc.get_utils import (
     get_new_identifier,
     get_possible_variables,
@@ -86,7 +85,6 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     def draw_label(self):
         return "Datacube tutorial"
 
-    @NodesDecorators.node_connections
     def update(self):
         #####################
         # OPERATION HERE!!! #
