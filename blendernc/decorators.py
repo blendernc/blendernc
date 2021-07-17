@@ -44,6 +44,8 @@ class NodesDecorators(object):
                     node_out_list.append(outn)
                     # Exit while if output node is encounter.
                     if not outn.outputs.keys():
+                        outn.blendernc_dataset_identifier = ""
+                        # TODO delete blendernc_dict from output.
                         outn = ""
                         node_out_list.pop()
                     # Exit while if node is not linked.
@@ -62,6 +64,7 @@ class NodesDecorators(object):
                     # Purge dictionary form all other nodes.
                     else:
                         node_out.blendernc_dict = {}
+                        node_out.blendernc_dataset_identifier = ""
             else:
                 raise AttributeError("Fail to find connections!")
 
