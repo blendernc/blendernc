@@ -94,7 +94,7 @@ Let's switch to the BlenderNC nodetree, we have two options:
   :width: 100%
   :class: with-shadow
 
-By default, the `3D view` **BlenderNC** panel will create 4 nodes ``datacube Path, datacube input, Resolution, Image Output``, as seen below:
+By default, the `3D view` **BlenderNC** panel will create 4 nodes ``datacube Path, datacube Input, Resolution, Image Output``, as seen below:
 
 .. image:: ../../images/ecmwf_example/selected_nodetree.png
   :width: 100%
@@ -102,7 +102,7 @@ By default, the `3D view` **BlenderNC** panel will create 4 nodes ``datacube Pat
 
 
 .. note::
-  The node ``datacube input`` changes name to the current loaded filename.
+  The node ``datacube Input`` changes name to the current loaded filename.
 
 Let's fix some of the issues:
 

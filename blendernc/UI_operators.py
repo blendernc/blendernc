@@ -29,7 +29,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         default_node_group_name = scene.default_nodegroup
 
         node_group = bpy.data.node_groups.get(default_node_group_name)
-        datacube = node_group.nodes.get("datacube input")
+        datacube = node_group.nodes.get("datacube Input")
 
         if not node_group.nodes.get(translate("Resolution")):
             ####################

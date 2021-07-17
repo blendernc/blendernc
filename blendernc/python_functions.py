@@ -66,7 +66,7 @@ def update_nodes(scene, context):
     selected_variable = scene.blendernc_datacube_vars
     default_node_group_name = scene.default_nodegroup
     bpy.data.node_groups.get(default_node_group_name).nodes.get(
-        "datacube input"
+        "datacube Input"
     ).blendernc_datacube_vars = selected_variable
     update_proxy_file(scene, context)
 

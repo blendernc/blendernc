@@ -9,7 +9,7 @@ class BlenderNC_NT_basic_nodes(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "datacubeBasincNodes"
+    bl_idname = "datacubeBasicNodes"
     # Label for nice name display
     bl_label = "Create Basic Nodes"
     blb_type = "NETCDF"

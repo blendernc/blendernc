@@ -6,7 +6,7 @@ from .node_tree import BlenderNCNodeCategory
 node_dicts = {
     "Shortcuts": {
         "name": "Shortcuts",
-        "items": ["datacubeBasincNodes"],
+        "items": ["datacubeBasicNodes"],
     },
     "Datacube": {
         "name": "Datacube",

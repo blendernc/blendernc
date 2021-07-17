@@ -14,7 +14,7 @@ class Test_operators(unittest.TestCase):
         bpy.ops.blendernc.var(file_path=file)
         blendernc_nodes = get_blendernc_nodetrees()
         node_tree = blendernc_nodes[0]
-        inp = node_tree.nodes.get("datacube input")
+        inp = node_tree.nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
         ran = node_tree.nodes.new("datacubeRange")
         node_tree.links.new(ran.inputs[0], inp.outputs[0])
@@ -50,7 +50,7 @@ class Test_operators(unittest.TestCase):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         bpy.ops.blendernc.var(file_path=file)
         blendernc_nodes = get_blendernc_nodetrees()
-        inp = blendernc_nodes[0].nodes.get("datacube input")
+        inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
         bpy.ops.blendernc.datacubeload_sui()
         bpy.ops.blendernc.purge_all()
@@ -60,7 +60,7 @@ class Test_operators(unittest.TestCase):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         bpy.ops.blendernc.var(file_path=file)
         blendernc_nodes = get_blendernc_nodetrees()
-        inp = blendernc_nodes[0].nodes.get("datacube input")
+        inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
         bpy.ops.blendernc.datacubeload_sui()
         out = blendernc_nodes[0].nodes.get("Output")
@@ -75,7 +75,7 @@ class Test_operators(unittest.TestCase):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         bpy.ops.blendernc.var(file_path=file)
         blendernc_nodes = get_blendernc_nodetrees()
-        inp = blendernc_nodes[0].nodes.get("datacube input")
+        inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
         bpy.ops.blendernc.datacubeload_sui()
         out = blendernc_nodes[0].nodes.get("Output")

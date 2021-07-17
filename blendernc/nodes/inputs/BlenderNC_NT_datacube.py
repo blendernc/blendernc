@@ -75,7 +75,7 @@ class BlenderNC_NT_datacube(bpy.types.Node):
     # but here we can define a label dynamically
     def draw_label(self):
         if self.blendernc_dataset_identifier not in self.blendernc_dict.keys():
-            return "datacube input"
+            return "datacube Input"
         else:
             return self.blendernc_file.split("/")[-1]
 

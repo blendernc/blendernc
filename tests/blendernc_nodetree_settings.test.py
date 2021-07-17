@@ -26,7 +26,7 @@ def create_nodes(file, var):
     props = tutils.build_dict_blendernc_prop(existing_nodes)
 
     props["datacube Path"]["blendernc_file"] = file
-    props["datacube input"]["blendernc_datacube_vars"] = var
+    props["datacube Input"]["blendernc_datacube_vars"] = var
     props["Resolution"]["bendernc_resolution"] = 80
     props["Output"]["update_on_frame_change"] = True
 

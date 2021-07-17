@@ -44,7 +44,7 @@ def build_dict_blendernc_prop(existing_nodes_list):
             if "blendernc" in _dir:
                 blendernc_prop_list.append(_dir)
 
-        if node.name == "datacube input":
+        if node.name == "datacube Input":
             blendernc_prop_list.remove("blendernc_file")
             blendernc_prop_list.remove("blendernc_dict")
             blendernc_prop_list.remove("blendernc_dataset_identifier")

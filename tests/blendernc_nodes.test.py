@@ -30,7 +30,7 @@ def render_image(file, var, node_list=[], node_args=None):
     props = tutils.build_dict_blendernc_prop(existing_nodes)
 
     props["datacube Path"]["blendernc_file"] = file
-    props["datacube input"]["blendernc_datacube_vars"] = var
+    props["datacube Input"]["blendernc_datacube_vars"] = var
     props["Resolution"]["bendernc_resolution"] = 80
 
     if node_args:
@@ -158,7 +158,7 @@ class Test_use_nodes(unittest.TestCase):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
         format = os.path.basename(file).split(".")
-        nodes = ["datacuberotatelon"]
+        nodes = ["datacubeRotatelon"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
             "./{0}_{1}_image_{2}_{3}.png".format(
@@ -171,7 +171,7 @@ class Test_use_nodes(unittest.TestCase):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
         format = os.path.basename(file).split(".")
-        nodes = ["datacuberotatelon", "datacubeRange"]
+        nodes = ["datacubeRotatelon", "datacubeRange"]
         render_image(file, var, nodes)
         file_exist = os.path.isfile(
             "./{0}_{1}_image_{2}_{3}.png".format(
@@ -231,7 +231,7 @@ class Test_use_nodes(unittest.TestCase):
         }
         render_image(file, var, nodes, node_args=dims_args)
         node_tree = bpy.data.node_groups["BlenderNC"]
-        node = node_tree.nodes.get("datacube input")
+        node = node_tree.nodes.get("datacube Input")
         links = node.outputs[0].links
         for link in links:
             link.from_socket.unlink(link)

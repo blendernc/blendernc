@@ -14,7 +14,7 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "datacuberotatelon"
+    bl_idname = "datacubeRotatelon"
     # Label for nice name display
     bl_label = "Rotate Longitude"
     # Icon identifier

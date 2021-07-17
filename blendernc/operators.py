@@ -117,7 +117,7 @@ class BlenderNC_OT_var(bpy.types.Operator):
             datacube.location[0] = -130
         else:
             path = node_group.nodes.get("datacube Path")
-            datacube = node_group.nodes.get("datacube input")
+            datacube = node_group.nodes.get("datacube Input")
         path.blendernc_file = self.file_path
         # LINK nodes
         if not node_group.links:
