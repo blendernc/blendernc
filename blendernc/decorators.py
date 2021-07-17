@@ -55,7 +55,11 @@ class NodesDecorators(object):
                 # If only output is connected, disconnect it.
                 for node_out in node_out_list:
                     cls.unlink_output(node_out)
-                    node_out.blendernc_dict.clear()
+                    if node_out.bl_idname == "netCDFNode":
+                        identifier = node_out.blendernc_dataset_identifier
+                        node_out.blendernc_dict.pop(identifier)
+                    else:
+                        node_out.blendernc_dict.clear()
             else:
                 raise AttributeError("Fail to find connections!")
 
