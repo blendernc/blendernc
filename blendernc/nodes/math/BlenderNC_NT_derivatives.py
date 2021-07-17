@@ -94,8 +94,7 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
                 )
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
         else:
-            if unique_identifier in self.blendernc_dict.keys():
-                self.blendernc_dict.pop(unique_identifier)
+            self.blendernc_dict.pop(unique_identifier, None)
 
         if self.outputs.items():
             if self.outputs[0].is_linked and self.inputs[0].is_linked:

@@ -61,9 +61,7 @@ def build_dict_blendernc_prop(existing_nodes_list):
 def refresh_state(func):
     def wrapper(*args, **kwargs):
         func(*args, **kwargs)
-        node_groups = bpy.data.node_groups
-        if is_blendernc_in_nodetree(node_groups):
-            bpy.context.scene.nc_cache.pop("BlenderNC")
+        bpy.context.scene.nc_cache.pop("BlenderNC", None)
         print("Purge")
 
     return wrapper

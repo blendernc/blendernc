@@ -58,11 +58,10 @@ class NodesDecorators(object):
                     # Only remove the identifier of the node from the global dictionary.
                     if node_out.bl_idname == "netCDFNode":
                         identifier = node_out.blendernc_dataset_identifier
-                        if identifier in node_out.blendernc_dict.keys():
-                            node_out.blendernc_dict.pop(identifier)
+                        node_out.blendernc_dict.pop(identifier, None)
                     # Purge dictionary form all other nodes.
                     else:
-                        node_out.blendernc_dict.clear()
+                        node_out.blendernc_dict = {}
             else:
                 raise AttributeError("Fail to find connections!")
 

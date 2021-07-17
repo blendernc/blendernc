@@ -182,8 +182,7 @@ def purge_cache(NodeTree, identifier):
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.nc_cache:
         cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
-        if frame in list(cached_nodetree.keys()):
-            cached_nodetree.pop(frame)
+        cached_nodetree.pop(frame, None)
 
 
 def is_cached(NodeTree, identifier):
