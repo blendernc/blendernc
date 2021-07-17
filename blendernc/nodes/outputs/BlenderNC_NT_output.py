@@ -75,6 +75,9 @@ class BlenderNC_NT_output(bpy.types.Node):
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
+        if hasattr(self.image, "copy"):
+            copied_image = self.image.copy()
+            self.image = copied_image
         print("Copying from node ", node)
 
     # Free function to clean up on removal.

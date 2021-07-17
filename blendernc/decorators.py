@@ -55,9 +55,12 @@ class NodesDecorators(object):
                 # If only output is connected, disconnect it.
                 for node_out in node_out_list:
                     cls.unlink_output(node_out)
+                    # Only remove the identifier of the node from the global dictionary.
                     if node_out.bl_idname == "netCDFNode":
                         identifier = node_out.blendernc_dataset_identifier
-                        node_out.blendernc_dict.pop(identifier)
+                        if identifier in node_out.blendernc_dict.keys():
+                            node_out.blendernc_dict.pop(identifier)
+                    # Purge dictionary form all other nodes.
                     else:
                         node_out.blendernc_dict.clear()
             else:
