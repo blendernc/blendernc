@@ -9,15 +9,15 @@ from blendernc.get_utils import get_new_identifier, get_possible_variables
 from blendernc.python_functions import dict_update
 
 
-class BlenderNC_NT_netcdf(bpy.types.Node):
+class BlenderNC_NT_datacube(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Node to initiate netCDF dataset using xarray"""
+    """Node to initiate datacube dataset using xarray"""
     # Optional identifier string. If not explicitly defined,
     # he python class name is used.
-    bl_idname = "netCDFNode"
+    bl_idname = "datacubeNode"
     # Label for nice name display
-    bl_label = "netCDF input"
+    bl_label = "datacube Input"
     # Icon identifier
     bl_icon = "UGLYPACKAGE"
     bl_type = "NETCDF"
@@ -25,7 +25,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     blendernc_file: bpy.props.StringProperty()
     """An instance of the original StringProperty."""
 
-    blendernc_netcdf_vars: bpy.props.EnumProperty(
+    blendernc_datacube_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
         update=dict_update,
@@ -43,7 +43,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # as shown below.
     def init(self, context):
         self.inputs.new("bNCstringSocket", "Path")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
         self.blendernc_dataset_identifier = get_new_identifier(self)
         self.color = (0.4, 0.8, 0.4)
         self.use_custom_color = True
@@ -61,7 +61,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         layout.label(text="Select Variable:")
-        layout.prop(self, "blendernc_netcdf_vars", text="")
+        layout.prop(self, "blendernc_datacube_vars", text="")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,
@@ -75,7 +75,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
     # but here we can define a label dynamically
     def draw_label(self):
         if self.blendernc_dataset_identifier not in self.blendernc_dict.keys():
-            return "netCDF input"
+            return "datacube Input"
         else:
             return self.blendernc_file.split("/")[-1]
 
@@ -84,7 +84,7 @@ class BlenderNC_NT_netcdf(bpy.types.Node):
         identifier = self.blendernc_dataset_identifier
         blendernc_dict = self.blendernc_dict[identifier]
         updated_dataset = blendernc_dict["Dataset"][
-            self.blendernc_netcdf_vars
+            self.blendernc_datacube_vars
         ].to_dataset()
 
         # Note, only this node will have access to the socket.

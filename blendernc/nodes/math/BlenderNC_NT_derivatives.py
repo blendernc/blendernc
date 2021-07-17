@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.messages import unselected_nc_file, unselected_nc_var
+from blendernc.messages import unselected_datacube, unselected_variable
 
 
 class BlenderNC_NT_derivatives(bpy.types.Node):
@@ -13,7 +13,7 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFderivative"
+    bl_idname = "datacubeDerivative"
     # Label for nice name display
     bl_label = "Derivate"
     # Icon identifier
@@ -30,8 +30,8 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -77,7 +77,7 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
                 # Check if user has selected a variable
                 if "selected_var" not in unique_data_dict_node.keys():
                     bpy.context.window_manager.popup_menu(
-                        unselected_nc_var, title="Error", icon="ERROR"
+                        unselected_variable, title="Error", icon="ERROR"
                     )
                     self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
                     return
@@ -90,7 +90,7 @@ class BlenderNC_NT_derivatives(bpy.types.Node):
                 #####################
             else:
                 bpy.context.window_manager.popup_menu(
-                    unselected_nc_file, title="Error", icon="ERROR"
+                    unselected_datacube, title="Error", icon="ERROR"
                 )
                 self.inputs[0].links[0].from_socket.unlink(self.inputs[0].links[0])
         else:

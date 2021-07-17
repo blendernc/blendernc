@@ -41,7 +41,7 @@ Import data!
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
-- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navigate and select a dataset, for example: `blendernc/test/dataset/ssh_1995-01.nc`.
+- Switch to the BlenderNC panel and click on ``Load datacube``. Then click the folder icon, navigate and select a dataset, for example: `blendernc/test/dataset/ssh_1995-01.nc`.
 
 .. image:: ../../images/simple_animation/select_dataset.png
   :width: 100%
@@ -65,7 +65,7 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
   :width: 100%
   :class: with-shadow
 
-- Click in the check box next to ``Animate netCDF`` highlighted in :purple:`purple`. This option can be selected at anytime during.
+- Click in the check box next to ``Animate datacube`` highlighted in :purple:`purple`. This option can be selected at anytime during.
 
 .. image:: ../../images/simple_animation/select_animate.png
   :width: 100%
@@ -77,7 +77,7 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
   :width: 100%
   :class: with-shadow
 
-- Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have a netCDF animation. Also, you can change frames, for example, change to frame `5`, and the material will be updated.
+- Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have an animation. Also, you can change frames, for example, change to frame `5`, and the material will be updated.
 
 .. image:: ../../images/simple_animation/change_keyframe.png
   :width: 100%

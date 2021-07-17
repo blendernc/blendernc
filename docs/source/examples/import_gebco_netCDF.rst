@@ -9,7 +9,7 @@ Download the GEBCO bathymetry dataset (`for more info click here <https://www.ge
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
-- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navigate and select the GEBCO bathymetry netCDF.
+- Switch to the BlenderNC panel and click on ``Load datacube``. Then click the folder icon, navigate and select the GEBCO bathymetry netCDF.
 
 .. image:: ../../images/gebco_example/gebco_select_file.png
   :width: 100%

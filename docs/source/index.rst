@@ -14,7 +14,7 @@ BlenderNC
 Blender (i.e. netCDF, cfGrib, and zarr files). It allows 2D and 3D visualization and the generation of scientific data
 animations. The main development of *BlenderNC* currently focuses on
 geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework
-should support the load of any netCDF.
+should support the load of any datacube.
 
 .. image:: ../images/GEBCO_blendernc.png
   :width: 100%

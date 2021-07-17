@@ -19,9 +19,9 @@ bpy.types.Scene.default_nodegroup = bpy.props.StringProperty(
 
 
 class BlenderNC_OT_Simple_UI(bpy.types.Operator):
-    bl_idname = "blendernc.ncload_sui"
-    bl_label = "Load netcdf file"
-    bl_description = "Loads netcdf file"
+    bl_idname = "blendernc.datacubeload_sui"
+    bl_label = "Load datacube file"
+    bl_description = "Loads datacube file"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -29,19 +29,19 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         default_node_group_name = scene.default_nodegroup
 
         node_group = bpy.data.node_groups.get(default_node_group_name)
-        netcdf = node_group.nodes.get("netCDF input")
+        datacube = node_group.nodes.get("datacube Input")
 
         if not node_group.nodes.get(translate("Resolution")):
             ####################
-            resol = node_group.nodes.new("netCDFResolution")
+            resol = node_group.nodes.new("datacubeResolution")
             resol.location[0] = 30
-            output = node_group.nodes.new("netCDFOutput")
+            output = node_group.nodes.new("datacubeOutput")
             output.location[0] = 190
         else:
             resol = node_group.nodes.get(translate("Resolution"))
             output = node_group.nodes.get(translate("Output"))
         # LINK
-        node_group.links.new(resol.inputs[0], netcdf.outputs[0])
+        node_group.links.new(resol.inputs[0], datacube.outputs[0])
 
         resol.blendernc_resolution = scene.blendernc_resolution
 
@@ -62,7 +62,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class ImportnetCDFCollection(bpy.types.PropertyGroup):
+class ImportDatacubeCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for importing the file",
@@ -86,7 +86,7 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
     """An instance of the original StringProperty."""
 
-    files: bpy.props.CollectionProperty(type=ImportnetCDFCollection)
+    files: bpy.props.CollectionProperty(type=ImportDatacubeCollection)
     """An instance of the original CollectionProperty."""
 
     node_group: bpy.props.StringProperty(
@@ -150,7 +150,7 @@ class BlenderNC_OT_purge_all(bpy.types.Operator):
 
     def execute(self, context):
         NodeTrees = get_blendernc_nodetrees()
-        cache = bpy.context.scene.nc_cache
+        cache = bpy.context.scene.datacube_cache
         if cache.keys():
             for NodeTree in NodeTrees:
                 NodeTree_name = NodeTree.bl_idname

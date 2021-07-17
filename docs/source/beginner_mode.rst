@@ -36,8 +36,8 @@ Switch to the :purple:`BlenderNC panel`.
   :width: 100%
   :alt: BlenderNC panel
 
-Within the :purple:`BlenderNC panel` click on `Load netCDF`, then select a
-netCDF by clicking the :green:`folder icon`.
+Within the :purple:`BlenderNC panel` click on `Load datacube`, then select a
+datacube by clicking the :green:`folder icon`.
 
 .. image:: ../images/blendernc_panel.png
   :width: 30%
@@ -56,7 +56,7 @@ Select an object and apply the material by clicking
   :width: 30%
   :alt: BlenderNC apply
 
-To animate the netCDF in time click over "**Animate netCDF**". Press **space**
+To animate the datacube in time click over "**Animate datacube**". Press **space**
 in your keyboard to visualize animation.
 
 .. note:: The material will be applied to the selected object.

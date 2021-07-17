@@ -65,7 +65,7 @@ In this tutorial will explore:
       :class: with-shadow
 
 
-2. Select all the nodes except for the ``netCDF Path`` node, by clicking and draging over the **BlenderNC** nodetree.
+2. Select all the nodes except for the ``datacube Path`` node, by clicking and draging over the **BlenderNC** nodetree.
 
 .. image:: ../../images/ecmwf_example/select_nodes.png
   :width: 100%
@@ -157,7 +157,7 @@ In this tutorial will explore:
   :width: 100%
   :class: with-shadow
 
-.. note:: Instead of using the same dataset, now you can experiment by adding another ``netCDF Path`` node and use a different dataset and animating multiple variables.
+.. note:: Instead of using the same dataset, now you can experiment by adding another ``datacube Path`` node and use a different dataset and animating multiple variables.
 
 If you render the image (press ``F12``), your image should resemble:
 

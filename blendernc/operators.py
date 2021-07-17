@@ -24,9 +24,9 @@ from blendernc.translations import translate
 bNCEngine = BlenderncEngine()
 
 
-class BlenderNC_OT_ncload(bpy.types.Operator):
+class BlenderNC_OT_datacubeload(bpy.types.Operator):
     """
-    BlenderNC_OT_ncload Load netCDF files within Blender.
+    BlenderNC_OT_datacubeload Load datacube files within Blender.
 
     Parameters
     ----------
@@ -39,14 +39,14 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         {FINISHED} if operator exits successfully.
     """
 
-    bl_idname = "blendernc.ncload"
-    bl_label = "Load netcdf file"
-    bl_description = "Loads netcdf file"
+    bl_idname = "blendernc.datacubeload"
+    bl_label = "Load datacube file"
+    bl_description = "Loads datacube file"
     bl_options = {"REGISTER", "UNDO"}
 
     file_path: bpy.props.StringProperty(
         name="File path",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
@@ -80,7 +80,7 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         # If quick import, define global variable.
         if self.node_group == default_node_group_name:
             var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
-            bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
+            bpy.types.Scene.blendernc_datacube_vars = bpy.props.EnumProperty(
                 items=var_names, name="Select Variable", update=update_nodes
             )
 
@@ -89,8 +89,8 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
 
 class BlenderNC_OT_var(bpy.types.Operator):
     bl_idname = "blendernc.var"
-    bl_label = "Load netcdf vars"
-    bl_description = "Loads netcdf vars"
+    bl_label = "Load datacube vars"
+    bl_description = "Loads datacube vars"
     bl_options = {"REGISTER", "UNDO"}
 
     file_path: bpy.props.StringProperty()
@@ -111,26 +111,26 @@ class BlenderNC_OT_var(bpy.types.Operator):
 
         node_group = bpy.data.node_groups.get(default_node_group_name)
         if not node_group.nodes:
-            path = node_group.nodes.new("netCDFPath")
+            path = node_group.nodes.new("datacubePath")
             path.location[0] = -300
-            netcdf = node_group.nodes.new("netCDFNode")
-            netcdf.location[0] = -130
+            datacube = node_group.nodes.new("datacubeNode")
+            datacube.location[0] = -130
         else:
-            path = node_group.nodes.get("netCDF Path")
-            netcdf = node_group.nodes.get("netCDF input")
+            path = node_group.nodes.get("datacube Path")
+            datacube = node_group.nodes.get("datacube Input")
         path.blendernc_file = self.file_path
         # LINK nodes
         if not node_group.links:
-            node_group.links.new(netcdf.inputs[0], path.outputs[0])
+            node_group.links.new(datacube.inputs[0], path.outputs[0])
 
-        netcdf.update()
+        datacube.update()
         return {"FINISHED"}
 
 
 class BlenderNC_OT_compute_range(bpy.types.Operator):
     bl_idname = "blendernc.compute_range"
     bl_label = "Compute vmin & vmax"
-    bl_description = "Compute vmax and vmin of netcdf selected variable"
+    bl_description = "Compute vmax and vmin of datacube selected variable"
     bl_options = {"REGISTER", "UNDO"}
 
     node: bpy.props.StringProperty()
@@ -166,14 +166,14 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
     file_name: bpy.props.StringProperty(
         name="File name",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
     """An instance of the original StringProperty."""
     var_name: bpy.props.StringProperty(
         name="File name",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
@@ -197,7 +197,7 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         file_path = abspath(self.file_name)
 
         scene = context.scene
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_datacube(file_path)
+        scene.blendernc_dict
 
         var_name = self.var_name
         if not var_name:
@@ -216,10 +216,10 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BlenderNC_OT_netcdf2img(bpy.types.Operator):
-    bl_idname = "blendernc.nc2img"
-    bl_label = "From netcdf to image"
-    bl_description = "Updates an image with netcdf data"
+class BlenderNC_OT_datacube2img(bpy.types.Operator):
+    bl_idname = "blendernc.datacube2img"
+    bl_label = "From datacube to image"
+    bl_description = "Updates an image with datacube data"
     node: bpy.props.StringProperty()
     """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
@@ -256,7 +256,7 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
 
 
 class BlenderNC_OT_apply_material(bpy.types.Operator):
-    bl_label = "Load netCDF"
+    bl_label = "Load datacube"
     bl_idname = "blendernc.apply_material"
     bl_description = "Apply texture to material for simple cases"
     bl_context = "objectmode"
@@ -344,7 +344,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class ImportnetCDFCollection(bpy.types.PropertyGroup):
+class ImportDatacubeCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for importing the file",

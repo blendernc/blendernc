@@ -4,7 +4,7 @@ import functools
 import bpy
 
 from blendernc.get_utils import get_input_links
-from blendernc.messages import unselected_nc_var, unselected_variable
+from blendernc.messages import unselected_datacube, unselected_variable
 
 
 class NodesDecorators(object):
@@ -58,7 +58,7 @@ class NodesDecorators(object):
                 for node_out in node_out_list:
                     cls.unlink_output(node_out)
                     # Only remove the identifier of the node from the global dictionary.
-                    if node_out.bl_idname == "netCDFNode":
+                    if node_out.bl_idname == "datacubeNode":
                         identifier = node_out.blendernc_dataset_identifier
                         node_out.blendernc_dict.pop(identifier, None)
                     # Purge dictionary form all other nodes.
@@ -119,23 +119,23 @@ class NodesDecorators(object):
         """
         # TODO: Add function to check for multiple connectgions
         inputs_links = get_input_links(node)
-        if node.bl_idname == "netCDFPath":
+        if node.bl_idname == "datacubePath":
             return True
         elif node.bl_idname == "Datacube_tutorial":
             return True
         elif (
-            inputs_links.from_node.bl_idname == "netCDFPath"
-            and node.bl_idname == "netCDFNode"
+            inputs_links.from_node.bl_idname == "datacubePath"
+            and node.bl_idname == "datacubeNode"
         ):
             cls.get_blendernc_file(node)
             return cls.select_var_dataset(node)
         elif (
-            inputs_links.from_node.bl_idname == "netCDFPath"
-            and node.bl_idname == "netCDFinputgrid"
+            inputs_links.from_node.bl_idname == "datacubePath"
+            and node.bl_idname == "datacubeInputGrid"
         ):
             cls.get_blendernc_file(node)
             return cls.select_grid_dataset(node)
-        elif inputs_links.from_node.bl_idname == "netCDFNode":
+        elif inputs_links.from_node.bl_idname == "datacubeNode":
             # Copy from socket! Note that this socket is shared in memory at \
             # any point in the nodetree.
             # TODO: Create a custom property that allows to pass a dataset,
@@ -180,7 +180,7 @@ class NodesDecorators(object):
             if "selected_var" not in blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
                 bpy.context.window_manager.popup_menu(
-                    unselected_nc_var, title="Error", icon="ERROR"
+                    unselected_variable, title="Error", icon="ERROR"
                 )
                 cls.unlink_input(node)
                 node.blendernc_dict.pop(identifier)
@@ -190,9 +190,9 @@ class NodesDecorators(object):
                 return True
         # Else user should select a file.
         else:
-            # Exception for netCDFNode to update dataset
+            # Exception for datacubeNode to update dataset
             bpy.context.window_manager.popup_menu(
-                unselected_variable, title="Error", icon="ERROR"
+                unselected_datacube, title="Error", icon="ERROR"
             )
             cls.unlink_input(node)
             return False
@@ -202,18 +202,19 @@ class NodesDecorators(object):
         inputs_links = get_input_links(node)
         if node.blendernc_file != inputs_links.from_socket.text:
             node.blendernc_file = inputs_links.from_socket.text
-            bpy.ops.blendernc.ncload(
+            bpy.ops.blendernc.datacubeload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
             )
             return False
         elif (
-            node.blendernc_netcdf_vars != "No var" and node.blendernc_netcdf_vars != ""
+            node.blendernc_datacube_vars != "No var"
+            and node.blendernc_datacube_vars != ""
         ):
             return True
         else:
-            bpy.ops.blendernc.ncload(
+            bpy.ops.blendernc.datacubeload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
@@ -226,7 +227,7 @@ class NodesDecorators(object):
         identifier = node.blendernc_dataset_identifier
         if node.blendernc_file != inputs_links.from_socket.text:
             node.blendernc_file = inputs_links.from_socket.text
-            bpy.ops.blendernc.ncload(
+            bpy.ops.blendernc.datacubeload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
@@ -239,7 +240,7 @@ class NodesDecorators(object):
         elif node.blendernc_grid_x != "" and node.blendernc_grid_y != "":
             return True
         else:
-            bpy.ops.blendernc.ncload(
+            bpy.ops.blendernc.datacubeload(
                 file_path=node.blendernc_file,
                 node_group=node.rna_type.id_data.name,
                 node=node.name,

@@ -28,7 +28,7 @@ bpy.types.Scene.blendernc_resolution = bpy.props.FloatProperty(
     options={"ANIMATABLE"},
 )
 
-bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
+bpy.types.Scene.blendernc_datacube_vars = bpy.props.EnumProperty(
     items=empty_item(), name="No variable"
 )
 
@@ -45,7 +45,7 @@ bpy.types.Scene.blendernc_meshes = bpy.props.PointerProperty(
 )
 
 bpy.types.Scene.blendernc_animate = bpy.props.BoolProperty(
-    default=False, name="Animate netCDF", update=update_animation
+    default=False, name="Animate datacube", update=update_animation
 )
 
 
@@ -81,7 +81,7 @@ class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
         split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
         # Select variables menu
         box_asts.label(text="Select variable:", icon="WORLD_DATA")
-        box_asts.prop(scn, "blendernc_netcdf_vars", text="")
+        box_asts.prop(scn, "blendernc_datacube_vars", text="")
         box_asts.prop(scn, "blendernc_animate")
         row = box_asts.row(align=True)
         split = row.split(factor=0.9)
@@ -90,7 +90,7 @@ class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
         # TO DO: Add info?
         # box_asts.label(text="INFO", icon='INFO')
 
-        if scn.blendernc_netcdf_vars != "NONE" and [
+        if scn.blendernc_datacube_vars != "NONE" and [
             True
             for node_groups in bpy.data.node_groups.keys()
             if "BlenderNC" in node_groups

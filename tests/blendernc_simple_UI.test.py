@@ -23,7 +23,7 @@ def capture_render_log(func):
 @capture_render_log
 def render_image(file, var, res):
     bpy.context.scene.blendernc_file = file
-    bpy.context.scene.blendernc_netcdf_vars = var
+    bpy.context.scene.blendernc_datacube_vars = var
     bpy.context.scene.blendernc_resolution = res
 
     # Delete cube

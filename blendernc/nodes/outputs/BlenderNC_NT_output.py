@@ -19,7 +19,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFOutput"
+    bl_idname = "datacubeOutput"
     # Label for nice name display
     bl_label = "Output"
     # Icon identifier
@@ -69,7 +69,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     # as shown below.
     def init(self, context):
         self.frame_loaded = -1
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.8, 0.4, 0.4)
         self.use_custom_color = True
 
@@ -122,7 +122,7 @@ class BlenderNC_NT_output(bpy.types.Node):
 
         node_names = self.rna_type.id_data.nodes.keys()
         if "Input Grid" in node_names and len(self.inputs) == 1:
-            self.inputs.new("bNCnetcdfSocket", "Grid")
+            self.inputs.new("bNCdatacubeSocket", "Grid")
         elif "Input Grid" not in node_names and len(self.inputs) == 2:
             self.inputs.remove(self.inputs.get("Grid"))
 

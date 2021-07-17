@@ -4,15 +4,20 @@
 
 <!--INFO-->
 
-**BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org).
+---
+### Important:
+##### <span style="color: red;"> The BlenderNC API has been updated for future development and consistency to support `netCDF`, `grib`, and `zarr` formats. In other words, previous versions to 0.4.0 are not compatible. Users are required to update their BlenderNC nodetree to use the renamed nodes. Version 0.3.3 is the last version with support for the previous API.</span>
+---
 
-BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display netCDF data files as images and volumetric data in Blender.
+**BlenderNC** is an open source add-on and Python module to visualize **netCDF**, **grib**, and **zarr** datasets in [**Blender**](www.blender.org).
+
+BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display datasets as images in Blender.
 
 #### Why BlenderNC?
 
 Science visualization is a fundamental part of science communication and the exploration of large datasets. However, production quality real-time visualization and animation of scientific data has remained unreachable to the scientific community. BlenderNC main goal is to facilitate the generation of quality animations of scientific gridded data with a powerful and simple interface. For example:
 
-- Quick load of netCDFs:
+- Quick load of datasets:
 
 <img src="./docs/images/quick_load_gif.gif" width="70%" />
 

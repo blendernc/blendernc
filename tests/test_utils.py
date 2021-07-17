@@ -44,11 +44,11 @@ def build_dict_blendernc_prop(existing_nodes_list):
             if "blendernc" in _dir:
                 blendernc_prop_list.append(_dir)
 
-        if node.name == "netCDF input":
+        if node.name == "datacube Input":
             blendernc_prop_list.remove("blendernc_file")
             blendernc_prop_list.remove("blendernc_dict")
             blendernc_prop_list.remove("blendernc_dataset_identifier")
-        elif node.name != "netCDF Path":
+        elif node.name != "datacube Path":
             blendernc_prop_list.remove("blendernc_dataset_identifier")
             blendernc_prop_list.remove("blendernc_dict")
 
@@ -61,7 +61,7 @@ def build_dict_blendernc_prop(existing_nodes_list):
 def refresh_state(func):
     def wrapper(*args, **kwargs):
         func(*args, **kwargs)
-        bpy.context.scene.nc_cache.pop("BlenderNC", None)
+        bpy.context.scene.datacube_cache.pop("BlenderNC", None)
         print("Purge")
 
     return wrapper

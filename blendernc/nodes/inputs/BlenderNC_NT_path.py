@@ -11,9 +11,9 @@ class BlenderNC_NT_path(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFPath"
+    bl_idname = "datacubePath"
     # Label for nice name display
-    bl_label = "netCDF Path"
+    bl_label = "datacube Path"
     # Icon identifier
     bl_icon = "FOLDER_REDIRECT"
     blb_type = "NETCDF"
@@ -72,7 +72,7 @@ class BlenderNC_NT_path(bpy.types.Node):
     # Explicit user label overrides this,
     # but here we can define a label dynamically
     def draw_label(self):
-        return "netCDF Path"
+        return "datacube Path"
 
     def update(self):
         if self.outputs[0].is_linked and self.blendernc_file:
