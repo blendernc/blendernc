@@ -13,7 +13,7 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
 .. image:: ../../images/gebco_example/gebco_select_file.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Select variable (``elevation``):
 

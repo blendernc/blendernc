@@ -14,7 +14,7 @@ def divide_cmap(n, step):
 
 
 def update_fill_value(node, context):
-    colorramp = node.node_tree.nodes.get("Color_Ramp.000").color_ramp
+    colorramp = node.node_tree.nodes.get("ColorRamp.000").color_ramp
     colorramp.elements[0].color = node.fv_color
 
 

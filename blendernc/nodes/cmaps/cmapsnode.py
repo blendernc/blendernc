@@ -17,7 +17,6 @@ core_colorramp = ColorRamp()
 
 
 def update_colorramp(self, context):
-    update_operator(self, context)
     if not self.colormaps:
         return
     else:
@@ -29,7 +28,7 @@ def update_colorramp(self, context):
             if selected_cmap[0].split("_")[-1] == "_r":
                 selected_cmap[0] = selected_cmap[0].replace("_r", "")
 
-        colorramp = self.node_tree.nodes[self._get_name("Color_Ramp")].color_ramp
+        colorramp = self.node_tree.nodes[self._get_name("ColorRamp")].color_ramp
         core_colorramp.update_colormap(colorramp, selected_cmap, cmap_steps)
 
 
@@ -67,9 +66,30 @@ class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
 
 
 # Chosen operator has changed - update the nodes and links
-def update_operator(self, context):
+def update_operator(self):
     self.__nodeinterface_setup__()
     self.__nodetree_setup__()
+
+
+def create_colormap_nodetree(self):
+    # Create node tree
+    self.node_tree = core_colorramp.create_group_node(node_group_name)
+    # Create group input and output
+    input = self.node_tree.nodes.new("NodeGroupInput")
+    input.bl_label = self._get_name("Group Input")
+    input.name = self._get_name("Group Input")
+    output = self.node_tree.nodes.new("NodeGroupOutput")
+    output.bl_label = self._get_name("Group Output")
+    output.name = self._get_name("Group Output")
+    # Create Colormap
+    core_colorramp.create_colorramp(self._get_name("ColorRamp"))
+
+
+def default_colorramp():
+    colormaps = core_colorramp.get_cmaps()
+    first_colormap = next(iter(colormaps.values()))[0]
+    first_colorlib = next(iter(colormaps))
+    return first_colormap + ":" + first_colorlib
 
 
 class BlenderNC_OT_select_colormap(bpy.types.Operator):
@@ -132,10 +152,9 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     # Manage the internal nodes to perform the chained operation:
     # clear all the nodes and build from scratch each time.
     def __nodetree_setup__(self):
-        # Remove all links and all nodes that aren  't Group Input or Group
+        # Remove all links and all nodes that aren't Group Input or Group
         input_node = self.node_tree.nodes[self._get_name("Group Input")]
-        # TODO: ADD math here to control max and min values
-        cmap = self.node_tree.nodes[self._get_name("Color_Ramp")]
+        cmap = self.node_tree.nodes[self._get_name("ColorRamp")]
         output_node = self.node_tree.nodes[self._get_name("Group Output")]
 
         # Links:
@@ -179,23 +198,11 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Setup the node tree and add the group Input and Output nodes
     def init(self, context):
-        # Create node tree
-        self.node_tree = core_colorramp.create_group_node(node_group_name)
-        # Create group input and output
-        input = self.node_tree.nodes.new("NodeGroupInput")
-        input.bl_label = self._get_name("Group Input")
-        input.name = self._get_name("Group Input")
-        output = self.node_tree.nodes.new("NodeGroupOutput")
-        output.bl_label = self._get_name("Group Output")
-        output.name = self._get_name("Group Output")
-        # Create Colormap
-        core_colorramp.create_colorramp(self._get_name("Color_Ramp"))
+        create_colormap_nodetree(self)
         # Set width of node
         self.width = 250
-        colormaps = core_colorramp.get_cmaps()
-        first_colormap = next(iter(colormaps.values()))[0]
-        first_colorlib = next(iter(colormaps))
-        self.colormaps = first_colormap + ":" + first_colorlib
+        self.colormaps = default_colorramp()
+        update_operator(self)
         # Update node
         update_colorramp(self, context)
 
@@ -212,24 +219,23 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         layout.prop(self, "n_stops")
         layout.prop(self, "fcmap")
 
-        tnode = self.node_tree.nodes[self._get_name("Color_Ramp")]
+        tnode = self.node_tree.nodes[self._get_name("ColorRamp")]
         layout.template_color_ramp(tnode, "color_ramp", expand=True)
         layout.prop(self, "fv_color")
 
     # Copy
     def copy(self, node):
+        create_colormap_nodetree(self)
+        self.colormaps = default_colorramp()
+        update_operator(self)
         print("Copying from node ", node)
 
     # Free (when node is deleted)
     def free(self):
-        # Free node group
-        if len(self.node_tree.nodes.keys()) <= 3:
-            bpy.data.node_groups.remove(self.node_tree, do_unlink=True)
-        else:
-            id_node = self._node_identifier()
-            for node_key in self.node_tree.nodes.keys():
-                if id_node in node_key:
-                    self.node_tree.nodes.remove(self.node_tree.nodes[node_key])
+        id_node = self._node_identifier()
+        for node_key in self.node_tree.nodes.keys():
+            if id_node in node_key:
+                self.node_tree.nodes.remove(self.node_tree.nodes[node_key])
 
     def update(self):
         pass
@@ -241,7 +247,7 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         n_split = self.name.split(".")
         # See line 105 of utils_colorramp.py
         if len(n_split) == 1:
-            n_id = ".000"
+            n_id = ""
         else:
             n_id = "." + n_split[-1]
         return name + n_id

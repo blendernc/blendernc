@@ -46,25 +46,25 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
 .. image:: ../../images/ecmwf_example/select_dataset.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Select the variable ``t2m`` from this dataset (Air-Temperature at 2 meters):
 
 .. image:: ../../images/ecmwf_example/select_variable.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Click over the animation checkbox to allow the dataset to be animated.
 
 .. image:: ../../images/ecmwf_example/select_animate.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Let's increase the resolution to 100%:
 
 .. image:: ../../images/ecmwf_example/change_resolution.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Now, we can apply the material BlenderNC just created, but first, lets delete the default cube (shortuct ``x``), create a sphere (shortcut ``shift + a`` - ``Mesh -> UV Sphere``), and scale it to ``2x`` (shortcut ``s + 2 + return``)
 
@@ -72,7 +72,7 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
 .. image:: ../../images/ecmwf_example/3D_view.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 .. note::
     So far there is noting new, but the render preview looks awful, we will fix it using the BlenderNC nodetree.
@@ -86,19 +86,19 @@ Let's switch to the BlenderNC nodetree, we have two options:
 
 .. image:: ../../images/ecmwf_example/change_workspace.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - or switch viewport to the BlenderNC nodetree:
 
 .. image:: ../../images/ecmwf_example/change_nodetree.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path, netCDF input, Resolution, Image Output``, as seen below:
 
 .. image:: ../../images/ecmwf_example/selected_nodetree.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 
 .. note::
@@ -162,31 +162,31 @@ After fixing the render preview:
 
 .. image:: ../../images/ecmwf_example/change_min_max_values.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Select the ``Sphere`` by clicking over it, this will automatically show the material applied to the ``Sphere``, by the default the name will be ``BlenderNC_default``.
 
 .. image:: ../../images/ecmwf_example/change_material.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - After selecting the image or changing material (changing material will assing the selected material to the selected object), the material nodetree will be displayed:
 
 .. image:: ../../images/ecmwf_example/zoom_colormap_node.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Within the material nodetree, you will find a node titled ``Colormap``, in this node, you can change the colormap used for the preview and render. Currently, BlenderNC supports `cmocean <https://matplotlib.org/cmocean/>`_ and `matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_ colormaps.
 
 .. image:: ../../images/ecmwf_example/supported_colorbar.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 - Select a different colormap, for example ``gist_heat``
 
 .. image:: ../../images/ecmwf_example/updated_colormap.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 .. note::
   Changing the colormap, doesn't change the colorbar material. This will be autimatically handle in a future release of BlenderNC.
@@ -195,10 +195,10 @@ After fixing the render preview:
 
 .. image:: ../../images/ecmwf_example/update_colorbar.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
 
 This concludes this tutorial:
 
 .. image:: ../../images/ecmwf_example/end_tutorial.png
   :width: 100%
-  :class: with-shadow float-left
+  :class: with-shadow
