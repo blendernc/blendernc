@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import netcdf_values, update_value_and_node_tree
+from blendernc.python_functions import datacube_values, update_value_and_node_tree
 
 
 class BlenderNC_NT_resolution(bpy.types.Node):
@@ -14,7 +14,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFResolution"
+    bl_idname = "datacubeResolution"
     # Label for nice name display
     bl_label = "Resolution"
     # Icon identifier
@@ -43,8 +43,8 @@ class BlenderNC_NT_resolution(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.4, 0.4, 0.8)
         self.use_custom_color = True
 
@@ -80,7 +80,7 @@ class BlenderNC_NT_resolution(bpy.types.Node):
         dataset = unique_data_dict_node["Dataset"]
         var_name = sel_var["selected_var_name"]
         resolution = self.blendernc_resolution
-        netcdf_data = netcdf_values(dataset, var_name, resolution)
-        unique_data_dict_node["Dataset"] = netcdf_data
+        datacube_data = datacube_values(dataset, var_name, resolution)
+        unique_data_dict_node["Dataset"] = datacube_data
         sel_var["resolution"] = resolution
         # TODO: Do I know time here if so, select time and load snapshot here

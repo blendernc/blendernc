@@ -6,12 +6,12 @@ import bpy
 class BlenderNC_NT_preloader(bpy.types.Node):
     # === Basics ===
     # Description string
-    """A netcdf node"""
+    """A datacube node"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFPreloadNode"
+    bl_idname = "datacubePreloadNode"
     # Label for nice name display
-    bl_label = "Load netCDF"
+    bl_label = "Load datacube"
     # Icon identifier
     bl_icon = "SOUND"
     blb_type = "NETCDF"
@@ -38,10 +38,10 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     def draw_buttons(self, context, layout):
         # scene = context.scene
         layout.label(text="INFO: Work in progress", icon="INFO")
-        # if scene.nc_dictionary:
+        # if scene.blendernc_dict:
         #     layout.prop(self, "file_name")
         # else:
-        #     layout.label(text="No netcdf loaded")
+        #     layout.label(text="No datacube loaded")
         # if self.file_name:
         #     layout.prop(self, "var_name")
         # if self.var_name:
@@ -67,7 +67,7 @@ class BlenderNC_NT_preloader(bpy.types.Node):
     # Explicit user label overrides this,
     # but here we can define a label dynamically
     def draw_label(self):
-        return "Load netCDF"
+        return "Load datacube"
 
     def update_value(self, context):
         self.update()

@@ -30,7 +30,7 @@ macOS
 
     cd /Applications/Blender.app/Contents/Resources/2.83/python/bin/
     ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz datacube4
 
 Linux
 -----

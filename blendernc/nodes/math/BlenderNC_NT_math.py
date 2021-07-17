@@ -47,7 +47,7 @@ class BlenderNC_NT_math(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFmath"
+    bl_idname = "datacubeMath"
     # Label for nice name display
     bl_label = "Math"
     # Icon identifier
@@ -71,8 +71,8 @@ class BlenderNC_NT_math(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -107,9 +107,9 @@ class BlenderNC_NT_math(bpy.types.Node):
         if operation in operation_types["float"] and "Float" not in self.inputs.keys():
             self.inputs.new("bNCfloatSocket", "Float")
         elif operation in operation_types["dataset"] and "Float" in self.inputs.keys():
-            self.inputs.new("bNCnetcdfSocket", "Dataset")
+            self.inputs.new("bNCdatacubeSocket", "Dataset")
         elif operation in operation_types["dataset"] and len(self.inputs.keys()) == 1:
-            self.inputs.new("bNCnetcdfSocket", "Dataset")
+            self.inputs.new("bNCdatacubeSocket", "Dataset")
         else:
             pass
 

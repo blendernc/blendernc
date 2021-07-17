@@ -9,7 +9,7 @@ class BlenderNC_NT_transpose(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFtranspose"
+    bl_idname = "datacubeTranspose"
     # Label for nice name display
     bl_label = "Transpose"
     # Icon identifier
@@ -24,8 +24,8 @@ class BlenderNC_NT_transpose(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):

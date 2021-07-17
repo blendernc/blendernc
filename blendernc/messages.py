@@ -69,23 +69,19 @@ def increase_resolution(self, context):
     self.layout.label(text="Increase resolution.")
 
 
-def unselected_nc_file(self, context):
-    self.layout.label(text="Select a netCDF file.")
+def unselected_datacube(self, context):
+    self.layout.label(text="Select a variable from the datacube.")
 
 
 def unselected_variable(self, context):
-    self.layout.label(text="Select a variable file.")
+    self.layout.label(text="Reselect a variable from the datacube.")
 
 
-def unselected_nc_var(self, context):
-    self.layout.label(text="Select a variable from the netCDF file.")
-
-
-def unselected_nc_dim(self, context):
+def unselected_dim(self, context):
     self.layout.label(text="Select a dimension to drop.")
 
 
-def unselected_nc_coord(self, context):
+def unselected_coord(self, context):
     self.layout.label(text="Select a coordinate to drop.")
 
 

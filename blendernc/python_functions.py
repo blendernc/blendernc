@@ -7,7 +7,7 @@
 import glob
 import os
 
-# TODO: If netcdf file has been selected already create a copy of the TreeNode
+# TODO: If datacube file has been selected already create a copy of the TreeNode
 import bpy
 
 # Other imports
@@ -63,11 +63,11 @@ def update_node_tree(self, context):
 
 
 def update_nodes(scene, context):
-    selected_variable = scene.blendernc_netcdf_vars
+    selected_variable = scene.blendernc_datacube_vars
     default_node_group_name = scene.default_nodegroup
     bpy.data.node_groups.get(default_node_group_name).nodes.get(
-        "netCDF input"
-    ).blendernc_netcdf_vars = selected_variable
+        "datacube input"
+    ).blendernc_datacube_vars = selected_variable
     update_proxy_file(scene, context)
 
 
@@ -142,15 +142,15 @@ def purge_cache(NodeTree, identifier):
     nodetrees = bnc_gutils.get_blendernc_nodetrees()
     n = 0
     for node in nodetrees:
-        # Make sure the nc_cache is loaded.
-        if node.name in scene.nc_cache.keys():
-            cache = scene.nc_cache[node.name]
+        # Make sure the datacube_cache is loaded.
+        if node.name in scene.datacube_cache.keys():
+            cache = scene.datacube_cache[node.name]
             for key, item in cache.items():
                 n += len(item)
 
     if scene.blendernc_memory_handle == "FRAMES":
         while n > scene.blendernc_frames:
-            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            cached_nodetree = scene.datacube_cache[NodeTree][identifier]
             frames_loaded = list(cached_nodetree.keys())
             cached_nodetree.pop(frames_loaded[0])
             n -= 1
@@ -163,42 +163,42 @@ def purge_cache(NodeTree, identifier):
         mem = psutil.virtual_memory()
         mem_avail_percent = (mem.available / mem.total) * 100
         while mem_avail_percent < scene.blendernc_avail_mem_purge and n > 1:
-            cached_nodetree = scene.nc_cache[NodeTree][identifier]
+            cached_nodetree = scene.datacube_cache[NodeTree][identifier]
             frames_loaded = list(cached_nodetree.keys())
             cached_nodetree.pop(frames_loaded[0])
             print("Removed frame: {0}".format(frames_loaded[0]))
             from blendernc.core.sys_utils import get_size
 
-            cache_dict_size = get_size(scene.nc_cache)
+            cache_dict_size = get_size(scene.datacube_cache)
             message = "Dynamic cache: \n Total dict cache - {0} \n"
             message += "Available percentage - {1}"
             warnings.warn(message.format(cache_dict_size, mem_avail_percent))
             n -= 1
 
         # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
-        # print(scene.nc_cache['BlenderNC']['001'].keys() )
+        # print(scene.datacube_cache['BlenderNC']['001'].keys() )
 
 
 def refresh_cache(NodeTree, identifier, frame):
-    if bpy.context.scene.nc_cache:
-        cached_nodetree = bpy.context.scene.nc_cache[NodeTree][identifier]
+    if bpy.context.scene.datacube_cache:
+        cached_nodetree = bpy.context.scene.datacube_cache[NodeTree][identifier]
         cached_nodetree.pop(frame, None)
 
 
 def is_cached(NodeTree, identifier):
-    if NodeTree in bpy.context.scene.nc_cache.keys():
-        if identifier in bpy.context.scene.nc_cache[NodeTree].keys():
+    if NodeTree in bpy.context.scene.datacube_cache.keys():
+        if identifier in bpy.context.scene.datacube_cache[NodeTree].keys():
             return True
     else:
         return False
 
 
 def del_cache(NodeTree, identifier):
-    if bpy.context.scene.nc_cache:
-        bpy.context.scene.nc_cache[NodeTree].pop(identifier)
-        # keys = list(bpy.context.scene.nc_cache[NodeTree][identifier].keys())
+    if bpy.context.scene.datacube_cache:
+        bpy.context.scene.datacube_cache[NodeTree].pop(identifier)
+        # keys = list(bpy.context.scene.datacube_cache[NodeTree][identifier].keys())
         # for key in keys:
-        #     bpy.context.scene.nc_cache[NodeTree][identifier].pop(key)
+        #     bpy.context.scene.datacube_cache[NodeTree][identifier].pop(key)
 
 
 def update_res(scene, context):
@@ -223,11 +223,11 @@ def dict_update(node, context):
         node_tree = node.rna_type.id_data.name
         unique_identifier = node.blendernc_dataset_identifier
 
-        update_dict(node.blendernc_netcdf_vars, node)
+        update_dict(node.blendernc_datacube_vars, node)
 
         if (
             is_cached(node_tree, unique_identifier)
-            and selected_var != node.blendernc_netcdf_vars
+            and selected_var != node.blendernc_datacube_vars
         ):
             del_cache(node_tree, unique_identifier)
 
@@ -252,8 +252,8 @@ def normalize_data_w_grid(node, node_tree, data, grid_node):
     #     grid_y = grid.coords[y_grid_name].drop((x_grid_name,y_grid_name))
     #     grid = xarray.merge((grid_y,grid_x))
 
-    x_grid_data = netcdf_values(grid, x_grid_name, active_resolution, False)
-    y_grid_data = netcdf_values(grid, y_grid_name, active_resolution, False)
+    x_grid_data = datacube_values(grid, x_grid_name, active_resolution, False)
+    y_grid_data = datacube_values(grid, y_grid_name, active_resolution, False)
 
     # Plot image using matplotlib.
     # TODO Current implementation is not ideal, it is slow
@@ -298,7 +298,7 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
 
 
 def load_frame(context, node, node_tree, frame, grid_node=None):
-    # Find netcdf file data
+    # Find datacube file data
     # Get the data of the selected variable and grid
 
     var_data = bnc_gutils.get_var_data(context, node, node_tree)
@@ -401,7 +401,7 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
 
     try:
         # TODO:Use time coordinate, not index.
-        pixels_cache = scene.nc_cache[node_tree][unique_identifier][frame]
+        pixels_cache = scene.datacube_cache[node_tree][unique_identifier][frame]
         # If the size of the cache data does not match the size
         # of the image multiplied by the 4 channels (RGBA)
         # we need to reload the data.
@@ -412,7 +412,7 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     timer.tick("Load Frame")
 
     # In case data has been pre-loaded
-    pixels_value = scene.nc_cache[node_tree][unique_identifier][frame]
+    pixels_value = scene.datacube_cache[node_tree][unique_identifier][frame]
     timer.tick("Assign to pixel")
     # TODO: Test version, make it copatible with 2.8 forwards
     image.pixels.foreach_set(pixels_value)
@@ -552,7 +552,7 @@ def update_colormap_interface(context, node, node_tree):
     # Get data dictionary stored at scene object
 
 
-def netcdf_values(
+def datacube_values(
     dataset,
     selected_variable,
     active_resolution,
@@ -595,17 +595,17 @@ def resolution_steps(size, res):
 def update_proxy_file(self, context):
     """
     Update function:
-        -   Checks if netCDF file exists
-        -   Extracts variable names using netCDF4 conventions.
+        -   Checks if datacube file exists
+        -   Extracts variable names using datacube conventions.
     """
-    bpy.ops.blendernc.ncload_sui()
+    bpy.ops.blendernc.datacubeload_sui()
 
 
 def update_file_vars(node, context):
     """
     Update function:
-        -   Checks if netCDF file exists
-        -   Extracts variable names using netCDF4 conventions.
+        -   Checks if datacube file exists
+        -   Extracts variable names using datacube conventions.
     """
     bpy.ops.blendernc.var(file_path=bpy.context.scene.blendernc_file)
 

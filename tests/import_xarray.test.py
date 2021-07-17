@@ -38,13 +38,13 @@ def render_image(file, var):
     node_tree.use_fake_user = True
 
     # Create nodes
-    path = node_tree.nodes.new("netCDFPath")
+    path = node_tree.nodes.new("datacubePath")
     path.location = (-350, 0)
-    inp = node_tree.nodes.new("netCDFNode")
+    inp = node_tree.nodes.new("datacubeNode")
     inp.location = (-125, 0)
-    res = node_tree.nodes.new("netCDFResolution")
+    res = node_tree.nodes.new("datacubeResolution")
     res.location = (125, 0)
-    out = node_tree.nodes.new("netCDFOutput")
+    out = node_tree.nodes.new("datacubeOutput")
     out.location = (350, 0)
 
     # Select variable
@@ -52,7 +52,7 @@ def render_image(file, var):
     # Connect path node to datacube node
     node_tree.links.new(inp.inputs[0], path.outputs[0])
     # Select variable
-    inp.blendernc_netcdf_vars = var
+    inp.blendernc_datacube_vars = var
     # Change resolution
     res.blendernc_resolution = 100
 
@@ -111,7 +111,7 @@ def render_image(file, var):
 
 
 class Test_format_import(unittest.TestCase):
-    def test_import_netCDF(self):
+    def test_import_datacube(self):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
         format = file.split(".")[-1]

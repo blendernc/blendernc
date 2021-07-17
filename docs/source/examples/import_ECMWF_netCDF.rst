@@ -42,7 +42,7 @@ Import data!
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
-- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navigate and select the ecmwdf netcdf dataset: ``blendernc/test/dataset/ssh_1995-01.nc``
+- Switch to the BlenderNC panel and click on ``Load datacube``. Then click the folder icon, navigate and select the ECMWF netcdf dataset: ``blendernc/test/dataset/ssh_1995-01.nc``
 
 .. image:: ../../images/ecmwf_example/select_dataset.png
   :width: 100%
@@ -94,7 +94,7 @@ Let's switch to the BlenderNC nodetree, we have two options:
   :width: 100%
   :class: with-shadow
 
-By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path, netCDF input, Resolution, Image Output``, as seen below:
+By default, the `3D view` **BlenderNC** panel will create 4 nodes ``datacube Path, datacube input, Resolution, Image Output``, as seen below:
 
 .. image:: ../../images/ecmwf_example/selected_nodetree.png
   :width: 100%
@@ -102,13 +102,13 @@ By default, the `3D view` **BlenderNC** panel will create 4 nodes ``netCDF Path,
 
 
 .. note::
-  The node ``netCDF input`` changes name to the current loaded filename.
+  The node ``datacube input`` changes name to the current loaded filename.
 
 Let's fix some of the issues:
 
 1. Fix washed out colormap:
 
-   -  Import netCDF range by pressing ``shift+a`` and then navegate to ``Datacube``, then select ``netCDF Range``.
+   -  Import datacube range by pressing ``shift+a`` and then navegate to ``Datacube``, then select ``datacube Range``.
 
    .. image:: ../../images/ecmwf_example/add_range_node.png
     :width: 100%

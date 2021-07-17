@@ -1,10 +1,10 @@
 blendernc.nodes.inputs
 ======================
 
-blendernc.nodes.inputs.BlenderNC\_NT\_netcdf
+blendernc.nodes.inputs.BlenderNC\_NT\_datacube
 --------------------------------------------
 
-.. automodule:: blendernc.nodes.inputs.BlenderNC_NT_netcdf
+.. automodule:: blendernc.nodes.inputs.BlenderNC_NT_datacube
    :members:
    :undoc-members:
    :show-inheritance:

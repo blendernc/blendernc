@@ -14,7 +14,7 @@ from .nodes.cmaps.cmapsnode import (
 from .nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from .nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
 from .nodes.grid.BlenderNC_NT_rotate_lon import BlenderNC_NT_rotatelon
-from .nodes.inputs.BlenderNC_NT_netcdf import BlenderNC_NT_netcdf
+from .nodes.inputs.BlenderNC_NT_datacube import BlenderNC_NT_datacube
 from .nodes.inputs.BlenderNC_NT_path import BlenderNC_NT_path
 from .nodes.inputs.BlenderNC_NT_range import BlenderNC_NT_range
 from .nodes.inputs.BlenderNC_NT_tutorial import BlenderNC_NT_tutorial
@@ -37,8 +37,8 @@ from .operators import (
     BlenderNC_OT_apply_material,
     BlenderNC_OT_colorbar,
     BlenderNC_OT_compute_range,
-    BlenderNC_OT_ncload,
-    BlenderNC_OT_netcdf2img,
+    BlenderNC_OT_datacube2img,
+    BlenderNC_OT_datacubeload,
     BlenderNC_OT_preloader,
     BlenderNC_OT_var,
 )
@@ -49,15 +49,15 @@ from .panels import (
     BlenderNC_workspace_memory,
     BlenderNC_workspace_panel,
 )
-from .sockets import bNCfloatSocket, bNCnetcdfSocket, bNCstringSocket
+from .sockets import bNCdatacubeSocket, bNCfloatSocket, bNCstringSocket
 from .UI_operators import (
     BlenderNC_OT_purge_all,
     BlenderNC_OT_Simple_UI,
     Import_OT_mfdataset,
-    ImportnetCDFCollection,
+    ImportDatacubeCollection,
 )
 
-# from . nodes import BlenderNC_NT_netcdf, BlenderNC_NT_preloader,\
+# from . nodes import BlenderNC_NT_datacube, BlenderNC_NT_preloader,\
 #                     BlenderNC_NT_resolution, BlenderNC_NT_output,\
 #                     BlenderNC_NT_select_axis, BlenderNC_NT_path
 
@@ -71,7 +71,7 @@ classes = [
     BlenderNC_workspace_memory,
     # Nodes
     BlenderNC_NT_path,
-    BlenderNC_NT_netcdf,
+    BlenderNC_NT_datacube,
     BlenderNC_NT_range,
     BlenderNC_NT_tutorial,
     BlenderNC_NT_resolution,
@@ -96,9 +96,9 @@ classes = [
     BlenderNC_OT_select_colormap,
     BLENDERNC_CMAPS_NT_node,
     # Operators
-    BlenderNC_OT_ncload,
+    BlenderNC_OT_datacubeload,
     BlenderNC_OT_var,
-    BlenderNC_OT_netcdf2img,
+    BlenderNC_OT_datacube2img,
     BlenderNC_OT_preloader,
     BlenderNC_OT_apply_material,
     BlenderNC_OT_compute_range,
@@ -107,10 +107,10 @@ classes = [
     BlenderNC_OT_Simple_UI,
     BlenderNC_OT_purge_all,
     # Operators: files
-    ImportnetCDFCollection,
+    ImportDatacubeCollection,
     Import_OT_mfdataset,
     # Sockets
-    bNCnetcdfSocket,
+    bNCdatacubeSocket,
     bNCstringSocket,
     bNCfloatSocket,
 ]
@@ -123,7 +123,7 @@ handlers = bpy.app.handlers
 
 def registerBlenderNC():
     bpy.types.Scene.update_all_images = update_all_images
-    bpy.types.Scene.nc_cache = defaultdict(None)
+    bpy.types.Scene.datacube_cache = defaultdict(None)
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
     handlers.render_pre.append(bpy.types.Scene.update_all_images)
@@ -138,14 +138,12 @@ def registerBlenderNC():
 
 
 def unregisterBlenderNC():
-    # del bpy.types.Scene.nc_dictionary
     del bpy.types.Scene.update_all_images
-    del bpy.types.Scene.nc_cache
+    del bpy.types.Scene.datacube_cache
 
     # Delete from handlers
     handlers.frame_change_pre.remove(update_all_images)
     handlers.render_pre.remove(update_all_images)
-    # del bpy.types.Scene.nc_file_path
 
     nodeitems_utils.unregister_node_categories(node_tree_name)
 

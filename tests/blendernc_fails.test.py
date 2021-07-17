@@ -36,7 +36,7 @@ def test_no_selected_file(node_list=[], node_args=None):
 
 class Test_expected_errors(unittest.TestCase):
     def test_node_no_file(self):
-        nodes = ["netCDFPath", "netCDFNode"]
+        nodes = ["datacubePath", "datacubeNode"]
         test_no_selected_file(nodes)
         # self.assertRaises(ExpectedException, test_no_selected_file, nodes)
 

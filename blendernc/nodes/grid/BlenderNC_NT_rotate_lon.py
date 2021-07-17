@@ -14,7 +14,7 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFrotatelon"
+    bl_idname = "datacuberotatelon"
     # Label for nice name display
     bl_label = "Rotate Longitude"
     # Icon identifier
@@ -40,8 +40,8 @@ class BlenderNC_NT_rotatelon(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.4, 0.4, 0.8)
         self.use_custom_color = True
 

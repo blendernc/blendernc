@@ -16,7 +16,7 @@ def create_nodes(file, var):
     bpy.data.node_groups.new("BlenderNC", "BlenderNC")
 
     # Create nodes
-    nodes = ["netCDFPath", "netCDFNode", "netCDFResolution", "netCDFOutput"]
+    nodes = ["datacubePath", "datacubeNode", "datacubeResolution", "datacubeOutput"]
 
     node_names = tutils.create_nodes(nodes)
 
@@ -25,8 +25,8 @@ def create_nodes(file, var):
     # Now let's change properties.
     props = tutils.build_dict_blendernc_prop(existing_nodes)
 
-    props["netCDF Path"]["blendernc_file"] = file
-    props["netCDF input"]["blendernc_netcdf_vars"] = var
+    props["datacube Path"]["blendernc_file"] = file
+    props["datacube input"]["blendernc_datacube_vars"] = var
     props["Resolution"]["bendernc_resolution"] = 80
     props["Output"]["update_on_frame_change"] = True
 

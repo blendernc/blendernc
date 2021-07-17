@@ -61,13 +61,13 @@ def node_manipulation(action):
             node[-1].free()
             existing_node_names.remove(node[-1].bl_idname)
 
-    if "netCDFbasincnodes" in enum_items:
-        enum_items.remove("netCDFbasincnodes")
+    if "datacubeBasincNodes" in enum_items:
+        enum_items.remove("datacubeBasincNodes")
         enum_items = enum_items + [
-            "netCDFPath",
-            "netCDFNode",
-            "netCDFResolution",
-            "netCDFOutput",
+            "datacubePath",
+            "datacubeNode",
+            "datacubeResolution",
+            "datacubeOutput",
         ]
 
     return sorted(enum_items), sorted(existing_node_names)
@@ -89,10 +89,10 @@ class Test_simple_render(unittest.TestCase):
         # Existing list should be empty
         self.assertFalse(e_n)
 
-    def test_two_netCDFNode_creation(self):
+    def test_two_datacube_Node_creation(self):
         node_manipulation("create")
         node_tree = bpy.data.node_groups.new("BlenderNC", "test")
-        node = node_tree.nodes.new("netCDFNode")
+        node = node_tree.nodes.new("datacubeNode")
         unique_identifier = node.blendernc_dataset_identifier
         # unique identifier must be equal to two.
         self.assertEqual(unique_identifier, "002")

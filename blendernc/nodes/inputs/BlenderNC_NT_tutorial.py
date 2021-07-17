@@ -35,7 +35,7 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     )
     """An instance of the original EnumProperty."""
 
-    blendernc_netcdf_vars: bpy.props.EnumProperty(
+    blendernc_datacube_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
         update=dict_update,
@@ -53,7 +53,7 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     # as shown below.
     def init(self, context):
         self.blendernc_dataset_identifier = get_new_identifier(self) + "_t"
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.4, 0.8, 0.4)
         self.use_custom_color = True
 
@@ -71,7 +71,7 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
         layout.label(text="Select Datacube:")
         layout.prop(self, "blendernc_xarray_datacube", text="")
         layout.label(text="Select Variable:")
-        layout.prop(self, "blendernc_netcdf_vars", text="")
+        layout.prop(self, "blendernc_datacube_vars", text="")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,

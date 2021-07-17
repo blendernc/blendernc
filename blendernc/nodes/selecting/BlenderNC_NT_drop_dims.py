@@ -15,7 +15,7 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFdims"
+    bl_idname = "datacubeDims"
     # Label for nice name display
     bl_label = "Drop Dimension"
     # Icon identifier
@@ -39,8 +39,8 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
 
     # Copy
     def copy(self, node):

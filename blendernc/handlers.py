@@ -16,7 +16,7 @@ def update_all_images(scene):
         for node in nt.nodes:
             nodes.append(node)
 
-    operator = bpy.ops.BlenderNC.nc2img
+    operator = bpy.ops.BlenderNC.datacube2img
     for node in nodes:
         if not node.name.count(translate("Output")):
             continue
