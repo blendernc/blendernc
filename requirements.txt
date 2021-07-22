@@ -3,7 +3,7 @@ cython
 zarr
 ecmwflibs
 cfgrib
-xarray
+xarray[complete]
 cmocean
 matplotlib
 dask
@@ -11,3 +11,5 @@ scipy
 netCDF4
 toolz
 pooch
+psutil
+typing-extensions

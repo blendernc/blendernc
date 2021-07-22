@@ -5,6 +5,15 @@ import bpy
 import blendernc.python_functions as bnc_pyfunc
 
 
+def get_blendernc_nodetrees():
+    blendernc_nodetrees = [
+        items
+        for keys, items in bpy.data.node_groups.items()
+        if "BlenderNC" == items.bl_label
+    ]
+    return blendernc_nodetrees
+
+
 def get_unique_data_dict(node):
     # Replaces all node.blendernc_dict[unique_identifier]
     # TODO: Make sure to replace all the unique data dicts
@@ -24,11 +33,11 @@ def get_input_links(node):
     return inputs.links[0]
 
 
-def get_var(ncdata):
-    dimensions = sorted(list(ncdata.coords.dims.keys()))
-    variables = sorted(list(ncdata.variables.keys() - dimensions))
-    long_name_list = [ncdata[var].attrs["long_name"] for var in variables]
-    if "long_name" in ncdata[variables[0]].attrs:
+def get_var(datacubedata):
+    dimensions = sorted(list(datacubedata.coords.dims.keys()))
+    variables = sorted(list(datacubedata.variables.keys() - dimensions))
+    if "long_name" in datacubedata[variables[0]].attrs:
+        long_name_list = [datacubedata[var].attrs["long_name"] for var in variables]
         var_names = bnc_pyfunc.build_enum_prop_list(
             variables, "DISK_DRIVE", long_name_list
         )
@@ -43,38 +52,48 @@ def get_var_dict(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
     unique_identifier = node.blendernc_dataset_identifier
     try:
-        scene.nc_cache[node_tree]
+        scene.datacube_cache[node_tree]
     except KeyError:
-        scene.nc_cache[node_tree] = {}
+        scene.datacube_cache[node_tree] = {}
 
     # Check if dictionary entry for the variable exists
     try:
-        scene.nc_cache[node_tree][unique_identifier]
+        scene.datacube_cache[node_tree][unique_identifier]
     except KeyError:
-        scene.nc_cache[node_tree][unique_identifier] = {}
-    return scene.nc_cache[node_tree][unique_identifier]
+        scene.datacube_cache[node_tree][unique_identifier] = {}
+    return scene.datacube_cache[node_tree][unique_identifier]
 
 
 def get_var_data(context, node, node_tree):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
     unique_data_dict = get_unique_data_dict(node)
-    # Get the netcdf of the selected file
-    ncdata = unique_data_dict["Dataset"]
+    # Get the datacube of the selected file
+    datacubedata = unique_data_dict["Dataset"]
     # Get var name
     var_name = unique_data_dict["selected_var"]["selected_var_name"]
     # Get the data of the selected variable
     # Remove Nans
     # TODO: Add node to preserve NANs
     # if node.keep_nan:
-    data = ncdata[var_name]
+    data = datacubedata[var_name]
     # else:
-    # data = ncdata[var_name].where(np.isfinite(ncdata[var_name]), 0)
+    # data = datacubedata[var_name].where(np.isfinite(datacubedata[var_name]), 0)
     return data
 
 
-def get_dims(ncdata, var):
-    dimensions = list(ncdata[var].coords.dims)
+def get_units_data(node, node_tree):
+    node = bpy.data.node_groups[node_tree].nodes[node]
+    # Get data dictionary stored at scene object
+    unique_data_dict = get_unique_data_dict(node)
+    # Get the metadata of the selected variable
+    var_metadata = unique_data_dict["selected_var"]
+    unit = var_metadata["units"]
+    return unit
+
+
+def get_dims(datacubedata, var):
+    dimensions = list(datacubedata[var].coords.dims)
     dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=0)
     return dim_names
 
@@ -86,21 +105,36 @@ def get_geo_coord_names(dataset):
 
 
 def get_possible_variables(node, context):
-    ncfile = node.blendernc_file
+    datacubefile = node.blendernc_file
     unique_identifier = node.blendernc_dataset_identifier
-    if not ncfile or unique_identifier not in node.blendernc_dict.keys():
+    if not datacubefile or unique_identifier not in node.blendernc_dict.keys():
         return bnc_pyfunc.empty_item()
     unique_data_dict = get_unique_data_dict(node)
-    ncdata = unique_data_dict["Dataset"]
-    items = get_var(ncdata)
+    datacubedata = unique_data_dict["Dataset"]
+    items = get_var(datacubedata)
     return items
 
 
 def get_new_identifier(node):
-    if len(node.name.split(".")) == 1:
-        return "{:03}".format(0)
-    else:
-        return "{:03}".format(int(node.name.split(".")[-1]))
+    nodetrees = get_blendernc_nodetrees()
+    counter = 0
+    identif_list = [0]
+    for nodetree in nodetrees:
+        same_nodes_idname = [n for n in nodetree.nodes if n.bl_idname == node.bl_idname]
+        for same_node in same_nodes_idname:
+            assigned_identifiers = same_node.blendernc_dataset_identifier.split("_")[0]
+            if assigned_identifiers:
+                identif_list.append(int(assigned_identifiers))
+            res = [
+                ele
+                for ele in range(1, max(identif_list) + 1)
+                if ele not in identif_list
+            ]
+            if res:
+                counter = res[0]
+            else:
+                counter += 1
+    return "{:03}".format(counter)
 
 
 # TODO Add decorator to simplify.
@@ -112,9 +146,9 @@ def get_possible_dims(node, context):
     unique_identifier = node.blendernc_dataset_identifier
     parent_node = link.from_node
     data_dictionary = parent_node.blendernc_dict[unique_identifier]
-    ncdata = data_dictionary["Dataset"]
+    datacubedata = data_dictionary["Dataset"]
     var_name = data_dictionary["selected_var"]["selected_var_name"]
-    items = get_dims(ncdata, var_name)
+    items = get_dims(datacubedata, var_name)
     return items
 
 
@@ -122,11 +156,11 @@ def get_time(context, node, node_tree, frame):
     node = bpy.data.node_groups[node_tree].nodes[node]
     # Get data dictionary stored at scene object
     unique_data_dict = get_unique_data_dict(node)
-    # Get the netcdf of the selected file
-    ncdata = unique_data_dict["Dataset"]
+    # Get the datacube of the selected file
+    datacubedata = unique_data_dict["Dataset"]
     # Get the data of the selected variable
-    if "time" in ncdata.coords.keys():
-        time = ncdata["time"]
+    if "time" in datacubedata.coords.keys():
+        time = datacubedata["time"]
         if time.size == 1:
             return time.values
         elif frame > time.size:
@@ -191,7 +225,7 @@ def get_all_nodes_using_image(image_name):
     users = {}
     for node_group in bpy.data.node_groups:
         for node in node_group.nodes:
-            if node.bl_idname == "netCDFOutput":
+            if node.bl_idname == "datacubeOutput":
                 users[node_group.name] = node
 
     for material in bpy.data.materials:
@@ -239,13 +273,13 @@ def get_items_axes(self, context):
 
 # def get_max_timestep(self, context):
 #     scene = context.scene
-#     ncfile = self.file_name
-#     data_dictionary = scene.nc_dictionary
-#     if not ncfile or not data_dictionary:
+#     datacubefile = self.file_name
+#     data_dictionary = scene.blendernc_dict
+#     if not datacubefile or not data_dictionary:
 #         return 0
-#     ncdata = data_dictionary["Dataset"]
+#     datacubedata = data_dictionary["Dataset"]
 #     var_name = self.var_name
-#     var_data = ncdata[var_name]
+#     var_data = datacubedata[var_name]
 
 #     t = var_data.shape[0]
 #     return t - 1

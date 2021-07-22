@@ -4,8 +4,14 @@ from os.path import abspath
 
 import bpy
 
-from blendernc.get_utils import get_node, get_var
-from blendernc.messages import active_selection_preference, unselected_object
+from blendernc.get_utils import get_blendernc_nodetrees, get_node, get_var
+from blendernc.messages import (
+    PrintMessage,
+    active_selection_preference,
+    asign_material,
+    select_file,
+    unselected_object,
+)
 from blendernc.python_functions import (
     BlenderncEngine,
     load_frame,
@@ -13,13 +19,14 @@ from blendernc.python_functions import (
     update_image,
     update_nodes,
 )
+from blendernc.translations import translate
 
 bNCEngine = BlenderncEngine()
 
 
-class BlenderNC_OT_ncload(bpy.types.Operator):
+class BlenderNC_OT_datacubeload(bpy.types.Operator):
     """
-    BlenderNC_OT_ncload Load netCDF files within Blender.
+    BlenderNC_OT_datacubeload Load datacube files within Blender.
 
     Parameters
     ----------
@@ -32,14 +39,14 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
         {FINISHED} if operator exits successfully.
     """
 
-    bl_idname = "blendernc.ncload"
-    bl_label = "Load netcdf file"
-    bl_description = "Loads netcdf file"
+    bl_idname = "blendernc.datacubeload"
+    bl_label = "Load datacube file"
+    bl_description = "Loads datacube file"
     bl_options = {"REGISTER", "UNDO"}
 
     file_path: bpy.props.StringProperty(
         name="File path",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
@@ -55,47 +62,35 @@ class BlenderNC_OT_ncload(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
+            PrintMessage(select_file, "Error", "ERROR")
             return {"FINISHED"}
         file_path = abspath(self.file_path)
 
         node = get_node(self.node_group, self.node)
-        # TODO: allow xarray.open_mfdataset if wildcard "*" use in name.
-        # Useful for large datasets. Implement node with chunks if file is huge.
 
-        # TODO: allow handling of multiple formats using "*.nc" or "*.grib"
+        # TODO: Implement node with chunks if file is huge.
 
         unique_identifier = node.blendernc_dataset_identifier
         node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(
             file_path
         )
         self.report({"INFO"}, "Lazy load of %s!" % file_path)
+        scn = context.scene
+        default_node_group_name = scn.default_nodegroup
         # If quick import, define global variable.
-        if self.node_group == "BlenderNC":
+        if self.node_group == default_node_group_name:
             var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
-            bpy.types.Scene.blendernc_netcdf_vars = bpy.props.EnumProperty(
+            bpy.types.Scene.blendernc_datacube_vars = bpy.props.EnumProperty(
                 items=var_names, name="Select Variable", update=update_nodes
             )
-        # Create new node in BlenderNC node
-        blendernc_nodes = [
-            keys
-            for keys in bpy.data.node_groups.keys()
-            if ("BlenderNC" in keys or "NodeTree" in keys)
-        ]
-        if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-            bpy.data.node_groups["BlenderNC"].use_fake_user = True
-
-        if not bpy.data.node_groups[-1].nodes:
-            bpy.data.node_groups[-1].nodes.new("netCDFNode")
 
         return {"FINISHED"}
 
 
 class BlenderNC_OT_var(bpy.types.Operator):
     bl_idname = "blendernc.var"
-    bl_label = "Load netcdf vars"
-    bl_description = "Loads netcdf vars"
+    bl_label = "Load datacube vars"
+    bl_description = "Loads datacube vars"
     bl_options = {"REGISTER", "UNDO"}
 
     file_path: bpy.props.StringProperty()
@@ -103,43 +98,39 @@ class BlenderNC_OT_var(bpy.types.Operator):
 
     def execute(self, context):
         if not self.file_path:
-            self.report({"INFO"}, "Select a file!")
-            return {"FINISHED"}
+            PrintMessage(select_file, "Error", "ERROR")
+            return {"CANCELLED"}
 
-        blendernc_nodes = [
-            bpy.data.node_groups[keys]
-            for keys in bpy.data.node_groups.keys()
-            if (
-                bpy.data.node_groups[keys].bl_label == "BlenderNC"
-                and keys == "BlenderNC"
-            )
-        ]
+        blendernc_nodes = get_blendernc_nodetrees()
+        scn = context.scene
+        default_node_group_name = scn.default_nodegroup
+
         if not blendernc_nodes:
-            bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-            bpy.data.node_groups["BlenderNC"].use_fake_user = True
+            bpy.data.node_groups.new(default_node_group_name, "BlenderNC")
+            bpy.data.node_groups[default_node_group_name].use_fake_user = True
 
-        node_group = bpy.data.node_groups.get("BlenderNC")
+        node_group = bpy.data.node_groups.get(default_node_group_name)
         if not node_group.nodes:
-            path = node_group.nodes.new("netCDFPath")
+            path = node_group.nodes.new("datacubePath")
             path.location[0] = -300
-            netcdf = node_group.nodes.new("netCDFNode")
-            netcdf.location[0] = -130
+            datacube = node_group.nodes.new("datacubeNode")
+            datacube.location[0] = -130
         else:
-            path = node_group.nodes.get("netCDF Path")
-            netcdf = node_group.nodes.get("netCDF input")
+            path = node_group.nodes.get("datacube Path")
+            datacube = node_group.nodes.get("datacube Input")
         path.blendernc_file = self.file_path
         # LINK nodes
         if not node_group.links:
-            node_group.links.new(netcdf.inputs[0], path.outputs[0])
+            node_group.links.new(datacube.inputs[0], path.outputs[0])
 
-        netcdf.update()
+        datacube.update()
         return {"FINISHED"}
 
 
 class BlenderNC_OT_compute_range(bpy.types.Operator):
     bl_idname = "blendernc.compute_range"
     bl_label = "Compute vmin & vmax"
-    bl_description = "Compute vmax and vmin of netcdf selected variable"
+    bl_description = "Compute vmax and vmin of datacube selected variable"
     bl_options = {"REGISTER", "UNDO"}
 
     node: bpy.props.StringProperty()
@@ -175,14 +166,14 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
     file_name: bpy.props.StringProperty(
         name="File name",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
     """An instance of the original StringProperty."""
     var_name: bpy.props.StringProperty(
         name="File name",
-        description="Path to the netCDF file that will be loaded.",
+        description="Path to the datacube file that will be loaded.",
         subtype="FILE_PATH",
         # default="",
     )
@@ -206,7 +197,7 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         file_path = abspath(self.file_name)
 
         scene = context.scene
-        scene.nc_dictionary[file_path] = bNCEngine.check_files_datacube(file_path)
+        scene.blendernc_dict
 
         var_name = self.var_name
         if not var_name:
@@ -225,10 +216,10 @@ class BlenderNC_OT_preloader(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BlenderNC_OT_netcdf2img(bpy.types.Operator):
-    bl_idname = "blendernc.nc2img"
-    bl_label = "From netcdf to image"
-    bl_description = "Updates an image with netcdf data"
+class BlenderNC_OT_datacube2img(bpy.types.Operator):
+    bl_idname = "blendernc.datacube2img"
+    bl_label = "From datacube to image"
+    bl_description = "Updates an image with datacube data"
     node: bpy.props.StringProperty()
     """An instance of the original StringProperty."""
     node_group: bpy.props.StringProperty()
@@ -257,15 +248,15 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
     """An instance of the original StringProperty."""
 
     def execute(self, context):
-        if bpy.data.images[self.image].users >= 2:
+        if bpy.data.images[self.image].users > 2:
             update_colormap_interface(context, self.node, self.node_group)
         else:
-            self.report({"ERROR"}, "Assigned material to object!")
+            PrintMessage(asign_material, "Error", "ERROR")
         return {"FINISHED"}
 
 
 class BlenderNC_OT_apply_material(bpy.types.Operator):
-    bl_label = "Load netCDF"
+    bl_label = "Load datacube"
     bl_idname = "blendernc.apply_material"
     bl_description = "Apply texture to material for simple cases"
     bl_context = "objectmode"
@@ -286,14 +277,10 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             pass
         elif sel_obj and act_obj:
             if sel_obj.name != act_obj.name:
-                bpy.context.window_manager.popup_menu(
-                    active_selection_preference, title="Warning", icon="INFO"
-                )
+                PrintMessage(active_selection_preference, "Warning", "INFO")
                 sel_obj = act_obj
         else:
-            bpy.context.window_manager.popup_menu(
-                unselected_object, title="Error", icon="ERROR"
-            )
+            PrintMessage(unselected_object, "Error", "ERROR")
             return {"FINISHED"}
 
         blendernc_materials = [
@@ -317,21 +304,30 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             cmap = blendernc_material.node_tree.nodes.new("cmapsNode")
             cmap.location = (-290, 250)
             bump = blendernc_material.node_tree.nodes.new("ShaderNodeBump")
+            bump.inputs[0].default_value = 0.3
             bump.location = (-290, -50)
 
         else:
-            texcoord = blendernc_material.node_tree.nodes.get("Texture Coordinate")
-            imagetex = blendernc_material.node_tree.nodes.get("Image Texture")
+            texcoord = blendernc_material.node_tree.nodes.get(
+                translate("Texture Coordinate")
+            )
+            imagetex = blendernc_material.node_tree.nodes.get(
+                translate("Image Texture")
+            )
             cmap = blendernc_material.node_tree.nodes.get("Colormap")
-            bump = blendernc_material.node_tree.nodes.get("Bump")
+            bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
 
-        P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
+        P_BSDF = blendernc_material.node_tree.nodes.get(translate("Principled BSDF"))
+        # This line is executed when a different language is selected. By
+        # default a new blender file will create a node named "Principled BSDF"
+        if not P_BSDF:
+            P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
 
         if sel_obj.name == "Icosphere":
-            texcoord_link = texcoord.outputs.get("Generated")
+            texcoord_link = texcoord.outputs.get(translate("Generated"))
             imagetex.projection = "SPHERE"
         else:
-            texcoord_link = texcoord.outputs.get("UV")
+            texcoord_link = texcoord.outputs.get(translate("UV"))
             imagetex.projection = "FLAT"
 
         blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)
@@ -348,7 +344,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class ImportnetCDFCollection(bpy.types.PropertyGroup):
+class ImportDatacubeCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for importing the file",

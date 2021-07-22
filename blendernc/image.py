@@ -34,14 +34,14 @@ def image_data(node):
     data_dictionary = node.blendernc_dict
     unique_identifier = node.blendernc_dataset_identifier
     # Get dataset
-    ncdata = data_dictionary[unique_identifier]["Dataset"]
+    datacubedata = data_dictionary[unique_identifier]["Dataset"]
     # Get var name
     var_name = data_dictionary[unique_identifier]["selected_var"]["selected_var_name"]
     # Get the data of the selected variable
-    if len(ncdata[var_name].shape) == 2:
-        data = ncdata[var_name][:, :].values[:, :]
-    elif len(ncdata[var_name].shape) == 3:
-        data = ncdata[var_name][0, :, :].values[:, :]
+    if len(datacubedata[var_name].shape) == 2:
+        data = datacubedata[var_name][:, :].values[:, :]
+    elif len(datacubedata[var_name].shape) == 3:
+        data = datacubedata[var_name][0, :, :].values[:, :]
     steps = max(data.shape) // 128
     if steps < 1:
         steps = 1

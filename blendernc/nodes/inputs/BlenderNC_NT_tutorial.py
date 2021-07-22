@@ -4,7 +4,6 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.decorators import NodesDecorators
 from blendernc.get_utils import (
     get_new_identifier,
     get_possible_variables,
@@ -36,7 +35,7 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     )
     """An instance of the original EnumProperty."""
 
-    blendernc_netcdf_vars: bpy.props.EnumProperty(
+    blendernc_datacube_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
         update=dict_update,
@@ -53,14 +52,14 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.blendernc_dataset_identifier = get_new_identifier(self)
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.blendernc_dataset_identifier = get_new_identifier(self) + "_t"
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.4, 0.8, 0.4)
         self.use_custom_color = True
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
-        self.blendernc_dataset_identifier = get_new_identifier(self)
+        self.blendernc_dataset_identifier = get_new_identifier(self) + "_t"
         print("Copying from node ", node)
 
     # Free function to clean up on removal.
@@ -72,7 +71,7 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
         layout.label(text="Select Datacube:")
         layout.prop(self, "blendernc_xarray_datacube", text="")
         layout.label(text="Select Variable:")
-        layout.prop(self, "blendernc_netcdf_vars", text="")
+        layout.prop(self, "blendernc_datacube_vars", text="")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,
@@ -86,7 +85,6 @@ class BlenderNC_NT_tutorial(bpy.types.Node):
     def draw_label(self):
         return "Datacube tutorial"
 
-    @NodesDecorators.node_connections
     def update(self):
         #####################
         # OPERATION HERE!!! #

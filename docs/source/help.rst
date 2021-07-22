@@ -9,7 +9,7 @@ Report
 Related Projects
 ================
 
-The netCDFs used for the examples and figures come from a high-resolution ocean and ice model of the COSIMA community models (e.g. MOM5). These models are
+The datacubes used for the examples and figures come from a high-resolution ocean and ice model of the COSIMA community models (e.g. MOM5). These models are
 run on `NCI Gadi <https://nci.org.au>`_.
 
 
@@ -20,3 +20,7 @@ Underlying Python technologies
 
 - `xarray <http://xarray.pydata.org/en/stable/#>`_
 
+Relevant Blender Addons
+#######################
+
+- `blender-addon-updater <https://github.com/CGCookie/blender-addon-updater>`_ to allow the user to update the addon within Blender.

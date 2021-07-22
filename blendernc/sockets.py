@@ -5,7 +5,7 @@ from bpy.props import FloatProperty, StringProperty
 from bpy.types import NodeSocket
 
 socket_colors = {
-    "bNCnetcdfSocket": (0.6, 1.0, 0.6, 1.0),
+    "bNCdatacubeSocket": (0.6, 1.0, 0.6, 1.0),
     "bNCpercentSocket": (0.8, 0.8, 0.8, 0.3),
 }
 
@@ -23,9 +23,9 @@ class bNCSocketDefault:
                 self.dataset.pop(key)
 
 
-class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
+class bNCdatacubeSocket(NodeSocket, bNCSocketDefault):
     """
-    bNCnetcdfSocket netCDF socket for file import
+    bNCdatacubeSocket datacube socket for file import
 
     Parameters
     ----------
@@ -35,8 +35,8 @@ class bNCnetcdfSocket(NodeSocket, bNCSocketDefault):
         Base class for all sockets
     """
 
-    bl_idname = "bNCnetcdfSocket"
-    bl_label = "netCDF Socket"
+    bl_idname = "bNCdatacubeSocket"
+    bl_label = "datacube Socket"
 
     dataset = defaultdict()
     unique_identifier: StringProperty()

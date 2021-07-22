@@ -20,7 +20,6 @@ def capture_render_log(func):
     return wrapper
 
 
-@capture_render_log
 def render_image(datacube="air_temperature", var="air"):
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
@@ -37,14 +36,14 @@ def render_image(datacube="air_temperature", var="air"):
     # Create nodes
     inp = node_tree.nodes.new("Datacube_tutorial")
     inp.location = (-300, 0)
-    res = node_tree.nodes.new("netCDFResolution")
+    res = node_tree.nodes.new("datacubeResolution")
     res.location = (0, 0)
-    out = node_tree.nodes.new("netCDFOutput")
+    out = node_tree.nodes.new("datacubeOutput")
     out.location = (300, 0)
 
     # Select variable
     inp.blendernc_xarray_datacube = datacube
-    inp.blendernc_netcdf_vars = var
+    inp.blendernc_datacube_vars = var
 
     # Change resolution
     res.blendernc_resolution = 100
@@ -92,6 +91,15 @@ def render_image(datacube="air_temperature", var="air"):
 
     bpy.ops.blendernc.apply_material()
 
+    bpy.ops.blendernc.colorbar(
+        node=out.bl_label, node_group="BlenderNC", image="BlenderNC_default"
+    )
+
+    blender_render_image(var)
+
+
+@capture_render_log
+def blender_render_image(var):
     scene = bpy.context.scene
     render = scene.render
     directory = bpy.path.abspath("//")
@@ -119,4 +127,7 @@ class Test_simple_render(unittest.TestCase):
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_simple_render)
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)
