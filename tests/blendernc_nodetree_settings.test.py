@@ -128,6 +128,13 @@ class Test_settings(unittest.TestCase):
             print("\n".join(output))
         self.assertEqual(removed_frames, [2, 3])
 
+    def test_dask(self):
+        bpy.context.scene.blendernc_use_dask = "True"
+        bpy.context.scene.blendernc_use_dask = "False"
+        bpy.context.scene.blendernc_use_dask = "False"
+        bpy.context.scene.blendernc_use_dask = "True"
+        bpy.context.scene.blendernc_use_dask = "True"
+
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_settings)
 test = unittest.TextTestRunner().run(suite)
