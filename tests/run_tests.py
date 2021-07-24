@@ -17,7 +17,7 @@ if len(sys.argv) > 1:
 
 errors = {}
 
-for file in glob.glob("./*.test1.py"):
+for file in glob.glob("./*.test.py"):
     # change 'blendernc' to match your addon
     print("Running file: {0}".format(file))
     # Currently EVEE is not supported without a display.
