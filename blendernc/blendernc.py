@@ -43,6 +43,7 @@ from .operators import (
     BlenderNC_OT_var,
 )
 from .panels import (
+    BlenderNC_dask_client,
     BlenderNC_UI_PT_file_selection,
     BlenderNC_UI_PT_parent,
     BlenderNC_workspace_animation,
@@ -69,6 +70,7 @@ classes = [
     BlenderNC_workspace_panel,
     BlenderNC_workspace_animation,
     BlenderNC_workspace_memory,
+    BlenderNC_dask_client,
     # Nodes
     BlenderNC_NT_path,
     BlenderNC_NT_datacube,

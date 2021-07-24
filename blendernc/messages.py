@@ -65,6 +65,11 @@ def no_cached_nodes():
     return text
 
 
+def client_exists():
+    text = "Client exists; a new client will be created."
+    return text
+
+
 def increase_resolution(self, context):
     self.layout.label(text="Increase resolution.")
 

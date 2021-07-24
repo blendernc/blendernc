@@ -4,7 +4,7 @@ import os
 import bpy
 from bpy.app.handlers import persistent
 
-from blendernc.messages import PrintMessage, load_after_restart
+from blendernc.messages import PrintMessage, client_exists, load_after_restart
 from blendernc.python_functions import build_enum_prop_list
 
 # Import auto updater
@@ -94,6 +94,31 @@ def update_message(self, context):
     PrintMessage(load_after_restart, "Info", "INFO")
 
 
+def update_client(self, context):
+    import dask.distributed as ddist
+
+    # Try to get if client exists
+    try:
+        c = ddist.get_client()
+    except ValueError:
+        c = ""
+    # Close client.
+    if self.blendernc_use_dask == "False" and c:
+        c.close()
+        c = "No client"
+    # Refresh client
+    elif self.blendernc_use_dask == "True" and c:
+        PrintMessage(client_exists, "Info", "INFO")
+        c.close()
+        c = ddist.Client()
+    # Create new client
+    elif self.blendernc_use_dask == "True":
+        c = ddist.Client()
+    else:
+        c = "No client"
+    print(c)
+
+
 class BlenderNC_Preferences(bpy.types.AddonPreferences):
     """
     BlenderNC_Preferences Constructor of BlenderNC preferences.
@@ -114,6 +139,10 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         workspace = ["NONE", "ONLY CREATE WORKSPACE", "INITIATE WITH WORKSPACE"]
         return build_enum_prop_list(workspace)
 
+    def item_dask():
+        dask = ["True", "False"]
+        return build_enum_prop_list(dask)
+
     blendernc_workspace: bpy.props.EnumProperty(
         items=item_workspace_option(),
         default="ONLY CREATE WORKSPACE",
@@ -129,6 +158,13 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         update=update_message,
     )
     """An instance of the original EnumProperty."""
+
+    blendernc_use_dask: bpy.props.EnumProperty(
+        items=item_dask(),
+        name="Use dask Client:",
+        update=update_client,
+    )
+    """An instance of the original BoolProperty."""
 
     auto_check_update: bpy.props.BoolProperty(
         name="Auto-check for Update",
@@ -180,10 +216,18 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         row = layout.row()
         row.label(text="Default load shading:")
         row.prop(self, "blendernc_workspace_shading", expand=True)
-        # TODO: Add dask option here!
         row = layout.row()
-        col = row.column()
-        addon_updater_ops.update_settings_ui(self, context, col)
+        row.label(text="Use dask Client:")
+        row.prop(self, "blendernc_use_dask", expand=True)
+        row = layout.row()
+        row.label(text="Useful links:")
+        documentation = "https://blendernc.readthedocs.io/en/latest/"
+        row.operator("wm.url_open", text="Documentation").url = documentation
+        report = "https://github.com/blendernc/blendernc/issues/new"
+        row.operator("wm.url_open", text="Report bugs").url = report
+        # TODO: Add link to documentation and report bugs to github.
+        row = layout.row()
+        addon_updater_ops.update_settings_ui(self, context, row)
 
 
 @persistent
@@ -199,6 +243,12 @@ def load_handler_for_startup(_):
     import bpy
 
     prefs = get_addon_preference()
+
+    if prefs.blendernc_use_dask == "True":
+        import dask.distributed as ddist
+
+        c = ddist.Client()
+        print(c)
 
     # Use material preview shading.
     for screen in bpy.data.screens:

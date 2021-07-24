@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import bpy
 
+from blendernc.preferences import get_addon_preference
 from blendernc.python_functions import (
     build_enum_prop_list,
     empty_item,
@@ -87,8 +88,6 @@ class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
         split = row.split(factor=0.9)
         split.prop(scn, "blendernc_resolution")
         split.label(text=str("%"))
-        # TO DO: Add info?
-        # box_asts.label(text="INFO", icon='INFO')
 
         if scn.blendernc_datacube_vars != "NONE" and [
             True
@@ -96,21 +95,7 @@ class BlenderNC_UI_PT_file_selection(bpy.types.Panel):
             if "BlenderNC" in node_groups
         ]:
             self.layout.prop(scn, "blendernc_meshes")
-            # self.layout.prop_search(scn, "theChosenObject", scn, "objects")
             self.layout.operator("blendernc.apply_material", text="Apply Material")
-
-
-# # TODO: Dask client:
-# class BlenderNC_UI_PT_dask_client(bpy.types.Panel):
-#     bl_idname = "BLENDERNC_PT_DASK"
-#     bl_label = "Dask Client"
-#     bl_category = "BlenderNC"
-#     bl_space_type = "VIEW_3D"
-#     bl_region_type = "UI"
-#     bl_parent_id = "BLENDERNC_PT_PANEL_PARENT"
-
-#     def draw(self, context):
-#         pass
 
 
 class BlenderNC_workspace_panel(bpy.types.Panel):
@@ -142,14 +127,12 @@ bpy.types.Scene.blendernc_animation_type = bpy.props.EnumProperty(
     items=item_animation(),
     default="EXTEND",
     name="",
-    # update=update_workspace,
 )
 
 bpy.types.Scene.blendernc_memory_handle = bpy.props.EnumProperty(
     items=item_memory_handle(),
     default="FRAMES",
     name="",
-    # update=update_workspace,
 )
 
 bpy.types.Scene.blendernc_frames = bpy.props.IntProperty(
@@ -214,3 +197,35 @@ class BlenderNC_workspace_memory(bpy.types.Panel):
         row = box_asts.row()
         row.operator("blendernc.purge_all", text="Purge")
         scn = context.scene
+
+
+class BlenderNC_dask_client(bpy.types.Panel):
+    bl_idname = "BLENDERNC_PT_dask"
+    bl_label = "Dask Client"
+    bl_category = "BlenderNC"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+    bl_parent_id = "BLENDERNC_PT_workspace_parent"
+
+    def draw(self, context):
+        box_asts = self.layout.box()
+        row = box_asts.row()
+        pref = get_addon_preference()
+        if pref.blendernc_use_dask == "True":
+            import dask.distributed as ddist
+
+            # Get client
+            try:
+                c = ddist.get_client()
+            # Create client if it doesn't exist
+            except ValueError:
+                c = ddist.Client()
+            row.label(text="Dask client:", icon="LINKED")
+            row = box_asts.row()
+            row.label(text=c.dashboard_link)
+            row = box_asts.row()
+            row.operator(
+                "wm.url_open", text="Open dask dashboard"
+            ).url = c.dashboard_link
+        else:
+            row.label(text="No dask client.", icon="UNLINKED")
