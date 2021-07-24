@@ -110,10 +110,10 @@ def update_client(self, context):
     elif self.blendernc_use_dask == "True" and c:
         PrintMessage(client_exists, "Info", "INFO")
         c.close()
-        c = ddist.Client()
+        c = ddist.Client(processes=False)
     # Create new client
     elif self.blendernc_use_dask == "True":
-        c = ddist.Client()
+        c = ddist.Client(processes=False)
     else:
         c = "No client"
     print(c)
@@ -247,7 +247,7 @@ def load_handler_for_startup(_):
     if prefs.blendernc_use_dask == "True":
         import dask.distributed as ddist
 
-        c = ddist.Client()
+        c = ddist.Client(processes=False)
         print(c)
 
     # Use material preview shading.

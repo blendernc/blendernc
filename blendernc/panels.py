@@ -219,7 +219,7 @@ class BlenderNC_dask_client(bpy.types.Panel):
                 c = ddist.get_client()
             # Create client if it doesn't exist
             except ValueError:
-                c = ddist.Client()
+                c = ddist.Client(processes=False)
             row.label(text="Dask client:", icon="LINKED")
             row = box_asts.row()
             row.label(text=c.dashboard_link)
