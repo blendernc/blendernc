@@ -10,6 +10,8 @@ cython_build
 blendernc/blendernc_updater/*
 blendernc/blendernc_updater
 tests/dataset/*.idx
+dask-worker*
+*dask-worker*
 
 # Test
 tests/*.png
