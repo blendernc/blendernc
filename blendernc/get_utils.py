@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import bpy
 
+import blendernc.core.update_ui as bnc_updateUI
+
 # Partial import to avoid cyclic import
 import blendernc.python_functions as bnc_pyfunc
 
@@ -182,7 +184,7 @@ def get_max_min_data(context, node, node_tree):
     if max_val is not None and min_val is not None:
         return var_metadata["max_value"], var_metadata["min_value"]
     else:
-        bnc_pyfunc.update_range(node, context)
+        bnc_updateUI.update_range(node, context)
         return var_metadata["max_value"], var_metadata["min_value"]
 
 

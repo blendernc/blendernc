@@ -4,13 +4,13 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.decorators import NodesDecorators
-from blendernc.image import dataset_2_image_preview
-from blendernc.python_functions import (
+from blendernc.core.update_ui import (
     update_colormap_interface,
     update_image,
     update_value,
 )
+from blendernc.decorators import NodesDecorators
+from blendernc.image import dataset_2_image_preview
 
 
 class BlenderNC_NT_output(bpy.types.Node):

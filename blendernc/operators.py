@@ -4,6 +4,11 @@ from os.path import abspath
 
 import bpy
 
+from blendernc.core.update_ui import (
+    update_colormap_interface,
+    update_image,
+    update_nodes,
+)
 from blendernc.get_utils import get_blendernc_nodetrees, get_node, get_var
 from blendernc.messages import (
     PrintMessage,
@@ -12,13 +17,7 @@ from blendernc.messages import (
     select_file,
     unselected_object,
 )
-from blendernc.python_functions import (
-    BlenderncEngine,
-    load_frame,
-    update_colormap_interface,
-    update_image,
-    update_nodes,
-)
+from blendernc.python_functions import BlenderncEngine, load_frame
 from blendernc.translations import translate
 
 bNCEngine = BlenderncEngine()

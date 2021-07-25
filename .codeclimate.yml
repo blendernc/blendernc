@@ -1,2 +1,6 @@
 exclude_patterns:
 - "blendernc/addon_updater*.py"
+
+file-lines:
+    config:
+      threshold: 450
