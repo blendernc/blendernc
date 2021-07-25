@@ -140,7 +140,7 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         return build_enum_prop_list(workspace)
 
     def item_dask():
-        dask = ["True", "False"]
+        dask = ["False", "True"]
         return build_enum_prop_list(dask)
 
     blendernc_workspace: bpy.props.EnumProperty(
