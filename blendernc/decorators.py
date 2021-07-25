@@ -37,34 +37,10 @@ class NodesDecorators(object):
                 update = cls.input_connections(node)
             elif connections["output"]:
                 outn = node.outputs[0].links[0].to_node
-                node_out_list = [node]
                 # Make sure to disconnect all nodes follwoing,
                 # as well as to clear dataset.
-                while outn:
-                    node_out_list.append(outn)
-                    # Exit while if output node is encounter.
-                    if not outn.outputs.keys():
-                        outn.blendernc_dataset_identifier = ""
-                        # TODO delete blendernc_dict from output.
-                        outn = ""
-                        node_out_list.pop()
-                    # Exit while if node is not linked.
-                    elif not outn.outputs[0].is_linked:
-                        outn = ""
-                    # Change outn to append in list.
-                    else:
-                        outn = outn.outputs[0].links[0].to_node
-                # If only output is connected, disconnect it.
-                for node_out in node_out_list:
-                    cls.unlink_output(node_out)
-                    # Only remove the identifier of the node from the global dictionary.
-                    if node_out.bl_idname == "datacubeNode":
-                        identifier = node_out.blendernc_dataset_identifier
-                        node_out.blendernc_dict.pop(identifier, None)
-                    # Purge dictionary form all other nodes.
-                    else:
-                        node_out.blendernc_dict = {}
-                        node_out.blendernc_dataset_identifier = ""
+                cls.desconnect_nodes(outn, node)
+
             else:
                 raise AttributeError("Fail to find connections!")
 
@@ -79,6 +55,40 @@ class NodesDecorators(object):
         # cache based on type of node. Instead of having them all
         # over the place.
         return wrapper_update
+
+    @staticmethod
+    def get_nodes_desconnect(outn, node):
+        node_out_list = [node]
+        while outn:
+            node_out_list.append(outn)
+            # Exit while if output node is encounter.
+            if not outn.outputs.keys():
+                outn.blendernc_dataset_identifier = ""
+                # TODO delete blendernc_dict from output.
+                outn = ""
+                node_out_list.pop()
+            # Exit while if node is not linked.
+            elif not outn.outputs[0].is_linked:
+                outn = ""
+            # Change outn to append in list.
+            else:
+                outn = outn.outputs[0].links[0].to_node
+        return node_out_list
+
+    @classmethod
+    def desconnect_nodes(cls, outn, node):
+        node_out_list = cls.get_nodes_desconnect(outn, node)
+        # If only output is connected, disconnect it.
+        for node_out in node_out_list:
+            cls.unlink_output(node_out)
+            # Only remove the identifier of the node from the global dictionary.
+            if node_out.bl_idname == "datacubeNode":
+                identifier = node_out.blendernc_dataset_identifier
+                node_out.blendernc_dict.pop(identifier, None)
+            # Purge dictionary form all other nodes.
+            else:
+                node_out.blendernc_dict = {}
+                node_out.blendernc_dataset_identifier = ""
 
     @staticmethod
     def unlink_input(node):
@@ -273,3 +283,33 @@ class NodesDecorators(object):
         Dummy update
         """
         return
+
+
+class DrawDecorators(object):
+    """
+    DrawDecorators
+    """
+
+    @classmethod
+    def is_connected(cls, func):
+        """ """
+
+        @functools.wraps(func)
+        def wrapper_update(node, context, layout):
+            func_globals = func.__globals__
+            if (
+                node.inputs[0].is_linked
+                and node.inputs[0].links
+                and node.blendernc_dataset_identifier
+            ):
+                blendernc_dict = node.inputs[0].links[0].from_node.blendernc_dict
+                if blendernc_dict:
+                    # Return provided function to compute its contents.
+                    func_globals["blendernc_dict"] = blendernc_dict
+                    return func(node, context, layout)
+                else:
+                    pass
+            else:
+                pass
+
+        return wrapper_update

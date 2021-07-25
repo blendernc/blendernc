@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
 
-from ..python_functions import (
-    build_enum_prop_list,
-    refresh_cache,
-    update_value_and_node_tree,
-)
+from ..python_functions import build_enum_prop_list, refresh_cache
+from .update_ui import update_value_and_node_tree
 
 
 def get_items_datetimes(self, context):
