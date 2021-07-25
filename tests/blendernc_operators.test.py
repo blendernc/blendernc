@@ -5,6 +5,7 @@ import unittest
 import bpy
 
 from blendernc.get_utils import get_blendernc_nodetrees
+from blendernc.UI_operators import findCommonName
 
 
 class Test_operators(unittest.TestCase):
@@ -82,6 +83,26 @@ class Test_operators(unittest.TestCase):
         out.update_on_frame_change = True
         bpy.context.scene.frame_set(2)
         bpy.ops.blendernc.purge_all()
+
+    def test_common_name_matching_files(self):
+        filenames = ["ssh_1995-01.nc", "ssh_1995-02.nc"]
+        output = findCommonName(filenames)
+        self.assertEqual("ssh_1995-0*.nc", output)
+
+    def test_common_name_2_no_matching_start(self):
+        filenames = ["ssh_1995-01.nc", "ECMWF_data.grib"]
+        with self.assertRaises(ValueError):
+            findCommonName(filenames)
+
+    def test_common_name_no_matching_format(self):
+        filenames = ["ssh_1995-01.nc", "ssh_2000-10.grib"]
+        with self.assertRaises(ValueError):
+            findCommonName(filenames)
+
+    def test_common_name_4(self):
+        filenames = ["ssh_1995-01.nc", "ssh_data.nc"]
+        with self.assertRaises(ValueError):
+            findCommonName(filenames)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_operators)
