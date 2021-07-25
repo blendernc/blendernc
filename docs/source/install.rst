@@ -14,10 +14,19 @@ BlenderNC requires the following python modules to be installed in Blender's Pyt
 
 .. code-block:: bash
 
-    xarray
-    xgcm
+    numpy
+    zarr
+    ecmwflibs
+    cfgrib
+    xarray[complete]
     cmocean
     matplotlib
+    dask
+    scipy
+    netCDF4
+    toolz
+    pooch
+    psutil
 
 
 To install the previous python modules in your Blender distribution execute the
