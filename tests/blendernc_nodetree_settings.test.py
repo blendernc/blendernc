@@ -6,6 +6,8 @@ from io import StringIO
 import bpy
 import test_utils as tutils
 
+from blendernc.preferences import get_addon_preference
+
 
 @tutils.refresh_state
 def create_nodes(file, var):
@@ -127,6 +129,15 @@ class Test_settings(unittest.TestCase):
                 removed_frames.append(int(output[-1].split(": ")[-1]))
             print("\n".join(output))
         self.assertEqual(removed_frames, [2, 3])
+
+    def test_dask(self):
+        pref = get_addon_preference()
+        pref.blendernc_use_dask = "True"
+        pref.blendernc_use_dask = "True"
+        pref.blendernc_use_dask = "False"
+        pref.blendernc_use_dask = "False"
+        pref.blendernc_use_dask = "True"
+        pref.blendernc_use_dask = "False"
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_settings)

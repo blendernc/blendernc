@@ -7,9 +7,11 @@ xarray[complete]
 cmocean
 matplotlib
 dask
+dask[distributed]
+bokeh
+Popen
 scipy
 netCDF4
 toolz
 pooch
 psutil
-typing-extensions
