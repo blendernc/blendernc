@@ -28,28 +28,33 @@ macOS
 
 .. code-block:: bash
 
-    cd /Applications/Blender.app/Contents/Resources/2.83/python/bin/
-    ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz datacube4
+    BLENDERPY=/Applications/Blender.app/Contents/Resources/2.XX/python/bin/python3.7m
+    $BLENDERPY -m ensurepip
+    $BLENDERPY -m pip install -r requirements.txt
 
 Linux
 -----
 
 .. code-block:: bash
 
-    cd /path/to/blender/2.83/python/bin/
-    ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    BLENDERPY=/path/to/blender/2.83/python/bin/python3.7m
+    $BLENDERPY -m ensurepip
+    $BLENDERPY -m pip install -r requirements.txt
 
 Windows
 -------
 
 .. code-block:: bash
 
-    cd /path/to/blender/2.82/python/bin/
-    python.exe -m ensurepip
-    python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    set BLENDERPY=/path/to/blender/2.82/python/bin/python.exe
+    %BLENDERPY%-m ensurepip
+    %BLENDERPY% -m pip install -r requirements.txt
 
+or install the following requirements using:
+
+.. code-block:: bash
+
+    $BLENDERPY -m pip install -r numpy cython zarr ecmwflibs cfgrib xarray[complete] cmocean matplotlib dask scipy netCDF4 toolz pooch psutil
 
 Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
