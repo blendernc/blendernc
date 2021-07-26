@@ -25,25 +25,7 @@ class NodesDecorators(object):
 
         @functools.wraps(func)
         def wrapper_update(node):
-            update = False
-            # Who am I connected?
-            connections = cls.amIconnected(node)
-            # Test types of connections.
-            if not connections["input"] and not connections["output"]:
-                pass
-            elif connections["input"] and connections["output"]:
-                update = cls.input_connections(node)
-            elif connections["input"]:
-                update = cls.input_connections(node)
-            elif connections["output"]:
-                outn = node.outputs[0].links[0].to_node
-                # Make sure to disconnect all nodes follwoing,
-                # as well as to clear dataset.
-                cls.desconnect_nodes(outn, node)
-
-            else:
-                raise AttributeError("Fail to find connections!")
-
+            update = cls.shouldIupdate(node)
             if update:
                 # Return provided function to compute its contents.
                 return func(node)
@@ -55,6 +37,27 @@ class NodesDecorators(object):
         # cache based on type of node. Instead of having them all
         # over the place.
         return wrapper_update
+
+    @classmethod
+    def shouldIupdate(cls, node):
+        update = False
+        # Who am I connected?
+        connections = cls.amIconnected(node)
+        # Test types of connections.
+        if not connections["input"] and not connections["output"]:
+            pass
+        elif connections["input"] and connections["output"]:
+            update = cls.input_connections(node)
+        elif connections["input"]:
+            update = cls.input_connections(node)
+        elif connections["output"]:
+            outn = node.outputs[0].links[0].to_node
+            # Make sure to disconnect all nodes follwoing,
+            # as well as to clear dataset.
+            cls.desconnect_nodes(outn, node)
+        else:
+            raise AttributeError("Fail to find connections!")
+        return update
 
     @staticmethod
     def get_nodes_desconnect(outn, node):
@@ -129,22 +132,11 @@ class NodesDecorators(object):
         """
         # TODO: Add function to check for multiple connectgions
         inputs_links = get_input_links(node)
-        if node.bl_idname == "datacubePath":
+        if node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
             return True
-        elif node.bl_idname == "Datacube_tutorial":
-            return True
-        elif (
-            inputs_links.from_node.bl_idname == "datacubePath"
-            and node.bl_idname == "datacubeNode"
-        ):
+        elif inputs_links.from_node.bl_idname == "datacubePath":
             cls.get_blendernc_file(node)
-            return cls.select_var_dataset(node)
-        elif (
-            inputs_links.from_node.bl_idname == "datacubePath"
-            and node.bl_idname == "datacubeInputGrid"
-        ):
-            cls.get_blendernc_file(node)
-            return cls.select_grid_dataset(node)
+            return cls.get_dataset(node)
         elif inputs_links.from_node.bl_idname == "datacubeNode":
             # Copy from socket! Note that this socket is shared in memory at \
             # any point in the nodetree.
@@ -156,6 +148,13 @@ class NodesDecorators(object):
             cls.get_data_from_node(node)
 
         return cls.dataset_has_identifier(node)
+
+    @classmethod
+    def get_dataset(cls, node):
+        if node.bl_idname == "datacubeNode":
+            return cls.select_var_dataset(node)
+        elif node.bl_idname == "datacubeInputGrid":
+            return cls.select_grid_dataset(node)
 
     @staticmethod
     def get_data_from_socket(node):
