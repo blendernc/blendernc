@@ -100,9 +100,21 @@ def get_dims(datacubedata, var):
     return dim_names
 
 
+def get_coord(coords, geo_coord_name):
+    if "lon" in geo_coord_name[0].lower():
+        geo_coord_name.append("x")
+    elif "lat" in geo_coord_name[0].lower():
+        geo_coord_name.append("y")
+    return [
+        coord
+        for coord in coords
+        if (geo_coord_name[0] in coord or geo_coord_name[1] in coord)
+    ]
+
+
 def get_geo_coord_names(dataset):
-    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
-    lat_coords = [coord for coord in dataset.coords if ("lat" in coord or "y" in coord)]
+    lon_coords = get_coord(dataset.coords, ["lon"])
+    lat_coords = get_coord(dataset.coords, ["lat"])
     return {"lon_name": lon_coords, "lat_name": lat_coords}
 
 
