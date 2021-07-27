@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import bpy
 
+import blendernc.core.update_ui as bnc_updateUI
+
 # Partial import to avoid cyclic import
 import blendernc.python_functions as bnc_pyfunc
 
@@ -98,9 +100,21 @@ def get_dims(datacubedata, var):
     return dim_names
 
 
+def get_coord(coords, geo_coord_name):
+    if "lon" in geo_coord_name[0].lower():
+        geo_coord_name.append("x")
+    elif "lat" in geo_coord_name[0].lower():
+        geo_coord_name.append("y")
+    return [
+        coord
+        for coord in coords
+        if (geo_coord_name[0] in coord or geo_coord_name[1] in coord)
+    ]
+
+
 def get_geo_coord_names(dataset):
-    lon_coords = [coord for coord in dataset.coords if ("lon" in coord or "x" in coord)]
-    lat_coords = [coord for coord in dataset.coords if ("lat" in coord or "y" in coord)]
+    lon_coords = get_coord(dataset.coords, ["lon"])
+    lat_coords = get_coord(dataset.coords, ["lat"])
     return {"lon_name": lon_coords, "lat_name": lat_coords}
 
 
@@ -182,7 +196,7 @@ def get_max_min_data(context, node, node_tree):
     if max_val is not None and min_val is not None:
         return var_metadata["max_value"], var_metadata["min_value"]
     else:
-        bnc_pyfunc.update_range(node, context)
+        bnc_updateUI.update_range(node, context)
         return var_metadata["max_value"], var_metadata["min_value"]
 
 

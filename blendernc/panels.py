@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 import bpy
 
+from blendernc.core.update_ui import update_animation, update_file_vars, update_res
 from blendernc.preferences import get_addon_preference
-from blendernc.python_functions import (
-    build_enum_prop_list,
-    empty_item,
-    update_animation,
-    update_file_vars,
-    update_res,
-)
+from blendernc.python_functions import build_enum_prop_list, empty_item
 
 
 def select_only_meshes(self, object):

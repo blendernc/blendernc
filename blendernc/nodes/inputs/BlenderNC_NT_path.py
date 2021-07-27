@@ -2,7 +2,7 @@
 # Imports
 import bpy
 
-from blendernc.python_functions import update_value_and_node_tree
+from blendernc.core.update_ui import update_value_and_node_tree
 
 
 class BlenderNC_NT_path(bpy.types.Node):

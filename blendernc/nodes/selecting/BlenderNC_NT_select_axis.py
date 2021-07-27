@@ -4,13 +4,10 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.decorators import NodesDecorators
+from blendernc.core.update_ui import update_node_tree, update_value_and_node_tree
+from blendernc.decorators import DrawDecorators, NodesDecorators
 from blendernc.get_utils import get_items_axes
-from blendernc.python_functions import (
-    refresh_cache,
-    update_node_tree,
-    update_value_and_node_tree,
-)
+from blendernc.python_functions import refresh_cache
 
 
 class BlenderNC_NT_select_axis(bpy.types.Node):
@@ -64,36 +61,25 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
+    @DrawDecorators.is_connected
     def draw_buttons(self, context, layout):
-        if (
-            self.inputs[0].is_linked
-            and self.inputs[0].links
-            and self.blendernc_dataset_identifier
-        ):
-            blendernc_dict = self.inputs[0].links[0].from_node.blendernc_dict
-            if blendernc_dict:
-                dataset = blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
-                dims = dataset[
-                    blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
-                        "selected_var_name"
-                    ]
-                ].dims
-                if len(dims) >= 2:
-                    layout.prop(self, "axes", text="")
-                if self.axes:
-                    layout.label(text="Select within range:")
-                    min_val_axes = dataset[self.axes][0].values
-                    max_val_axes = dataset[self.axes][-1].values
+        dataset = blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
+        dims = dataset[
+            blendernc_dict[self.blendernc_dataset_identifier]["selected_var"][
+                "selected_var_name"
+            ]
+        ].dims
+        if len(dims) >= 2:
+            layout.prop(self, "axes", text="")
+        if self.axes:
+            layout.label(text="Select within range:")
+            min_val_axes = dataset[self.axes][0].values
+            max_val_axes = dataset[self.axes][-1].values
 
-                    layout.label(
-                        text="[{0:.2f} - {1:.2f}]".format(min_val_axes, max_val_axes)
-                    )
-                    layout.prop(self, "axis_selection", text="")
-                    layout.label(text="INFO: nearest value", icon="INFO")
-                    layout.label(text="will be selected")
-
-        # layout.label(text="INFO: Work in progress", icon='INFO')
-        # layout.prop(self, "axis")
+            layout.label(text="[{0:.2f} - {1:.2f}]".format(min_val_axes, max_val_axes))
+            layout.prop(self, "axis_selection", text="")
+            layout.label(text="INFO: nearest value", icon="INFO")
+            layout.label(text="will be selected")
 
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead

@@ -4,8 +4,9 @@ from collections import defaultdict
 
 import bpy
 
+from blendernc.core.update_ui import update_value_and_node_tree
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import datacube_values, update_value_and_node_tree
+from blendernc.python_functions import datacube_values
 
 
 class BlenderNC_NT_resolution(bpy.types.Node):

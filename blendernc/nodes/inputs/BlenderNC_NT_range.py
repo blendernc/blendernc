@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import bpy
 
+import blendernc.core.update_ui as bnc_updateUI
 from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import update_range
 
 
 class BlenderNC_NT_range(bpy.types.Node):
@@ -22,11 +22,11 @@ class BlenderNC_NT_range(bpy.types.Node):
     blb_type = "NETCDF"
 
     blendernc_dataset_min: bpy.props.FloatProperty(
-        name="vmin", default=0, update=update_range
+        name="vmin", default=0, update=bnc_updateUI.update_range
     )
     """An instance of the original FloatProperty."""
     blendernc_dataset_max: bpy.props.FloatProperty(
-        name="vmax", default=1, update=update_range
+        name="vmax", default=1, update=bnc_updateUI.update_range
     )
     """An instance of the original FloatProperty."""
 
