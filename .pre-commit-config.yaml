@@ -3,10 +3,6 @@ repos:
     rev: v4.0.1  # Use the ref you want to point at
     hooks:
     -   id: trailing-whitespace
-# -   repo: https://github.com/asottile/pyupgrade
-#     rev: v2.12.0
-#     hooks:
-#     - id: pyupgrade
 -   repo: https://github.com/psf/black
     rev: 21.7b0
     hooks:
@@ -24,6 +20,6 @@ repos:
       # These files are not supported by BlenderNC development.
       exclude: |
         (?x)(
-            ^blendernc/(addon_updater|addon_updater_ops).py|
+            ^blendernc/addon_updater.py|
             ^tests/.py
         )
