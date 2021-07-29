@@ -25,5 +25,5 @@ repos:
       exclude: |
         (?x)(
             ^blendernc/(addon_updater|addon_updater_ops).py|
-            ^testing/.py
+            ^tests/.py
         )
