@@ -21,4 +21,7 @@ repos:
     hooks:
     - id: flake8
       args: ["--ignore", "F722,F821,E203,W503,F405", "--max-line-length", "88","--max-complexity","10"]
-      exclude: ^blendernc/addon_updater*.py
+      exclude:
+        # These files are not supported by BlenderNC development.
+        ^blendernc/addon_updater_ops.py,
+        ^blendernc/addon_updater.py
