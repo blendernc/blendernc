@@ -20,6 +20,6 @@ repos:
       # These files are not supported by BlenderNC development.
       exclude: |
         (?x)(
-            ^blendernc/addon_updater.py|
-            ^tests/.py
+            ^blendernc/addon_updater.*py|
+            ^tests/.*py
         )
