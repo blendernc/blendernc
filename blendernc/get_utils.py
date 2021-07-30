@@ -275,6 +275,22 @@ def get_items_axes(self, context):
     return dims_list
 
 
+def get_default_material():
+    blendernc_materials = [
+        material
+        for material in bpy.data.materials
+        if "BlenderNC_default" in material.name
+    ]
+    if len(blendernc_materials) != 0:
+        blendernc_material = blendernc_materials[-1]
+    else:
+        bpy.ops.material.new()
+        blendernc_material = bpy.data.materials[-1]
+        blendernc_material.name = "BlenderNC_default"
+
+    return blendernc_material
+
+
 # Delete if not use in a few months (25-Jun-2021):
 #
 # def get_selected_var(node):

@@ -4,6 +4,7 @@
 #
 # Probably for this reason I should avoid importing bpy here...
 
+# import gc
 import glob
 import os
 
@@ -17,6 +18,7 @@ import xarray
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
 from blendernc.core.update_ui import update_dict, update_value_and_node_tree
+from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
 
 
@@ -63,18 +65,8 @@ def dataarray_random_sampling(dataarray, n):
     return values
 
 
-def purge_cache(NodeTree, identifier):
-
-    scene = bpy.context.scene
-    nodetrees = bnc_gutils.get_blendernc_nodetrees()
-    n = 0
-    for node in nodetrees:
-        # Make sure the datacube_cache is loaded.
-        if node.name in scene.datacube_cache.keys():
-            cache = scene.datacube_cache[node.name]
-            for key, item in cache.items():
-                n += len(item)
-
+@MemoryDecorator.nodetrees_cached
+def purge_cache(NodeTree, identifier, n=0, scene=None):
     if scene.blendernc_memory_handle == "FRAMES":
         while n > scene.blendernc_frames:
             cached_nodetree = scene.datacube_cache[NodeTree][identifier]
@@ -96,14 +88,14 @@ def purge_cache(NodeTree, identifier):
             print("Removed frame: {0}".format(frames_loaded[0]))
             from blendernc.core.sys_utils import get_size
 
-            cache_dict_size = get_size(scene.datacube_cache)
-            message = "Dynamic cache: \n Total dict cache - {0} \n"
-            message += "Available percentage - {1}"
+            cache_dict_size = get_size(scene.datacube_cache) / (1024 ** 2)  # Mb
+            message = "\nDynamic cache:"
+            message += "\nTotal dict cache - {0:.2f} Mb"
+            message += "\nAvailable percentage - {1:.2f} %"
             warnings.warn(message.format(cache_dict_size, mem_avail_percent))
             n -= 1
-
-        # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
-        # print(scene.datacube_cache['BlenderNC']['001'].keys() )
+    # # Collect Garbage
+    # gc.collect()
 
 
 def refresh_cache(NodeTree, identifier, frame):

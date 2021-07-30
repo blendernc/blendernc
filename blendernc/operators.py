@@ -9,7 +9,12 @@ from blendernc.core.update_ui import (
     update_image,
     update_nodes,
 )
-from blendernc.get_utils import get_blendernc_nodetrees, get_node, get_var
+from blendernc.get_utils import (
+    get_blendernc_nodetrees,
+    get_default_material,
+    get_node,
+    get_var,
+)
 from blendernc.messages import (
     PrintMessage,
     active_selection_preference,
@@ -282,18 +287,31 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             PrintMessage(unselected_object, "Error", "ERROR")
             return {"FINISHED"}
 
-        blendernc_materials = [
-            material
-            for material in bpy.data.materials
-            if "BlenderNC_default" in material.name
-        ]
-        if len(blendernc_materials) != 0:
-            blendernc_material = blendernc_materials[-1]
-        else:
-            bpy.ops.material.new()
-            blendernc_material = bpy.data.materials[-1]
-            blendernc_material.name = "BlenderNC_default"
+        blendernc_material = get_default_material()
+        self.create_materials(blendernc_material)
 
+        imagetex = blendernc_material.node_tree.nodes.get(translate("Image Texture"))
+        cmap = blendernc_material.node_tree.nodes.get("Colormap")
+        bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
+
+        P_BSDF = self.get_P_BSDF(blendernc_material)
+
+        texcoord_link = self.get_projection(sel_obj.name, blendernc_material, imagetex)
+
+        blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)
+        blendernc_material.node_tree.links.new(cmap.inputs[0], imagetex.outputs[0])
+        blendernc_material.node_tree.links.new(bump.inputs[2], imagetex.outputs[0])
+        blendernc_material.node_tree.links.new(P_BSDF.inputs[0], cmap.outputs[0])
+        blendernc_material.node_tree.links.new(P_BSDF.inputs[-3], bump.outputs[0])
+
+        imagetex.image = bpy.data.images.get("BlenderNC_default")
+
+        self.apply_material(sel_obj)
+
+        return {"FINISHED"}
+
+    @staticmethod
+    def create_materials(blendernc_material):
         if len(blendernc_material.node_tree.nodes.keys()) == 2:
             texcoord = blendernc_material.node_tree.nodes.new("ShaderNodeTexCoord")
             texcoord.location = (-760, 250)
@@ -306,41 +324,32 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             bump.inputs[0].default_value = 0.3
             bump.location = (-290, -50)
 
-        else:
-            texcoord = blendernc_material.node_tree.nodes.get(
-                translate("Texture Coordinate")
-            )
-            imagetex = blendernc_material.node_tree.nodes.get(
-                translate("Image Texture")
-            )
-            cmap = blendernc_material.node_tree.nodes.get("Colormap")
-            bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
-
+    @staticmethod
+    def get_P_BSDF(blendernc_material):
         P_BSDF = blendernc_material.node_tree.nodes.get(translate("Principled BSDF"))
         # This line is executed when a different language is selected. By
         # default a new blender file will create a node named "Principled BSDF"
         if not P_BSDF:
             P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
+        return P_BSDF
 
-        if sel_obj.name == "Icosphere":
+    @staticmethod
+    def get_projection(name, blendernc_material, imagetex):
+        texcoord = blendernc_material.node_tree.nodes.get(
+            translate("Texture Coordinate")
+        )
+        if name == "Icosphere":
             texcoord_link = texcoord.outputs.get(translate("Generated"))
             imagetex.projection = "SPHERE"
         else:
             texcoord_link = texcoord.outputs.get(translate("UV"))
             imagetex.projection = "FLAT"
+        return texcoord_link
 
-        blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)
-        blendernc_material.node_tree.links.new(cmap.inputs[0], imagetex.outputs[0])
-        blendernc_material.node_tree.links.new(bump.inputs[2], imagetex.outputs[0])
-        blendernc_material.node_tree.links.new(P_BSDF.inputs[0], cmap.outputs[0])
-        blendernc_material.node_tree.links.new(P_BSDF.inputs[-3], bump.outputs[0])
-
-        imagetex.image = bpy.data.images.get("BlenderNC_default")
-
-        if sel_obj or act_obj.type == "MESH":
+    @staticmethod
+    def apply_material(sel_obj):
+        if sel_obj == "MESH":
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
-
-        return {"FINISHED"}
 
 
 class ImportDatacubeCollection(bpy.types.PropertyGroup):

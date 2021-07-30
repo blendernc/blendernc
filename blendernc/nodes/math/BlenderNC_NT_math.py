@@ -5,37 +5,33 @@ from collections import defaultdict
 import bpy
 import numpy as np
 
-from blendernc.core.update_ui import update_node_tree, update_value_and_node_tree
-from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import refresh_cache
-
-operation_items = [
-    ("Multiply", "Multiply", "", 1),
-    ("Divide", "Divide", "", 2),
-    ("Add", "Add", "", 3),
-    ("Subtract", "Subtract", "", 4),
-    ("Logarithm", "Log", "", 5),
-    ("SymLog", "SymLog", "", 6),
-    ("Power", "Power", "", 7),
-    None,
-    ("Greater than", "Greater than", "", 8),
-    ("Smaller than", "Smaller than", "", 9),
-]
+from blendernc.core.update_ui import update_value_and_node_tree
+from blendernc.decorators import MathDecorator, NodesDecorators
+from blendernc.python_functions import build_enum_prop_list, refresh_cache
 
 operation_types = {
     "float": (
-        "Add",
-        "Subtract",
-        "Multiply",
-        "Divide",
-        "SymLog",
         "Power",
         "Greater than",
         "Smaller than",
     ),
-    "unique": ("Logarithm"),
-    "dataset": (""),
+    "unique": ("Logarithm", "SymLog"),
+    "dataset": ("Add", "Subtract", "Multiply", "Divide"),
 }
+
+ops = {
+    "Add": (lambda x, y: x + y),
+    "Subtract": (lambda x, y: x - y),
+    "Multiply": (lambda x, y: x * y),
+    "Divide": (lambda x, y: x / y),
+    "Logarithm": (lambda x, y: np.log10(x)),
+    "SymLog": (lambda x, y: np.sign(x) * np.log10(abs(x))),
+    "Power": (lambda x, y: x ** y),
+    "Greater than": (lambda x, y: x.where(x > y, 1).where(x <= y, 0)),
+    "Smaller than": (lambda x, y: x.where(x < y, 1).where(x >= y, 0)),
+}
+
+operation_items = build_enum_prop_list(list(ops.keys()))
 
 
 class BlenderNC_NT_math(bpy.types.Node):
@@ -95,80 +91,45 @@ class BlenderNC_NT_math(bpy.types.Node):
     def draw_label(self):
         return "Math"
 
-    def create_sockets(self):
-        operation = self.blendernc_operation
-
-        for input in self.inputs[1::]:
-            self.inputs.remove(input)
-
-        if operation in operation_types["float"] and "Float" not in self.inputs.keys():
+    def create_sockets(self, operation):
+        link_keys = self.inputs.keys()
+        if len(link_keys) == 1 and operation not in operation_types["unique"]:
             self.inputs.new("bNCfloatSocket", "Float")
-        elif operation in operation_types["dataset"] and "Float" in self.inputs.keys():
+        elif len(link_keys) > 1 and operation in operation_types["unique"]:
+            self.inputs.remove(self.inputs[-1])
+        elif (
+            operation in operation_types["dataset"]
+            and "Float" not in link_keys
+            and not self.inputs[-1].is_linked
+        ):
+            self.inputs.remove(self.inputs[-1])
+            self.inputs.new("bNCfloatSocket", "Float")
+        elif (
+            operation in operation_types["dataset"]
+            and "Float" in link_keys
+            and self.inputs.get("Float").is_linked
+        ):
+            connected_socket = self.inputs.get("Float").links[0].from_socket
+            self.inputs.remove(self.inputs.get("Float"))
             self.inputs.new("bNCdatacubeSocket", "Dataset")
-        elif operation in operation_types["dataset"] and len(self.inputs.keys()) == 1:
-            self.inputs.new("bNCdatacubeSocket", "Dataset")
+            node_group = self.rna_type.id_data
+            node_group.links.new(self.inputs[-1], connected_socket)
         else:
             pass
 
     @NodesDecorators.node_connections
     def update(self):
-        unique_identifier = self.blendernc_dataset_identifier
-        unique_data_dict_node = self.blendernc_dict[unique_identifier]
-        parent_node = self.inputs[0].links[0].from_node
-        dataset = parent_node.blendernc_dict[unique_identifier]["Dataset"].copy()
-
-        self.create_sockets()
-
-        # print(dataset.isel(latitude=0).isel(time=0).values)
-        if self.blendernc_operation == "Multiply":
-            dataset = dataset * self.inputs.get("Float").Float
-        elif self.blendernc_operation == "Divide":
-            dataset = dataset / self.inputs.get("Float").Float
-        elif self.blendernc_operation == "Add":
-            if self.inputs[-1].links and self.inputs[0].links:
-                input_from_node = self.inputs[-1].links[0].from_node
-                sel_var = unique_data_dict_node["selected_var"]
-                var_name = sel_var["selected_var_name"]
-
-                dataset_other = (
-                    self.inputs[-1]
-                    .links[0]
-                    .from_node.blendernc_dict[
-                        input_from_node.blendernc_dataset_identifier
-                    ]
-                )
-                varname_other = dataset_other["selected_var"]["selected_var_name"]
-
-                dataarray_link_1 = unique_data_dict_node["Dataset"][var_name]
-                dataarray_link_2 = dataset_other["Dataset"][varname_other]
-
-                dataarray = dataarray_link_1 + dataarray_link_2
-                dataset = dataarray.to_dataset(name=var_name)
-
-        elif self.blendernc_operation == "Subtract":
-            if self.inputs[-1].links:
-                input_from_node = self.inputs[-1].links[0].from_node
-                dataset = dataset - input_from_node.blendernc_dict
-        elif self.blendernc_operation == "Logarithm":
-            dataset = np.log10(dataset)
-        elif self.blendernc_operation == "SymLog":
-            constant = self.inputs.get("Float").Float
-            log10 = np.log10(1 + np.abs(dataset) / constant)
-            sign_log10 = log10 * np.sign(dataset)
-            dataset = sign_log10
-        elif self.blendernc_operation == "Power":
-            constant = self.inputs.get("Float").Float
-            dataset = dataset ** constant
-        elif self.blendernc_operation == "Greater than":
-            value = self.inputs.get("Float").Float
-            dataset = dataset.where(dataset > value, 1).where(dataset <= value, 0)
-        elif self.blendernc_operation == "Smaller than":
-            value = self.inputs.get("Float").Float
-            dataset = dataset.where(dataset < value, 1).where(dataset >= value, 0)
-        unique_data_dict_node["Dataset"] = dataset
-
         NodeTree = self.rna_type.id_data.name
         frame = bpy.context.scene.frame_current
         identifier = self.blendernc_dataset_identifier
         refresh_cache(NodeTree, identifier, frame)
-        update_node_tree(self, bpy.context)
+        operation = self.blendernc_operation
+        self.create_sockets(operation)
+        self.compute_operation()
+
+    @MathDecorator.math_operation
+    def compute_operation(self, data1, data2=None, name=""):
+        dataset = ops[self.blendernc_operation](data1, data2)
+        if type(data1) == type(data2):
+            dataset = dataset.to_dataset(name=name)
+        return dataset

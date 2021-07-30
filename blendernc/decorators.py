@@ -3,7 +3,8 @@ import functools
 
 import bpy
 
-from blendernc.get_utils import get_input_links
+from blendernc.core.update_ui import update_random_range
+from blendernc.get_utils import get_blendernc_nodetrees, get_input_links
 from blendernc.messages import unselected_datacube, unselected_variable
 
 
@@ -312,3 +313,81 @@ class DrawDecorators(object):
                 pass
 
         return wrapper_update
+
+
+class MemoryDecorator(object):
+    """ """
+
+    def nodetrees_cached(func):
+        """ """
+
+        @functools.wraps(func)
+        def unique_identifier(*args, **kwargs):
+            scene = bpy.context.scene
+            n = MemoryDecorator.number_cached_frames(scene)
+            if n != 1:
+                kwargs = {"n": n, "scene": scene}
+                return func(*args, **kwargs)
+            else:
+                pass
+
+        return unique_identifier
+
+    def number_cached_frames(scene):
+        nodetrees = get_blendernc_nodetrees()
+        n = 0
+        for node in nodetrees:
+            # Make sure the datacube_cache is loaded.
+            if node.name in scene.datacube_cache.keys():
+                cache = scene.datacube_cache[node.name]
+                for key, item in cache.items():
+                    n += len(item)
+        return n
+
+
+class MathDecorator(object):
+    """ """
+
+    def math_operation(func):
+        """ """
+
+        @functools.wraps(func)
+        def which_calculation(*args, **kwargs):
+            self = args[0]
+            unique_identifier = self.blendernc_dataset_identifier
+            unique_data_dict_node = self.blendernc_dict[unique_identifier]
+            parent_node = self.inputs[0].links[0].from_node
+            dataset_parent = parent_node.blendernc_dict[unique_identifier][
+                "Dataset"
+            ].copy()
+            computation_types = self.inputs.keys()
+            if "Float" in computation_types and "Dataset" in computation_types:
+                float = self.inputs.get("Float").Float
+                dataset = func(self, dataset_parent, float)
+            elif "Dataset" in computation_types and len(computation_types) == 2:
+                input_from_node = self.inputs[-1].links[0].from_node
+                dataset_other = (
+                    self.inputs[-1]
+                    .links[0]
+                    .from_node.blendernc_dict[
+                        input_from_node.blendernc_dataset_identifier
+                    ]
+                )
+                varname_other = dataset_other["selected_var"]["selected_var_name"]
+
+                sel_var = unique_data_dict_node["selected_var"]
+                var_name = sel_var["selected_var_name"]
+
+                dataarray_link_1 = unique_data_dict_node["Dataset"][var_name]
+                dataarray_link_2 = dataset_other["Dataset"][varname_other]
+
+                dataset = func(self, dataarray_link_1, dataarray_link_2, var_name)
+            elif "Dataset" in computation_types and len(computation_types) == 1:
+                dataset = func(self, dataset_parent)
+
+            unique_data_dict_node["Dataset"] = dataset
+            max_val, min_val = update_random_range(unique_data_dict_node)
+            unique_data_dict_node["selected_var"]["max_value"] = max_val
+            unique_data_dict_node["selected_var"]["min_value"] = min_val
+
+        return which_calculation

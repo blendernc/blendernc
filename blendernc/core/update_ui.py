@@ -107,13 +107,7 @@ def update_range(node, context):
         max_val = node.blendernc_dataset_max
         min_val = node.blendernc_dataset_min
     except AttributeError:
-        dataset = unique_data_dict["Dataset"]
-        sel_var = unique_data_dict["selected_var"]
-        selected_variable = sel_var["selected_var_name"]
-        selected_var_dataset = dataset[selected_variable]
-        rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, 100)
-        max_val = np.max(rand_sample)
-        min_val = np.min(rand_sample)
+        max_val, min_val = update_random_range(unique_data_dict)
         if max_val == min_val:
             window_manager = bpy.context.window_manager
             window_manager.popup_menu(increase_resolution, title="Error", icon="ERROR")
@@ -129,6 +123,17 @@ def update_range(node, context):
         bnc_pyfunc.refresh_cache(NodeTree, unique_identifier, frame)
 
     update_value_and_node_tree(node, context)
+
+
+def update_random_range(unique_data_dict):
+    dataset = unique_data_dict["Dataset"]
+    sel_var = unique_data_dict["selected_var"]
+    selected_variable = sel_var["selected_var_name"]
+    selected_var_dataset = dataset[selected_variable]
+    rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, 100)
+    max_val = np.max(rand_sample)
+    min_val = np.min(rand_sample)
+    return max_val, min_val
 
 
 def update_datetime_text(
@@ -293,6 +298,11 @@ def update_value_and_node_tree(self, context):
 
 def update_node_tree(self, context):
     self.rna_type.id_data.interface_update(context)
+
+
+def update_socket_and_tree(self, context):
+    self.node.update()
+    update_node_tree(self, context)
 
 
 def update_nodes(scene, context):
