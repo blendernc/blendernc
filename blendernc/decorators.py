@@ -353,14 +353,18 @@ class MathDecorator(object):
 
         @functools.wraps(func)
         def which_calculation(*args, **kwargs):
+            # Get all identifiers of the node
             self = args[0]
             unique_identifier = self.blendernc_dataset_identifier
             unique_data_dict_node = self.blendernc_dict[unique_identifier]
             parent_node = self.inputs[0].links[0].from_node
+            # Extract parent dataset
             dataset_parent = parent_node.blendernc_dict[unique_identifier][
                 "Dataset"
             ].copy()
+            # Computation name list
             computation_types = self.inputs.keys()
+            # Compute with node
             if "Float" in computation_types and "Dataset" in computation_types:
                 float = self.inputs.get("Float").Float
                 dataset = func(self, dataset_parent, float)

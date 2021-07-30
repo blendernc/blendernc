@@ -88,7 +88,7 @@ def purge_cache(NodeTree, identifier, n=0, scene=None):
             print("Removed frame: {0}".format(frames_loaded[0]))
             from blendernc.core.sys_utils import get_size
 
-            cache_dict_size = get_size(scene.datacube_cache) / (1024 ** 2)  # Mb
+            cache_dict_size = get_size.size(scene.datacube_cache) / (1024 ** 2)  # Mb
             message = "\nDynamic cache:"
             message += "\nTotal dict cache - {0:.2f} Mb"
             message += "\nAvailable percentage - {1:.2f} %"

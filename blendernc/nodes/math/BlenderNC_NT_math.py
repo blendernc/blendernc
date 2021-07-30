@@ -132,4 +132,5 @@ class BlenderNC_NT_math(bpy.types.Node):
         dataset = ops[self.blendernc_operation](data1, data2)
         if type(data1) == type(data2):
             dataset = dataset.to_dataset(name=name)
+            # TODO: Update the node to ensure the image will be updated.
         return dataset

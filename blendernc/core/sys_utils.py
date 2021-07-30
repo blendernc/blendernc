@@ -6,29 +6,34 @@ from numbers import Number
 ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
 
 
-def get_size(obj_0):
+class get_size(object):
     """Recursively iterate to sum size of object & members."""
-    _seen_ids = set()
 
-    def inner(obj):
-        obj_id = id(obj)
-        if obj_id in _seen_ids:
-            return 0
-        _seen_ids.add(obj_id)
+    @classmethod
+    def size(cls, obj):
+        size = cls.map_object(obj)
+        size += cls.custom_instance(obj)
+        return size
+
+    @classmethod
+    def map_object(cls, obj):
         size = sys.getsizeof(obj)
         if isinstance(obj, ZERO_DEPTH_BASES):
             pass  # bypass remaining control flow and return
         elif isinstance(obj, (tuple, list, Set, deque)):
-            size += sum(inner(i) for i in obj)
+            size += sum(cls.size(i) for i in obj)
         elif isinstance(obj, Mapping) or hasattr(obj, "items"):
-            size += sum(inner(k) + inner(v) for k, v in getattr(obj, "items")())
-        # Check for custom object instances - may subclass above too
-        if hasattr(obj, "__dict__"):
-            size += inner(vars(obj))
-        if hasattr(obj, "__slots__"):  # can have __slots__ with __dict__
-            size += sum(
-                inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s)
-            )
+            size += sum(cls.size(k) + cls.size(v) for k, v in getattr(obj, "items")())
         return size
 
-    return inner(obj_0)
+    @classmethod
+    def custom_instance(cls, obj):
+        size = 0
+        # Check for custom object instances - may subclass above too
+        if hasattr(obj, "__dict__"):
+            size = cls.size(vars(obj))
+        if hasattr(obj, "__slots__"):  # can have __slots__ with __dict__
+            size = sum(
+                cls.size(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s)
+            )
+        return size
