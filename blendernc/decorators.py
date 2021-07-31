@@ -3,9 +3,9 @@ import functools
 
 import bpy
 
-from blendernc.core.update_ui import update_random_range
-from blendernc.get_utils import get_blendernc_nodetrees, get_input_links
-from blendernc.messages import unselected_datacube, unselected_variable
+import blendernc.core.update_ui as bncupdate_ui
+import blendernc.get_utils as bnc_gutils
+from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable, huge_image, drop_dim
 
 
 class NodesDecorators(object):
@@ -96,7 +96,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def unlink_input(node):
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         inputs_links.from_socket.unlink(inputs_links)
 
     @staticmethod
@@ -132,7 +132,7 @@ class NodesDecorators(object):
         Test only one incoming connection.
         """
         # TODO: Add function to check for multiple connectgions
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         if node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
             return True
         elif inputs_links.from_node.bl_idname == "datacubePath":
@@ -159,7 +159,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def get_data_from_socket(node):
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         socket = inputs_links.from_socket
         node.blendernc_dataset_identifier = socket.unique_identifier
         if socket.unique_identifier in socket.dataset.keys():
@@ -168,7 +168,7 @@ class NodesDecorators(object):
 
     @staticmethod
     def get_data_from_node(node):
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         node_parent = inputs_links.from_node
         node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
         if (
@@ -189,7 +189,7 @@ class NodesDecorators(object):
             # If var is not selected disconnect and return update == False
             if "selected_var" not in blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
-                bpy.context.window_manager.popup_menu(
+                PrintMessage(
                     unselected_variable, title="Error", icon="ERROR"
                 )
                 cls.unlink_input(node)
@@ -201,7 +201,7 @@ class NodesDecorators(object):
         # Else user should select a file.
         else:
             # Exception for datacubeNode to update dataset
-            bpy.context.window_manager.popup_menu(
+            PrintMessage(
                 unselected_datacube, title="Error", icon="ERROR"
             )
             cls.unlink_input(node)
@@ -209,7 +209,7 @@ class NodesDecorators(object):
 
     @classmethod
     def select_var_dataset(cls, node):
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         if node.blendernc_file != inputs_links.from_socket.text:
             node.blendernc_file = inputs_links.from_socket.text
             bpy.ops.blendernc.datacubeload(
@@ -233,7 +233,7 @@ class NodesDecorators(object):
 
     @classmethod
     def select_grid_dataset(cls, node):
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         identifier = node.blendernc_dataset_identifier
         if node.blendernc_file != inputs_links.from_socket.text:
             node.blendernc_file = inputs_links.from_socket.text
@@ -264,7 +264,7 @@ class NodesDecorators(object):
     @staticmethod
     def get_blendernc_file(node):
         # TODO disconnect if not connected to proper node.
-        inputs_links = get_input_links(node)
+        inputs_links = bnc_gutils.get_input_links(node)
         if not node.blendernc_file:
             node.blendernc_file = inputs_links.from_node.blendernc_file
 
@@ -334,7 +334,7 @@ class MemoryDecorator(object):
         return unique_identifier
 
     def number_cached_frames(scene):
-        nodetrees = get_blendernc_nodetrees()
+        nodetrees = bnc_gutils.get_blendernc_nodetrees()
         n = 0
         for node in nodetrees:
             # Make sure the datacube_cache is loaded.
@@ -390,8 +390,21 @@ class MathDecorator(object):
                 dataset = func(self, dataset_parent)
 
             unique_data_dict_node["Dataset"] = dataset
-            max_val, min_val = update_random_range(unique_data_dict_node)
+            max_val, min_val = bncupdate_ui.update_random_range(unique_data_dict_node)
             unique_data_dict_node["selected_var"]["max_value"] = max_val
             unique_data_dict_node["selected_var"]["min_value"] = min_val
 
         return which_calculation
+
+class ImageDecorator(object):
+    def check_data(func):
+        """ """
+
+        @functools.wraps(func)
+        def data_size(*args):
+            if not args[5]:
+                return False
+            
+            
+            func(*args)
+        return data_size

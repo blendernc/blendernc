@@ -252,7 +252,7 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
     """An instance of the original StringProperty."""
 
     def execute(self, context):
-        if bpy.data.images[self.image].users > 2:
+        if bpy.data.images[self.image].users >= 2:
             update_colormap_interface(context, self.node, self.node_group)
         else:
             PrintMessage(asign_material, "Error", "ERROR")
@@ -348,7 +348,7 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
 
     @staticmethod
     def apply_material(sel_obj):
-        if sel_obj == "MESH":
+        if sel_obj.type == "MESH":
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
 
 

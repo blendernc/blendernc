@@ -5,14 +5,13 @@ import blendernc.get_utils as bnc_gutils
 import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.core.logging import Timer
-from blendernc.messages import drop_dim, huge_image, increase_resolution
+from blendernc.messages import PrintMessage, drop_dim, huge_image, increase_resolution
 from blendernc.translations import translate
+from blendernc.decorators import ImageDecorator
 
 
+@ImageDecorator.check_data
 def update_image(context, node, node_tree, frame, image, grid_node=None):
-    window_manager = bpy.context.window_manager
-    if not image:
-        return False
     # Leave next line here, if move to the end it will crash blender.
     # TODO: Text why this line crashes, up to this point,
     # it seems quite random.
@@ -37,10 +36,10 @@ def update_image(context, node, node_tree, frame, image, grid_node=None):
     elif len(var_data.shape) == 3:
         t, y, x = var_data.shape
     else:
-        window_manager.popup_menu(drop_dim, title="Error", icon="ERROR")
+        PrintMessage(drop_dim, title="Error", icon="ERROR")
 
     if y > 5120 or x > 5120:
-        window_manager.popup_menu(huge_image, title="Error", icon="ERROR")
+        PrintMessage(huge_image, title="Error", icon="ERROR")
         return
 
     # Check if the image is an image object or a image name:
@@ -110,7 +109,7 @@ def update_range(node, context):
         max_val, min_val = update_random_range(unique_data_dict)
         if max_val == min_val:
             window_manager = bpy.context.window_manager
-            window_manager.popup_menu(increase_resolution, title="Error", icon="ERROR")
+            PrintMessage(increase_resolution, title="Error", icon="ERROR")
             # Cancel update range and force the user to change the resolution.
             return
 
@@ -183,72 +182,80 @@ def update_colormap_interface(context, node, node_tree):
 
     node = bpy.data.node_groups[node_tree].nodes[node]
 
+    # Find materials using image:
+    materials = bnc_gutils.get_all_materials_using_image(node.image)
+
     # Find all nodes using the selected image in the node.
-    all_nodes = bnc_gutils.get_all_nodes_using_image(node.image.name)
-    # Find only materials using image.
-    material_users = [
-        items
-        for nodes, items in all_nodes.items()
-        if items.rna_type.id_data.name == "Shader Nodetree"
-    ]
+    image_user_nodes = bnc_gutils.get_all_nodes_using_image(materials, node.image)
+
     # support for multiple materials. This will generate multiple colorbars.
-    colormap = [bnc_gutils.get_colormaps_of_materials(node) for node in material_users]
+    colormap = [
+        bnc_gutils.get_colormaps_of_materials(user_node, node.image)
+        for user_node in image_user_nodes
+    ]
 
     width = 0.007
     height = 0.12
-    if "Camera" in bpy.data.objects.keys():
-        Camera = bpy.data.objects.get("Camera")
-        children_name = [children.name for children in Camera.children]
-        if "cbar_{}".format(node.name) not in children_name:
-            bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
-            cbar_plane = bpy.context.object
-            cbar_plane.name = "cbar_{}".format(node.name)
-            cbar_plane.dimensions = (width, height, 0)
-            cbar_plane.location = (0.15, 0, -0.5)
-            cbar_plane.parent = Camera
-            splines = bnc_cramputils.add_splines(
-                colormap[-1].n_stops,
-                cbar_plane,
-                width,
-                height,
-            )
-        else:
-            c_childrens = Camera.children
-            cbar_plane = [
-                child
-                for child in c_childrens
-                if child.name == "cbar_{}".format(node.name)
-            ][-1]
-            splines = [
-                child
-                for child in cbar_plane.children
-                if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
-            ]
 
-        # Update splines
-        step = (max_val - min_val) / (len(splines) - 1)
-        labels = np.arange(min_val, max_val + step, step)
-        for s_index in range(len(splines)):
-            splines[s_index].data.body = str(np.round(labels[s_index], 2))
+    if "Camera" not in bpy.data.objects.keys():
+        return
 
-        # TODO: Make the text pattern search more generic. i.e, include
-        unit_objs = [
+    Camera = bpy.data.objects.get("Camera")
+    children_name = [children.name for children in Camera.children]
+    if "cbar_{}".format(node.name) not in children_name:
+        bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
+        cbar_plane = bpy.context.object
+        cbar_plane.name = "cbar_{}".format(node.name)
+        cbar_plane.dimensions = (width, height, 0)
+        cbar_plane.location = (0.15, 0, -0.5)
+        cbar_plane.parent = Camera
+        splines = bnc_cramputils.add_splines(
+            colormap[-1].n_stops,
+            cbar_plane,
+            width,
+            height,
+        )
+    else:
+        c_childrens = Camera.children
+        cbar_plane = [
+            child for child in c_childrens if child.name == "cbar_{}".format(node.name)
+        ][-1]
+        splines = [
             child
             for child in cbar_plane.children
-            if "text_units_{}".format(cbar_plane.name) in child.name
+            if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
         ]
 
-        if not unit_objs:
-            unit_obj = bnc_cramputils.add_units(cbar_plane)
-        else:
-            unit_obj = unit_objs[0]
+    # Update splines
+    step = (max_val - min_val) / (len(splines) - 1)
+    labels = np.arange(min_val, max_val + step, step)
+    for s_index in range(len(splines)):
+        splines[s_index].data.body = str(np.round(labels[s_index], 2))
 
-        unit_obj.data.body = units
+    unit_obj = create_unit_obj(cbar_plane)
 
-        c_material = bnc_cramputils.colorbar_material(node, colormap[-1])
-        if c_material:
-            cbar_plane.data.materials.append(c_material)
+    unit_obj.data.body = units
+
+    c_material = bnc_cramputils.colorbar_material(node, colormap[-1])
+
+    if c_material:
+        cbar_plane.data.materials.append(c_material)
     # Get data dictionary stored at scene object
+
+
+def create_unit_obj(cbar_plane):
+    # TODO: Make the text pattern search more generic. i.e, include
+    unit_objs = [
+        child
+        for child in cbar_plane.children
+        if "text_units_{}".format(cbar_plane.name) in child.name
+    ]
+
+    if not unit_objs:
+        unit_obj = bnc_cramputils.add_units(cbar_plane)
+    else:
+        unit_obj = unit_objs[0]
+    return unit_obj
 
 
 def update_res(scene, context):

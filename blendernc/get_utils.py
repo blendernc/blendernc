@@ -5,6 +5,7 @@ import blendernc.core.update_ui as bnc_updateUI
 
 # Partial import to avoid cyclic import
 import blendernc.python_functions as bnc_pyfunc
+from blendernc.translations import translate
 
 
 def get_blendernc_nodetrees():
@@ -208,46 +209,88 @@ def get_xarray_datasets(node, context):
     return bnc_pyfunc.select_datacube() + datacube_names
 
 
-def get_colormaps_of_materials(node):
+def search(ID):
+    def users(col):
+        ret = tuple(repr(o) for o in col if o.user_of_id(ID))
+        return ret if ret else None
+
+    return filter(None, (users(getattr(bpy.data, p)) for p in dir(bpy.data)))
+
+
+def get_colormaps_of_materials(node, image):
     """
     Function to find materials using the BlenderNC output node image.
     """
-    unfind = True
-    counter = 0
+    nodetree = node.id_data
 
-    links = node.outputs.get("Color").links
-    # TODO: Change this to a recursive search.
-    # Currently, only colormaps directly connected to
-    # the output will generate a colormap.
-    while unfind:
-        for link in links:
-            if link.to_node.bl_idname == "cmapsNode":
-                colormap_node = link.to_node
-                unfind = False
-                break
-            elif counter == 10:
-                unfind = False
-            else:
-                counter += 1
+    colormap_nodes = [node for node in nodetree.nodes if "Colormap" in node.name]
 
-    if counter == 10:
+    if not colormap_nodes:
+        raise ValueError("Colormap not found after 10 tree node interations")
+    elif len(colormap_nodes) == 1:
+        colormap_node = colormap_nodes[0]
+    else:
+        cmap_links = get_material_links(colormap_nodes)
+
+        colormap_name = get_colormap_connected_to_image(cmap_links, image)
+
+        colormap_node = nodetree.nodes.get(next(iter(colormap_name)))
+
+    if not colormap_node:
         raise ValueError("Colormap not found after 10 tree node interations")
     return colormap_node
 
 
-def get_all_nodes_using_image(image_name):
+def get_material_links(nodes):
+    links = {node.name: node.inputs[0].links for node in nodes}
+    return links
+
+
+def get_colormap_connected_to_image(cmap_links, image):
+    colormap_name = None
+    connected_nodes = {
+        key: links[0].from_node for key, links in cmap_links.items() if links
+    }
+    count = 0
+    while not colormap_name or count > 10:
+        node_with_image = {
+            key: connection
+            for key, connection in connected_nodes.items()
+            if hasattr(connection, "image")
+        }
+        colormap_name = {
+            key: node.name
+            for key, node in node_with_image.items()
+            if node.image == image
+        }
+
+        upstream_links = {
+            key: get_material_links([links[0].from_node])
+            for key, links in cmap_links.items()
+            if links
+        }
+
+        connected_nodes = {
+            key: items[next(iter(items))] for key, items in upstream_links.items()
+        }
+        count += 1
+
+    return colormap_name
+
+
+def get_all_materials_using_image(image):
+    return [material for material in bpy.data.materials if material.user_of_id(image)]
+
+
+def get_all_nodes_using_image(materials, image):
     users = {}
-    for node_group in bpy.data.node_groups:
-        for node in node_group.nodes:
-            if node.bl_idname == "datacubeOutput":
-                users[node_group.name] = node
-
-    for material in bpy.data.materials:
-        if not material.grease_pencil:
-            for node in material.node_tree.nodes:
-                if node.bl_idname == "ShaderNodeTexImage":
-                    users[material.name] = node
-
+    for material in materials:
+        user_nodes = [
+            node
+            for node in material.node_tree.nodes
+            if translate("Image Texture") in node.name
+        ]
+        users = [user for user in user_nodes if user.image == image]
     return users
 
 

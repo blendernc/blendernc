@@ -20,19 +20,23 @@ def update_fill_value(node, context):
 
 def colorbar_material(node, colormap):
     materials = bpy.data.materials
+    image_name = node.image.name
     blendernc_materials = [
-        material for material in materials if "" + node.name in material.name
+        material
+        for material in materials
+        if image_name + "_" + colormap.name in material.name
     ]
 
     if len(blendernc_materials) != 0:
         blendernc_material = blendernc_materials[-1]
         cmap = blendernc_material.node_tree.nodes.get("Colormap")
         if cmap.colormaps == colormap.colormaps:
-            return
+            cmap.update()
+            return blendernc_material
     else:
         bpy.ops.material.new()
         blendernc_material = bpy.data.materials[-1]
-        blendernc_material.name = "" + node.name
+        blendernc_material.name = image_name + "_" + colormap.name
 
     material_node_tree = blendernc_material.node_tree
 
