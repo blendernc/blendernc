@@ -5,7 +5,13 @@ import bpy
 
 import blendernc.core.update_ui as bncupdate_ui
 import blendernc.get_utils as bnc_gutils
-from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable, huge_image, drop_dim
+from blendernc.messages import (
+    PrintMessage,
+    drop_dim,
+    huge_image,
+    unselected_datacube,
+    unselected_variable,
+)
 
 
 class NodesDecorators(object):
@@ -189,9 +195,7 @@ class NodesDecorators(object):
             # If var is not selected disconnect and return update == False
             if "selected_var" not in blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
-                PrintMessage(
-                    unselected_variable, title="Error", icon="ERROR"
-                )
+                PrintMessage(unselected_variable, title="Error", icon="ERROR")
                 cls.unlink_input(node)
                 node.blendernc_dict.pop(identifier)
                 return False
@@ -201,9 +205,7 @@ class NodesDecorators(object):
         # Else user should select a file.
         else:
             # Exception for datacubeNode to update dataset
-            PrintMessage(
-                unselected_datacube, title="Error", icon="ERROR"
-            )
+            PrintMessage(unselected_datacube, title="Error", icon="ERROR")
             cls.unlink_input(node)
             return False
 
@@ -396,6 +398,7 @@ class MathDecorator(object):
 
         return which_calculation
 
+
 class ImageDecorator(object):
     def check_data(func):
         """ """
@@ -404,7 +407,7 @@ class ImageDecorator(object):
         def data_size(*args):
             if not args[5]:
                 return False
-            
-            
+
             func(*args)
+
         return data_size

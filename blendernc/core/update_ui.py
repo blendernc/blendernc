@@ -5,9 +5,9 @@ import blendernc.get_utils as bnc_gutils
 import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.core.logging import Timer
+from blendernc.decorators import ImageDecorator
 from blendernc.messages import PrintMessage, drop_dim, huge_image, increase_resolution
 from blendernc.translations import translate
-from blendernc.decorators import ImageDecorator
 
 
 @ImageDecorator.check_data
