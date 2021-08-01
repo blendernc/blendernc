@@ -290,11 +290,11 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         blendernc_material = get_default_material()
         self.create_materials(blendernc_material)
 
-        imagetex = blendernc_material.node_tree.nodes.get(translate("Image Texture"))
-        cmap = blendernc_material.node_tree.nodes.get("Colormap")
-        bump = blendernc_material.node_tree.nodes.get(translate("Bump"))
+        imagetex = self.get_translated_node(blendernc_material,"Image Texture")
+        cmap = self.get_translated_node(blendernc_material,"Colormap")
+        bump = self.get_translated_node(blendernc_material,"Bump")
 
-        P_BSDF = self.get_P_BSDF(blendernc_material)
+        P_BSDF = self.get_translated_node(blendernc_material,"Principled BSDF")
 
         texcoord_link = self.get_projection(sel_obj.name, blendernc_material, imagetex)
 
@@ -325,12 +325,12 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             bump.location = (-290, -50)
 
     @staticmethod
-    def get_P_BSDF(blendernc_material):
-        P_BSDF = blendernc_material.node_tree.nodes.get(translate("Principled BSDF"))
+    def get_translated_node(blendernc_material,eng_node_name):
+        P_BSDF = blendernc_material.node_tree.nodes.get(translate(eng_node_name))
         # This line is executed when a different language is selected. By
         # default a new blender file will create a node named "Principled BSDF"
         if not P_BSDF:
-            P_BSDF = blendernc_material.node_tree.nodes.get("Principled BSDF")
+            P_BSDF = blendernc_material.node_tree.nodes.get(eng_node_name)
         return P_BSDF
 
     @staticmethod

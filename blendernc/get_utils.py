@@ -322,7 +322,7 @@ def get_default_material():
     blendernc_materials = [
         material
         for material in bpy.data.materials
-        if "BlenderNC_default" in material.name
+        if ("BlenderNC_default" in material.name and "Colormap" not in material.name) 
     ]
     if len(blendernc_materials) != 0:
         blendernc_material = blendernc_materials[-1]
