@@ -130,7 +130,8 @@ def findCommonName(filenames):
         S = difflib.SequenceMatcher(None, filenames[fcounter], filenames[fcounter + 1])
         cname = ""
         for block in S.get_matching_blocks():
-            cfname.append(name_match(block, cname, filenames[fcounter]))
+            cname = name_match(block, cname, filenames[fcounter])
+        cfname.append(cname)
         fcounter += 1
     commonName = min(cfname, key=len)
     if "*" not in commonName:
@@ -146,7 +147,7 @@ def name_match(block, cfname, filename):
     elif block.a == block.b and block.size != 0:
         if len(cfname) != 0 and len(cfname) != block.a:
             cfname += "*"
-        cfname == filename[block.a : block.a + block.size]
+        cfname += filename[block.a : block.a + block.size]
     elif cfname or block.a != block.b:
         pass
     return cfname

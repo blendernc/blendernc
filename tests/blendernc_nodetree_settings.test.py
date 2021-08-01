@@ -4,8 +4,8 @@ import unittest
 from io import StringIO
 
 import bpy
-import test_utils as tutils
 
+import tests.test_utils as tutils
 from blendernc.preferences import get_addon_preference
 
 
@@ -90,6 +90,7 @@ class Test_settings(unittest.TestCase):
             if output:
                 loaded_frames.append(int(output[-3].split(" ")[-2]))
             print("\n".join(output))
+        print(loaded_frames)
         # self.assertEqual(loaded_frames, [3,4])
 
     def test_animation_setting_loop(self):

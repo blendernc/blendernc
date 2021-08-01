@@ -5,13 +5,7 @@ import bpy
 
 import blendernc.core.update_ui as bncupdate_ui
 import blendernc.get_utils as bnc_gutils
-from blendernc.messages import (
-    PrintMessage,
-    drop_dim,
-    huge_image,
-    unselected_datacube,
-    unselected_variable,
-)
+from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable
 
 
 class NodesDecorators(object):
@@ -405,7 +399,7 @@ class ImageDecorator(object):
 
         @functools.wraps(func)
         def data_size(*args):
-            if not args[5]:
+            if len(args) < 5:
                 return False
 
             func(*args)
