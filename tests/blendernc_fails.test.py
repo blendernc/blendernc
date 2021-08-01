@@ -2,7 +2,8 @@ import sys
 import unittest
 
 import bpy
-import test_utils as tutils
+
+import tests.test_utils as tutils
 
 
 def test_no_selected_file(node_list=[], node_args=None):

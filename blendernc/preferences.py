@@ -2,6 +2,7 @@
 import os
 
 import bpy
+import dask.distributed as ddist
 from bpy.app.handlers import persistent
 
 from blendernc.messages import PrintMessage, client_exists, load_after_restart
@@ -95,13 +96,7 @@ def update_message(self, context):
 
 
 def update_client(self, context):
-    import dask.distributed as ddist
-
-    # Try to get if client exists
-    try:
-        c = ddist.get_client()
-    except ValueError:
-        c = ""
+    c = dask_client()
     # Close client.
     if self.blendernc_use_dask == "False" and c:
         c.close()
@@ -117,6 +112,18 @@ def update_client(self, context):
     else:
         c = "No client"
     print(c)
+
+
+def dask_client(create_client=False):
+    # Try to get if client exists
+    try:
+        c = ddist.get_client()
+    except ValueError:
+        if create_client:
+            c = ddist.Client(processes=False)
+        else:
+            c = ""
+    return c
 
 
 class BlenderNC_Preferences(bpy.types.AddonPreferences):
@@ -245,15 +252,17 @@ def load_handler_for_startup(_):
     prefs = get_addon_preference()
 
     if prefs.blendernc_use_dask == "True":
-        import dask.distributed as ddist
-
-        c = ddist.Client(processes=False)
-        print(c)
+        dask_client(create_client=True)
 
     # Use material preview shading.
-    for screen in bpy.data.screens:
-        for area in screen.areas:
-            for space in area.spaces:
-                if space.type == "VIEW_3D":
-                    space.shading.type = prefs.blendernc_workspace_shading
-                    space.shading.use_scene_lights = True
+    areas = [
+        space
+        for screen in bpy.data.screens
+        for area in screen.areas
+        for space in area.spaces
+        if space.type == "VIEW_3D"
+    ]
+
+    for space in areas:
+        space.shading.type = prefs.blendernc_workspace_shading
+        space.shading.use_scene_lights = True

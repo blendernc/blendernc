@@ -391,17 +391,3 @@ class MathDecorator(object):
             unique_data_dict_node["selected_var"]["min_value"] = min_val
 
         return which_calculation
-
-
-class ImageDecorator(object):
-    def check_data(func):
-        """ """
-
-        @functools.wraps(func)
-        def data_size(*args):
-            if len(args) < 5:
-                return False
-
-            func(*args)
-
-        return data_size

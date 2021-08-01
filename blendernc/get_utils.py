@@ -10,11 +10,21 @@ from blendernc.translations import translate
 
 def get_blendernc_nodetrees():
     blendernc_nodetrees = [
-        items
-        for keys, items in bpy.data.node_groups.items()
-        if "BlenderNC" == items.bl_label
+        node_group
+        for node_group in bpy.data.node_groups
+        if "BlenderNC" == node_group.bl_label
     ]
     return blendernc_nodetrees
+
+
+def get_all_output_nodes():
+    nodes = []
+    node_trees = get_blendernc_nodetrees()
+
+    # Find all nodes
+    for nt in node_trees:
+        [nodes.append(node) for node in nt.nodes if node.name == translate("Output")]
+    return nodes
 
 
 def get_unique_data_dict(node):
@@ -50,9 +60,9 @@ def get_var(datacubedata):
     return bnc_pyfunc.select_item() + [None] + var_names
 
 
-def get_var_dict(context, node, node_tree):
-    scene = context.scene
-    node = bpy.data.node_groups[node_tree].nodes[node]
+def get_var_dict(node):
+    scene = bpy.context.scene
+    node_tree = node.rna_type.id_data.name
     unique_identifier = node.blendernc_dataset_identifier
     try:
         scene.datacube_cache[node_tree]
@@ -67,8 +77,7 @@ def get_var_dict(context, node, node_tree):
     return scene.datacube_cache[node_tree][unique_identifier]
 
 
-def get_var_data(context, node, node_tree):
-    node = bpy.data.node_groups[node_tree].nodes[node]
+def get_var_data(node):
     # Get data dictionary stored at scene object
     unique_data_dict = get_unique_data_dict(node)
     # Get the datacube of the selected file
@@ -167,8 +176,7 @@ def get_possible_dims(node, context):
     return items
 
 
-def get_time(context, node, node_tree, frame):
-    node = bpy.data.node_groups[node_tree].nodes[node]
+def get_time(node, frame):
     # Get data dictionary stored at scene object
     unique_data_dict = get_unique_data_dict(node)
     # Get the datacube of the selected file
@@ -186,8 +194,8 @@ def get_time(context, node, node_tree, frame):
         return ""
 
 
-def get_max_min_data(context, node, node_tree):
-    node = bpy.data.node_groups[node_tree].nodes[node]
+def get_max_min_data(node):
+    context = bpy.context
     # Get data dictionary stored at scene object
     unique_data_dict = get_unique_data_dict(node)
     # Get the metadata of the selected variable

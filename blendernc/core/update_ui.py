@@ -5,98 +5,124 @@ import blendernc.get_utils as bnc_gutils
 import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.core.logging import Timer
-from blendernc.decorators import ImageDecorator
 from blendernc.messages import PrintMessage, drop_dim, huge_image, increase_resolution
 from blendernc.translations import translate
 
 
-@ImageDecorator.check_data
-def update_image(context, node, node_tree, frame, image, grid_node=None):
-    # Leave next line here, if move to the end it will crash blender.
-    # TODO: Text why this line crashes, up to this point,
-    # it seems quite random.
-    timer = Timer()
+class UpdateImage:
+    """
+    UpdateImage class, responsable of loading and generating an
+    image from a datacube.
+    """
 
-    node_ = bpy.data.node_groups[node_tree].nodes[node]
-    unique_identifier = node_.blendernc_dataset_identifier
-    scene = context.scene
+    def __init__(self, context, node, node_tree, frame, image, grid_node=None):
+        self.scene = context.scene
+        self.nodename = node
+        self.node = bpy.data.node_groups[node_tree].nodes[node]
+        self.u_identifier = self.node.blendernc_dataset_identifier
+        self.node_tree = node_tree
+        self.frame = frame
+        self.image = image
+        self.grid_node = grid_node
+        if self.image:
+            self.timer = Timer()
+            self.check_image()
+            self.update_image()
 
-    if not grid_node and len(node_.inputs) == 2:
-        grid_node = node_.inputs[1].links[0].from_node.name
+    def update_image(self):
+        self.timer.tick("Variable load")
+        # Get the data of the selected variable and grid
+        var_data = bnc_gutils.get_var_data(self.node)
+        self.timer.tick("Variable load")
 
-    timer.tick("Variable load")
-    # Get the data of the selected variable and grid
+        t, y, x = self.data_shape(var_data.shape)
 
-    var_data = bnc_gutils.get_var_data(context, node, node_tree)
+        if y > 5120 or x > 5120:
+            PrintMessage(huge_image, title="Error", icon="ERROR")
+            return
 
-    timer.tick("Variable load")
-    # Get object shape
-    if len(var_data.shape) == 2:
-        y, x = var_data.shape
-    elif len(var_data.shape) == 3:
-        t, y, x = var_data.shape
-    else:
-        PrintMessage(drop_dim, title="Error", icon="ERROR")
+        self.timer.tick("Image dimensions")
+        # Ensure that the image and the data have the same size.
+        img_x, img_y = self.image_dims(x, y)
+        self.timer.tick("Image dimensions")
+        # Get data of the selected step
+        self.timer.tick("Load Frame")
+        # IF timestep is larger, use the last time value
+        if self.frame >= t:
+            self.frame = self.preference_animation(t)
 
-    if y > 5120 or x > 5120:
-        PrintMessage(huge_image, title="Error", icon="ERROR")
-        return
+        if self.frame is False:
+            return self.frame
 
-    # Check if the image is an image object or a image name:
-    if not isinstance(image, bpy.types.Image):
-        images = bpy.data.images
-        image = images[image]
-        image.colorspace_settings.name = "Non-Color"
+        self.timer.tick("Update time")
+        update_datetime_text(self.node, self.node_tree, self.frame)
+        self.timer.tick("Update time")
+        self.store_image_in_cache(self.frame, img_x, img_y)
+        self.timer.tick("Load Frame")
 
-    timer.tick("Image dimensions")
-    # Ensure that the image and the data have the same size.
-    img_x, img_y = list(image.size)
+        # In case data has been pre-loaded
+        datacube_cache = self.scene.datacube_cache[self.node_tree]
+        pixels_value = datacube_cache[self.u_identifier][self.frame]
+        self.timer.tick("Assign to pixel")
+        # TODO: Test version, make it copatible with 2.8 forwards
+        self.image.pixels.foreach_set(pixels_value)
+        self.timer.tick("Assign to pixel")
+        self.timer.tick("Update Image")
+        self.image.update()
+        self.timer.tick("Update Image")
+        self.timer.report(total=True, frame=self.frame)
+        bnc_pyfunc.purge_cache(self.node_tree, self.u_identifier)
+        return True
 
-    if [img_x, img_y] != [x, y]:
-        image.scale(x, y)
-        img_x, img_y = list(image.size)
-    timer.tick("Image dimensions")
-    # Get data of the selected step
-    timer.tick("Load Frame")
-    # IF timestep is larger, use the last time value
-    if frame >= var_data.shape[0]:
-        if scene.blendernc_animation_type == "EXTEND":
-            frame = var_data.shape[0] - 1
-        elif scene.blendernc_animation_type == "LOOP":
-            current_frame = scene.frame_current
-            n_repeat = current_frame // var_data.shape[0]
-            frame = current_frame - n_repeat * var_data.shape[0]
+    def store_image_in_cache(self, frame, img_x, img_y):
+        try:
+            # TODO:Use time coordinate, not index.
+            datacube_cache = self.scene.datacube_cache[self.node_tree]
+            pixels_cache = datacube_cache[self.u_identifier][frame]
+            # If the size of the cache data does not match the size
+            # of the image multiplied by the 4 channels (RGBA)
+            # we need to reload the data.
+            if pixels_cache.size != 4 * img_x * img_y:
+                raise ValueError("Size of image doesn't match")
+        except (KeyError, ValueError):
+            bnc_pyfunc.load_frame(self.node, frame, self.grid_node)
+
+    def check_image(self):
+        # Check if the image is an image object or a image name:
+        if not isinstance(self.image, bpy.types.Image):
+            images = bpy.data.images
+            self.image = images[self.image]
+            self.image.colorspace_settings.name = "Non-Color"
+
+    def data_shape(self, shape):
+        # Get object shape
+        if len(shape) == 2:
+            y, x = shape
+            t = 0
+        elif len(shape) == 3:
+            t, y, x = shape
         else:
-            return False
+            PrintMessage(drop_dim, title="Error", icon="ERROR")
+        return t, y, x
 
-    # timer.tick('Update time')
-    update_datetime_text(context, node, node_tree, frame)
-    # timer.tick('Update time')
+    def image_dims(self, x, y):
+        img_x, img_y = list(self.image.size)
 
-    try:
-        # TODO:Use time coordinate, not index.
-        pixels_cache = scene.datacube_cache[node_tree][unique_identifier][frame]
-        # If the size of the cache data does not match the size
-        # of the image multiplied by the 4 channels (RGBA)
-        # we need to reload the data.
-        if pixels_cache.size != 4 * img_x * img_y:
-            raise ValueError("Size of image doesn't match")
-    except (KeyError, ValueError):
-        bnc_pyfunc.load_frame(context, node, node_tree, frame, grid_node)
-    timer.tick("Load Frame")
+        if [img_x, img_y] != [x, y]:
+            self.image.scale(x, y)
+            img_x, img_y = list(self.image.size)
+        return img_x, img_y
 
-    # In case data has been pre-loaded
-    pixels_value = scene.datacube_cache[node_tree][unique_identifier][frame]
-    timer.tick("Assign to pixel")
-    # TODO: Test version, make it copatible with 2.8 forwards
-    image.pixels.foreach_set(pixels_value)
-    timer.tick("Assign to pixel")
-    timer.tick("Update Image")
-    image.update()
-    timer.tick("Update Image")
-    timer.report(total=True, frame=frame)
-    bnc_pyfunc.purge_cache(node_tree, unique_identifier)
-    return True
+    def preference_animation(self, t):
+        if self.scene.blendernc_animation_type == "EXTEND":
+            frame = t - 1
+        elif self.scene.blendernc_animation_type == "LOOP":
+            current_frame = self.scene.frame_current
+            n_repeat = current_frame // t
+            frame = current_frame - n_repeat * t
+        else:
+            frame = False
+        return frame
 
 
 def update_range(node, context):
@@ -108,7 +134,6 @@ def update_range(node, context):
     except AttributeError:
         max_val, min_val = update_random_range(unique_data_dict)
         if max_val == min_val:
-            window_manager = bpy.context.window_manager
             PrintMessage(increase_resolution, title="Error", icon="ERROR")
             # Cancel update range and force the user to change the resolution.
             return
@@ -136,7 +161,6 @@ def update_random_range(unique_data_dict):
 
 
 def update_datetime_text(
-    context,
     node,
     node_tree,
     frame,
@@ -149,7 +173,7 @@ def update_datetime_text(
     If text is provided, frame is ignored.
     """
     if not time_text:
-        time = str(bnc_gutils.get_time(context, node, node_tree, frame))[:10]
+        time = str(bnc_gutils.get_time(node, frame))[:10]
     else:
         time = time_text
     # TODO allow user to define format.
@@ -175,12 +199,11 @@ def update_datetime_text(
             text.select_set(False)
 
 
-def update_colormap_interface(context, node, node_tree):
+def update_colormap_interface(nodename, node_tree):
     # Get var range
-    max_val, min_val = bnc_gutils.get_max_min_data(context, node, node_tree)
-    units = bnc_gutils.get_units_data(node, node_tree)
-
-    node = bpy.data.node_groups[node_tree].nodes[node]
+    node = bpy.data.node_groups[node_tree].nodes[nodename]
+    max_val, min_val = bnc_gutils.get_max_min_data(node)
+    units = bnc_gutils.get_units_data(nodename, node_tree)
 
     # Find materials using image:
     materials = bnc_gutils.get_all_materials_using_image(node.image)

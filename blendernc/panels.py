@@ -2,7 +2,7 @@
 import bpy
 
 from blendernc.core.update_ui import update_animation, update_file_vars, update_res
-from blendernc.preferences import get_addon_preference
+from blendernc.preferences import dask_client, get_addon_preference
 from blendernc.python_functions import build_enum_prop_list, empty_item
 
 
@@ -207,14 +207,8 @@ class BlenderNC_dask_client(bpy.types.Panel):
         row = box_asts.row()
         pref = get_addon_preference()
         if pref.blendernc_use_dask == "True":
-            import dask.distributed as ddist
+            c = dask_client(create_client=True)
 
-            # Get client
-            try:
-                c = ddist.get_client()
-            # Create client if it doesn't exist
-            except ValueError:
-                c = ddist.Client(processes=False)
             row.label(text="Dask client:", icon="LINKED")
             row = box_asts.row()
             row.label(text=c.dashboard_link)

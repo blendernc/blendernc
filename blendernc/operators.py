@@ -5,8 +5,8 @@ from os.path import abspath
 import bpy
 
 from blendernc.core.update_ui import (
+    UpdateImage,
     update_colormap_interface,
-    update_image,
     update_nodes,
 )
 from blendernc.get_utils import (
@@ -236,7 +236,7 @@ class BlenderNC_OT_datacube2img(bpy.types.Operator):
     """An instance of the original StringProperty."""
 
     def execute(self, context):
-        update_image(context, self.node, self.node_group, self.frame, self.image)
+        UpdateImage(context, self.node, self.node_group, self.frame, self.image)
         return {"FINISHED"}
 
 
@@ -253,7 +253,7 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
 
     def execute(self, context):
         if bpy.data.images[self.image].users >= 2:
-            update_colormap_interface(context, self.node, self.node_group)
+            update_colormap_interface(self.node, self.node_group)
         else:
             PrintMessage(asign_material, "Error", "ERROR")
         return {"FINISHED"}
