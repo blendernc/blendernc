@@ -43,6 +43,12 @@ def get_item_days(self, context):
         selected_year = dt2cal(selected_time)[0]  # year
         selected_month = dt2cal(selected_time)[1]  # month
 
+    dataset_days_in_month = days_in_month(datetimes, selected_month, selected_year)
+
+    return build_enum_prop_list(dataset_days_in_month, start=0)
+
+
+def days_in_month(datetimes, selected_month, selected_year):
     dataset_days_in_month = []
     for datetime in datetimes:
         if (
@@ -52,8 +58,7 @@ def get_item_days(self, context):
             dataset_days_in_month.append(dt2cal(datetime)[2])
         else:
             break
-
-    return build_enum_prop_list(dataset_days_in_month, start=0)
+    return dataset_days_in_month
 
 
 def get_item_month(self, context):

@@ -45,6 +45,16 @@ def active_selection_preference():
     return text
 
 
+def huge_image():
+    text = "Image is larger than 4096x4096 pixels, reduce the resolution."
+    return text
+
+
+def drop_dim():
+    text = "4D field, drop a dimension or select a slice"
+    return text
+
+
 def unselected_object():
     text = "Select an object to apply material."
     return text
@@ -70,12 +80,14 @@ def client_exists():
     return text
 
 
-def increase_resolution(self, context):
-    self.layout.label(text="Increase resolution.")
+def increase_resolution():
+    text = "Increase resolution."
+    return text
 
 
-def unselected_datacube(self, context):
-    self.layout.label(text="Select a variable from the datacube.")
+def unselected_datacube():
+    text = "Select a variable from the datacube."
+    return text
 
 
 def unselected_variable(self, context):
@@ -88,13 +100,3 @@ def unselected_dim(self, context):
 
 def unselected_coord(self, context):
     self.layout.label(text="Select a coordinate to drop.")
-
-
-def huge_image(self, context):
-    self.layout.label(
-        text="Image is larger than 4096x4096 pixels, reduce the resolution."
-    )
-
-
-def drop_dim(self, context):
-    self.layout.label(text="4D field, drop a dimension or select a slice")

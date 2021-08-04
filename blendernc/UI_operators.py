@@ -124,19 +124,14 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
 def findCommonName(filenames):
     import difflib
 
-    cfname = [""] * (len(filenames) - 1)
+    cfname = []
     fcounter = 0
     while len(filenames) - 1 > fcounter:
         S = difflib.SequenceMatcher(None, filenames[fcounter], filenames[fcounter + 1])
+        cname = ""
         for block in S.get_matching_blocks():
-            if not cfname[fcounter] and (block.a != 0 or block.b != 0):
-                raise ValueError("Filenames strings start does not match.")
-            elif block.a == block.b and block.size != 0:
-                if len(cfname[fcounter]) != 0 and len(cfname[fcounter]) != block.a:
-                    cfname[fcounter] += "*"
-                cfname[fcounter] += filenames[fcounter][block.a : block.a + block.size]
-            elif cfname[fcounter] or block.a != block.b:
-                pass
+            cname = name_match(block, cname, filenames[fcounter])
+        cfname.append(cname)
         fcounter += 1
     commonName = min(cfname, key=len)
     if "*" not in commonName:
@@ -144,6 +139,18 @@ def findCommonName(filenames):
     if commonName[-1] == ".":
         raise ValueError("Filenames formats do not match")
     return commonName
+
+
+def name_match(block, cfname, filename):
+    if not cfname and (block.a != 0 or block.b != 0):
+        raise ValueError("Start of filename strings do not match.")
+    elif block.a == block.b and block.size != 0:
+        if len(cfname) != 0 and len(cfname) != block.a:
+            cfname += "*"
+        cfname += filename[block.a : block.a + block.size]
+    elif cfname or block.a != block.b:
+        pass
+    return cfname
 
 
 class BlenderNC_OT_purge_all(bpy.types.Operator):

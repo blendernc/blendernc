@@ -4,6 +4,7 @@
 #
 # Probably for this reason I should avoid importing bpy here...
 
+# import gc
 import glob
 import os
 
@@ -14,9 +15,11 @@ import bpy
 import numpy as np
 import xarray
 
+import blendernc.core.update_ui as bnc_updateUI
+
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
-from blendernc.core.update_ui import update_dict, update_value_and_node_tree
+from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
 
 
@@ -63,18 +66,8 @@ def dataarray_random_sampling(dataarray, n):
     return values
 
 
-def purge_cache(NodeTree, identifier):
-
-    scene = bpy.context.scene
-    nodetrees = bnc_gutils.get_blendernc_nodetrees()
-    n = 0
-    for node in nodetrees:
-        # Make sure the datacube_cache is loaded.
-        if node.name in scene.datacube_cache.keys():
-            cache = scene.datacube_cache[node.name]
-            for key, item in cache.items():
-                n += len(item)
-
+@MemoryDecorator.nodetrees_cached
+def purge_cache(NodeTree, identifier, n=0, scene=None):
     if scene.blendernc_memory_handle == "FRAMES":
         while n > scene.blendernc_frames:
             cached_nodetree = scene.datacube_cache[NodeTree][identifier]
@@ -96,14 +89,14 @@ def purge_cache(NodeTree, identifier):
             print("Removed frame: {0}".format(frames_loaded[0]))
             from blendernc.core.sys_utils import get_size
 
-            cache_dict_size = get_size(scene.datacube_cache)
-            message = "Dynamic cache: \n Total dict cache - {0} \n"
-            message += "Available percentage - {1}"
+            cache_dict_size = get_size.size(scene.datacube_cache) / (1024 ** 2)  # Mb
+            message = "\nDynamic cache:"
+            message += "\nTotal dict cache - {0:.2f} Mb"
+            message += "\nAvailable percentage - {1:.2f} %"
             warnings.warn(message.format(cache_dict_size, mem_avail_percent))
             n -= 1
-
-        # print(cache_dict_size/2**10, mem.available/2**10,mem.total/2**10)
-        # print(scene.datacube_cache['BlenderNC']['001'].keys() )
+    # # Collect Garbage
+    # gc.collect()
 
 
 def refresh_cache(NodeTree, identifier, frame):
@@ -141,7 +134,7 @@ def dict_update(node, context):
         node_tree = node.rna_type.id_data.name
         unique_identifier = node.blendernc_dataset_identifier
 
-        update_dict(node.blendernc_datacube_vars, node)
+        bnc_updateUI.update_dict(node.blendernc_datacube_vars, node)
 
         if (
             is_cached(node_tree, unique_identifier)
@@ -149,11 +142,11 @@ def dict_update(node, context):
         ):
             del_cache(node_tree, unique_identifier)
 
-        update_value_and_node_tree(node, context)
+        bnc_updateUI.update_value_and_node_tree(node, context)
 
 
-def normalize_data_w_grid(node, node_tree, data, grid_node):
-    node = bpy.data.node_groups[node_tree].nodes[node]
+def normalize_data_w_grid(node, data, grid_node):
+    node_tree = node.rna_type.id_data.name
     unique_data_dict = bnc_gutils.get_unique_data_dict(node)
 
     grid_node = bpy.data.node_groups[node_tree].nodes[grid_node]
@@ -215,17 +208,17 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     return normalize_data(new_image[::-1])
 
 
-def load_frame(context, node, node_tree, frame, grid_node=None):
+def load_frame(node, frame, grid_node=None):
     # Find datacube file data
     # Get the data of the selected variable and grid
 
-    var_data = bnc_gutils.get_var_data(context, node, node_tree)
+    var_data = bnc_gutils.get_var_data(node)
 
     # Find cache dictionary
-    var_dict = bnc_gutils.get_var_dict(context, node, node_tree)
+    var_dict = bnc_gutils.get_var_dict(node)
 
     # Global max and min
-    vmax, vmin = bnc_gutils.get_max_min_data(context, node, node_tree)
+    vmax, vmin = bnc_gutils.get_max_min_data(node)
 
     # TODO: Improve by using coordinates,
     # could generate issues if the first axis isn't time
@@ -241,7 +234,6 @@ def load_frame(context, node, node_tree, frame, grid_node=None):
     if grid_node:
         normalized_data = normalize_data_w_grid(
             node,
-            node_tree,
             frame_data,
             grid_node,
         )

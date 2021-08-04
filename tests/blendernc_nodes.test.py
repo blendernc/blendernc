@@ -3,7 +3,8 @@ import sys
 import unittest
 
 import bpy
-import test_utils as tutils
+
+import tests.test_utils as tutils
 
 
 @tutils.refresh_state

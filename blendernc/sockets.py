@@ -4,6 +4,8 @@ from collections import defaultdict
 from bpy.props import FloatProperty, StringProperty
 from bpy.types import NodeSocket
 
+from blendernc.core.update_ui import update_socket_and_tree
+
 socket_colors = {
     "bNCdatacubeSocket": (0.6, 1.0, 0.6, 1.0),
     "bNCpercentSocket": (0.8, 0.8, 0.8, 0.3),
@@ -92,7 +94,7 @@ class bNCfloatSocket(NodeSocket, bNCSocketDefault):
     bl_idname = "bNCfloatSocket"
     bl_label = "Float Socket"
 
-    Float: FloatProperty(default=1)
+    Float: FloatProperty(default=1, update=update_socket_and_tree)
     """An instance of the original FloatProperty."""
 
     def draw(self, context, layout, node, text):

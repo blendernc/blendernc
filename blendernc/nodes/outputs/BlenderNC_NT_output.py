@@ -5,8 +5,8 @@ from collections import defaultdict
 import bpy
 
 from blendernc.core.update_ui import (
+    UpdateImage,
     update_colormap_interface,
-    update_image,
     update_value,
 )
 from blendernc.decorators import NodesDecorators
@@ -120,6 +120,9 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.node_group = self.rna_type.id_data.name
             operator.image = self.image.name
 
+        self.draw_grid_input()
+
+    def draw_grid_input(self):
         node_names = self.rna_type.id_data.nodes.keys()
         if "Input Grid" in node_names and len(self.inputs) == 1:
             self.inputs.new("bNCdatacubeSocket", "Grid")
@@ -151,7 +154,7 @@ class BlenderNC_NT_output(bpy.types.Node):
                 self.grid_node_name = self.inputs[1].links[0].from_node.name
 
         if self.image:
-            update_image(
+            UpdateImage(
                 bpy.context,
                 self.name,
                 node_tree,
@@ -160,4 +163,4 @@ class BlenderNC_NT_output(bpy.types.Node):
                 self.grid_node_name,
             )
             if self.image.users >= 3:
-                update_colormap_interface(bpy.context, self.name, node_tree)
+                update_colormap_interface(self.name, node_tree)
