@@ -35,7 +35,12 @@ def colorbar_material(node, colormap):
             return blendernc_material
     else:
         bpy.ops.material.new()
-        blendernc_material = bpy.data.materials[-1]
+        materials = bpy.data.materials
+        blendernc_material = [
+            materials[material_name]
+            for material_name in materials.keys()
+            if "Material" in material_name
+        ][-1]
         blendernc_material.name = image_name + "_" + colormap.name
 
     material_node_tree = blendernc_material.node_tree

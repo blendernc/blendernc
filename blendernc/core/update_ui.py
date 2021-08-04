@@ -202,18 +202,19 @@ def update_datetime_text(
 def update_colormap_interface(nodename, node_tree):
     # Get var range
     node = bpy.data.node_groups[node_tree].nodes[nodename]
+    image = node.image
     max_val, min_val = bnc_gutils.get_max_min_data(node)
     units = bnc_gutils.get_units_data(nodename, node_tree)
 
     # Find materials using image:
-    materials = bnc_gutils.get_all_materials_using_image(node.image)
+    materials = bnc_gutils.get_all_materials_using_image(image)
 
     # Find all nodes using the selected image in the node.
-    image_user_nodes = bnc_gutils.get_all_nodes_using_image(materials, node.image)
+    image_user_nodes = bnc_gutils.get_all_nodes_using_image(materials, image)
 
     # support for multiple materials. This will generate multiple colorbars.
     colormap = [
-        bnc_gutils.get_colormaps_of_materials(user_node, node.image)
+        bnc_gutils.get_colormaps_of_materials(user_node, image)
         for user_node in image_user_nodes
     ]
 
@@ -225,10 +226,10 @@ def update_colormap_interface(nodename, node_tree):
 
     Camera = bpy.data.objects.get("Camera")
     children_name = [children.name for children in Camera.children]
-    if "cbar_{}".format(node.name) not in children_name:
+    if "cbar_{}".format(image.name) not in children_name:
         bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False)
         cbar_plane = bpy.context.object
-        cbar_plane.name = "cbar_{}".format(node.name)
+        cbar_plane.name = "cbar_{}".format(image.name)
         cbar_plane.dimensions = (width, height, 0)
         cbar_plane.location = (0.15, 0, -0.5)
         cbar_plane.parent = Camera
@@ -241,12 +242,12 @@ def update_colormap_interface(nodename, node_tree):
     else:
         c_childrens = Camera.children
         cbar_plane = [
-            child for child in c_childrens if child.name == "cbar_{}".format(node.name)
+            child for child in c_childrens if child.name == "cbar_{}".format(image.name)
         ][-1]
         splines = [
             child
             for child in cbar_plane.children
-            if "text_cbar_{}".format(node.name.split(".")[0]) in child.name
+            if "text_cbar_{}".format(image.name.split(".")[0]) in child.name
         ]
 
     # Update splines

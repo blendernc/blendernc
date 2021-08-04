@@ -225,7 +225,7 @@ class NodesDecorators(object):
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
             )
-            return False
+            return True
 
     @classmethod
     def select_grid_dataset(cls, node):
