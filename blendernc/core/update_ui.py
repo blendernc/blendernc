@@ -64,7 +64,6 @@ class UpdateImage:
         datacube_cache = self.scene.datacube_cache[self.node_tree]
         pixels_value = datacube_cache[self.u_identifier][self.frame]
         self.timer.tick("Assign to pixel")
-        # TODO: Test version, make it copatible with 2.8 forwards
         self.image.pixels.foreach_set(pixels_value)
         self.timer.tick("Assign to pixel")
         self.timer.tick("Update Image")

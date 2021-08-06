@@ -50,19 +50,16 @@ def select_datacube():
 
 
 def dataarray_random_sampling(dataarray, n):
-    values = np.zeros(n) * np.nan
     dataarray_dims = [dim for dim in dataarray.dims]
-    counter = 0
     randint = np.random.randint
-    while not np.isfinite(values).all():
-        len_data_dims = len(dataarray_dims)
-        dims_dict = {
-            dataarray_dims[ii]: randint(0, len(dataarray[dataarray_dims[ii]]))
-            for ii in range(len_data_dims)
-        }
-        values[counter] = dataarray.isel(dims_dict).values
-        if np.isfinite(values[counter]):
-            counter += 1
+    len_data_dims = len(dataarray_dims)
+    dims_dict = {
+        dataarray_dims[ii]: [
+            randint(0, len(dataarray[dataarray_dims[ii]])) for nn in range(n)
+        ]
+        for ii in range(len_data_dims)
+    }
+    values = dataarray.isel(dims_dict).values
     return values
 
 

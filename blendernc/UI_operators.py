@@ -164,7 +164,7 @@ class BlenderNC_OT_purge_all(bpy.types.Operator):
         cache = bpy.context.scene.datacube_cache
         if cache.keys():
             for NodeTree in NodeTrees:
-                NodeTree_name = NodeTree.bl_idname
+                NodeTree_name = NodeTree.name
                 if not cache[NodeTree_name].keys():
                     PrintMessage(no_cached_image, "Info", "INFO")
                 else:
