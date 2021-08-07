@@ -154,8 +154,8 @@ def update_random_range(unique_data_dict):
     selected_variable = sel_var["selected_var_name"]
     selected_var_dataset = dataset[selected_variable]
     rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, 100)
-    max_val = np.max(rand_sample)
-    min_val = np.min(rand_sample)
+    max_val = np.nanmax(rand_sample)
+    min_val = np.nanmin(rand_sample)
     return max_val, min_val
 
 
