@@ -98,13 +98,15 @@ def render_image(file, var, node_list=[], node_args=None):
 
 class Test_use_nodes(unittest.TestCase):
     def test_math_switch_ops(self):
+        bpy.ops.wm.read_homefile()
         file_exist = True
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
         format = os.path.basename(file).split(".")
         nodes = ["datacubeMath"]
         for key in ops.keys():
-            dims_args = {"Math": {"blendernc_operation": key, "update_range": True}}
+            print("Testing", key)
+            dims_args = {"Math": {"blendernc_operation": key, "update_range": False}}
             render_image(file, var, nodes, node_args=dims_args)
             filename = "./{0}_{1}_image_{2}_{3}_{4}.png".format(
                 format[0], var, format[-1], "_".join(nodes), key
