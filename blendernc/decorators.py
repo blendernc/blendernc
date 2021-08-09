@@ -242,7 +242,9 @@ class NodesDecorators(object):
                 "Dataset"
             ].copy()
             return False
-        elif node.blendernc_grid_x != "" and node.blendernc_grid_y != "":
+        elif (
+            node.blendernc_grid_x != "No var" and node.blendernc_grid_y != "No var"
+        ) and (node.blendernc_grid_x != "" and node.blendernc_grid_y != ""):
             return True
         else:
             bpy.ops.blendernc.datacubeload(
