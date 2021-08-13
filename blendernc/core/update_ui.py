@@ -23,11 +23,10 @@ class UpdateImage:
         self.node_tree = node_tree
         self.frame = frame
         self.image = image
+        self.grid_node = grid_node
         if len(self.node.inputs) == 2 and not grid_node:
             if self.node.inputs[1].is_linked and self.node.inputs[1].links:
                 self.grid_node = self.node.inputs[1].links[0].from_node.name
-        else:
-            self.grid_node = grid_node
 
         if self.image:
             self.timer = Timer()
