@@ -90,8 +90,9 @@ def unselected_datacube():
     return text
 
 
-def unselected_variable(self, context):
-    self.layout.label(text="Reselect a variable from the datacube.")
+def unselected_variable():
+    text = "Reselect a variable from the datacube."
+    return text
 
 
 def unselected_dim(self, context):

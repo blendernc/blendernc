@@ -50,19 +50,16 @@ def select_datacube():
 
 
 def dataarray_random_sampling(dataarray, n):
-    values = np.zeros(n) * np.nan
     dataarray_dims = [dim for dim in dataarray.dims]
-    counter = 0
     randint = np.random.randint
-    while not np.isfinite(values).all():
-        len_data_dims = len(dataarray_dims)
-        dims_dict = {
-            dataarray_dims[ii]: randint(0, len(dataarray[dataarray_dims[ii]]))
-            for ii in range(len_data_dims)
-        }
-        values[counter] = dataarray.isel(dims_dict).values
-        if np.isfinite(values[counter]):
-            counter += 1
+    len_data_dims = len(dataarray_dims)
+    dims_dict = {
+        dataarray_dims[ii]: [
+            randint(0, len(dataarray[dataarray_dims[ii]])) for nn in range(n)
+        ]
+        for ii in range(len_data_dims)
+    }
+    values = dataarray.isel(dims_dict).values
     return values
 
 
@@ -417,16 +414,24 @@ class BlenderncEngine:
         basename = os.path.basename(self.file_path[0])
         ext = os.path.splitext(basename)
         if ext[1] == ".nc":
-            self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
+            self.dataset = xarray.open_mfdataset(
+                self.file_path, combine="by_coords", chunks={"time": 1, "t": 1}
+            )
             return
         elif ext[1] == ".grib":
             self.dataset = xarray.open_mfdataset(
-                self.file_path, engine="cfgrib", combine="by_coords"
+                self.file_path,
+                engine="cfgrib",
+                combine="by_coords",
+                chunks={"time": 1, "t": 1},
             )
             return
         elif ext[1] == ".zarr":
             self.dataset = xarray.open_mfdataset(
-                self.file_path, engine="zarr", combine="by_coords"
+                self.file_path,
+                engine="zarr",
+                combine="by_coords",
+                chunks={"time": 1, "t": 1},
             )
             return
         else:
