@@ -63,7 +63,7 @@ or install the following requirements using:
 
 .. code-block:: bash
 
-    $BLENDERPY -m pip install -r numpy cython zarr ecmwflibs cfgrib xarray[complete] cmocean matplotlib dask scipy netCDF4 toolz pooch psutil
+    $BLENDERPY -m pip install numpy cython zarr ecmwflibs cfgrib xarray[complete] cmocean matplotlib dask dask[distributed] scipy netCDF4 toolz pooch psutil
 
 Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
@@ -95,6 +95,8 @@ The addon is installed just like any other Blender addon:
 
   .. note::
       Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
+
+      #. Right-click link and select "Download Linked File As ...",
 
       #. Manually zip the blendernc folder, or
 
