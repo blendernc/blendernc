@@ -75,7 +75,7 @@ Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
   :class: with-shadow
 
 .. note::
-    So far there is noting new, but the render preview looks awful, we will fix it using the BlenderNC nodetree.
+    So far there is nothing new, but the render preview looks awful, we will fix it using the BlenderNC nodetree.
 
 BlenderNC nodetree
 ------------------
