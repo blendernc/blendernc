@@ -8,6 +8,8 @@ from blendernc.preferences import (
     load_handler_for_startup,
 )
 
+__version__ = "0.4.4"
+
 from . import addon_updater_ops
 
 bl_info = {
@@ -15,7 +17,7 @@ bl_info = {
     "author": "Oriol Tintó Prims & Josué Martínez-Moreno",
     "description": "Blender Add-On to visualize geo-scientific data",
     "blender": (2, 83, 0),
-    "version": (0, 4, 4),
+    "version": tuple(int(ii) for ii in __version__.split(".")),
     "location": "View3D",
     "warning": "Early version",
     "category": "Generic",

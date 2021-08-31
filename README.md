@@ -4,11 +4,6 @@
 
 <!--INFO-->
 
----
-### Important:
-##### <span style="color: red;"> The BlenderNC API has been updated for future development and consistency to support `netCDF`, `grib`, and `zarr` formats. In other words, previous versions to 0.4.0 are not compatible. Users are required to update their BlenderNC nodetree to use the renamed nodes. Version 0.3.3 is the last version with support for the previous API.</span>
----
-
 **BlenderNC** is an open source add-on and Python module to visualize **netCDF**, **grib**, and **zarr** datasets in [**Blender**](www.blender.org).
 
 BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display datasets as images in Blender.
@@ -19,11 +14,11 @@ Science visualization is a fundamental part of science communication and the exp
 
 - Quick load of datasets:
 
-<img src="./docs/images/quick_load_gif.gif" width="70%" />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/quick_load_gif.gif" width="70%" />
 
 - Nodes tree for more complex visualizations:
 
-<img src="./docs/images/GEBCO_blendernc.png" width="70%" />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/GEBCO_blendernc.png" width="70%" />
 
 - Math computations in BlenderNC node tree.
 
@@ -50,10 +45,10 @@ Support
 
 <div style="width:100%">
 <a href="https://esowc.ecmwf.int">
-<img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
 </a>
 <a href="http://cosima.org.au/">
-<img src="./docs/images/logo_cosima.png" width="47%" style='float:right;'/>
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/logo_cosima.png" width="47%" style='float:right;'/>
 </a>
 </div>
 
