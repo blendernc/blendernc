@@ -12,6 +12,8 @@ blendernc/blendernc_updater
 tests/dataset/*.idx
 dask-worker*
 *dask-worker*
+node_modules
+package-lock.json
 
 # Test
 tests/*.png
