@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 2
       - uses: wagoid/commitlint-github-action@v4
         with:
           configFile: ".commitlintrc.yml"
