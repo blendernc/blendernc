@@ -5,7 +5,7 @@ import blendernc.get_utils as bnc_gutils
 import blendernc.nodes.cmaps.utils_colorramp as bnc_cramputils
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.core.logging import Timer
-from blendernc.messages import PrintMessage, drop_dim, huge_image, increase_resolution
+from blendernc.messages import PrintMessage, drop_dim, huge_image, same_min_max_value
 from blendernc.translations import translate
 
 
@@ -53,12 +53,15 @@ class UpdateImage:
 
         if self.frame is False:
             return self.frame
+        self.timer.tick("Load Frame")
+
+        self.timer.tick("Store in Cache")
+        self.store_image_in_cache(self.frame, img_x, img_y)
+        self.timer.tick("Store in Cache")
 
         self.timer.tick("Update time")
         update_datetime_text(self.node, self.node_tree, self.frame)
         self.timer.tick("Update time")
-        self.store_image_in_cache(self.frame, img_x, img_y)
-        self.timer.tick("Load Frame")
 
         # In case data has been pre-loaded
         datacube_cache = self.scene.datacube_cache[self.node_tree]
@@ -134,7 +137,7 @@ def update_range(node, context):
     except AttributeError:
         max_val, min_val = update_random_range(unique_data_dict)
         if max_val == min_val:
-            PrintMessage(increase_resolution, title="Error", icon="ERROR")
+            PrintMessage(same_min_max_value, title="Error", icon="ERROR")
             # Cancel update range and force the user to change the resolution.
             return
 

@@ -80,8 +80,9 @@ def client_exists():
     return text
 
 
-def increase_resolution():
-    text = "Increase resolution."
+def same_min_max_value():
+    text = "Increase resolution or define the max and min values of the dataset"
+    text += "by using a Range node."
     return text
 
 
