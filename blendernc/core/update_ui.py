@@ -299,9 +299,9 @@ def update_res(scene, context):
     """
     Simple UI function to update BlenderNC node tree.
     """
-    bpy.data.node_groups.get("BlenderNC").nodes.get(
-        translate("Resolution")
-    ).blendernc_resolution = scene.blendernc_resolution
+    res_node = bpy.data.node_groups.get("BlenderNC").nodes.get(translate("Resolution"))
+    if res_node:
+        res_node.blendernc_resolution = scene.blendernc_resolution
 
 
 def update_proxy_file(self, context):
