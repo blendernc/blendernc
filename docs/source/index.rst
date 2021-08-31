@@ -41,7 +41,7 @@ should support the load of any datacube.
    examples/import_gebco_netCDF
    examples/simple_animation
    examples/import_ECMWF_netCDF
-   examples/node_tree_editor
+   .. examples/node_tree_editor
    examples/import_ECMWF_grib
    examples/displacement_animation
    examples/multiple_field_animations
