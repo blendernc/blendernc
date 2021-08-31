@@ -46,7 +46,7 @@ long_description = long_description.replace(
 
 setup(
     name="blendernc",
-    version="0.4.2",
+    version="0.4.4",
     description="Blender add-on to import datasets (netCDF, grib, and zarr)",
     long_description=long_description,
     url="https://github.com/blendernc/blendernc",

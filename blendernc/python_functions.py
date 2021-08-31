@@ -53,7 +53,6 @@ def dataarray_random_sampling(dataarray, n):
     dataarray_dims = [dim for dim in dataarray.dims]
     randint = np.random.randint
     len_data_dims = len(dataarray_dims)
-
     dims_dict = {
         dataarray_dims[ii]: np.array(
             [randint(0, len(dataarray[dataarray_dims[ii]])) for nn in range(n)],
@@ -417,16 +416,24 @@ class BlenderncEngine:
         basename = os.path.basename(self.file_path[0])
         ext = os.path.splitext(basename)
         if ext[1] == ".nc":
-            self.dataset = xarray.open_mfdataset(self.file_path, combine="by_coords")
+            self.dataset = xarray.open_mfdataset(
+                self.file_path, combine="by_coords", chunks={"time": 1, "t": 1}
+            )
             return
         elif ext[1] == ".grib":
             self.dataset = xarray.open_mfdataset(
-                self.file_path, engine="cfgrib", combine="by_coords"
+                self.file_path,
+                engine="cfgrib",
+                combine="by_coords",
+                chunks={"time": 1, "t": 1},
             )
             return
         elif ext[1] == ".zarr":
             self.dataset = xarray.open_mfdataset(
-                self.file_path, engine="zarr", combine="by_coords"
+                self.file_path,
+                engine="zarr",
+                combine="by_coords",
+                chunks={"time": 1, "t": 1},
             )
             return
         else:

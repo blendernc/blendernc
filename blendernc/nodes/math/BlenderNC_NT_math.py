@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 import numpy as np
 
-from blendernc.core.update_ui import update_value_and_node_tree
+from blendernc.core.update_ui import update_random_range, update_value_and_node_tree
 from blendernc.decorators import MathDecorator, NodesDecorators
 from blendernc.python_functions import build_enum_prop_list, refresh_cache
 
@@ -54,6 +54,12 @@ class BlenderNC_NT_math(bpy.types.Node):
     )
     """An instance of the original EnumProperty."""
 
+    update_range: bpy.props.BoolProperty(
+        name="Auto-update range",
+        default=False,
+    )
+    """An instance of the original BoolProperty."""
+
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
     """An instance of the original StringProperty."""
@@ -78,6 +84,7 @@ class BlenderNC_NT_math(bpy.types.Node):
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
         layout.prop(self, "blendernc_operation", text="")
+        layout.prop(self, "update_range")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,
@@ -125,7 +132,11 @@ class BlenderNC_NT_math(bpy.types.Node):
         refresh_cache(NodeTree, identifier, frame)
         operation = self.blendernc_operation
         self.create_sockets(operation)
-        self.compute_operation()
+        unique_data_dict_node = self.compute_operation()
+        if self.update_range:
+            max_val, min_val = update_random_range(unique_data_dict_node)
+            unique_data_dict_node["selected_var"]["max_value"] = max_val
+            unique_data_dict_node["selected_var"]["min_value"] = min_val
 
     @MathDecorator.math_operation
     def compute_operation(self, data1, data2=None, name=""):

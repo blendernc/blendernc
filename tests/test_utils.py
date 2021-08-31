@@ -60,8 +60,9 @@ def build_dict_blendernc_prop(existing_nodes_list):
 
 def refresh_state(func):
     def wrapper(*args, **kwargs):
-        func(*args, **kwargs)
+        nodes = func(*args, **kwargs)
         bpy.context.scene.datacube_cache.pop("BlenderNC", None)
         print("Purge")
+        return nodes
 
     return wrapper

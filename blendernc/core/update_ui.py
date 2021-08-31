@@ -24,6 +24,10 @@ class UpdateImage:
         self.frame = frame
         self.image = image
         self.grid_node = grid_node
+        if len(self.node.inputs) == 2 and not grid_node:
+            if self.node.inputs[1].is_linked and self.node.inputs[1].links:
+                self.grid_node = self.node.inputs[1].links[0].from_node.name
+
         if self.image:
             self.timer = Timer()
             self.check_image()
@@ -67,7 +71,6 @@ class UpdateImage:
         datacube_cache = self.scene.datacube_cache[self.node_tree]
         pixels_value = datacube_cache[self.u_identifier][self.frame]
         self.timer.tick("Assign to pixel")
-        # TODO: Test version, make it copatible with 2.8 forwards
         self.image.pixels.foreach_set(pixels_value)
         self.timer.tick("Assign to pixel")
         self.timer.tick("Update Image")
@@ -158,8 +161,8 @@ def update_random_range(unique_data_dict):
     selected_variable = sel_var["selected_var_name"]
     selected_var_dataset = dataset[selected_variable]
     rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, 100)
-    max_val = np.max(rand_sample)
-    min_val = np.min(rand_sample)
+    max_val = np.nanmax(rand_sample)
+    min_val = np.nanmin(rand_sample)
     return max_val, min_val
 
 

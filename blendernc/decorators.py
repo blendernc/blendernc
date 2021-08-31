@@ -3,7 +3,6 @@ import functools
 
 import bpy
 
-import blendernc.core.update_ui as bncupdate_ui
 import blendernc.get_utils as bnc_gutils
 from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable
 
@@ -243,7 +242,9 @@ class NodesDecorators(object):
                 "Dataset"
             ].copy()
             return False
-        elif node.blendernc_grid_x != "" and node.blendernc_grid_y != "":
+        elif (
+            node.blendernc_grid_x != "No var" and node.blendernc_grid_y != "No var"
+        ) and (node.blendernc_grid_x != "" and node.blendernc_grid_y != ""):
             return True
         else:
             bpy.ops.blendernc.datacubeload(
@@ -386,8 +387,6 @@ class MathDecorator(object):
                 dataset = func(self, dataset_parent)
 
             unique_data_dict_node["Dataset"] = dataset
-            max_val, min_val = bncupdate_ui.update_random_range(unique_data_dict_node)
-            unique_data_dict_node["selected_var"]["max_value"] = max_val
-            unique_data_dict_node["selected_var"]["min_value"] = min_val
+            return unique_data_dict_node
 
         return which_calculation

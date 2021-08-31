@@ -2,13 +2,17 @@
 Background render tutorial
 ==========================
 
-Follow the next script to create one of the simplest animation using the data provided within **BlenderNC**.
+Follow the next script to create one of the simplest animation using the data provided within **BlenderNC**. It can be run (on MacOS) with the line
+
+.. code-block:: bash
+
+    /Applications/Blender.app/Contents/MacOS/Blender -b - P background.py
 
 .. code-block:: python
 
     import bpy
-    file = /path/2/file/ # Replace this line with the path to the datacube
-    var = var_name # Replace this line with the variable name (str)
+    file = "/path/2/file/" # Replace this line with the path to the datacube
+    var = "var_name" # Replace this line with the variable name (str)
 
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
