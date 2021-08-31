@@ -4,21 +4,21 @@
 
 <!--INFO-->
 
-**BlenderNC** is an open source add-on and Python module to visualize **netCDF** data in [**Blender**](www.blender.org).
+**BlenderNC** is an open source add-on and Python module to visualize **netCDF**, **grib**, and **zarr** datasets in [**Blender**](www.blender.org).
 
-BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display netCDF data files as images and volumetric data in Blender.
+BlenderNC builds upon [**xarray**](https://github.com/pydata/xarray) and [**dask**](https://dask.org) to lazy load, manipulate, and display datasets as images in Blender.
 
 #### Why BlenderNC?
 
 Science visualization is a fundamental part of science communication and the exploration of large datasets. However, production quality real-time visualization and animation of scientific data has remained unreachable to the scientific community. BlenderNC main goal is to facilitate the generation of quality animations of scientific gridded data with a powerful and simple interface. For example:
 
-- Quick load of netCDFs:
+- Quick load of datasets:
 
-<img src="./docs/images/quick_load_gif.gif" width="70%" />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/quick_load_gif.gif" width="70%" />
 
 - Nodes tree for more complex visualizations:
 
-<img src="./docs/images/GEBCO_blendernc.png" width="70%" />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/GEBCO_blendernc.png" width="70%" />
 
 - Math computations in BlenderNC node tree.
 
@@ -29,7 +29,8 @@ Learn more about BlenderNC in the official documentation at [https://blendernc.r
 
 Contributing
 ------------
-All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. More information about contributing to BlenderNC can be found at our [Contribution page](https://blendernc.readthedocs.io/contribute).
+
+All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome. More information about contributing to BlenderNC can be found at our [Contribution page](https://blendernc.readthedocs.io/en/latest/contribute.html).
 
 Use Github to:
 - report bugs,
@@ -44,10 +45,10 @@ Support
 
 <div style="width:100%">
 <a href="https://esowc.ecmwf.int">
-<img src="./docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/logo_ESoWC.png" width="47%" style='margin-bottom:5px' />
 </a>
 <a href="http://cosima.org.au/">
-<img src="./docs/images/logo_cosima.png" width="47%" style='float:right;'/>
+<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/logo_cosima.png" width="47%" style='float:right;'/>
 </a>
 </div>
 
@@ -63,5 +64,4 @@ To implement and improve support of weather and climate data visualizations in G
 [@whatnick](https://github.com/whatnick)
 [@navidcy](https://github.com/navidcy)
 [@stephansiemen](https://github.com/stephansiemen)
-
 

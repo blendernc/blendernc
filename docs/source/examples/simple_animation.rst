@@ -1,84 +1,86 @@
+.. _simple_example:
+
 ================
 Simple animation
 ================
 
+.. raw:: html
+
+    <style>
+        .purple {color:purple}
+    </style>
+
+
+.. role:: purple
+
 .. important::
     For this third example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
 
-Data provided
--------------
+Data
+----
 
+The data provided can be found at the main `BlenderNC <https://github.com/blendernc/blendernc>`_ repository in the path ``blendernc/test/dataset``.
 
-
-Download your own data! (optional)
-----------------------------------
-
-Let's download daily sea surface temperature data from 1981 to the present derived from satellite observations (`for more info click here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=overview>`__) and download it by following the instructions `here <https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-surface-temperature?tab=form>`_ [Dataset]_! Let's start downloading one year, for example, 2020.
 
 .. code-block:: bash
 
-    import cdsapi
+    blendernc
+    └── tests
+        └── dataset
+            ├── ECMWF_data.grib
+            ├── ECMWF_data.nc
+            ├── ssh_1995-01.nc
+            └── ssh_1995-01.zarr
 
-    c = cdsapi.Client()
+Optionally, you can access more data by following the instructions at :ref:`download_more_data`
 
-    c.retrieve(
-    'satellite-sea-surface-temperature',
-    {
-    'variable': 'all',
-    'format': 'tgz',
-    'processinglevel': 'level_4',
-    'sensor_on_satellite': 'combined_product',
-    'version': '2_0',
-    'year': [
-    '2020',
-    ],
-    'month': [
-    '01', '02', '03',
-    '04', '05', '06',
-    '07', '08', '09',
-    '10', '11', '12',
-    ],
-    'day': [
-    '01', '02', '03',
-    '04', '05', '06',
-    '07', '08', '09',
-    '10', '11', '12',
-    '13', '14', '15',
-    '16', '17', '18',
-    '19', '20', '21',
-    '22', '23', '24',
-    '25', '26', '27',
-    '28', '29', '30',
-    '31',
-    ],
-    },
-    'download.tar.gz')
-
-.. important::
-    You will need to create an account and follow the instructions to use the ``cdsapp``: `click here <https://cds.climate.copernicus.eu/api-how-to>`__!
+Independent to the data you decide to download or use, the following process will be identical.
 
 Import data!
 ------------
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 
-- Switch to the BlenderNC panel and click on ``Load netCDF``. Then click the folder icon, navigate and select the GEBCO bathymetry netCDF.
+- Switch to the BlenderNC panel and click on ``Load datacube``. Then click the folder icon, navigate and select a dataset, for example: `blendernc/test/dataset/ssh_1995-01.nc`.
 
-- Select variable (``elevation``):
+.. image:: ../../images/simple_animation/select_dataset.png
+  :width: 100%
+  :class: with-shadow
+
+- Select variable (``adt`` for example dataset):
+
+.. image:: ../../images/simple_animation/select_variable.png
+  :width: 100%
+  :class: with-shadow
 
 - Let's increase the resolution to 100%:
 
-- Click in the check box next to ``Animate netCDF``
+.. image:: ../../images/simple_animation/change_resolution.png
+  :width: 100%
+  :class: with-shadow
 
 - Now, we can apply the material BlenderNC just created, but first, lets delete the default cube (shortuct ``x``), create a sphere (shortcut ``shift + a`` - ``Mesh -> UV Sphere``), and scale it to ``2x`` (shortcut ``s + 2 + return``)
 
-- Select sphere by clicking over it, then click apply material (highlighted in blue above).
+.. image:: ../../images/simple_animation/add_sphere.png
+  :width: 100%
+  :class: with-shadow
 
-There will be no visible change until we switch to a rendered 3D viewport (``Z`` and click over ) or render the camera (shortcut ``F12``).
+- Click in the check box next to ``Animate datacube`` highlighted in :purple:`purple`. This option can be selected at anytime during.
 
-Press ``0`` in your number path to change your view to the camera view. If you are using a laptop, you can emulate a number path by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
+.. image:: ../../images/simple_animation/select_animate.png
+  :width: 100%
+  :class: with-shadow
 
-Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have a netCDF animation.
+- Select sphere by clicking over it, then click apply material (highlighted in blue above). There will be no visible change until we switch to a rendered 3D viewport (``Z`` and click over ) or render the camera (shortcut ``F12``). Press ``0`` in your number path to change your view to the camera view. If you are using a laptop, you can emulate a number path by following the instructions in this `link <https://docs.blender.org/manual/en/latest/editors/preferences/input.html>`__!
 
-.. [Dataset]
-    Merchant, C.J., Embury, O., Bulgin, C.E., Block, T., Corlett, G.K., Fiedler, E., Good, S.A., Mittaz, J., Rayner, N.A., Berry, D., Eastwood, S., Taylor, M., Tsushima, Y., Waterfall, A., Wilson, R. and Donlon, C. (2019), Satellite-based time-series of sea-surface temperature since 1981 for climate applications. Scientific Data 6, 223, doi:10.1038/s41597-019-0236-x
+.. image:: ../../images/simple_animation/rendered_view.png
+  :width: 100%
+  :class: with-shadow
+
+- Once you are in the camera mode, press ``Spacebar`` on your keyboard to play the animation. Voila! now we have an animation. Also, you can change frames, for example, change to frame `5`, and the material will be updated.
+
+.. image:: ../../images/simple_animation/change_keyframe.png
+  :width: 100%
+  :class: with-shadow
+
+

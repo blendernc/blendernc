@@ -14,7 +14,7 @@ BlenderNC
 Blender (i.e. netCDF, cfGrib, and zarr files). It allows 2D and 3D visualization and the generation of scientific data
 animations. The main development of *BlenderNC* currently focuses on
 geo-spatial data (i.e. Oceanographic - Atmospheric data), however, the framework
-should support the load of any netCDF.
+should support the load of any datacube.
 
 .. image:: ../images/GEBCO_blendernc.png
   :width: 100%
@@ -27,6 +27,7 @@ should support the load of any netCDF.
    install
    howtouse
    preferences
+   remote_render
 
 .. toctree::
    :maxdepth: 2
@@ -39,9 +40,9 @@ should support the load of any netCDF.
 
    examples/import_gebco_netCDF
    examples/simple_animation
-   examples/easy_tutorial_test
    examples/import_ECMWF_netCDF
-   examples/import_ECMWF_grid
+   .. examples/node_tree_editor
+   examples/import_ECMWF_grib
    examples/displacement_animation
    examples/multiple_field_animations
    examples/irregular_grid
@@ -57,7 +58,7 @@ should support the load of any netCDF.
    :caption: Help & References
 
    help
-   development
+   contribute
 
 
 Indices and tables

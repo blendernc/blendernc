@@ -9,11 +9,11 @@ from blendernc.get_utils import get_new_identifier, get_var
 
 
 def get_possible_grid(node, context):
-    ncfile = node.persistent_dict
-    if not ncfile or "Dataset" not in node.persistent_dict.keys():
+    datacubefile = node.persistent_dict
+    if not datacubefile or "Dataset" not in node.persistent_dict.keys():
         return []
-    ncdata = node.persistent_dict["Dataset"]
-    items = get_var(ncdata)
+    datacubedata = node.persistent_dict["Dataset"]
+    items = get_var(datacubedata)
     return items
 
 
@@ -23,7 +23,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFinputgrid"
+    bl_idname = "datacubeInputGrid"
     # Label for nice name display
     bl_label = "Input Grid"
     # Icon identifier
@@ -56,7 +56,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     # Initialization function, called when a new node is created.
     def init(self, context):
         self.inputs.new("bNCstringSocket", "Path")
-        self.outputs.new("bNCnetcdfSocket", "Grid")
+        self.outputs.new("bNCdatacubeSocket", "Grid")
         self.blendernc_dataset_identifier = get_new_identifier(self) + "_g"
 
     # Copy function to initialize a copied node from an existing one.
@@ -65,8 +65,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier in self.blendernc_dict.keys():
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
+        self.blendernc_dict.pop(self.blendernc_dataset_identifier, None)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.

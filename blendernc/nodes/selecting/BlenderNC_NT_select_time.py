@@ -11,12 +11,9 @@ from blendernc.core.dates import (
     get_item_year,
     update_date,
 )
-from blendernc.decorators import NodesDecorators
-from blendernc.python_functions import (
-    refresh_cache,
-    update_datetime_text,
-    update_node_tree,
-)
+from blendernc.core.update_ui import update_datetime_text, update_node_tree
+from blendernc.decorators import DrawDecorators, NodesDecorators
+from blendernc.python_functions import refresh_cache
 
 
 class BlenderNC_NT_select_time(bpy.types.Node):
@@ -25,7 +22,7 @@ class BlenderNC_NT_select_time(bpy.types.Node):
     """Select axis"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFtime"
+    bl_idname = "datacubeTime"
     # Label for nice name display
     bl_label = "Select Time"
     # Icon identifier
@@ -81,8 +78,8 @@ class BlenderNC_NT_select_time(bpy.types.Node):
     # This is the most common place to create the sockets for a node,
     # as shown below.
     def init(self, context):
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
-        self.outputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
+        self.outputs.new("bNCdatacubeSocket", "Dataset")
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
@@ -93,47 +90,41 @@ class BlenderNC_NT_select_time(bpy.types.Node):
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
+    @DrawDecorators.is_connected
     def draw_buttons(self, context, layout):
-        if (
-            self.inputs[0].is_linked
-            and self.inputs[0].links
-            and self.blendernc_dataset_identifier
-        ):
-            blendernc_dict = self.inputs[0].links[0].from_node.blendernc_dict
-            if blendernc_dict:
-                dataset = blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
-                coords = list(dataset.coords)
-                if len(coords) >= 3:
-                    # Dataset is 3D.
-                    if "time" in coords:
-                        dataset_time = dataset["time"]
-                        if "datetime64" in str(dataset_time.dtype):
+        dataset = blendernc_dict[self.blendernc_dataset_identifier]["Dataset"]
+        coords = list(dataset.coords)
+        if len(coords) >= 3:
+            # Dataset is 3D.
+            if "time" in coords:
+                dataset_time = dataset["time"]
+                if "datetime64" in str(dataset_time.dtype):
 
-                            layout.label(text="Date Format:")
-                            row = layout.row(align=True)
+                    layout.label(text="Date Format:")
+                    row = layout.row(align=True)
 
-                            # split = row.split(factor=0.25,align=True)
-                            # split.prop(self, 'hour',text='')
-                            split = row.split(factor=0.30, align=True)
-                            split.prop(self, "day", text="")
-                            split = split.split(factor=0.40, align=True)
-                            split.prop(self, "month", text="")
-                            split.prop(self, "year", text="")
+                    # split = row.split(factor=0.25,align=True)
+                    # split.prop(self, 'hour',text='')
+                    split = row.split(factor=0.30, align=True)
+                    split.prop(self, "day", text="")
+                    split = split.split(factor=0.40, align=True)
+                    split.prop(self, "month", text="")
+                    split.prop(self, "year", text="")
 
-                        else:
-                            layout.prop(self, "step", text="")
-                    else:
-                        pass
-                        # m_ini = "Dataset coords are"
-                        # m_end = ", only 'time' coordinate name is supported."
-                        # text_format = (m_ini, coords[0], coords[1], m_end)
-                        # text = "{0} ({1}, {2}) {3}".format(**text_format)
-                        # self.report({'ERROR'}, text)
                 else:
-                    pass
-                    # m_ini = "Dataset coords are 2D"
-                    # text = "{0} ({1}, {2})".format(m_ini, coords[0], coords[1])
-                    # self.report({'ERROR'}, text)
+                    layout.prop(self, "step", text="")
+            else:
+                pass
+                # m_ini = "Dataset coords are"
+                # m_end = ", only 'time' coordinate name is supported."
+                # text_format = (m_ini, coords[0], coords[1], m_end)
+                # text = "{0} ({1}, {2}) {3}".format(**text_format)
+                # self.report({'ERROR'}, text)
+        else:
+            pass
+            # m_ini = "Dataset coords are 2D"
+            # text = "{0} ({1}, {2})".format(m_ini, coords[0], coords[1])
+            # self.report({'ERROR'}, text)
 
     # Detail buttons in the sidebar.
     # If this function is not defined,

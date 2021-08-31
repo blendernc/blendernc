@@ -6,35 +6,35 @@ from .node_tree import BlenderNCNodeCategory
 node_dicts = {
     "Shortcuts": {
         "name": "Shortcuts",
-        "items": ["netCDFbasincnodes"],
+        "items": ["datacubeBasicNodes"],
     },
     "Datacube": {
         "name": "Datacube",
-        "items": ["netCDFPath", "netCDFNode", "netCDFRange", "Datacube_tutorial"],
+        "items": ["datacubePath", "datacubeNode", "datacubeRange", "Datacube_tutorial"],
     },
     "Grid": {
         "name": "Grid",
-        "items": ["netCDFinputgrid", "netCDFResolution", "netCDFrotatelon"],
+        "items": ["datacubeInputGrid", "datacubeResolution", "datacubeRotatelon"],
     },
     "Selection": {
         "name": "Selection",
-        "items": ["netCDFaxis", "netCDFtime"],
+        "items": ["datacubeAxis", "datacubeTime"],
     },
     "Dimensions": {
         "name": "Dimensions",
-        "items": ["netCDFdims"],
+        "items": ["datacubeDims", "datacubeSort"],
     },
     "Math": {
         "name": "Math",
-        "items": ["netCDFmath"],  # 'netCDFtranspose','netCDFderivative'],
+        "items": ["datacubeMath"],  # 'datacubeTranspose','datacubeDerivative'],
     },
     # 'Vectors':{
     #     'name':'Vectors',
-    #     'items':['netCDFlic'],
+    #     'items':['datacubeLic'],
     # },
     "Output": {
         "name": "Output",
-        "items": ["netCDFOutput"],  # netCDFPreloadNode
+        "items": ["datacubeOutput"],  # datacubePreloadNode
     },
 }
 

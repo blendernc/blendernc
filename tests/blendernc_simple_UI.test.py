@@ -23,7 +23,7 @@ def capture_render_log(func):
 @capture_render_log
 def render_image(file, var, res):
     bpy.context.scene.blendernc_file = file
-    bpy.context.scene.blendernc_netcdf_vars = var
+    bpy.context.scene.blendernc_datacube_vars = var
     bpy.context.scene.blendernc_resolution = res
 
     # Delete cube
@@ -66,7 +66,7 @@ def blender_render_image(file, var):
     directory = bpy.path.abspath("//")
 
     format = file.split(".")[-1]
-    render.filepath = f"{directory}" + "{0}_image_{1}.png".format(var, format)
+    render.filepath = f"{directory}" + "UI_{0}_image_{1}.png".format(var, format)
     bpy.ops.render.render(write_still=True)
 
     render.filepath = directory
@@ -84,4 +84,7 @@ class Test_format_import(unittest.TestCase):
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
-unittest.TextTestRunner().run(suite)
+test = unittest.TextTestRunner().run(suite)
+
+ret = not test.wasSuccessful()
+sys.exit(ret)

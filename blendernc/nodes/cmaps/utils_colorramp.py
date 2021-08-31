@@ -14,25 +14,34 @@ def divide_cmap(n, step):
 
 
 def update_fill_value(node, context):
-    colorramp = node.node_tree.nodes.get("Color_Ramp.000").color_ramp
+    colorramp = node.node_tree.nodes.get("ColorRamp").color_ramp
     colorramp.elements[0].color = node.fv_color
 
 
 def colorbar_material(node, colormap):
     materials = bpy.data.materials
+    image_name = node.image.name
     blendernc_materials = [
-        material for material in materials if "" + node.name in material.name
+        material
+        for material in materials
+        if image_name + "_" + colormap.name in material.name
     ]
 
     if len(blendernc_materials) != 0:
         blendernc_material = blendernc_materials[-1]
         cmap = blendernc_material.node_tree.nodes.get("Colormap")
         if cmap.colormaps == colormap.colormaps:
-            return
+            cmap.update()
+            return blendernc_material
     else:
         bpy.ops.material.new()
-        blendernc_material = bpy.data.materials[-1]
-        blendernc_material.name = "" + node.name
+        materials = bpy.data.materials
+        blendernc_material = [
+            materials[material_name]
+            for material_name in materials.keys()
+            if "Material" in material_name
+        ][-1]
+        blendernc_material.name = image_name + "_" + colormap.name
 
     material_node_tree = blendernc_material.node_tree
 
@@ -97,6 +106,22 @@ def add_splines(n, cbar_plane, width=0.1, height=1):
     return splines
 
 
+def add_units(cbar_plane):
+    size = 1.5
+    y_rescale = 0.12
+    bpy.ops.object.text_add(radius=size)
+    units = bpy.context.object
+    units.data.align_y = "CENTER"
+    units.data.align_x = "CENTER"
+    units.parent = cbar_plane
+    units.location = (0, 1.18, 0)
+    units.scale = (1.7, y_rescale, 1.2)
+    mat = bnc_pyfunc.ui_material()
+    units.name = "text_units_{}".format(cbar_plane.name)
+    units.data.materials.append(mat)
+    return units
+
+
 class ColorRamp(object):
     def __init__(self):
         self.cmaps = self.installed_cmaps()
@@ -121,20 +146,6 @@ class ColorRamp(object):
             # TODO: Raise error in UI.
 
         return cmaps
-
-    def get_colormaps(self):
-        names = self.get_cmaps()
-        cmap_names = []
-        counter = 0
-
-        for key, items in names.items():
-            for item in items:
-                element_1 = "{}:{}".format(item, key)
-                element_2 = "{}-{}".format(item, key)
-                cmap_names.append((element_1, element_2, "", counter))
-                counter += 1
-        return cmap_names
-        # [(cmaps[ii],cmaps[ii],"",ii) for ii in range(len(cmaps))]
 
     def get_cmaps(self):
         import importlib

@@ -1,3 +1,5 @@
+.. _install_blendernc:
+
 =================
 Install BlenderNC
 =================
@@ -12,10 +14,19 @@ BlenderNC requires the following python modules to be installed in Blender's Pyt
 
 .. code-block:: bash
 
-    xarray
-    xgcm
+    numpy
+    zarr
+    ecmwflibs
+    cfgrib
+    xarray[complete]
     cmocean
     matplotlib
+    dask
+    scipy
+    netCDF4
+    toolz
+    pooch
+    psutil
 
 
 To install the previous python modules in your Blender distribution execute the
@@ -26,27 +37,52 @@ macOS
 
 .. code-block:: bash
 
-    cd /Applications/Blender.app/Contents/Resources/2.83/python/bin/
-    ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    BLENDERPY=/Applications/Blender.app/Contents/Resources/2.XX/python/bin/python3.7m
+    $BLENDERPY -m ensurepip
+    $BLENDERPY -m pip install -r requirements.txt
 
 Linux
 -----
 
 .. code-block:: bash
 
-    cd /path/to/blender/2.83/python/bin/
-    ./python3.7m -m ensurepip
-    ./python3.7m -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    BLENDERPY=/path/to/blender/2.83/python/bin/python3.7m
+    $BLENDERPY -m ensurepip
+    $BLENDERPY -m pip install -r requirements.txt
 
 Windows
 -------
 
 .. code-block:: bash
 
-    cd /path/to/blender/2.82/python/bin/
-    python.exe -m ensurepip
-    python.exe -m pip install xarray xgcm cmocean matplotlib scipy toolz netcdf4
+    set BLENDERPY=/path/to/blender/2.82/python/bin/python.exe
+    %BLENDERPY%-m ensurepip
+    %BLENDERPY% -m pip install -r requirements.txt
+
+or install the following requirements using:
+
+.. code-block:: bash
+
+    $BLENDERPY -m pip install numpy cython zarr ecmwflibs cfgrib xarray[complete] cmocean matplotlib dask dask[distributed] scipy netCDF4 toolz pooch psutil
+
+Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
+
+- macOS:
+
+    .. code-block:: bash
+
+        cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
+
+- Linux and Windows:
+    Go to the directory where Blender is installed and look for the ``modules`` folder
+
+
+Then link all the packages from your python environment folder:
+
+.. code-block:: bash
+
+    ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .
+
 
 Install Addon
 =============
@@ -59,6 +95,8 @@ The addon is installed just like any other Blender addon:
 
   .. note::
       Under macOS - Safari downloading a .zip file will by default unzip it. You can fix this by:
+
+      #. Right-click link and select "Download Linked File As ...",
 
       #. Manually zip the blendernc folder, or
 
@@ -100,7 +138,7 @@ Optionally, **but not recommended**, you can link or copy the blendernc folder w
 output example on:
 
 - macOS:
--
+
     .. code-block:: bash
 
         '/Users/{username}/Library/Application\ Support/Blender/2.9{X}/scripts/addons'
@@ -174,21 +212,3 @@ Compile Blender:
 
 .. note::
     Make sure to use the same python version.
-
-Another **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
-
-- macOS:
-
-    .. code-block:: bash
-
-        cd /Applications/Blender.app/Contents/Resources/2.9{X}/scripts/modules
-
-- Linux and Windows:
-    Go to the directory where Blender is installed and look for the ``modules`` folder
-
-
-Then link all the packages from your python environment folder:
-
-.. code-block:: bash
-
-    ln -s $PATH_PYTHON/lib/python3.6/site-packages/* .

@@ -4,13 +4,13 @@ from collections import defaultdict
 
 import bpy
 
-from blendernc.decorators import NodesDecorators
-from blendernc.image import dataset_2_image_preview
-from blendernc.python_functions import (
+from blendernc.core.update_ui import (
+    UpdateImage,
     update_colormap_interface,
-    update_image,
     update_value,
 )
+from blendernc.decorators import NodesDecorators
+from blendernc.image import dataset_2_image_preview
 
 
 class BlenderNC_NT_output(bpy.types.Node):
@@ -19,7 +19,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     """NetCDF loading resolution"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
-    bl_idname = "netCDFOutput"
+    bl_idname = "datacubeOutput"
     # Label for nice name display
     bl_label = "Output"
     # Icon identifier
@@ -69,18 +69,20 @@ class BlenderNC_NT_output(bpy.types.Node):
     # as shown below.
     def init(self, context):
         self.frame_loaded = -1
-        self.inputs.new("bNCnetcdfSocket", "Dataset")
+        self.inputs.new("bNCdatacubeSocket", "Dataset")
         self.color = (0.8, 0.4, 0.4)
         self.use_custom_color = True
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
+        if hasattr(self.image, "copy"):
+            copied_image = self.image.copy()
+            self.image = copied_image
         print("Copying from node ", node)
 
     # Free function to clean up on removal.
     def free(self):
-        if self.blendernc_dataset_identifier != "":
-            self.blendernc_dict.pop(self.blendernc_dataset_identifier)
+        self.blendernc_dict.pop(self.blendernc_dataset_identifier, None)
         print("Removing node ", self, ", Goodbye!")
 
     # Additional buttons displayed on the node.
@@ -118,9 +120,12 @@ class BlenderNC_NT_output(bpy.types.Node):
             operator.node_group = self.rna_type.id_data.name
             operator.image = self.image.name
 
+        self.draw_grid_input()
+
+    def draw_grid_input(self):
         node_names = self.rna_type.id_data.nodes.keys()
         if "Input Grid" in node_names and len(self.inputs) == 1:
-            self.inputs.new("bNCnetcdfSocket", "Grid")
+            self.inputs.new("bNCdatacubeSocket", "Grid")
         elif "Input Grid" not in node_names and len(self.inputs) == 2:
             self.inputs.remove(self.inputs.get("Grid"))
 
@@ -143,19 +148,14 @@ class BlenderNC_NT_output(bpy.types.Node):
     @NodesDecorators.node_connections
     def update(self):
         node_tree = self.rna_type.id_data.name
-        # TODO Move this section to the decorator.
-        if len(self.inputs) == 2:
-            if self.inputs[1].is_linked and self.inputs[1].links:
-                self.grid_node_name = self.inputs[1].links[0].from_node.name
 
         if self.image:
-            update_image(
+            UpdateImage(
                 bpy.context,
                 self.name,
                 node_tree,
                 bpy.context.scene.frame_current,
                 self.image.name,
-                self.grid_node_name,
             )
             if self.image.users >= 3:
-                update_colormap_interface(bpy.context, self.name, node_tree)
+                update_colormap_interface(self.name, node_tree)

@@ -3,16 +3,12 @@ repos:
     rev: v4.0.1  # Use the ref you want to point at
     hooks:
     -   id: trailing-whitespace
-# -   repo: https://github.com/asottile/pyupgrade
-#     rev: v2.12.0
-#     hooks:
-#     - id: pyupgrade
 -   repo: https://github.com/psf/black
-    rev: 21.6b0
+    rev: 21.8b0
     hooks:
     - id: black
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.9.1
+    rev: 5.9.3
     hooks:
     - id: isort
       args: ["--profile", "black", "-l", "88"]
@@ -20,5 +16,10 @@ repos:
     rev: 3.9.2
     hooks:
     - id: flake8
-      args: ["--ignore", "F722,F821,E203,W503,F405", "--max-line-length", "88"]
-      exclude: ^blendernc/addon_updater.*.py
+      args: ["--ignore", "F722,F821,E203,W503,F405", "--max-line-length", "88","--max-complexity","5"]
+      # These files are not supported by BlenderNC development, and exclude tests.
+      exclude: |
+        (?x)(
+            ^blendernc/addon_updater.*py|
+            ^tests/.*py
+        )

@@ -1,3 +1,5 @@
+.. _pro_mode:
+
 PRO mode!
 #########
 
@@ -31,7 +33,7 @@ Any data visualization requires at least these nodes.
   :width: 80%
   :alt: BlenderNC basic nodes
 
-Now you are ready to start loading netCDFs.
+Now you are ready to start loading datacubes.
 Let's move to the first tutorial:
 
 - Import Gebco Data (WIP)
