@@ -2,7 +2,7 @@ repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1  # Use the ref you want to point at
     hooks:
-    -   id: trailing-whitespace
+    - id: trailing-whitespace
 -   repo: https://github.com/psf/black
     rev: 21.8b0
     hooks:

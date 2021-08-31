@@ -15,6 +15,9 @@ rules:
     - test
     - revert
     - chore
+    - breaking
+    - minor
+    - major
 help: |
   **Possible types**:
   `ci`:       Changes to our CI configuration files and scripts (example scopes: Travis, Circle CI, BrowserStack, SauceLabs)
@@ -23,6 +26,7 @@ help: |
   `docs`:     Adds or alters documentation. (example scopes: readme, worker, code_of_conduct, contributors)
   `style`:    Improves formatting, white-space.
   `refactor`: Rewrites code without feature, performance or bug changes.
+  `breaking`: Rewrites code but it brakes backwards compatibility.
   `perf`:     Improves performance.
   `test`:     Adds or modifies tests. (example scopes: functionals, unit-tests)
   `revert`:   Changes that reverting other changes
