@@ -1,4 +1,5 @@
 numpy
+bottleneck==1.2.1
 cython
 zarr
 ecmwflibs
