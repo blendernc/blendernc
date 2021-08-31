@@ -30,13 +30,11 @@ packages = [
 
 [tool.semantic_release]
 version_variable = [
-    "blendernc/__init__.py:__version__"
+    "blendernc/__init__.py:__version__",
+    "docs/source/conf.py:release"
 ]
 version_toml = [
     "pyproject.toml:tool.poetry.version"
-]
-version_pattern = [
-    "docs/source/conf.py:release"
 ]
 major_on_zero = false
 branch = "main"
