@@ -1,5 +1,5 @@
 ==================
-Import ECMWF cGrib
+Import ECMWF GRIB
 ==================
 
 .. raw:: html
