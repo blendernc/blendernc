@@ -60,6 +60,7 @@ def dataarray_random_sampling(dataarray, n):
         for ii in range(len_data_dims)
     }
     values = dataarray.isel(dims_dict).values
+
     return values
 
 

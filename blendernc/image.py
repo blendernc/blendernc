@@ -77,9 +77,8 @@ def from_data_to_pixel_value(data, image_float=True):
     # BW in RGB format for image
     rgb = np.repeat(data[:, :, np.newaxis], 3, axis=2)
     rgba = np.concatenate((rgb, alpha_channel[:, :, np.newaxis]), axis=2)
-    rgba = rgba.ravel()
     # Using foreach_set function for performance ( requires a 32-bit argument)
     if image_float:
-        return np.float32(rgba)
+        return np.float32(rgba.ravel())
     else:
-        return np.float16(rgba)
+        return np.float16(rgba.ravel())
