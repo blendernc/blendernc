@@ -27,8 +27,6 @@ jobs:
           poetry config virtualenvs.create false
           poetry install
 
-      # Can't use: relekang/python-semantic-release@master because
-      # it's running Python 3.7, and Tryceratops requires >=3.8
       - name: Python Semantic Release
         run: |
           git config --global user.name "github-actions"
