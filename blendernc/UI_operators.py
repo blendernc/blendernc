@@ -40,13 +40,12 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         else:
             resol = node_group.nodes.get(translate("Resolution"))
             output = node_group.nodes.get(translate("Output"))
-        # LINK
-        node_group.links.new(resol.inputs[0], datacube.outputs[0])
 
         resol.blendernc_resolution = scene.blendernc_resolution
 
         # LINK
-        node_group.links.new(output.inputs[0], resol.outputs[0])
+        node_group.links.new(resol.inputs[0], datacube.outputs[0])
+
         bpy.ops.image.new(
             name=default_node_group_name + "_default",
             width=1024,
@@ -58,7 +57,9 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         )
         output.image = bpy.data.images.get(default_node_group_name + "_default")
         output.update_on_frame_change = scene.blendernc_animate
-        output.update()
+
+        # LINK
+        node_group.links.new(output.inputs[0], resol.outputs[0])
         return {"FINISHED"}
 
 

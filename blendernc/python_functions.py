@@ -54,10 +54,9 @@ def dataarray_random_sampling(dataarray, n):
     randint = np.random.randint
     len_data_dims = len(dataarray_dims)
     dims_dict = {
-        dataarray_dims[ii]: np.array(
-            [randint(0, len(dataarray[dataarray_dims[ii]])) for nn in range(n)],
-            dtype=int,
-        )
+        dataarray_dims[ii]: [
+            randint(0, len(dataarray[dataarray_dims[ii]])) for nn in range(n)
+        ]
         for ii in range(len_data_dims)
     }
     values = dataarray.isel(dims_dict).values

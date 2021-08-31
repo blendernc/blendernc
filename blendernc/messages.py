@@ -38,10 +38,8 @@ def load_after_restart():
 
 
 def active_selection_preference():
-    text = (
-        "The active selection has preference over picked object. "
-        + "Make sure you selected the right mesh to apply material."
-    )
+    text = "The active selection has preference over picked object. "
+    text += "Make sure you selected the right mesh to apply material."
     return text
 
 
@@ -81,7 +79,9 @@ def client_exists():
 
 
 def same_min_max_value():
-    text = "Increase resolution or define the max and min values of the dataset"
+    text = "Random sampling has been attempted 4 times. "
+    text += "Please increase the resolution "
+    text += "or define the max and min values of the dataset "
     text += "by using a Range node."
     return text
 

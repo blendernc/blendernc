@@ -139,10 +139,6 @@ def update_range(node, context):
         min_val = node.blendernc_dataset_min
     except AttributeError:
         max_val, min_val = update_random_range(unique_data_dict)
-        if max_val == min_val:
-            PrintMessage(same_min_max_value, title="Error", icon="ERROR")
-            # Cancel update range and force the user to change the resolution.
-            return
 
     unique_data_dict["selected_var"]["max_value"] = max_val
     unique_data_dict["selected_var"]["min_value"] = min_val
@@ -151,18 +147,29 @@ def update_range(node, context):
         NodeTree = node.rna_type.id_data.name
         frame = bpy.context.scene.frame_current
         bnc_pyfunc.refresh_cache(NodeTree, unique_identifier, frame)
+        update_value_and_node_tree(node, context)
 
-    update_value_and_node_tree(node, context)
 
-
-def update_random_range(unique_data_dict):
+def update_random_range(unique_data_dict, n=20):
+    counter = 0
+    max_val = 0
+    min_val = 0
     dataset = unique_data_dict["Dataset"]
     sel_var = unique_data_dict["selected_var"]
     selected_variable = sel_var["selected_var_name"]
     selected_var_dataset = dataset[selected_variable]
-    rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, 100)
-    max_val = np.nanmax(rand_sample)
-    min_val = np.nanmin(rand_sample)
+    if max_val == min_val:
+        while counter < 4 and max_val == min_val:
+            rand_sample = bnc_pyfunc.dataarray_random_sampling(selected_var_dataset, n)
+            max_val = np.nanmax(rand_sample)
+            min_val = np.nanmin(rand_sample)
+            n += 20
+            counter += 1
+        if counter == 4 and max_val == min_val:
+            PrintMessage(same_min_max_value, title="Error", icon="ERROR")
+            # Cancel update range and force the user to change
+            # the resolution or define max and min.
+            return
     return max_val, min_val
 
 
