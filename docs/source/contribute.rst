@@ -92,15 +92,39 @@ BlenderNC is coded using the following linters for formatting conformance:
 These can be applied before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`_. Follow these steps to set up your development environment.
 
 .. code-block:: bash
+
     pip install pre-commit
     pre-commit install
 
-Additionally, `commitlint <https://commitlint.js.org/#/>`_ is installed by doing:
+Make sure to install `commitlint <https://commitlint.js.org/#/>`_ is installed by doing:
+
 .. code-block:: bash
+
     npm install -g @commitlint/cli @commitlint/config-conventional
     pre-commit install --hook-type commit-msg
 
-Git commits after this trigger `git hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>`_ and perform necessary code-quality checks.
+otherwise, the ``pre-commit`` will fail with the following error:
+
+.. code-block:: bash
+
+    Error: Cannot find module "@commitlint/config-conventional" from "/blendernc"
+
+Before commiting or creating a PR, it is recommended to execute:
+
+.. code-block:: bash
+
+    pre-commit
+
+or
+
+.. code-block:: bash
+
+    pre-commit run --all-files
+
+to skip skipping of files.
+
+.. important::
+    Commits and PR's pushed into branches ``master``, ``dev`` or ``distribution`` trigger `github actions <https://github.com/features/actions>`_ and perform necessary code-quality checks.
 
 
 Distribution
