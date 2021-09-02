@@ -1,23 +1,33 @@
-*__pycache__*
+
+
+# Docs
 docs/build/
 docs/source/_build/
+
+# Others
+*__pycache__*
 *.old
 .DS_Store
 *.bk
 .vscode/
-cython_build/*
-cython_build
 blendernc/blendernc_updater/*
 blendernc/blendernc_updater
-tests/dataset/*.idx
+
+# Dask
 dask-worker*
 *dask-worker*
+
+# Test
+node_modules
+package-lock.json
+package.json
 
 # Test
 tests/*.png
 tests/sitecustomize.py
 tests/blender_render.log
 tests/.coverage*
+tests/dataset/*.idx
 
 # Distribution / packaging
 .Python
@@ -33,6 +43,8 @@ parts/
 sdist/
 var/
 wheels/
+cython_build/*
+cython_build/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
