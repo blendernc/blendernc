@@ -26,10 +26,3 @@ help: |
   `test`:       Adds or modifies tests. (example scopes: functionals, unit-tests)
   `chore`:      No production code change. Updating grunt tasks etc;
   `breaking`:   Rewrites code but it brakes backwards compatibility.
-  `:boom:`:     Major release using emoji
-  `:sparkles:`: Minor release using emoji
-  `:egg:`:      Minor release using emoji
-  `:bug:`:`     Patch release using emoji
-  `:zap:`:      Patch release using emoji
-  `:penguin:`:  Patch release using emoji
-  `:robot:`:    Patch release using emoji
