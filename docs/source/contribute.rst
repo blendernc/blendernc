@@ -100,8 +100,9 @@ Make sure to install `commitlint <https://commitlint.js.org/#/>`_ is installed b
 
 .. code-block:: bash
 
-    npm install -g @commitlint/cli @commitlint/config-conventional
+    npm install --save-dev @commitlint/{cli,config-conventional}
     pre-commit install --hook-type commit-msg
+
 
 otherwise, the ``pre-commit`` will fail with the following error:
 
