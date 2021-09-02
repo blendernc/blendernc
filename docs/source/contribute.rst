@@ -7,6 +7,12 @@ If you want to contribute to the development of BlenderNC, please submit a pull 
 Development workflow
 ####################
 
+|vscode badge|
+
+.. |vscode badge| image:: https://open.vscode.dev/badges/open-in-vscode.svg
+   :target: https://open.vscode.dev/blendernc/blendernc
+
+
 - Download and install `Visual Studio Code <https://code.visualstudio.com/>`_.
 - Install Visual Studio Code Add-On ``jacqueslucke.blender-development`` by searching at the `Extensions in Marketplace`.
 - Set up your ``Blender`` executable by pressing ``ctrl+shift+P`` -> ``Blender Start`` -> ``Choose new blender executable``.
@@ -75,11 +81,59 @@ and then run the following code in sections:
 Linting
 #######
 
-BlenderNC currently uses `Black <https://github.com/psf/black>`_ , `Flake8 <https://flake8.pycqa.org/en/latest/>`_ and `Isort <https://isort.readthedocs.io/en/latest/>`_ for linting and formatting conformance. These can be applied
-before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`_. Follow these steps to set up your development environment.
+BlenderNC is coded using the following linters for formatting conformance:
+
+- `Black <https://github.com/psf/black>`_ ,
+- `Flake8 <https://flake8.pycqa.org/en/latest/>`_,
+- `Isort <https://isort.readthedocs.io/en/latest/>`_,
+- `commitlint <https://commitlint.js.org/#/>`_.
+
+
+These can be applied before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`_. Follow these steps to set up your development environment.
 
 .. code-block:: bash
+
     pip install pre-commit
     pre-commit install
 
-Git commits after this trigger `git hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>`_ and perform necessary code-quality checks.
+Make sure to install `commitlint <https://commitlint.js.org/#/>`_ is installed by doing:
+
+.. code-block:: bash
+
+    npm install --save-dev @commitlint/{cli,config-conventional}
+    pre-commit install --hook-type commit-msg
+
+
+otherwise, the ``pre-commit`` will fail with the following error:
+
+.. code-block:: bash
+
+    Error: Cannot find module "@commitlint/config-conventional" from "/blendernc"
+
+Before commiting or creating a PR, it is recommended to execute:
+
+.. code-block:: bash
+
+    pre-commit
+
+or
+
+.. code-block:: bash
+
+    pre-commit run --all-files
+
+to skip skipping of files.
+
+.. important::
+    Commits and PR's pushed into branches ``master``, ``dev`` or ``distribution`` trigger `github actions <https://github.com/features/actions>`_ and perform necessary code-quality checks.
+
+
+Distribution
+############
+
+Distribution of the BlenderNC is automatic updated through `github actions <https://github.com/features/actions>`_ when commits and PR's are pushed into the branches ``master``, ``dev`` or ``distribution``.
+
+BlenderNC releases to PyPi are automated by using `poetry <https://python-poetry.org>`_, `semantic-release <https://semantic-release.gitbook.io/semantic-release/>`_, and `python-semantic-release <https://python-semantic-release.readthedocs.io/en/latest/>`_, through github actions that determine the next version number, generate the release notes and publishe the package to `PyPi <https://pypi.org/project/blendernc/>`_. For more information on the CI integration of semantic-release see `./github/workflows/release.yml <https://github.com/blendernc/blendernc/blob/distribution/.github/workflows/release.yml>`_
+
+Aditionally, a compressed BlenderNC release is publised to `blendernc-zip-install <https://github.com/blendernc/blendernc-zip-install>`_
+when commits and PR's are pushed into the branches ``master``, ``dev`` or ``distribution``. This compressed release can be used to manually install BlenderNC in Blender. For more information on the CI integration of zip releases see `./github/workflows/ci.yml <https://github.com/blendernc/blendernc/blob/distribution/.github/workflows/ci.yml>`_
