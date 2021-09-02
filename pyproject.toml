@@ -26,7 +26,7 @@ packages = [
 ]
 
 [tool.poetry.urls]
-"Changelog" = "https://github.com/blendernc/blendernc/blob/main/CHANGELOG.md"
+"Changelog" = "https://github.com/blendernc/blendernc/blob/master/CHANGELOG.md"
 
 [tool.semantic_release]
 version_variable = [
