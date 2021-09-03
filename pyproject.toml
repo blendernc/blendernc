@@ -36,6 +36,10 @@ version_variable = [
 version_toml = [
     "pyproject.toml:tool.poetry.version"
 ]
+
+version_pattern= [
+    'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
+]
 major_on_zero = false
 branch = "master"
 upload_to_pypi = true
