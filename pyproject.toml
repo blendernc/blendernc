@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blendernc"
-version = "0.4.10"
+version = "0.4.9"
 description = "Blender add-on to import datasets (netCDF, grib, and zarr)"
 authors = ["josuemtzmo <josue.martinezmoreno@anu.edu.au>"]
 license = "MIT"
@@ -38,7 +38,8 @@ version_toml = [
 ]
 
 version_pattern= [
-    'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
+    '.github/ISSUE_TEMPLATE.md "BlenderNC Version: "{version}'
+    # 'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
 ]
 major_on_zero = false
 branch = "master"
