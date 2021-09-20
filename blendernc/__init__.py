@@ -17,7 +17,7 @@ bl_info = {
     "author": "Oriol Tintó Prims & Josué Martínez-Moreno",
     "description": "Blender Add-On to visualize geo-scientific data",
     "blender": (2, 83, 0),
-    "version": (0, 4, 9),
+    "version": (0, 4, 10),
     "location": "View3D",
     "warning": "Early version",
     "category": "Generic",
