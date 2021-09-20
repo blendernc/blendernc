@@ -1,0 +1,41 @@
+name: Build BlenderNC using Poetry
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-n-publish:
+    name: Build BlenderNC
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install pypa/build
+        run: >-
+          python -m
+          pip install
+          build
+          --user
+      - name: Upgrade pip
+        run: >-
+          python -m
+          pip install
+          --upgrade pip
+      - name: Install Cython and Numpy
+        run: >-
+          python -m
+          pip install
+          cython numpy --user
+      - name: Install poetry
+        run: >-
+          python -m
+          pip install poetry
+      - name: Install BlenderNC using poetry
+        run: >-
+          poetry build
