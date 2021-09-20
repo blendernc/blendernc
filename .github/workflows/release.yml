@@ -40,6 +40,7 @@ jobs:
           should_skip: $(echo $should_skip)
       - name: Updated blender __init__
         if: ${{ env.should_skip == 0 }}
+        run: |
             #Get new version
             old_ver=$(semantic-release print-version --current)
             #Get new version
@@ -53,6 +54,7 @@ jobs:
             mv ./blendernc/__init__.py_tmp ./blendernc/__init__.py
       - name: Release new version
         if: ${{ env.should_skip == 0 }}
+        run: |
           semantic-release publish -D commit_author="github-actions <action@github.com>"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
