@@ -16,6 +16,8 @@ blendernc/blendernc_updater
 # Dask
 dask-worker*
 *dask-worker*
+node_modules
+package-lock.json
 
 # Test
 node_modules

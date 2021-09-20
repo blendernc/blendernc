@@ -1,6 +1,5 @@
 extends:
   - '@commitlint/config-conventional'
-  # - 'gitmoji'
 rules:
   header-max-length: [1, 'always', 72]
   type-enum:
