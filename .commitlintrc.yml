@@ -6,15 +6,15 @@ rules:
   type-enum:
   - 2
   - always
-  - - feat
-    - fix
+  - - fix
+    - feat
     - docs
     - style
     - refactor
     - perf
     - test
-    - chore
-    - breaking
+    - build
+    - ci
 help: |
   **Possible types**:
   `feat`:       Adds a new feature.
