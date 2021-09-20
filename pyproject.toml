@@ -38,7 +38,8 @@ version_toml = [
 ]
 
 version_pattern= [
-    'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
+    '.github/ISSUE_TEMPLATE.md:BlenderNC Version: {version}',
+    # 'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
 ]
 major_on_zero = false
 branch = "master"
