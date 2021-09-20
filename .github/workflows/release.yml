@@ -52,6 +52,7 @@ jobs:
             awk -v old_version="$blinfo_old" -v new_version="$blinfo" '{sub('old_version','new_version')}1' ./blendernc/__init__.py > ./blendernc/__init__.py_tmp
             # Rename temporal file
             mv ./blendernc/__init__.py_tmp ./blendernc/__init__.py
+            git commit -am 'chore: update blendernc bl_info version'
       - name: Release new version
         if: ${{ env.should_skip == 0 }}
         run: |
