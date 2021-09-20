@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.11 (2021-09-20)
+
+
 ## v0.4.10 (2021-09-03)
 ### Fix
 * Bump manual version of bl_info, blender greps the bl_info instead of running the script ([`0e02620`](https://github.com/blendernc/blendernc/commit/0e0262087d844200750ff865664ae764ec7cf4ad))
