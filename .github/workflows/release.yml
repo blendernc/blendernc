@@ -31,6 +31,8 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "action@github.com"
           semantic-release version --noop -v WARNING
+          # Get output of previous command, it seems to be hidding from
+          # bash as it is a logging, rather than a print.
           semantic-release publish -D commit_author="github-actions <action@github.com>"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
