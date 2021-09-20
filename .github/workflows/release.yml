@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - distribution_test
 
 jobs:
   release:
