@@ -30,9 +30,28 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "action@github.com"
-          semantic-release version --noop -v WARNING
-          # Get output of previous command, it seems to be hidding from
-          # bash as it is a logging, rather than a print.
+          c_ver=$(semantic-release print-version --current) #Check current version
+          n_ver=$(semantic-release print-version) #Check for new version
+          [[ "$c_ver" != "$n_ver" ]] #Compare versions
+          should_skip=$(echo $?) #Get exit status
+          echo "should_skip=$should_skip" >> $GITHUB_ENV
+        env:
+          should_skip: $(echo $should_skip)
+      - name: Updated blender __init__
+        if: ${{ env.should_skip == 0 }}
+            #Get new version
+            old_ver=$(semantic-release print-version --current)
+            #Get new version
+            new_ver=$(semantic-release print-version)
+            # constuct blender string version format.
+            blinfo_old=$(echo $old_ver | awk -F. '{print $1", "$2", "$3}')
+            blinfo=$(echo $new_ver | awk -F. '{print $1", "$2", "$3}')
+            # Replace version
+            awk -v old_version="$blinfo_old" -v new_version="$blinfo" '{sub('old_version','new_version')}1' ./blendernc/__init__.py > ./blendernc/__init__.py_tmp
+            # Rename temporal file
+            mv ./blendernc/__init__.py_tmp ./blendernc/__init__.py
+      - name: Release new version
+        if: ${{ env.should_skip == 0 }}
           semantic-release publish -D commit_author="github-actions <action@github.com>"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
