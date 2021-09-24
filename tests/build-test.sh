@@ -15,6 +15,7 @@ echo ${blender_version}
 
 COVERAGE_PROCESS_START=${PWD}"/.coveragerc"
 export COVERAGE_PROCESS_START=$COVERAGE_PROCESS_START
+export PYTHONPATH=$PYTHONPATH:${PWD}
 
 cd tests
 

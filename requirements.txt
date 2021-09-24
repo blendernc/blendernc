@@ -24,6 +24,7 @@ packaging==20.9
 pandas==1.1.5
 partd==1.2.0
 pillow==8.3.2
+pooch==1.5.1
 psutil==5.8.0
 pycparser==2.20
 pyparsing==2.4.7
