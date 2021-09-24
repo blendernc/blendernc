@@ -32,6 +32,6 @@ jobs:
           python -m
           pip install poetry
       - name: Install BlenderNC using poetry
-        run: >-
+        run: |
           poetry build
           poetry install
