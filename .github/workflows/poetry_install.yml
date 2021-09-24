@@ -27,11 +27,6 @@ jobs:
           python -m
           pip install
           --upgrade pip
-      - name: Install Cython and Numpy
-        run: >-
-          python -m
-          pip install
-          cython numpy --user
       - name: Install poetry
         run: >-
           python -m
@@ -39,3 +34,4 @@ jobs:
       - name: Install BlenderNC using poetry
         run: >-
           poetry build
+          poetry install

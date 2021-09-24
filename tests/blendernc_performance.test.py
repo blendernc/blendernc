@@ -27,8 +27,7 @@ def capture_render_log(func):
 
 
 @capture_render_log
-def render_image(file, var, res):
-
+def render_image(var):
     bpy.context.scene.blendernc_datacube_vars = var
 
 
@@ -44,7 +43,7 @@ class Test_format_import(unittest.TestCase):
             bpy.context.scene.blendernc_file = file
             bpy.context.scene.blendernc_resolution = res
             tic = time.time()
-            render_image(file, var, res)
+            render_image(var)
             toc = time.time()
             times[n] = toc - tic
 
@@ -66,7 +65,7 @@ class Test_format_import(unittest.TestCase):
             bpy.context.scene.blendernc_file = file
             bpy.context.scene.blendernc_resolution = res
             tic = time.time()
-            render_image(file, var, res)
+            render_image(var)
             toc = time.time()
             times[n] = toc - tic
 

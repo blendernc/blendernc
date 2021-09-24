@@ -8,7 +8,7 @@ $BLENDERPY -m pip install -r requirements.txt --progress-bar off
 
 $BLENDERPY -m pip install coverage --progress-bar off
 
-$BLENDERPY -m pip install -e . --progress-bar off
+$BLENDERPY -m pip install requests --progress-bar off
 
 blender_version=$(blender --version | head -n 1)
 echo ${blender_version}
@@ -24,6 +24,8 @@ echo -e "print('Initiate coverage')" >> sitecustomize.py
 echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
+
+echo $PYTHONPATH
 
 $BLENDERPY run_tests.py
 test_exit=$?
