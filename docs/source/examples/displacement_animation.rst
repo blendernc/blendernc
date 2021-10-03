@@ -1,5 +1,5 @@
 ======================
-Displacement animation
+Displacement rendering
 ======================
 
 .. raw:: html
@@ -150,3 +150,10 @@ Finally, play with the displacement midlevel to achieve a better interpretation 
 .. image:: ../../images/displacement_animation/cycles_render_lcc_mcc.png
     :width: 100%
     :class: with-shadow
+
+.. important::
+    If you want to render an animation, you would need to lock the interface of ``Blender``, as it's a known issue that ``Blender`` will crash when animating displacement modifiers.
+
+    .. image:: ../../images/displacement_animation/lock_render.png
+        :width: 100%
+        :class: with-shadow
