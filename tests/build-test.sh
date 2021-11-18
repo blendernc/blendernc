@@ -6,8 +6,6 @@ $BLENDERPY -m ensurepip --default-pip
 
 $BLENDERPY -m pip install -r requirements.txt --progress-bar off
 
-$BLENDERPY -m pip install "xarray[complete]" --progress-bar off
-
 $BLENDERPY -m pip install coverage --progress-bar off
 
 $BLENDERPY -m pip install requests --progress-bar off

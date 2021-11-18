@@ -4,7 +4,7 @@ attrs==21.2.0
 bottleneck==1.2.1
 certifi==2021.10.8
 cffi==1.15.0
-cfgrib==0.9.9.1
+cfgrib==0.9.9.0
 cftime==1.5.1.1
 charset-normalizer==2.0.7
 click==7.1.2
