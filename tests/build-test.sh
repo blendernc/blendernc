@@ -1,5 +1,7 @@
 #!/bin/sh
 
+apt update
+
 apt install libglib2.0-bin --yes
 
 $BLENDERPY -m ensurepip --default-pip
@@ -26,6 +28,8 @@ echo -e "print(cov)" >> sitecustomize.py
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
 echo $PYTHONPATH
+
+$BLENDERPY -m eccodes selfcheck
 
 $BLENDERPY run_tests.py
 test_exit=$?
