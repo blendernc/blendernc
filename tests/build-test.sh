@@ -10,6 +10,8 @@ $BLENDERPY -m pip install coverage --progress-bar off
 
 $BLENDERPY -m pip install requests --progress-bar off
 
+$BLENDERPY -m pip install eccodes --progress-bar off
+
 blender_version=$(blender --version | head -n 1)
 echo ${blender_version}
 
