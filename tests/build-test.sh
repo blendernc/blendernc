@@ -27,17 +27,19 @@ export PYTHONPATH=$PYTHONPATH:${PWD}
 
 echo $PYTHONPATH
 
-$BLENDERPY run_tests.py
-test_exit=$?
+$BLENDERPY -m eccodes selfcheck
 
-rm *.png
+# $BLENDERPY run_tests.py
+# test_exit=$?
 
-coverage combine
-coverage report
+# rm *.png
 
-mv ".coverage" ".coverage_${blender_version}"
+# coverage combine
+# coverage report
 
-if [ "$test_exit" -ne 0 ] ; then
-  echo "Tests failed!"
-  exit 1
-fi
+# mv ".coverage" ".coverage_${blender_version}"
+
+# if [ "$test_exit" -ne 0 ] ; then
+#   echo "Tests failed!"
+#   exit 1
+# fi
