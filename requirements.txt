@@ -44,5 +44,5 @@ toml==0.10.2
 tomli==1.2.2
 toolz==0.11.2
 urllib3==1.26.7
-xarray==0.19.0
+xarray[complete]==0.19.0
 zarr==2.10.2
