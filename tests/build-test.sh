@@ -31,17 +31,17 @@ echo $PYTHONPATH
 
 $BLENDERPY -m eccodes selfcheck
 
-# $BLENDERPY run_tests.py
-# test_exit=$?
+$BLENDERPY run_tests.py
+test_exit=$?
 
-# rm *.png
+rm *.png
 
-# coverage combine
-# coverage report
+coverage combine
+coverage report
 
-# mv ".coverage" ".coverage_${blender_version}"
+mv ".coverage" ".coverage_${blender_version}"
 
-# if [ "$test_exit" -ne 0 ] ; then
-#   echo "Tests failed!"
-#   exit 1
-# fi
+if [ "$test_exit" -ne 0 ] ; then
+  echo "Tests failed!"
+  exit 1
+fi
