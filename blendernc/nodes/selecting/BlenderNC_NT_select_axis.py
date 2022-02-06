@@ -97,14 +97,21 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         dataset = blendernc_dict["Dataset"]
         node_tree = self.rna_type.id_data.name
         if self.axes:
+            dtype=dataset[self.axes].dtype
+            if dtype != int:
+                method="nearest"
+                val_select=self.axis_selection
+            else: 
+                method=None
+                val_select=int(self.axis_selection)
             blendernc_dict["Dataset"] = dataset.sel(
-                {self.axes: self.axis_selection}, method="nearest"
-            ).drop(self.axes)
-            if self.pre_selected != self.axis_selection:
+                {self.axes: val_select}, method=method
+            )
+            if self.pre_selected != val_select:
                 refresh_cache(
                     node_tree,
                     self.blendernc_dataset_identifier,
                     bpy.context.scene.frame_current,
                 )
                 update_node_tree(self, bpy.context)
-                self.pre_selected = self.axis_selection
+                self.pre_selected = val_select

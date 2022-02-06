@@ -169,15 +169,22 @@ class NodesDecorators(object):
     def get_data_from_node(node):
         inputs_links = bnc_gutils.get_input_links(node)
         node_parent = inputs_links.from_node
-        node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
-        if (
-            node_parent.blendernc_dataset_identifier
-            in node_parent.blendernc_dict.keys()
-        ):
-            dataset = node_parent.blendernc_dict[
-                node.blendernc_dataset_identifier
-            ].copy()
-            node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
+        output_links = bnc_gutils.get_output_links(node_parent)
+        if len(output_links)==1:
+            node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
+            if (
+                node_parent.blendernc_dataset_identifier
+                in node_parent.blendernc_dict.keys()
+            ):
+                dataset = node_parent.blendernc_dict[
+                    node.blendernc_dataset_identifier
+                ].copy()
+                node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
+        else:
+            unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(output_links,node,node_parent)
+            node.blendernc_dataset_identifier = new_identifier
+            node_parent_dict = node_parent.blendernc_dict
+            node.blendernc_dict[new_identifier] = node_parent_dict[unique_identifier].copy()
 
     @classmethod
     def dataset_has_identifier(cls, node):
@@ -265,14 +272,6 @@ class NodesDecorators(object):
         if not node.blendernc_file:
             node.blendernc_file = inputs_links.from_node.blendernc_file
 
-    @staticmethod
-    def output_connections(node):
-        """
-        Test all output connections.
-        """
-        pass
-        # outputs = node.outputs[0]
-        # outputs_links = outputs.links
 
     @staticmethod
     def dummy_update(node):
@@ -299,7 +298,12 @@ class DrawDecorators(object):
                 and node.inputs[0].links
                 and node.blendernc_dataset_identifier
             ):
-                blendernc_dict = node.inputs[0].links[0].from_node.blendernc_dict
+                node_parent = node.inputs[0].links[0].from_node
+                blendernc_dict = node_parent.blendernc_dict
+                output_links = bnc_gutils.get_output_links(node_parent)
+                unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(output_links,node,node_parent)
+                blendernc_dict[new_identifier]=blendernc_dict[unique_identifier].copy()
+
                 if blendernc_dict:
                     # Return provided function to compute its contents.
                     func_globals["blendernc_dict"] = blendernc_dict
