@@ -76,7 +76,6 @@ class BlenderNC_NT_drop_dims(bpy.types.Node):
             if self.blendernc_dims in dataset.dims:
                 dataset = (
                     dataset.isel({self.blendernc_dims: 0})
-                    .drop(self.blendernc_dims)
                     .squeeze()
                 )
             else:

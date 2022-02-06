@@ -23,7 +23,7 @@ def get_all_output_nodes():
 
     # Find all nodes
     for nt in node_trees:
-        [nodes.append(node) for node in nt.nodes if node.name == translate("Output")]
+        [nodes.append(node) for node in nt.nodes if translate("Output") in node.name]
     return nodes
 
 
@@ -45,12 +45,22 @@ def get_input_links(node):
     inputs = node.inputs[0]
     return inputs.links[0]
 
+def get_output_links(node):
+    outputs = node.outputs[0]
+    return [link for link in outputs.links]
+
+def get_new_id_mult_outputs(output_links,node,node_parent):
+    node_names = [link.to_node.name for link in output_links]
+    node_index = node_names.index(node.name)
+    unique_identifier = node_parent.blendernc_dataset_identifier
+    new_identifier = unique_identifier+'_{0}'.format(node_index)
+    return unique_identifier, new_identifier
 
 def get_var(datacubedata):
     dimensions = sorted(list(datacubedata.coords.dims.keys()))
     variables = sorted(list(datacubedata.variables.keys() - dimensions))
     if "long_name" in datacubedata[variables[0]].attrs:
-        long_name_list = [datacubedata[var].attrs["long_name"] for var in variables]
+        long_name_list = [ datacubedata[var].attrs["long_name"] if "long_name" in datacubedata[var].attrs  else '' for var in variables ]
         var_names = bnc_pyfunc.build_enum_prop_list(
             variables, "DISK_DRIVE", long_name_list
         )
@@ -167,8 +177,8 @@ def get_possible_dims(node, context):
     if unique_identifier not in node.blendernc_dict.keys():
         return bnc_pyfunc.empty_item()
     link = get_input_links(node)
-    unique_identifier = node.blendernc_dataset_identifier
     parent_node = link.from_node
+    unique_identifier = parent_node.blendernc_dataset_identifier
     data_dictionary = parent_node.blendernc_dict[unique_identifier]
     datacubedata = data_dictionary["Dataset"]
     var_name = data_dictionary["selected_var"]["selected_var_name"]
@@ -305,10 +315,9 @@ def get_all_nodes_using_image(materials, image):
 def get_items_dims(self, context):
     if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
         # BlenderNC dictionary
+        linked_node = self.inputs[0].links[0].from_node
         blendernc_dict = (
-            self.inputs[0]
-            .links[0]
-            .from_node.blendernc_dict[self.blendernc_dataset_identifier]
+            linked_node.blendernc_dict[linked_node.blendernc_dataset_identifier]
             .copy()
         )
         # BlenderNC dataset
