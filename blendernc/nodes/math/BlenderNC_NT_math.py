@@ -7,7 +7,11 @@ import numpy as np
 
 from blendernc.core.update_ui import update_random_range, update_value_and_node_tree
 from blendernc.decorators import MathDecorator, NodesDecorators
-from blendernc.python_functions import build_enum_prop_list, refresh_cache
+from blendernc.python_functions import (
+    build_enum_prop_list,
+    preference_frame,
+    refresh_cache,
+)
 
 operation_types = {
     "float": (
@@ -129,6 +133,8 @@ class BlenderNC_NT_math(bpy.types.Node):
         NodeTree = self.rna_type.id_data.name
         frame = bpy.context.scene.frame_current
         identifier = self.blendernc_dataset_identifier
+        f = bpy.context.scene.frame_current
+        frame = preference_frame(self, identifier, f)
         refresh_cache(NodeTree, identifier, frame)
         operation = self.blendernc_operation
         self.create_sockets(operation)
@@ -140,8 +146,10 @@ class BlenderNC_NT_math(bpy.types.Node):
 
     @MathDecorator.math_operation
     def compute_operation(self, data1, data2=None, name=""):
-        dataset = ops[self.blendernc_operation](data1, data2)
-        if type(data1) == type(data2):
+        if type(data1) != type(data2):
+            dataset = ops[self.blendernc_operation](data1, data2)
+        else:
+            dataset = ops[self.blendernc_operation](data1, data2.values)
             dataset = dataset.to_dataset(name=name)
             # TODO: Update the node to ensure the image will be updated.
         return dataset

@@ -132,7 +132,9 @@ class NodesDecorators(object):
         """
         # TODO: Add function to check for multiple connectgions
         inputs_links = bnc_gutils.get_input_links(node)
-        if node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
+        if not inputs_links:
+            return
+        elif node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
             return True
         elif inputs_links.from_node.bl_idname == "datacubePath":
             cls.get_blendernc_file(node)

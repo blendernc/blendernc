@@ -36,7 +36,8 @@ def register():
     print("Registering to Change Defaults")
     bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
     bpy.app.handlers.load_factory_preferences_post.append(import_workspace)
-    bpy.app.handlers.load_factory_startup_post.append(import_workspace)
+    if bpy.app.version < (3, 0, 0):
+        bpy.app.handlers.load_factory_startup_post.append(import_workspace)
 
 
 def unregister():
@@ -50,4 +51,5 @@ def unregister():
     print("Unregistering to Change Defaults")
     bpy.app.handlers.load_factory_startup_post.remove(load_handler_for_startup)
     bpy.app.handlers.load_factory_preferences_post.remove(import_workspace)
-    bpy.app.handlers.load_factory_startup_post.remove(import_workspace)
+    if bpy.app.version < (3, 0, 0):
+        bpy.app.handlers.load_factory_startup_post.remove(import_workspace)

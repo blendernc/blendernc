@@ -13,7 +13,7 @@ from blendernc.core.dates import (
 )
 from blendernc.core.update_ui import update_datetime_text, update_node_tree
 from blendernc.decorators import DrawDecorators, NodesDecorators
-from blendernc.python_functions import refresh_cache
+from blendernc.python_functions import preference_frame, refresh_cache
 
 
 class BlenderNC_NT_select_time(bpy.types.Node):
@@ -148,25 +148,19 @@ class BlenderNC_NT_select_time(bpy.types.Node):
             unique_data_dict_node["Dataset"] = dataset.sel(
                 time=self.selected_time
             ).drop("time")
-            update_datetime_text(
-                bpy.context, self.name, node_tree, 0, self.selected_time
-            )
+            update_datetime_text(self, self.name, node_tree, 0, self.selected_time)
         elif self.selected_time and self.selected_time == self.step:
             unique_data_dict_node["Dataset"] = dataset.isel(
                 time=int(self.selected_time)
             ).drop("time")
-            update_datetime_text(
-                bpy.context, self.name, node_tree, 0, self.selected_time
-            )
+            update_datetime_text(self, self.name, node_tree, 0, self.selected_time)
         else:
             # TODO Add extra conditions to avoid issues if reusing a
             # node for multiple datasets.
             pass
         if self.pre_selected != self.selected_time:
-            refresh_cache(
-                node_tree,
-                self.blendernc_dataset_identifier,
-                bpy.context.scene.frame_current,
-            )
+            f = bpy.context.scene.frame_current
+            frame = preference_frame(self, unique_identifier, f)
+            refresh_cache(node_tree, unique_identifier, frame)
             update_node_tree(self, bpy.context)
             self.pre_selected = self.selected_time
