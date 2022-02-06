@@ -43,7 +43,10 @@ def get_node(node_group, node):
 
 def get_input_links(node):
     inputs = node.inputs[0]
-    return inputs.links[0]
+    if inputs.links:
+        return inputs.links[0]
+    else:
+        return
 
 def get_output_links(node):
     outputs = node.outputs[0]
