@@ -7,7 +7,7 @@ import bpy
 from blendernc.core.update_ui import update_node_tree, update_value_and_node_tree
 from blendernc.decorators import DrawDecorators, NodesDecorators
 from blendernc.get_utils import get_items_axes
-from blendernc.python_functions import refresh_cache
+from blendernc.python_functions import preference_frame, refresh_cache
 
 
 class BlenderNC_NT_select_axis(bpy.types.Node):
@@ -93,7 +93,8 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
 
     @NodesDecorators.node_connections
     def update(self):
-        blendernc_dict = self.blendernc_dict[self.blendernc_dataset_identifier]
+        unique_identifier = self.blendernc_dataset_identifier
+        blendernc_dict = self.blendernc_dict[unique_identifier]
         dataset = blendernc_dict["Dataset"]
         node_tree = self.rna_type.id_data.name
         if self.axes:
@@ -108,10 +109,8 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
                 {self.axes: val_select}, method=method
             )
             if self.pre_selected != val_select:
-                refresh_cache(
-                    node_tree,
-                    self.blendernc_dataset_identifier,
-                    bpy.context.scene.frame_current,
-                )
+                f = bpy.context.scene.frame_current
+                frame = preference_frame(self, unique_identifier, f)
+                refresh_cache(node_tree, unique_identifier, frame)
                 update_node_tree(self, bpy.context)
                 self.pre_selected = val_select

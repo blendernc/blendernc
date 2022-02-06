@@ -97,6 +97,18 @@ def purge_cache(NodeTree, identifier, n=0, scene=None):
     # gc.collect()
 
 
+def preference_frame(node, identifier, frame):
+    blendernc_dict = node.blendernc_dict[identifier]["Dataset"]
+    if len(blendernc_dict.dims.keys()) > 2:
+        t = len(blendernc_dict.time)
+    else:
+        t = 0
+
+    if frame >= t:
+        frame = bnc_updateUI.preference_animation(bpy.context.scene, t)
+    return frame
+
+
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.datacube_cache:
         cached_nodetree = bpy.context.scene.datacube_cache[NodeTree][identifier]
@@ -191,8 +203,10 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
 
     ax.set_ylim(-90, 90)
+    ax.set_xlim(x.min().values, x.max().values)
     fig.patch.set_visible(False)
     plt.axis("off")
+
     fig.canvas.draw()
     image = np.fromstring(fig.canvas.tostring_rgb(), dtype="uint8")
     image_shape = (data.shape[0], data.shape[1], 3)
@@ -315,8 +329,9 @@ def rotate_longitude(node, context):
              'lon' or 'x'."""
         )
     NodeTree = node.rna_type.id_data.name
-    frame = bpy.context.scene.frame_current
+    f = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
+    frame = preference_frame(node, identifier, f)
     refresh_cache(NodeTree, identifier, frame)
 
 

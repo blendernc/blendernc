@@ -53,7 +53,7 @@ class UpdateImage:
         self.timer.tick("Load Frame")
         # IF timestep is larger, use the last time value
         if self.frame >= t:
-            self.frame = self.preference_animation(t)
+            self.frame = preference_animation(self.scene, t)
 
         if self.frame is False:
             return self.frame
@@ -119,16 +119,17 @@ class UpdateImage:
             img_x, img_y = list(self.image.size)
         return img_x, img_y
 
-    def preference_animation(self, t):
-        if self.scene.blendernc_animation_type == "EXTEND":
-            frame = t - 1
-        elif self.scene.blendernc_animation_type == "LOOP":
-            current_frame = self.scene.frame_current
-            n_repeat = current_frame // t
-            frame = current_frame - n_repeat * t
-        else:
-            frame = False
-        return frame
+
+def preference_animation(scene, t):
+    if scene.blendernc_animation_type == "EXTEND":
+        frame = t - 1
+    elif scene.blendernc_animation_type == "LOOP":
+        current_frame = scene.frame_current
+        n_repeat = current_frame // t
+        frame = current_frame - n_repeat * t
+    else:
+        frame = False
+    return frame
 
 
 def update_range(node, context):
@@ -145,7 +146,8 @@ def update_range(node, context):
 
     if len(node.outputs) != 0:
         NodeTree = node.rna_type.id_data.name
-        frame = bpy.context.scene.frame_current
+        f = bpy.context.scene.frame_current
+        frame = bnc_pyfunc.preference_frame(node, unique_identifier, f)
         bnc_pyfunc.refresh_cache(NodeTree, unique_identifier, frame)
         update_value_and_node_tree(node, context)
 
