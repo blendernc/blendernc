@@ -172,7 +172,7 @@ class NodesDecorators(object):
         inputs_links = bnc_gutils.get_input_links(node)
         node_parent = inputs_links.from_node
         output_links = bnc_gutils.get_output_links(node_parent)
-        if len(output_links)==1:
+        if len(output_links) == 1:
             node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
             if (
                 node_parent.blendernc_dataset_identifier
@@ -183,10 +183,14 @@ class NodesDecorators(object):
                 ].copy()
                 node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
         else:
-            unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(output_links,node,node_parent)
+            unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
+                output_links, node, node_parent
+            )
             node.blendernc_dataset_identifier = new_identifier
             node_parent_dict = node_parent.blendernc_dict
-            node.blendernc_dict[new_identifier] = node_parent_dict[unique_identifier].copy()
+            node.blendernc_dict[new_identifier] = node_parent_dict[
+                unique_identifier
+            ].copy()
 
     @classmethod
     def dataset_has_identifier(cls, node):
@@ -274,7 +278,6 @@ class NodesDecorators(object):
         if not node.blendernc_file:
             node.blendernc_file = inputs_links.from_node.blendernc_file
 
-
     @staticmethod
     def dummy_update(node):
         """
@@ -303,8 +306,12 @@ class DrawDecorators(object):
                 node_parent = node.inputs[0].links[0].from_node
                 blendernc_dict = node_parent.blendernc_dict
                 output_links = bnc_gutils.get_output_links(node_parent)
-                unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(output_links,node,node_parent)
-                blendernc_dict[new_identifier]=blendernc_dict[unique_identifier].copy()
+                unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
+                    output_links, node, node_parent
+                )
+                blendernc_dict[new_identifier] = blendernc_dict[
+                    unique_identifier
+                ].copy()
 
                 if blendernc_dict:
                     # Return provided function to compute its contents.
@@ -361,8 +368,9 @@ class MathDecorator(object):
             unique_identifier = self.blendernc_dataset_identifier
             unique_data_dict_node = self.blendernc_dict[unique_identifier]
             parent_node = self.inputs[0].links[0].from_node
+            parent_identifier = parent_node.blendernc_dataset_identifier
             # Extract parent dataset
-            dataset_parent = parent_node.blendernc_dict[unique_identifier][
+            dataset_parent = parent_node.blendernc_dict[parent_identifier][
                 "Dataset"
             ].copy()
             # Computation name list

@@ -125,10 +125,13 @@ class Test_use_nodes(unittest.TestCase):
         math_node = [node for node in bl_nodes if node.bl_idname == "datacubeMath"]
         node_tree = math_node[0].id_data
         data_node = math_node[0].inputs[0].links[0].from_node
-        dataset_before = data_node.blendernc_dict["001"]["Dataset"].adt.values
+        parent_identifier = data_node.blendernc_dataset_identifier
+        dataset_before = data_node.blendernc_dict[parent_identifier][
+            "Dataset"
+        ].adt.values
         node_tree.links.new(math_node[0].inputs[1], data_node.outputs[0])
-        math_node
-        dataset = math_node[0].blendernc_dict["001"]["Dataset"].adt.values
+        node_identifier = math_node[0].blendernc_dataset_identifier
+        dataset = math_node[0].blendernc_dict[node_identifier]["Dataset"].adt.values
         mean_value = np.nanmean(dataset // dataset_before)
         # Unlink nodes
         math_node[0].inputs[1].unlink(math_node[0].inputs[1].links[0])

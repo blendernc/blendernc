@@ -148,11 +148,6 @@ class BlenderNC_NT_output(bpy.types.Node):
     @NodesDecorators.node_connections
     def update(self):
         node_tree = self.rna_type.id_data.name
-        unique_identifier = self.blendernc_dataset_identifier
-        unique_data_dict_node = self.blendernc_dict[unique_identifier]
-        print(self.name)
-        print(id(unique_data_dict_node))
-        print(unique_data_dict_node['Dataset'].dims)
         if self.image:
             UpdateImage(
                 bpy.context,
