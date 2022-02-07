@@ -80,9 +80,6 @@ class BlenderNC_NT_range(bpy.types.Node):
     def update(self):
         unique_identifier = self.blendernc_dataset_identifier
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
-        print(self.name)
-        print(id(unique_data_dict_node))
-        print(unique_data_dict_node['Dataset'].dims)
         sel_var = unique_data_dict_node["selected_var"]
         # Update vmax and vmin of the dataset.
         sel_var["max_value"] = self.blendernc_dataset_max
