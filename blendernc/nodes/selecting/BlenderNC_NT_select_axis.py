@@ -98,13 +98,13 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         dataset = blendernc_dict["Dataset"]
         node_tree = self.rna_type.id_data.name
         if self.axes:
-            dtype=dataset[self.axes].dtype
+            dtype = dataset[self.axes].dtype
             if dtype != int:
-                method="nearest"
-                val_select=self.axis_selection
-            else: 
-                method=None
-                val_select=int(self.axis_selection)
+                method = "nearest"
+                val_select = self.axis_selection
+            else:
+                method = None
+                val_select = int(self.axis_selection)
             blendernc_dict["Dataset"] = dataset.sel(
                 {self.axes: self.axis_selection}, method="nearest"
             ).drop(self.axes)
