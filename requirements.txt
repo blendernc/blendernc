@@ -28,7 +28,7 @@ numpy==1.21.4
 packaging==21.2
 pandas==1.1.5
 partd==1.2.0
-pillow==8.4.0
+pillow==9.0.0
 pooch==1.5.2
 psutil==5.8.0
 pycparser==2.21
