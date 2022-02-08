@@ -56,7 +56,7 @@ Windows
 .. code-block:: bash
 
     set BLENDERPY=/path/to/blender/2.82/python/bin/python.exe
-    %BLENDERPY%-m ensurepip
+    %BLENDERPY% -m ensurepip
     %BLENDERPY% -m pip install -r requirements.txt
 
 or install the following requirements using:
