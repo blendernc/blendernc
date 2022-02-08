@@ -48,22 +48,30 @@ def get_input_links(node):
     else:
         return
 
+
 def get_output_links(node):
     outputs = node.outputs[0]
     return [link for link in outputs.links]
 
-def get_new_id_mult_outputs(output_links,node,node_parent):
+
+def get_new_id_mult_outputs(output_links, node, node_parent):
     node_names = [link.to_node.name for link in output_links]
     node_index = node_names.index(node.name)
     unique_identifier = node_parent.blendernc_dataset_identifier
-    new_identifier = unique_identifier+'_{0}'.format(node_index)
+    new_identifier = unique_identifier + "_{0}".format(node_index)
     return unique_identifier, new_identifier
+
 
 def get_var(datacubedata):
     dimensions = sorted(list(datacubedata.coords.dims.keys()))
     variables = sorted(list(datacubedata.variables.keys() - dimensions))
     if "long_name" in datacubedata[variables[0]].attrs:
-        long_name_list = [ datacubedata[var].attrs["long_name"] if "long_name" in datacubedata[var].attrs  else '' for var in variables ]
+        long_name_list = [
+            datacubedata[var].attrs["long_name"]
+            if "long_name" in datacubedata[var].attrs
+            else ""
+            for var in variables
+        ]
         var_names = bnc_pyfunc.build_enum_prop_list(
             variables, "DISK_DRIVE", long_name_list
         )
@@ -319,10 +327,9 @@ def get_items_dims(self, context):
     if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
         # BlenderNC dictionary
         linked_node = self.inputs[0].links[0].from_node
-        blendernc_dict = (
-            linked_node.blendernc_dict[linked_node.blendernc_dataset_identifier]
-            .copy()
-        )
+        blendernc_dict = linked_node.blendernc_dict[
+            linked_node.blendernc_dataset_identifier
+        ].copy()
         # BlenderNC dataset
         dataset = blendernc_dict["Dataset"]
         # BlenderNC var
