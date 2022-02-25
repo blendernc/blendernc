@@ -134,7 +134,7 @@ class ColorRamp(object):
         installed_packages = pkg_resources.working_set
         installed_packages_list = sorted([i.key for i in installed_packages])
 
-        if "cmocean" and "colorcet" and "matplotlib"  in installed_packages_list:
+        if "cmocean" and "colorcet" and "matplotlib" in installed_packages_list:
             cmaps.append("cmocean")
             cmaps.append("colorcet")
             cmaps.append("matplotlib")
@@ -159,7 +159,7 @@ class ColorRamp(object):
             if maps == "cmocean":
                 names["cmocean"] = cmap.cm.cmapnames
             if maps == "colorcet":
-                names["colorcet"] = [key for key in cmap.cm_n.keys() if '_r' not in key]
+                names["colorcet"] = [key for key in cmap.cm_n.keys() if "_r" not in key]
             if maps == "matplotlib":
                 cmaps_listed = list(cmap.cm.cmaps_listed)
                 cmaps_datad = list(cmap.cm.datad)
