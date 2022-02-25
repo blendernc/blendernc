@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2022-02-25)
+### Feature
+* Add colorcet colormaps support ([`6bd8d83`](https://github.com/blendernc/blendernc/commit/6bd8d839a6709ba7ffad5a3cd35b6c0d7a764c7b))
+
+### Fix
+* Version of ecmwflibs ([`d98e9db`](https://github.com/blendernc/blendernc/commit/d98e9dbec3efbfd987f8bb9b99eb655d21a6c0a3))
+
 ## v0.4.11 (2021-09-20)
 
 
