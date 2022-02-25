@@ -63,7 +63,7 @@ or install the following requirements using:
 
 .. code-block:: bash
 
-    $BLENDERPY -m pip install numpy cython zarr ecmwflibs cfgrib xarray[complete] cmocean matplotlib dask dask[distributed] scipy netCDF4 toolz pooch psutil
+    $BLENDERPY -m pip install numpy cython zarr ecmwflibs cfgrib xarray cmocean matplotlib colorcet dask dask scipy netCDF4 toolz pooch psutil
 
 Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
