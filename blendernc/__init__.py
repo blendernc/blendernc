@@ -8,7 +8,7 @@ from blendernc.preferences import (
     load_handler_for_startup,
 )
 
-__version__ = "0.4.11"
+__version__ = "0.5.0"
 
 from . import addon_updater_ops
 
