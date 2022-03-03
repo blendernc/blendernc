@@ -100,7 +100,8 @@ def purge_cache(NodeTree, identifier, n=0, scene=None):
 def preference_frame(node, identifier, frame):
     blendernc_dict = node.blendernc_dict[identifier]["Dataset"]
     if len(blendernc_dict.dims.keys()) > 2:
-        t = len(blendernc_dict.time)
+        time_name = [dim for dim in blendernc_dict.dims if "time" in dim]
+        t = len(blendernc_dict[time_name])
     else:
         t = 0
 
