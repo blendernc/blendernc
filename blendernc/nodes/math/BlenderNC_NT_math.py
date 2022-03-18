@@ -30,7 +30,7 @@ ops = {
     "Divide": (lambda x, y: x / y),
     "Logarithm": (lambda x, y: np.log10(x)),
     "SymLog": (lambda x, y: np.sign(x) * np.log10(abs(x))),
-    "Power": (lambda x, y: x ** y),
+    "Power": (lambda x, y: x**y),
     "Greater than": (lambda x, y: x.where(x > y, 1).where(x <= y, 0)),
     "Smaller than": (lambda x, y: x.where(x < y, 1).where(x >= y, 0)),
 }
