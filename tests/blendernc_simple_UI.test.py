@@ -4,6 +4,8 @@ import unittest
 
 import bpy
 
+from blendernc.python_functions import del_cache, is_cached
+
 
 def capture_render_log(func):
     def wrapper(*args, **kwargs):
@@ -20,7 +22,7 @@ def capture_render_log(func):
     return wrapper
 
 
-@capture_render_log
+# @capture_render_log
 def render_image(file, var, res):
     bpy.context.scene.blendernc_file = file
     bpy.context.scene.blendernc_datacube_vars = var
@@ -57,6 +59,9 @@ def render_image(file, var, res):
     blender_render_image(file, var)
     # Test for change in res
     bpy.context.scene.blendernc_resolution = 10
+
+    is_cached(node_tree.name, out.blendernc_dataset_identifier)
+    del_cache(node_tree.name, out.blendernc_dataset_identifier)
 
 
 @capture_render_log
