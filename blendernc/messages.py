@@ -20,7 +20,7 @@ class PrintMessage(object):
                 self.message_contructor, title=self.title, icon=self.icon
             )
         else:
-            message = u"Running in background mode,\n {0}".format(self.message)
+            message = "Running in background mode,\n {0}".format(self.message)
             warnings.warn(message)
 
     def message_contructor(self, wm_self, context):
