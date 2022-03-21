@@ -125,7 +125,7 @@ class Test_simple_render(unittest.TestCase):
         file_exist = os.path.isfile("./{0}_image.png".format(var))
         self.assertTrue(file_exist)
 
-    def test_air_tutorial_data(self):
+    def test_no_selecte_tutorial_data(self):
         datacube = "No datacube"
         var = ""
         with self.assertRaises(TypeError):
