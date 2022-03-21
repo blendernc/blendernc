@@ -133,8 +133,10 @@ class Test_use_nodes(unittest.TestCase):
         node_identifier = math_node[0].blendernc_dataset_identifier
         dataset = math_node[0].blendernc_dict[node_identifier]["Dataset"].adt.values
         mean_value = np.nanmean(dataset // dataset_before)
+        math_node[0].update()
         # Unlink nodes
         math_node[0].inputs[1].unlink(math_node[0].inputs[1].links[0])
+        math_node[0].update()
         self.assertTrue(mean_value == 2.0)
 
 
