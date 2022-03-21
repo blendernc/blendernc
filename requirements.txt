@@ -1,7 +1,6 @@
 appdirs==1.4.4
 asciitree==0.3.3
 attrs==21.2.0
-bottleneck==1.2.1
 certifi==2021.10.8
 cffi==1.15.0
 cftime==1.5.1.1
