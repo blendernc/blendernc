@@ -223,6 +223,20 @@ class Test_use_nodes(unittest.TestCase):
         )
         self.assertTrue(file_exist)
 
+    def test_axis(self):
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        var = "adt"
+        format = os.path.basename(file).split(".")
+        nodes = ["datacubeAxis"]
+        dims_args = {"Select Axis": {"axis_selection": "time"}}
+        render_image(file, var, nodes, node_args=dims_args)
+        file_exist = os.path.isfile(
+            "./{0}_{1}_image_{2}_{3}.png".format(
+                format[0], var, format[-1], "_".join(nodes)
+            )
+        )
+        self.assertTrue(file_exist)
+
     def test_unlink_copy_node(self):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         var = "adt"
