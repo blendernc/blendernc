@@ -20,6 +20,7 @@ BlenderNC requires the following python modules to be installed in Blender's Pyt
     cfgrib
     xarray[complete]
     cmocean
+    colorcet
     matplotlib
     dask
     scipy
