@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.1 (2022-03-30)
+### Fix
+* Add colorcet to installation instructions ([`c3e43f1`](https://github.com/blendernc/blendernc/commit/c3e43f1bbf99b07c509c5e74c0ce588b1e91c9ba))
+
 ## v0.5.0 (2022-02-25)
 ### Feature
 * Add colorcet colormaps support ([`6bd8d83`](https://github.com/blendernc/blendernc/commit/6bd8d839a6709ba7ffad5a3cd35b6c0d7a764c7b))
