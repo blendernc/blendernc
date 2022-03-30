@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blendernc"
-version = "0.5.0"
+version = "0.5.1"
 description = "Blender add-on to import datasets (netCDF, grib, and zarr)"
 authors = ["josuemtzmo <josue.martinezmoreno@anu.edu.au>"]
 license = "MIT"
