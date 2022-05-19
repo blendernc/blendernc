@@ -132,6 +132,34 @@ def preference_animation(scene, t):
     return frame
 
 
+def update_lims(node, context):
+    unique_data_dict = bnc_gutils.get_unique_data_dict(node)
+    gridx = unique_data_dict["Dataset"][node.blendernc_grid_x]
+    gridy = unique_data_dict["Dataset"][node.blendernc_grid_y]
+    if len(gridx.shape) == 2 and len(gridy.shape) == 2:
+        node.blendernc_xgrid_min = gridx[0].min()
+        node.blendernc_xgrid_max = gridx[-1].max()
+        node.blendernc_ygrid_min = gridy[0].min()
+        node.blendernc_ygrid_max = gridy[-1].max()
+    elif len(gridx.shape) == 2 and len(gridy.shape) == 1:
+        node.blendernc_xgrid_min = gridx[0].min()
+        node.blendernc_xgrid_max = gridx[0].max()
+        node.blendernc_ygrid_min = gridy[0].values
+        node.blendernc_ygrid_max = gridy[-1].values
+    elif len(gridx.shape) == 1 and len(gridy.shape) == 2:
+        node.blendernc_xgrid_min = gridx[0].values
+        node.blendernc_xgrid_max = gridx[0].values
+        node.blendernc_ygrid_min = gridy[0].min()
+        node.blendernc_ygrid_max = gridy[-1].max()
+    elif len(gridx.shape) == 1 and len(gridy.shape) == 1:
+        node.blendernc_xgrid_min = gridx[0].values
+        node.blendernc_xgrid_max = gridx[-1].values
+        node.blendernc_ygrid_min = gridy[0].values
+        node.blendernc_ygrid_max = gridy[-1].values
+    else:
+        raise ValueError("Grid can only by 1D, or 2D")
+
+
 def update_range(node, context):
     unique_identifier = node.blendernc_dataset_identifier
     unique_data_dict = bnc_gutils.get_unique_data_dict(node)
