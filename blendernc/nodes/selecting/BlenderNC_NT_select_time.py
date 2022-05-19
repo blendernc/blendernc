@@ -5,10 +5,12 @@ from collections import defaultdict
 import bpy
 
 from blendernc.core.dates import (
+    convert2dt,
     get_item_days,
     get_item_month,
     get_item_time,
     get_item_year,
+    get_items_datetimes,
     update_date,
 )
 from blendernc.core.update_ui import update_datetime_text, update_node_tree
@@ -96,30 +98,22 @@ class BlenderNC_NT_select_time(bpy.types.Node):
         coords = list(dataset.coords)
         if len(coords) >= 3:
             # Dataset is 3D.
-            if "time" in coords:
-                dataset_time = dataset["time"]
-                if "datetime64" in str(dataset_time.dtype):
+            dataset_time = get_items_datetimes(self, context)
+            if convert2dt(dataset_time) is not False:
 
-                    layout.label(text="Date Format:")
-                    row = layout.row(align=True)
+                layout.label(text="Date Format:")
+                row = layout.row(align=True)
 
-                    # split = row.split(factor=0.25,align=True)
-                    # split.prop(self, 'hour',text='')
-                    split = row.split(factor=0.30, align=True)
-                    split.prop(self, "day", text="")
-                    split = split.split(factor=0.40, align=True)
-                    split.prop(self, "month", text="")
-                    split.prop(self, "year", text="")
+                # split = row.split(factor=0.25,align=True)
+                # split.prop(self, 'hour',text='')
+                split = row.split(factor=0.30, align=True)
+                split.prop(self, "day", text="")
+                split = split.split(factor=0.40, align=True)
+                split.prop(self, "month", text="")
+                split.prop(self, "year", text="")
 
-                else:
-                    layout.prop(self, "step", text="")
             else:
-                pass
-                # m_ini = "Dataset coords are"
-                # m_end = ", only 'time' coordinate name is supported."
-                # text_format = (m_ini, coords[0], coords[1], m_end)
-                # text = "{0} ({1}, {2}) {3}".format(**text_format)
-                # self.report({'ERROR'}, text)
+                layout.prop(self, "step", text="")
         else:
             pass
             # m_ini = "Dataset coords are 2D"

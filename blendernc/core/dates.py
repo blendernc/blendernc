@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
+
+import cftime
 import numpy as np
 
 from ..python_functions import build_enum_prop_list, refresh_cache
 from .update_ui import update_value_and_node_tree
+
+
+def get_time_dim(dims):
+    time_dims = [dim for dim in dims if "time" in dim]
+    return time_dims[0]
 
 
 def get_items_datetimes(self, context):
@@ -17,7 +24,7 @@ def get_items_datetimes(self, context):
         # BlenderNC dataset
         dataset = blendernc_dict["Dataset"]
         # BlenderNC times
-        datetimes = dataset["time"]
+        datetimes = dataset[get_time_dim(dataset.dims.keys())]
         return datetimes.values
 
 
@@ -26,10 +33,22 @@ def get_item_time(self, context):
     return build_enum_prop_list(times, start=0)
 
 
+def convert2dt(dates):
+    if "datetime64" in str(dates.dtype):
+        return dates
+    elif isinstance(dates[0], cftime.datetime):
+        return np.array([np.datetime64(t.strftime()) for t in dates])
+    else:
+        return False
+
+
 def get_item_days(self, context):
     datetimes = get_items_datetimes(self, context)
-    if "datetime64" not in str(datetimes.dtype):
+
+    datetimes = convert2dt(datetimes)
+    if datetimes is False:
         return []
+
     if self.selected_time == "":
         selected_time = min(datetimes)
         selected_year = dt2cal(selected_time)[0]  # year
@@ -50,12 +69,9 @@ def get_item_days(self, context):
 
 def days_in_month(datetimes, selected_month, selected_year):
     dataset_days_in_month = []
-    for datetime in datetimes:
-        if (
-            dt2cal(datetime)[1] == selected_month
-            and dt2cal(datetime)[0] == selected_year
-        ):
-            dataset_days_in_month.append(dt2cal(datetime)[2])
+    for datet in datetimes:
+        if dt2cal(datet)[1] == selected_month and dt2cal(datet)[0] == selected_year:
+            dataset_days_in_month.append(dt2cal(datet)[2])
         else:
             break
     return dataset_days_in_month
@@ -63,7 +79,8 @@ def days_in_month(datetimes, selected_month, selected_year):
 
 def get_item_month(self, context):
     datetimes = get_items_datetimes(self, context)
-    if "datetime64" not in str(datetimes.dtype):
+    datetimes = convert2dt(datetimes)
+    if datetimes is False:
         return []
     if self.selected_time == "":
         selected_time = min(datetimes)
@@ -84,7 +101,12 @@ def get_item_month(self, context):
 
 def get_item_year(self, context):
     datetimes = get_items_datetimes(self, context)
-    dataset_years = np.unique(dt2cal(datetimes)[:, 0])
+    datetimes = convert2dt(datetimes)
+    if datetimes is False:
+        return []
+    dataset_years = [
+        "{0:04}".format(year) for year in np.unique(dt2cal(datetimes)[:, 0])
+    ]
     return build_enum_prop_list(dataset_years, start=0)
 
 
@@ -126,7 +148,6 @@ def dt2cal(dt):
         calendar array with last axis representing year, month, day, hour,
         minute, second, microsecond
     """
-
     # allocate output
     out = np.empty(dt.shape + (7,), dtype="u4")
     # decompose calendar floors

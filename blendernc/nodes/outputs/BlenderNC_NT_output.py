@@ -143,7 +143,7 @@ class BlenderNC_NT_output(bpy.types.Node):
     # Explicit user label overrides this,
     # but here we can define a label dynamically
     def draw_label(self):
-        return "Image Output"
+        return "Image Output" + " "
 
     @NodesDecorators.node_connections
     def update(self):

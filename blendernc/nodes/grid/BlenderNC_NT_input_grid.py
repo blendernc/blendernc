@@ -4,8 +4,9 @@ from collections import defaultdict
 
 import bpy
 
+from blendernc.core.update_ui import update_lims
 from blendernc.decorators import NodesDecorators
-from blendernc.get_utils import get_new_identifier, get_var
+from blendernc.get_utils import get_dims, get_new_identifier, get_var
 
 
 def get_possible_grid(node, context):
@@ -13,8 +14,11 @@ def get_possible_grid(node, context):
     if not datacubefile or "Dataset" not in node.persistent_dict.keys():
         return []
     datacubedata = node.persistent_dict["Dataset"]
-    items = get_var(datacubedata)
-    return items
+    items = get_var(
+        datacubedata, str_filter=["x", "y", "z", "time", "lat", "lon", "depth"]
+    )
+    dims = get_dims(datacubedata, start_c=len(items) - 1)
+    return items + dims
 
 
 class BlenderNC_NT_input_grid(bpy.types.Node):
@@ -45,6 +49,23 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     )
     """An instance of the original EnumProperty."""
 
+    change_axeslim: bpy.props.BoolProperty(
+        name="Change plot limits", default=False, update=update_lims
+    )
+    """An instance of the original BoolProperty."""
+
+    blendernc_xgrid_max: bpy.props.FloatProperty(name="max", default=0)
+    """An instance of the original FloatProperty."""
+
+    blendernc_xgrid_min: bpy.props.FloatProperty(name="min", default=0)
+    """An instance of the original FloatProperty."""
+
+    blendernc_ygrid_max: bpy.props.FloatProperty(name="max", default=0)
+    """An instance of the original FloatProperty."""
+
+    blendernc_ygrid_min: bpy.props.FloatProperty(name="min", default=0)
+    """An instance of the original FloatProperty."""
+
     # Dataset requirements
     blendernc_dataset_identifier: bpy.props.StringProperty()
     """An instance of the original StringProperty."""
@@ -55,6 +76,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     # === Optional Functions ===
     # Initialization function, called when a new node is created.
     def init(self, context):
+        self.width = 200
         self.inputs.new("bNCstringSocket", "Path")
         self.outputs.new("bNCdatacubeSocket", "Grid")
         self.blendernc_dataset_identifier = get_new_identifier(self) + "_g"
@@ -73,8 +95,19 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
         layout.label(text="Select grid:")
         layout.label(text="X grid:")
         layout.prop(self, "blendernc_grid_x", text="")
+        if self.change_axeslim:
+            layout.label(text="X lims:")
+            row = layout.row(align=True)
+            row.prop(self, "blendernc_xgrid_min", text="min")
+            row.prop(self, "blendernc_xgrid_max", text="max")
         layout.label(text="Y grid:")
         layout.prop(self, "blendernc_grid_y", text="")
+        if self.change_axeslim:
+            layout.label(text="Y lims:")
+            row = layout.row(align=True)
+            row.prop(self, "blendernc_ygrid_min", text="min")
+            row.prop(self, "blendernc_ygrid_max", text="max")
+        layout.prop(self, "change_axeslim")
 
     # Detail buttons in the sidebar.
     # If this function is not defined,
@@ -92,8 +125,8 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
     def update(self):
         if self.persistent_dict != "":
             self.persistent_dict = self.blendernc_dict.copy()
-
         unique_identifier = self.blendernc_dataset_identifier
+
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
         dataset = unique_data_dict_node["Dataset"]
         if self.blendernc_grid_x and self.blendernc_grid_y:

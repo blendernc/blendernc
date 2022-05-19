@@ -12,7 +12,10 @@ def update_all_images(scene):
 
     operator = bpy.ops.BlenderNC.datacube2img
     for node in nodes:
-        if not node.update_on_frame_change:
+        not_update = not node.update_on_frame_change
+        not_identif = not node.blendernc_dataset_identifier
+        not_dict = node.blendernc_dataset_identifier not in node.blendernc_dict
+        if not_update or not_identif or not_dict:
             continue
 
         frame = scene.frame_current

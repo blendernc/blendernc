@@ -62,9 +62,36 @@ def get_new_id_mult_outputs(output_links, node, node_parent):
     return unique_identifier, new_identifier
 
 
-def get_var(datacubedata):
+def filter_2_string_lists(list, str_filter):
+    tmp_list = []
+    for strfit in str_filter:
+        for item in list:
+            if strfit in item.lower() and "" in item.lower().split(strfit):
+                tmp_list.append(varna)
+
+
+def get_var(datacubedata, str_filter=None):
+    """
+    get_var _summary_
+
+    Parameters
+    ----------
+    datacubedata : _type_
+        _description_
+    str_filter : List, optional
+        _description_, by default None
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     dimensions = sorted(list(datacubedata.coords.dims.keys()))
     variables = sorted(list(datacubedata.variables.keys() - dimensions))
+
+    if str_filter is not None:
+        variables = filter_2_string_lists(variables, str_filter)
+
     if "long_name" in datacubedata[variables[0]].attrs:
         long_name_list = [
             datacubedata[var].attrs["long_name"]
@@ -77,7 +104,6 @@ def get_var(datacubedata):
         )
     else:
         var_names = bnc_pyfunc.build_enum_prop_list(variables, "DISK_DRIVE")
-
     return bnc_pyfunc.select_item() + [None] + var_names
 
 
@@ -125,9 +151,12 @@ def get_units_data(node, node_tree):
     return unit
 
 
-def get_dims(datacubedata, var):
-    dimensions = list(datacubedata[var].coords.dims)
-    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=0)
+def get_dims(datacubedata, var=None, start_c=0):
+    if var is None:
+        dimensions = list(datacubedata.coords.dims)
+    else:
+        dimensions = list(datacubedata[var].coords.dims)
+    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=start_c)
     return dim_names
 
 
