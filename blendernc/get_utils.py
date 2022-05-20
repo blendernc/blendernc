@@ -67,7 +67,8 @@ def filter_2_string_lists(list, str_filter):
     for strfit in str_filter:
         for item in list:
             if strfit in item.lower() and "" in item.lower().split(strfit):
-                tmp_list.append(varna)
+                tmp_list.append(item)
+    return tmp_list
 
 
 def get_var(datacubedata, str_filter=None):
