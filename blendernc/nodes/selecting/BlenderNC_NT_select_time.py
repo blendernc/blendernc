@@ -11,6 +11,7 @@ from blendernc.core.dates import (
     get_item_time,
     get_item_year,
     get_items_datetimes,
+    get_time_dim,
     update_date,
 )
 from blendernc.core.update_ui import update_datetime_text, update_node_tree
@@ -138,15 +139,16 @@ class BlenderNC_NT_select_time(bpy.types.Node):
         unique_data_dict_node = self.blendernc_dict[unique_identifier]
         dataset = unique_data_dict_node["Dataset"]
         node_tree = self.rna_type.id_data.name
+        time_dim = get_time_dim(dataset.dims.keys())
         if self.day and self.month and self.year and self.selected_time:
             unique_data_dict_node["Dataset"] = dataset.sel(
-                time=self.selected_time
-            ).drop("time")
+                {time_dim: str(self.selected_time)}
+            ).drop(time_dim)
             update_datetime_text(self, self.name, node_tree, 0, self.selected_time)
         elif self.selected_time and self.selected_time == self.step:
             unique_data_dict_node["Dataset"] = dataset.isel(
-                time=int(self.selected_time)
-            ).drop("time")
+                {time_dim: int(self.selected_time)}
+            ).drop(time_dim)
             update_datetime_text(self, self.name, node_tree, 0, self.selected_time)
         else:
             # TODO Add extra conditions to avoid issues if reusing a

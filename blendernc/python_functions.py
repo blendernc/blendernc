@@ -112,8 +112,9 @@ def preference_frame(node, identifier, frame):
 
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.datacube_cache:
-        cached_nodetree = bpy.context.scene.datacube_cache[NodeTree][identifier]
-        cached_nodetree.pop(frame, None)
+        cache = bpy.context.scene.datacube_cache[NodeTree]
+        identifiers = [key for key in cache.keys() if identifier in key]
+        [cache[identifier].pop(frame, None) for identifier in identifiers]
 
 
 def is_cached(NodeTree, identifier):
@@ -264,7 +265,6 @@ def load_frame(node, frame, grid_node=None):
     # the performance. May be really useful with 3D and 4D dataset.
     if grid_node:
         normalized_data = normalize_data_w_grid(node, frame_data, grid_node, vmax, vmin)
-        print(normalized_data.max(), normalized_data.min())
     else:
         normalized_data = normalize_data(frame_data, vmax, vmin)
     # Store in cache
