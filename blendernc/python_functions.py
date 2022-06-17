@@ -189,8 +189,8 @@ def normalize_data_w_grid(node, data, grid_node, vmax, vmin):
         xlim = sorted((grid_node.blendernc_xgrid_min, grid_node.blendernc_xgrid_max))
         ylim = sorted((grid_node.blendernc_ygrid_min, grid_node.blendernc_ygrid_max))
     else:
-        xlim = [min(x_grid_data), max(x_grid_data)]
-        ylim = [min(y_grid_data), max(y_grid_data)]
+        xlim = [x_grid_data.min(), x_grid_data.max()]
+        ylim = [y_grid_data.min(), y_grid_data.max()]
 
     norm_data = plot_using_grid(
         x_grid_data, y_grid_data, data, vmin, vmax, xlim=xlim, ylim=ylim

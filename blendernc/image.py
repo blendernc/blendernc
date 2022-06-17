@@ -58,7 +58,7 @@ def array_to_image(array, image_float=False):
 
 
 # Definitions
-def normalize_data(data, max, min):
+def normalize_data(data, max=None, min=None):
     """ """
     # Find ranges and normalize in the interval [0,1]
     if min is None:

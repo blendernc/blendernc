@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bpy
+import numpy as np
 
 import blendernc.core.update_ui as bnc_updateUI
 
@@ -135,10 +136,10 @@ def get_var_data(node):
     # Get the data of the selected variable
     # Remove Nans
     # TODO: Add node to preserve NANs
-    # if node.keep_nan:
-    data = datacubedata[var_name]
-    # else:
-    # data = datacubedata[var_name].where(np.isfinite(datacubedata[var_name]), 0)
+    if not node.keep_nan:
+        data = datacubedata[var_name]
+    else:
+        data = datacubedata[var_name].where(np.isfinite(datacubedata[var_name]), 0)
     return data
 
 

@@ -15,7 +15,8 @@ def get_possible_grid(node, context):
         return []
     datacubedata = node.persistent_dict["Dataset"]
     items = get_var(
-        datacubedata, str_filter=["x", "y", "z", "time", "lat", "lon", "depth"]
+        datacubedata,
+        str_filter=["x", "y", "z", "time", "lat", "lon", "depth", "geolon", "geolat"],
     )
     dims = get_dims(datacubedata, start_c=len(items) - 1)
     return items + dims
