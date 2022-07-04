@@ -12,7 +12,7 @@ repos:
     hooks:
     - id: trailing-whitespace
 -   repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
     - id: black
 -   repo: https://github.com/PyCQA/isort
@@ -38,7 +38,7 @@ repos:
       stages: [commit-msg]
 
 -   repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.27.1
+    rev: v2.28.0
     hooks:
     - id: commitizen
       stages: [commit-msg]
