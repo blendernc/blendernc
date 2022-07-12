@@ -167,12 +167,12 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
     """An instance of the original EnumProperty."""
 
     blendernc_use_dask: bpy.props.EnumProperty(
-        items=Boolean(), name="Use dask Client:", update=update_client, default=1
+        items=Boolean(), name="Use dask Client:", update=update_client, default="False"
     )
     """An instance of the original BoolProperty."""
 
     blendernc_autoreload_datasets: bpy.props.EnumProperty(
-        items=Boolean(), name="Auto-reload datasets at opening file:", default=2
+        items=Boolean(), name="Auto-reload datasets at opening file:", default="True"
     )
     """An instance of the original BoolProperty."""
 
