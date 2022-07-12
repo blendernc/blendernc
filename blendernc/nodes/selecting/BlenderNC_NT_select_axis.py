@@ -3,6 +3,7 @@
 from collections import defaultdict
 
 import bpy
+import numpy as np
 
 from blendernc.core.update_ui import update_node_tree, update_value_and_node_tree
 from blendernc.decorators import DrawDecorators, NodesDecorators
@@ -73,10 +74,10 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
             layout.prop(self, "axes", text="")
         if self.axes:
             layout.label(text="Select within range:")
-            min_val_axes = dataset[self.axes][0].values
-            max_val_axes = dataset[self.axes][-1].values
+            min_val_axes = np.array(dataset[self.axes][0].values, dtype=float)
+            max_val_axes = np.array(dataset[self.axes][-1].values, dtype=float)
 
-            layout.label(text="[{0:.2f} - {1:.2f}]".format(min_val_axes, max_val_axes))
+            layout.label(text="[{0} - {1}]".format(min_val_axes, max_val_axes))
             layout.prop(self, "axis_selection", text="")
             layout.label(text="INFO: nearest value", icon="INFO")
             layout.label(text="will be selected")
@@ -99,7 +100,10 @@ class BlenderNC_NT_select_axis(bpy.types.Node):
         node_tree = self.rna_type.id_data.name
         if self.axes:
             dtype = dataset[self.axes].dtype
-            if dtype != int:
+            if dtype == "<M8[ns]":
+                method = "nearest"
+                val_select = np.array(int(self.axis_selection), dtype="M8[ns]")
+            elif dtype != int:
                 method = "nearest"
                 val_select = self.axis_selection
             else:

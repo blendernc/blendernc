@@ -228,7 +228,7 @@ class Test_use_nodes(unittest.TestCase):
         var = "adt"
         format = os.path.basename(file).split(".")
         nodes = ["datacubeAxis"]
-        dims_args = {"Select Axis": {"axis_selection": "time"}}
+        dims_args = {"Select Axis": {"axes": "time"}}
         render_image(file, var, nodes, node_args=dims_args)
         file_exist = os.path.isfile(
             "./{0}_{1}_image_{2}_{3}.png".format(
