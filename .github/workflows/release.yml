@@ -47,7 +47,7 @@ jobs:
             # constuct blender string version format.
             blinfo_old=$(echo $old_ver | tail -1 | awk -F. '{print $1", "$2", "$3}')
             blinfo=$(echo $new_ver | tail -1 | awk -F. '{print $1", "$2", "$3}')
-            echo $blinfo_old "-->" blinfo
+            echo $blinfo_old "-->" $blinfo
             # Replace version
             awk -v old_version="$blinfo_old" -v new_version="$blinfo" '{sub('old_version','new_version')}1' ./blendernc/__init__.py > ./blendernc/__init__.py_tmp
             # Rename temporal file
