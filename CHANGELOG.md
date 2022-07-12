@@ -2,6 +2,22 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2022-07-12)
+### Feature
+* Fix time axis selection and fix label for node tests ([`4c909c5`](https://github.com/blendernc/blendernc/commit/4c909c59732af617f9b077788b09610fa3e5076d))
+* Add preference, fix date selection of cftime ([`3a82746`](https://github.com/blendernc/blendernc/commit/3a82746b8b4fde50a13a3a339e125200d3c65ee5))
+* Allow nodes to be automatically load by only updating one node, smaller issues have been solved, particularly with the implementation of time selection and grid import ([`1681959`](https://github.com/blendernc/blendernc/commit/16819596597c1a5a97bb43df645e7ad5c3de5e91))
+
+### Fix
+* Fix backwards compatibility with blender 2.83 and blendernc preferece ([`618b54c`](https://github.com/blendernc/blendernc/commit/618b54c1d1adbd63b6e55ef108ed291a500f1b86))
+* Update precommit black rev ([`36ff67f`](https://github.com/blendernc/blendernc/commit/36ff67fb3351fabfe4dd7f2ac02598ca0afc5d28))
+* Remove bottleneck dependencies to remove issue of installation ([`99032ca`](https://github.com/blendernc/blendernc/commit/99032ca6b5772312b9179b8c9e00468a225632da))
+* Add support for coordname including time for preference frame computation ([`a6ae7aa`](https://github.com/blendernc/blendernc/commit/a6ae7aab625ef460d10b811c4725921630cac48f))
+* Solve security vulnerabilities in dependencies (Pillow) ([`d19fa33`](https://github.com/blendernc/blendernc/commit/d19fa33016381ecf704d56043508c1bc7f9bf479))
+* Fix test and using multiple outputs for one single math node ([`11b58d2`](https://github.com/blendernc/blendernc/commit/11b58d2acab371d4bdc6a3e15ee4bbcbf2700334))
+* Solve bugs and add support of multiple outputs ([`a4a3124`](https://github.com/blendernc/blendernc/commit/a4a31246a4e1039d8157ff376889ea540fe5a9d3))
+* Add full suport of frame selection & fix other bugs ([`d91000e`](https://github.com/blendernc/blendernc/commit/d91000e3db0e61083545e2dc03832b43c5754d77))
+
 ## v0.5.1 (2022-03-30)
 ### Fix
 * Add colorcet to installation instructions ([`c3e43f1`](https://github.com/blendernc/blendernc/commit/c3e43f1bbf99b07c509c5e74c0ce588b1e91c9ba))
