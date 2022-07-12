@@ -5,7 +5,7 @@ from collections import defaultdict
 import bpy
 import nodeitems_utils
 
-from .handlers import update_all_images
+from .handlers import load_handler, update_all_images
 from .nodes.cmaps.cmapsnode import (
     BLENDERNC_CMAPS_NT_node,
     BlenderNC_MT_avail_colormaps,
@@ -129,7 +129,7 @@ def registerBlenderNC():
     # Register handlers
     handlers.frame_change_pre.append(bpy.types.Scene.update_all_images)
     handlers.render_pre.append(bpy.types.Scene.update_all_images)
-
+    handlers.load_post.append(load_handler)
     # Register node categories
     nodeitems_utils.register_node_categories(node_tree_name, node_categories)
 
@@ -146,6 +146,7 @@ def unregisterBlenderNC():
     # Delete from handlers
     handlers.frame_change_pre.remove(update_all_images)
     handlers.render_pre.remove(update_all_images)
+    handlers.load_post.remove(load_handler)
 
     nodeitems_utils.unregister_node_categories(node_tree_name)
 

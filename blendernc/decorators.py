@@ -132,7 +132,9 @@ class NodesDecorators(object):
         """
         # TODO: Add function to check for multiple connectgions
         inputs_links = bnc_gutils.get_input_links(node)
-        if node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
+        if not inputs_links:
+            return
+        elif node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
             return True
         elif inputs_links.from_node.bl_idname == "datacubePath":
             cls.get_blendernc_file(node)
@@ -169,24 +171,70 @@ class NodesDecorators(object):
     def get_data_from_node(node):
         inputs_links = bnc_gutils.get_input_links(node)
         node_parent = inputs_links.from_node
-        node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
-        if (
-            node_parent.blendernc_dataset_identifier
-            in node_parent.blendernc_dict.keys()
-        ):
-            dataset = node_parent.blendernc_dict[
-                node.blendernc_dataset_identifier
+        output_links = bnc_gutils.get_output_links(node_parent)
+        if len(output_links) == 1:
+            node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
+            if (
+                node_parent.blendernc_dataset_identifier
+                in node_parent.blendernc_dict.keys()
+            ):
+                dataset = node_parent.blendernc_dict[
+                    node.blendernc_dataset_identifier
+                ].copy()
+                node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
+        else:
+            unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
+                output_links, node, node_parent
+            )
+            node.blendernc_dataset_identifier = new_identifier
+            node_parent_dict = node_parent.blendernc_dict
+            node.blendernc_dict[new_identifier] = node_parent_dict[
+                unique_identifier
             ].copy()
-            node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
+
+    @classmethod
+    def force_init_load(cls, node):
+        node_walked = [node]
+        identifier = node.blendernc_dataset_identifier
+
+        # Trick to reload data when starting blender
+        blendernc_dict = node.blendernc_dict
+        while identifier not in blendernc_dict.keys():
+            cls.force_grid_load(node)
+            inputs_links = bnc_gutils.get_input_links(node_walked[-1])
+            if node_walked[-1].bl_idname in ["datacubePath", "Datacube_tutorial"]:
+                return False
+            elif node_walked[-1].bl_idname != "datacubeNode":
+                identifier = node_walked[-1].blendernc_dataset_identifier
+                node_walked.append(inputs_links.from_node)
+                continue
+            else:
+                cls.get_dataset(node_walked[-1])
+                node_walked[-1].blendernc_datacube_vars = node_walked[
+                    -1
+                ].blendernc_datacube_vars
+                # Copy from input node recursively
+                for no in node_walked[::-1][1:]:
+                    cls.get_data_from_node(no)
+                    no.update()
+                return False
+
+    @classmethod
+    def force_grid_load(cls, node):
+        nodetree = node.rna_type.id_data
+        grid_nodes = [
+            nodes for nodes in nodetree.nodes if nodes.bl_idname == "datacubeInputGrid"
+        ]
+        [grid_node.update() for grid_node in grid_nodes]
 
     @classmethod
     def dataset_has_identifier(cls, node):
         identifier = node.blendernc_dataset_identifier
-        blendernc_dict = node.blendernc_dict
+        cls.force_init_load(node)
         # If identifier exist a file has been selected.
-        if identifier in blendernc_dict.keys():
+        if identifier in node.blendernc_dict.keys():
             # If var is not selected disconnect and return update == False
-            if "selected_var" not in blendernc_dict[identifier].keys():
+            if "selected_var" not in node.blendernc_dict[identifier].keys():
                 # Force definition of selected variable.
                 PrintMessage(unselected_variable, title="Error", icon="ERROR")
                 cls.unlink_input(node)
@@ -230,6 +278,12 @@ class NodesDecorators(object):
     def select_grid_dataset(cls, node):
         inputs_links = bnc_gutils.get_input_links(node)
         identifier = node.blendernc_dataset_identifier
+        gridstrnotnovar = (
+            node.blendernc_grid_x != "No var" and node.blendernc_grid_y != "No var"
+        )
+        gridstrnotempty = node.blendernc_grid_x != "" and node.blendernc_grid_y != ""
+        blenderdichasid = identifier in node.blendernc_dict
+
         if node.blendernc_file != inputs_links.from_socket.text:
             node.blendernc_file = inputs_links.from_socket.text
             bpy.ops.blendernc.datacubeload(
@@ -237,14 +291,9 @@ class NodesDecorators(object):
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
             )
-            # Duplicate  variables to extract variables
-            node.persistent_dict["Dataset"] = node.blendernc_dict[identifier][
-                "Dataset"
-            ].copy()
-            return False
-        elif (
-            node.blendernc_grid_x != "No var" and node.blendernc_grid_y != "No var"
-        ) and (node.blendernc_grid_x != "" and node.blendernc_grid_y != ""):
+        # TODO use not blenderdichasid to duplicate the
+        # datacube rather than reloading again
+        elif gridstrnotnovar and gridstrnotempty and blenderdichasid:
             return True
         else:
             bpy.ops.blendernc.datacubeload(
@@ -252,11 +301,11 @@ class NodesDecorators(object):
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
             )
-            # Duplicate  variables to extract variables
-            node.persistent_dict["Dataset"] = node.blendernc_dict[identifier][
-                "Dataset"
-            ].copy()
-            return False
+        # Duplicate  variables to extract variables
+        node.persistent_dict["Dataset"] = node.blendernc_dict[identifier][
+            "Dataset"
+        ].copy()
+        return False
 
     @staticmethod
     def get_blendernc_file(node):
@@ -264,15 +313,6 @@ class NodesDecorators(object):
         inputs_links = bnc_gutils.get_input_links(node)
         if not node.blendernc_file:
             node.blendernc_file = inputs_links.from_node.blendernc_file
-
-    @staticmethod
-    def output_connections(node):
-        """
-        Test all output connections.
-        """
-        pass
-        # outputs = node.outputs[0]
-        # outputs_links = outputs.links
 
     @staticmethod
     def dummy_update(node):
@@ -299,7 +339,18 @@ class DrawDecorators(object):
                 and node.inputs[0].links
                 and node.blendernc_dataset_identifier
             ):
-                blendernc_dict = node.inputs[0].links[0].from_node.blendernc_dict
+                node_parent = node.inputs[0].links[0].from_node
+                blendernc_dict = node_parent.blendernc_dict
+                output_links = bnc_gutils.get_output_links(node_parent)
+                unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
+                    output_links, node, node_parent
+                )
+                # TODO: Add condition to fix issue here
+                if unique_identifier in blendernc_dict.keys():
+                    blendernc_dict[new_identifier] = blendernc_dict[
+                        unique_identifier
+                    ].copy()
+
                 if blendernc_dict:
                     # Return provided function to compute its contents.
                     func_globals["blendernc_dict"] = blendernc_dict
@@ -355,8 +406,9 @@ class MathDecorator(object):
             unique_identifier = self.blendernc_dataset_identifier
             unique_data_dict_node = self.blendernc_dict[unique_identifier]
             parent_node = self.inputs[0].links[0].from_node
+            parent_identifier = parent_node.blendernc_dataset_identifier
             # Extract parent dataset
-            dataset_parent = parent_node.blendernc_dict[unique_identifier][
+            dataset_parent = parent_node.blendernc_dict[parent_identifier][
                 "Dataset"
             ].copy()
             # Computation name list

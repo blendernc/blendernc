@@ -8,11 +8,15 @@ from blendernc.get_utils import get_blendernc_nodetrees
 from blendernc.UI_operators import findCommonName
 
 
+def change_file(file):
+    bpy.ops.blendernc.var(file_path=file)
+
+
 class Test_operators(unittest.TestCase):
     def test_compute_range(self):
         # Node tree exists,
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
+        change_file(file)
         blendernc_nodes = get_blendernc_nodetrees()
         node_tree = blendernc_nodes[0]
         inp = node_tree.nodes.get("datacube Input")
@@ -30,8 +34,12 @@ class Test_operators(unittest.TestCase):
 
     def test_ui_file(self):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
-        # self.assertRaises(ExpectedException, test_no_selected_file, nodes)
+        change_file(file)
+
+    def test_ui_no_existing_file(self):
+        file = os.path.abspath("./dataset/abc.nc")
+        with self.assertRaises(RuntimeError):
+            change_file(file)
 
     def test_ui_no_file(self):
         bpy.ops.blendernc.var(file_path="")
@@ -43,13 +51,13 @@ class Test_operators(unittest.TestCase):
     def test_ui_remove_cache_nodetree(self):
         # Node tree exists,
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
+        change_file(file)
         bpy.ops.blendernc.purge_all()
 
     def test_ui_remove_cache_with_cache(self):
         # Node tree exists,
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
+        change_file(file)
         blendernc_nodes = get_blendernc_nodetrees()
         inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
@@ -59,7 +67,7 @@ class Test_operators(unittest.TestCase):
     def test_ui_remove_cache_with_cache_no_image(self):
         # Node tree exists,
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
+        change_file(file)
         blendernc_nodes = get_blendernc_nodetrees()
         inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"
@@ -74,7 +82,7 @@ class Test_operators(unittest.TestCase):
     def test_ui_remove_cache_with_cache_animate(self):
         # Node tree exists,
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
-        bpy.ops.blendernc.var(file_path=file)
+        change_file(file)
         blendernc_nodes = get_blendernc_nodetrees()
         inp = blendernc_nodes[0].nodes.get("datacube Input")
         inp.blendernc_datacube_vars = "adt"

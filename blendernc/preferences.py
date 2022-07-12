@@ -146,9 +146,9 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         workspace = ["NONE", "ONLY CREATE WORKSPACE", "INITIATE WITH WORKSPACE"]
         return build_enum_prop_list(workspace)
 
-    def item_dask():
-        dask = ["False", "True"]
-        return build_enum_prop_list(dask)
+    def Boolean():
+        boolean = ["False", "True"]
+        return build_enum_prop_list(boolean)
 
     blendernc_workspace: bpy.props.EnumProperty(
         items=item_workspace_option(),
@@ -167,9 +167,12 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
     """An instance of the original EnumProperty."""
 
     blendernc_use_dask: bpy.props.EnumProperty(
-        items=item_dask(),
-        name="Use dask Client:",
-        update=update_client,
+        items=Boolean(), name="Use dask Client:", update=update_client, default="False"
+    )
+    """An instance of the original BoolProperty."""
+
+    blendernc_autoreload_datasets: bpy.props.EnumProperty(
+        items=Boolean(), name="Auto-reload datasets at opening file:", default="True"
     )
     """An instance of the original BoolProperty."""
 
@@ -226,6 +229,9 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         row = layout.row()
         row.label(text="Use dask Client:")
         row.prop(self, "blendernc_use_dask", expand=True)
+        row = layout.row()
+        row.label(text="Auto-reload datasets:")
+        row.prop(self, "blendernc_autoreload_datasets", expand=True)
         row = layout.row()
         row.label(text="Useful links:")
         documentation = "https://blendernc.readthedocs.io/en/latest/"
