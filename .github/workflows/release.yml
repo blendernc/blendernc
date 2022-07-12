@@ -45,8 +45,9 @@ jobs:
             #Get new version
             new_ver=$(semantic-release print-version)
             # constuct blender string version format.
-            blinfo_old=$(echo $old_ver | tail -1 | awk -F. '{print $1", "$2", "$3}')
-            blinfo=$(echo $new_ver | tail -1 | awk -F. '{print $1", "$2", "$3}')
+            # This line does not work in Mac OS.
+            blinfo_old=$(echo $old_ver | awk 'NF>1{print $NF}' | awk -F. '{print $1", "$2", "$3}')
+            blinfo=$(echo $new_ver | awk 'NF>1{print $NF}' | awk -F. '{print $1", "$2", "$3}')
             echo $new_ver
             echo $old_ver
             echo $blinfo_old "-->" $blinfo
