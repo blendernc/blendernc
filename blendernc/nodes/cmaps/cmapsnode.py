@@ -226,7 +226,10 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     # Copy
     def copy(self, node):
         create_colormap_nodetree(self)
-        self.colormaps = default_colorramp()
+        # TODO: There seems to be a bug when copying this node... the node
+        # loses its inputs and outputs
+        # self.outputs.remove(self.outputs[0])
+        self.colormaps = self.colormaps
         update_operator(self)
         print("Copying from node ", node)
 
