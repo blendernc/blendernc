@@ -7,8 +7,11 @@ import bpy
 # TODO Replace all messages with print_message.
 # Possibly shift to class when blendernc is initiated. and move to logging.
 class PrintMessage(object):
-    def __init__(self, text, title, icon, edit_text=""):
-        self.message = text(edit_text)
+    def __init__(self, text, title, icon, edit_text=None):
+        if edit_text is None:
+            self.message = text()
+        else:
+            self.message = text(edit_text)
         self.title = title
         self.icon = icon
 
