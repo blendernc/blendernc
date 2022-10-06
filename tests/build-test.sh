@@ -8,6 +8,13 @@ $BLENDERPY -m ensurepip --default-pip
 
 $BLENDERPY -m pip install -r requirements.txt --progress-bar off
 
+# The following line works since the docker container has the "Python.h" file
+# required by dependencies of distributed and zarr.
+# TODO: Documentation on how to fully take advantages of both of these
+#       libraries.
+$BLENDERPY -m pip install distributed zarr
+$BLENDERPY -m pip install dask[complete] xarray[complete]
+
 $BLENDERPY -m pip install coverage --progress-bar off
 
 $BLENDERPY -m pip install requests --progress-bar off

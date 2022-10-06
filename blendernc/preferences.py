@@ -2,7 +2,7 @@
 import os
 
 import bpy
-import dask.distributed as ddist
+import pkg_resources
 from bpy.app.handlers import persistent
 
 from blendernc.messages import PrintMessage, client_exists, load_after_restart
@@ -10,6 +10,11 @@ from blendernc.python_functions import build_enum_prop_list
 
 # Import auto updater
 from . import addon_updater_ops
+
+installed = {pkg.key for pkg in pkg_resources.working_set}
+
+if "distributed" in installed:
+    import dask.distributed as ddist
 
 
 def get_addon_preference():
@@ -228,7 +233,10 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         row.prop(self, "blendernc_workspace_shading", expand=True)
         row = layout.row()
         row.label(text="Use dask Client:")
-        row.prop(self, "blendernc_use_dask", expand=True)
+        if "distributed" in installed:
+            row.prop(self, "blendernc_use_dask", expand=True)
+        else:
+            row.label(text="dask.distributed is not installed.", icon="ERROR")
         row = layout.row()
         row.label(text="Auto-reload datasets:")
         row.prop(self, "blendernc_autoreload_datasets", expand=True)
