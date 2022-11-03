@@ -1,10 +1,19 @@
 #!/bin/sh
 
+apt update
+
 apt install libglib2.0-bin --yes
 
 $BLENDERPY -m ensurepip --default-pip
 
 $BLENDERPY -m pip install -r requirements.txt --progress-bar off
+
+# The following line works since the docker container has the "Python.h" file
+# required by dependencies of distributed and zarr.
+# TODO: Documentation on how to fully take advantages of both of these
+#       libraries.
+$BLENDERPY -m pip install distributed zarr
+$BLENDERPY -m pip install dask[complete] xarray[complete]
 
 $BLENDERPY -m pip install coverage --progress-bar off
 
@@ -26,6 +35,8 @@ echo -e "print(cov)" >> sitecustomize.py
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
 echo $PYTHONPATH
+
+$BLENDERPY -m eccodes selfcheck
 
 $BLENDERPY run_tests.py
 test_exit=$?

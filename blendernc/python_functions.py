@@ -6,6 +6,7 @@
 
 # import gc
 import glob
+import importlib
 import os
 
 # TODO: If datacube file has been selected already create a copy of the TreeNode
@@ -13,7 +14,11 @@ import bpy
 
 # Other imports
 import numpy as np
-import xarray
+
+if importlib.find_loader("xarray"):
+    import xarray
+# else:
+#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
 
 import blendernc.core.update_ui as bnc_updateUI
 
@@ -87,7 +92,7 @@ def purge_cache(NodeTree, identifier, n=0, scene=None):
             print("Removed frame: {0}".format(frames_loaded[0]))
             from blendernc.core.sys_utils import get_size
 
-            cache_dict_size = get_size.size(scene.datacube_cache) / (1024 ** 2)  # Mb
+            cache_dict_size = get_size.size(scene.datacube_cache) / (1024**2)  # Mb
             message = "\nDynamic cache:"
             message += "\nTotal dict cache - {0:.2f} Mb"
             message += "\nAvailable percentage - {1:.2f} %"
@@ -97,10 +102,24 @@ def purge_cache(NodeTree, identifier, n=0, scene=None):
     # gc.collect()
 
 
+def preference_frame(node, identifier, frame):
+    blendernc_dict = node.blendernc_dict[identifier]["Dataset"]
+    if len(blendernc_dict.dims.keys()) > 2:
+        time_name = [dim for dim in blendernc_dict.dims if "time" in dim]
+        t = len(blendernc_dict[time_name])
+    else:
+        t = 0
+
+    if frame >= t:
+        frame = bnc_updateUI.preference_animation(bpy.context.scene, t)
+    return frame
+
+
 def refresh_cache(NodeTree, identifier, frame):
     if bpy.context.scene.datacube_cache:
-        cached_nodetree = bpy.context.scene.datacube_cache[NodeTree][identifier]
-        cached_nodetree.pop(frame, None)
+        cache = bpy.context.scene.datacube_cache[NodeTree]
+        identifiers = [key for key in cache.keys() if identifier in key]
+        [cache[identifier].pop(frame, None) for identifier in identifiers]
 
 
 def is_cached(NodeTree, identifier):
@@ -143,7 +162,7 @@ def dict_update(node, context):
         bnc_updateUI.update_value_and_node_tree(node, context)
 
 
-def normalize_data_w_grid(node, data, grid_node):
+def normalize_data_w_grid(node, data, grid_node, vmax, vmin):
     node_tree = node.rna_type.id_data.name
     unique_data_dict = bnc_gutils.get_unique_data_dict(node)
 
@@ -170,13 +189,25 @@ def normalize_data_w_grid(node, data, grid_node):
     # interpolation.
     # Tripolar grids will have issues
     # in the North Pole.
-    vmin = unique_data_dict["selected_var"]["min_value"]
-    vmax = unique_data_dict["selected_var"]["max_value"]
-    norm_data = plot_using_grid(x_grid_data, y_grid_data, data, vmin, vmax)
+
+    if grid_node.change_axeslim:
+        xlim = sorted((grid_node.blendernc_xgrid_min, grid_node.blendernc_xgrid_max))
+        ylim = sorted((grid_node.blendernc_ygrid_min, grid_node.blendernc_ygrid_max))
+    else:
+        xlim = [x_grid_data.min(), x_grid_data.max()]
+        ylim = [y_grid_data.min(), y_grid_data.max()]
+
+    norm_data = plot_using_grid(
+        x_grid_data, y_grid_data, data, vmin, vmax, xlim=xlim, ylim=ylim
+    )
     return norm_data
 
 
-def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+
+
+def plot_using_grid(x, y, data, vmin, vmax, dpi=300, xlim=None, ylim=[-90, 90]):
     # from matplotlib.backends.backend_agg import
     # FigureCanvasAgg as FigureCanvas
     import matplotlib
@@ -188,22 +219,30 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300):
     fig = plt.figure(figsize=(pixel_size_figure), dpi=dpi)
     ax = fig.add_axes((0, 0, 1, 1))
 
-    image = ax.pcolormesh(x.values, y.values, data, vmin=vmin, vmax=vmax)
+    # normalized_data = normalize_data(data,vmax,vmin)
+    image = ax.pcolormesh(
+        x.values, y.values, data, vmin=vmin, vmax=vmax, cmap="binary_r"
+    )
 
-    ax.set_ylim(-90, 90)
+    if not xlim:
+        xlim = (x.min().values, x.max().values)
+
+    ax.set_ylim(*ylim)
+    ax.set_xlim(*xlim)
     fig.patch.set_visible(False)
     plt.axis("off")
+
     fig.canvas.draw()
     image = np.fromstring(fig.canvas.tostring_rgb(), dtype="uint8")
     image_shape = (data.shape[0], data.shape[1], 3)
-    new_image = image.reshape(image_shape).sum(axis=2) / (3 * 255)
+    new_image = rgb2gray(image.reshape(image_shape)) / 255
     plt.close()
-    new_image[new_image == 1] = new_image.min() - (0.01 * new_image.min())
+    # new_image[new_image ==   1] = new_image.min() - (0.01 * new_image.min())
     # fig = plt.figure(figsize=(data.shape[0]/dpi, data.shape[1]/dpi), dpi=dpi)
     # ax = fig.add_axes((0,0,1,1))
     # ax.imshow(new_image)
     # plt.savefig('test.png')
-    return normalize_data(new_image[::-1])
+    return new_image
 
 
 def load_frame(node, frame, grid_node=None):
@@ -230,14 +269,9 @@ def load_frame(node, frame, grid_node=None):
     # TODO: Test if computing vmax and vmin once improves
     # the performance. May be really useful with 3D and 4D dataset.
     if grid_node:
-        normalized_data = normalize_data_w_grid(
-            node,
-            frame_data,
-            grid_node,
-        )
+        normalized_data = normalize_data_w_grid(node, frame_data, grid_node, vmax, vmin)
     else:
         normalized_data = normalize_data(frame_data, vmax, vmin)
-
     # Store in cache
     var_dict[frame] = from_data_to_pixel_value(normalized_data)
 
@@ -315,8 +349,9 @@ def rotate_longitude(node, context):
              'lon' or 'x'."""
         )
     NodeTree = node.rna_type.id_data.name
-    frame = bpy.context.scene.frame_current
+    f = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
+    frame = preference_frame(node, identifier, f)
     refresh_cache(NodeTree, identifier, frame)
 
 

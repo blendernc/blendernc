@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bpy
+import numpy as np
 
 import blendernc.core.update_ui as bnc_updateUI
 
@@ -23,7 +24,7 @@ def get_all_output_nodes():
 
     # Find all nodes
     for nt in node_trees:
-        [nodes.append(node) for node in nt.nodes if node.name == translate("Output")]
+        [nodes.append(node) for node in nt.nodes if translate("Output") in node.name]
     return nodes
 
 
@@ -43,20 +44,68 @@ def get_node(node_group, node):
 
 def get_input_links(node):
     inputs = node.inputs[0]
-    return inputs.links[0]
+    if inputs.links:
+        return inputs.links[0]
+    else:
+        return
 
 
-def get_var(datacubedata):
+def get_output_links(node):
+    outputs = node.outputs[0]
+    return [link for link in outputs.links]
+
+
+def get_new_id_mult_outputs(output_links, node, node_parent):
+    node_names = [link.to_node.name for link in output_links]
+    node_index = node_names.index(node.name)
+    unique_identifier = node_parent.blendernc_dataset_identifier
+    new_identifier = unique_identifier + "_{0}".format(node_index)
+    return unique_identifier, new_identifier
+
+
+def filter_2_string_lists(list, str_filter):
+    tmp_list = []
+    for strfit in str_filter:
+        for item in list:
+            if strfit in item.lower() and "" in item.lower().split(strfit):
+                tmp_list.append(item)
+    return tmp_list
+
+
+def get_var(datacubedata, str_filter=None):
+    """
+    get_var _summary_
+
+    Parameters
+    ----------
+    datacubedata : _type_
+        _description_
+    str_filter : List, optional
+        _description_, by default None
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     dimensions = sorted(list(datacubedata.coords.dims.keys()))
     variables = sorted(list(datacubedata.variables.keys() - dimensions))
+
+    if str_filter is not None:
+        variables = filter_2_string_lists(variables, str_filter)
+
     if "long_name" in datacubedata[variables[0]].attrs:
-        long_name_list = [datacubedata[var].attrs["long_name"] for var in variables]
+        long_name_list = [
+            datacubedata[var].attrs["long_name"]
+            if "long_name" in datacubedata[var].attrs
+            else ""
+            for var in variables
+        ]
         var_names = bnc_pyfunc.build_enum_prop_list(
             variables, "DISK_DRIVE", long_name_list
         )
     else:
         var_names = bnc_pyfunc.build_enum_prop_list(variables, "DISK_DRIVE")
-
     return bnc_pyfunc.select_item() + [None] + var_names
 
 
@@ -87,10 +136,10 @@ def get_var_data(node):
     # Get the data of the selected variable
     # Remove Nans
     # TODO: Add node to preserve NANs
-    # if node.keep_nan:
-    data = datacubedata[var_name]
-    # else:
-    # data = datacubedata[var_name].where(np.isfinite(datacubedata[var_name]), 0)
+    if not node.keep_nan:
+        data = datacubedata[var_name]
+    else:
+        data = datacubedata[var_name].where(np.isfinite(datacubedata[var_name]), 0)
     return data
 
 
@@ -104,9 +153,12 @@ def get_units_data(node, node_tree):
     return unit
 
 
-def get_dims(datacubedata, var):
-    dimensions = list(datacubedata[var].coords.dims)
-    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=0)
+def get_dims(datacubedata, var=None, start_c=0):
+    if var is None:
+        dimensions = list(datacubedata.coords.dims)
+    else:
+        dimensions = list(datacubedata[var].coords.dims)
+    dim_names = bnc_pyfunc.build_enum_prop_list(dimensions, "EMPTY_DATA", start=start_c)
     return dim_names
 
 
@@ -167,8 +219,8 @@ def get_possible_dims(node, context):
     if unique_identifier not in node.blendernc_dict.keys():
         return bnc_pyfunc.empty_item()
     link = get_input_links(node)
-    unique_identifier = node.blendernc_dataset_identifier
     parent_node = link.from_node
+    unique_identifier = parent_node.blendernc_dataset_identifier
     data_dictionary = parent_node.blendernc_dict[unique_identifier]
     datacubedata = data_dictionary["Dataset"]
     var_name = data_dictionary["selected_var"]["selected_var_name"]
@@ -305,12 +357,10 @@ def get_all_nodes_using_image(materials, image):
 def get_items_dims(self, context):
     if self.inputs[0].is_linked and self.inputs[0].links and self.blendernc_dict:
         # BlenderNC dictionary
-        blendernc_dict = (
-            self.inputs[0]
-            .links[0]
-            .from_node.blendernc_dict[self.blendernc_dataset_identifier]
-            .copy()
-        )
+        linked_node = self.inputs[0].links[0].from_node
+        blendernc_dict = linked_node.blendernc_dict[
+            linked_node.blendernc_dataset_identifier
+        ].copy()
         # BlenderNC dataset
         dataset = blendernc_dict["Dataset"]
         # BlenderNC var

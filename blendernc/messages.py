@@ -7,8 +7,11 @@ import bpy
 # TODO Replace all messages with print_message.
 # Possibly shift to class when blendernc is initiated. and move to logging.
 class PrintMessage(object):
-    def __init__(self, text, title, icon):
-        self.message = text()
+    def __init__(self, text, title, icon, edit_text=None):
+        if edit_text is None:
+            self.message = text()
+        else:
+            self.message = text(edit_text)
         self.title = title
         self.icon = icon
 
@@ -20,7 +23,7 @@ class PrintMessage(object):
                 self.message_contructor, title=self.title, icon=self.icon
             )
         else:
-            message = u"Running in background mode,\n {0}".format(self.message)
+            message = "Running in background mode,\n {0}".format(self.message)
             warnings.warn(message)
 
     def message_contructor(self, wm_self, context):
@@ -83,6 +86,25 @@ def same_min_max_value():
     text += "Please increase the resolution "
     text += "or define the max and min values of the dataset "
     text += "by using a Range node."
+    return text
+
+
+def no_package(edit_text):
+    text = text = "{0} is not installed, thus the functionality is limited.".format(
+        edit_text
+    )
+    return text
+
+
+def required_package(edit_text):
+    text = text = "{0} is not installed, thus BlenderNC will not work.".format(
+        edit_text
+    )
+    return text
+
+
+def path_no_exist(edit_text):
+    text = text = "{0} doesn't exist, check the provided path.".format(edit_text)
     return text
 
 

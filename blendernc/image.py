@@ -58,18 +58,20 @@ def array_to_image(array, image_float=False):
 
 
 # Definitions
-def normalize_data(data, max_range=None, min_range=None):
+def normalize_data(data, max=None, min=None):
     """ """
     # Find ranges and normalize in the interval [0,1]
-    if min_range is None:
-        min_range = np.nanmin(data)
-    if max_range is None:
-        max_range = np.nanmax(data)
-    var_range = max_range - min_range
+    if min is None:
+        min = np.nanmin(data)
+    if max is None:
+        max = np.nanmax(data)
+    var_range = max - min
 
-    data[data <= min_range] = min_range
-    data[data >= max_range] = max_range
-    return (data - min_range) / var_range
+    data[data <= min] = min
+    data[data >= max] = max
+
+    normalized_data = (data - min) / var_range
+    return normalized_data
 
 
 def from_data_to_pixel_value(data, image_float=True):

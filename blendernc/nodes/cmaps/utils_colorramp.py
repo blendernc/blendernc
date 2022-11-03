@@ -127,34 +127,24 @@ class ColorRamp(object):
         self.cmaps = self.installed_cmaps()
 
     def installed_cmaps(self):
-        import pkg_resources
-
+        expected_cmaps = ["cmocean", "colorcet", "matplotlib"]
         cmaps = []
 
-        installed_packages = pkg_resources.working_set
-        installed_packages_list = sorted([i.key for i in installed_packages])
-
-        if "cmocean" and "matplotlib" in installed_packages_list:
-            cmaps.append("cmocean")
-            cmaps.append("matplotlib")
-        elif "cmocean" in installed_packages_list:
-            cmaps.append("cmocean")
-        elif "matplotlib" in installed_packages_list:
-            cmaps.append("matplotlib")
-        else:
-            raise ImportError("Can't import 'cmocean' or 'matplotlib.'")
-            # TODO: Raise error in UI.
-
+        for cmap in expected_cmaps:
+            if importlib.find_loader(cmap):
+                cmaps.append(cmap)
         return cmaps
 
     def get_cmaps(self):
-        import importlib
+        self.cmaps = self.installed_cmaps()
 
         names = {}
         for maps in self.cmaps:
             cmap = importlib.import_module(maps)
             if maps == "cmocean":
                 names["cmocean"] = cmap.cm.cmapnames
+            if maps == "colorcet":
+                names["colorcet"] = [key for key in cmap.cm_n.keys() if "_r" not in key]
             if maps == "matplotlib":
                 cmaps_listed = list(cmap.cm.cmaps_listed)
                 cmaps_datad = list(cmap.cm.datad)
@@ -165,6 +155,8 @@ class ColorRamp(object):
         maps = cmap_module.__name__
         if maps == "cmocean":
             cmap = cmap_module.cm.cmap_d.get(s_cmap)
+        if maps == "colorcet":
+            cmap = cmap_module.cm_n.get(s_cmap)
         elif maps == "matplotlib":
             cmap = cmap_module.cm.get_cmap(s_cmap)
         return cmap
