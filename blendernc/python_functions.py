@@ -6,6 +6,7 @@
 
 # import gc
 import glob
+import importlib
 import os
 
 # TODO: If datacube file has been selected already create a copy of the TreeNode
@@ -13,7 +14,11 @@ import bpy
 
 # Other imports
 import numpy as np
-import xarray
+
+if importlib.find_loader("xarray"):
+    import xarray
+# else:
+#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
 
 import blendernc.core.update_ui as bnc_updateUI
 
