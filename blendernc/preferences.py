@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
+import importlib
 import os
+import sys
 
 import bpy
-import pkg_resources
 from bpy.app.handlers import persistent
 
-from blendernc.messages import PrintMessage, client_exists, load_after_restart
+from blendernc.messages import (
+    PrintMessage,
+    client_exists,
+    load_after_restart,
+    path_no_exist,
+    required_package,
+)
 from blendernc.python_functions import build_enum_prop_list
 
 # Import auto updater
 from . import addon_updater_ops
 
-installed = {pkg.key for pkg in pkg_resources.working_set}
-
-if "distributed" in installed:
-    import dask.distributed as ddist
+if importlib.find_loader("distributed"):
+    import distributed as ddist
 
 
 def get_addon_preference():
@@ -38,6 +43,20 @@ def get_addon_preference():
 
 
 @persistent
+def print_error(_):
+    PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
+
+
+def add_python_path():
+    addon = bpy.context.preferences.addons.get("blendernc")
+    python_path = addon.preferences.blendernc_python_path
+    if python_path:
+        import sys
+
+        sys.path.append(python_path)
+
+
+@persistent
 def import_workspace(_):
     """
     import_workspace Load BlenderNC workspace, based on the user preferences.
@@ -49,6 +68,8 @@ def import_workspace(_):
     """
 
     prefs = get_addon_preference()
+    if prefs.blendernc_python_path:
+        print(prefs.blendernc_python_path)
     # Make sure the BlenderNC has the right preferences.
     if prefs.blendernc_workspace == "NONE":
         return
@@ -65,6 +86,25 @@ def import_workspace(_):
         data_workspace = bpy.data.workspaces
         window = bpy.context.window_manager.windows[0]
         window.workspace = data_workspace[previously_selected_workspace]
+
+
+def update_path(self, context):
+    """
+    update_path Update path of python to find all libraries.
+
+    Parameters
+    ----------
+    context : bpy.context
+        Context in which update is called.
+    """
+    path = self.blendernc_python_path
+
+    if os.path.exists(path) and path not in sys.path and path:
+        sys.path.append(path)
+    elif path in sys.path:
+        pass
+    else:
+        PrintMessage(path_no_exist, title="Error", icon="ERROR", edit_text=path)
 
 
 def update_workspace(self, context):
@@ -96,7 +136,6 @@ def update_message(self, context):
     # source/blender/blenkernel/intern/icons.cc:889 BKE_icon_get:
     # no icon for icon ID: 110,101,101
     # TODO: Report issue to Blender.
-
     PrintMessage(load_after_restart, "Info", "INFO")
 
 
@@ -154,6 +193,14 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
     def Boolean():
         boolean = ["False", "True"]
         return build_enum_prop_list(boolean)
+
+    blendernc_python_path: bpy.props.StringProperty(
+        name="",
+        description="Path to Python Libs",
+        maxlen=1024,
+        update=update_path,
+    )
+    """An instance of the original StringProperty."""
 
     blendernc_workspace: bpy.props.EnumProperty(
         items=item_workspace_option(),
@@ -226,29 +273,36 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.label(text="Create BlenderNC workspace:")
-        row.prop(self, "blendernc_workspace")
-        row = layout.row()
-        row.label(text="Default load shading:")
-        row.prop(self, "blendernc_workspace_shading", expand=True)
-        row = layout.row()
-        row.label(text="Use dask Client:")
-        if "distributed" in installed:
-            row.prop(self, "blendernc_use_dask", expand=True)
+        if not importlib.find_loader("xarray"):
+            row.label(text="PATH to Python libraries:")
+            row.prop(self, "blendernc_python_path", expand=True)
         else:
-            row.label(text="dask.distributed is not installed.", icon="ERROR")
-        row = layout.row()
-        row.label(text="Auto-reload datasets:")
-        row.prop(self, "blendernc_autoreload_datasets", expand=True)
-        row = layout.row()
-        row.label(text="Useful links:")
-        documentation = "https://blendernc.readthedocs.io/en/latest/"
-        row.operator("wm.url_open", text="Documentation").url = documentation
-        report = "https://github.com/blendernc/blendernc/issues/new"
-        row.operator("wm.url_open", text="Report bugs").url = report
-        # TODO: Add link to documentation and report bugs to github.
-        row = layout.row()
-        addon_updater_ops.update_settings_ui(self, context, row)
+            row.label(text="PATH to Python libraries:")
+            row.prop(self, "blendernc_python_path", expand=True)
+            row = layout.row()
+            row.label(text="Create BlenderNC workspace:")
+            row.prop(self, "blendernc_workspace")
+            row = layout.row()
+            row.label(text="Default load shading:")
+            row.prop(self, "blendernc_workspace_shading", expand=True)
+            row = layout.row()
+            row.label(text="Use dask Client:")
+            if importlib.find_loader("distributed"):
+                row.prop(self, "blendernc_use_dask", expand=True)
+            else:
+                row.label(text="dask.distributed is not installed.", icon="ERROR")
+            row = layout.row()
+            row.label(text="Auto-reload datasets:")
+            row.prop(self, "blendernc_autoreload_datasets", expand=True)
+            row = layout.row()
+            # row.label(text="Useful links:")
+            # documentation = "https://blendernc.readthedocs.io/en/latest/"
+            # row.operator("wm.url_open", text="Documentation").url = documentation
+            # report = "https://github.com/blendernc/blendernc/issues/new"
+            # row.operator("wm.url_open", text="Report bugs").url = report
+            # TODO: Add link to documentation and report bugs to github.
+            # row = layout.row()
+            addon_updater_ops.update_settings_ui(self, context, row)
 
 
 @persistent

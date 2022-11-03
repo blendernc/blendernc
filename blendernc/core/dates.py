@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import cftime
 import numpy as np
 
 from ..python_functions import build_enum_prop_list, refresh_cache
@@ -34,6 +33,8 @@ def get_item_time(self, context):
 
 
 def convert2dt(dates):
+    import cftime
+
     if "datetime64" in str(dates.dtype):
         return np.array(dates, dtype="datetime64[D]")
     elif isinstance(dates[0], cftime.datetime):
