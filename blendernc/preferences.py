@@ -49,11 +49,12 @@ def print_error(_):
 
 def add_python_path():
     addon = bpy.context.preferences.addons.get("blendernc")
-    python_path = addon.preferences.blendernc_python_path
-    if python_path:
-        import sys
+    if addon:
+        python_path = addon.preferences.blendernc_python_path
+        if python_path:
+            import sys
 
-        sys.path.append(python_path)
+            sys.path.append(python_path)
 
 
 @persistent
@@ -68,8 +69,6 @@ def import_workspace(_):
     """
 
     prefs = get_addon_preference()
-    if prefs.blendernc_python_path:
-        print(prefs.blendernc_python_path)
     # Make sure the BlenderNC has the right preferences.
     if prefs.blendernc_workspace == "NONE":
         return
