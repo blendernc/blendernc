@@ -6,7 +6,6 @@
 
 # import gc
 import glob
-import importlib
 import os
 
 # TODO: If datacube file has been selected already create a copy of the TreeNode
@@ -15,17 +14,17 @@ import bpy
 # Other imports
 import numpy as np
 
-if importlib.find_loader("xarray"):
-    import xarray
-# else:
-#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
-
 import blendernc.core.update_ui as bnc_updateUI
 
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
 from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
+
+# if importlib.find_loader("xarray"):
+#     import xarray
+# else:
+#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -356,6 +355,8 @@ def rotate_longitude(node, context):
 
 
 def dict_update_tutorial_datacube(node, context):
+    import xarray
+
     unique_identifier = node.blendernc_dataset_identifier
     data_dictionary = node.blendernc_dict
     selected_datacube = node.blendernc_xarray_datacube
@@ -446,6 +447,8 @@ class BlenderncEngine:
         Engine detection by extension :
         http://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray.open_mfdataset
         """
+        import xarray
+
         # Determine engine to use based on extension of first file
         basename = os.path.basename(self.file_path[0])
         ext = os.path.splitext(basename)
