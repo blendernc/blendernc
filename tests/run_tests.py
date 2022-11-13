@@ -6,10 +6,13 @@ import sys
 # https://anzui.dev/blog/2015/05-21/automatic-blender-addon-testing-travisci
 
 blenderExecutable = "blender"
+test_name = "test"
 
 # allow override of blender executable (important for CI!)
 if len(sys.argv) > 1:
     blenderExecutable = sys.argv[1]
+    test_name = sys.argv[2]
+
 
 # iterate over each *.test.blend file in the "tests" directory
 # and open up blender with the .test.blend
@@ -17,7 +20,7 @@ if len(sys.argv) > 1:
 
 errors = {}
 
-for file in glob.glob("./*.test.py"):
+for file in glob.glob("./*.{0}.py".format(test_name)):
     # change 'blendernc' to match your addon
     print("Running file: {0}".format(file))
     # Currently EVEE is not supported without a display.

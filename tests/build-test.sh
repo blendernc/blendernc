@@ -4,6 +4,10 @@ apt update
 
 apt install libglib2.0-bin --yes
 
+# Run tests before installing libraries:
+$BLENDERPY run_tests.py "blender" "test_nolib"
+test_nolib_exit=$?
+
 $BLENDERPY -m ensurepip --default-pip
 
 $BLENDERPY -m pip install -r requirements.txt --progress-bar off
@@ -48,7 +52,7 @@ coverage report
 
 mv ".coverage" ".coverage_${blender_version}"
 
-if [ "$test_exit" -ne 0 ] ; then
+if [ "$test_exit" -ne 0 ] && [ "$test_nolib_exit" -ne 0 ] ; then
   echo "Tests failed!"
   exit 1
 fi
