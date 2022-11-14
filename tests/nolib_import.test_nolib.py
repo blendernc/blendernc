@@ -7,59 +7,27 @@ from blendernc.preferences import get_addon_preference
 
 
 class Test_Addon(unittest.TestCase):
-    def test_addon_enabled(self):
+    def test_addon_nolib_enabled(self):
         bpy.ops.preferences.addon_enable(module="blendernc")
         blendernc_preferences = get_addon_preference()
         self.assertIsNotNone(blendernc_preferences)
 
-    def test_addon_disable(self):
+    def test_addon_nolib_disable(self):
         bpy.ops.preferences.addon_disable(module="blendernc")
         isenabled = "blendernc" not in bpy.context.preferences.addons.keys()
         self.assertTrue(isenabled)
 
-    def test_change_preferences_workspace(self):
+    def test_addon_PATH_no_exist(self):
         bpy.ops.preferences.addon_enable(module="blendernc")
         blendernc_preferences = get_addon_preference()
-        preference_change = [blendernc_preferences.blendernc_workspace]
-        # Change workspace to None:
-        blendernc_preferences.blendernc_workspace = "NONE"
-        # Restart blender:
-        bpy.ops.wm.read_homefile()
-        preference_change.append(blendernc_preferences.blendernc_workspace)
-        # Change workspace to Only Create Workspace:
-        blendernc_preferences.blendernc_workspace = "ONLY CREATE WORKSPACE"
-        # Restart blender:
-        bpy.ops.wm.read_homefile()
-        preference_change.append(blendernc_preferences.blendernc_workspace)
-        # Change workspace to Only Create Workspace:
-        blendernc_preferences.blendernc_workspace = "INITIATE WITH WORKSPACE"
-        # Restart blender:
-        bpy.ops.wm.read_homefile()
-        preference_change.append(blendernc_preferences.blendernc_workspace)
-        expected_change = [
-            "ONLY CREATE WORKSPACE",
-            "NONE",
-            "ONLY CREATE WORKSPACE",
-            "INITIATE WITH WORKSPACE",
-        ]
-        self.assertEqual(preference_change, expected_change)
+        blendernc_preferences.blendernc_python_path = "/noexistingPATH/"
 
-    def test_change_preferences_shading(self):
+    def test_addon_PATH_exist(self):
         bpy.ops.preferences.addon_enable(module="blendernc")
         blendernc_preferences = get_addon_preference()
-        preference_change = [blendernc_preferences.blendernc_workspace_shading]
-        # Change workspace to Only Create Workspace:
-        blendernc_preferences.blendernc_workspace_shading = "RENDERED"
-        # Restart blender:
-        bpy.ops.wm.read_homefile()
-        preference_change.append(blendernc_preferences.blendernc_workspace_shading)
-        # Change workspace to Only Create Workspace:
-        blendernc_preferences.blendernc_workspace_shading = "MATERIAL"
-        # Restart blender:
-        bpy.ops.wm.read_homefile()
-        preference_change.append(blendernc_preferences.blendernc_workspace_shading)
-        expected_change = ["SOLID", "RENDERED", "MATERIAL"]
-        self.assertEqual(preference_change, expected_change)
+        blendernc_preferences.blendernc_python_path = "/bin/"
+        # Duplicate path to check if it ignores it
+        blendernc_preferences.blendernc_python_path = "/bin/"
 
 
 # we have to manually invoke the test runner here, as we cannot use the CLI
