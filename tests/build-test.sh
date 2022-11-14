@@ -4,27 +4,7 @@ apt update
 
 apt install libglib2.0-bin --yes
 
-# Run tests before installing libraries:
-$BLENDERPY run_tests.py "blender" "test_nolib"
-test_nolib_exit=$?
-
-$BLENDERPY -m ensurepip --default-pip
-
-$BLENDERPY -m pip install -r requirements.txt --progress-bar off
-
-# The following line works since the docker container has the "Python.h" file
-# required by dependencies of distributed and zarr.
-# TODO: Documentation on how to fully take advantages of both of these
-#       libraries.
-$BLENDERPY -m pip install distributed zarr
-$BLENDERPY -m pip install dask[complete] xarray[complete]
-
 $BLENDERPY -m pip install coverage --progress-bar off
-
-$BLENDERPY -m pip install requests --progress-bar off
-
-blender_version=$(blender --version | head -n 1)
-echo ${blender_version}
 
 COVERAGE_PROCESS_START=${PWD}"/.coveragerc"
 export COVERAGE_PROCESS_START=$COVERAGE_PROCESS_START
@@ -38,21 +18,45 @@ echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
-echo $PYTHONPATH
+# Run tests before installing libraries:
+$BLENDERPY run_tests.py "blender" "test_nolib"
+test_nolib_exit=$?
 
-$BLENDERPY -m eccodes selfcheck
+# cd ..
 
-$BLENDERPY run_tests.py
-test_exit=$?
+# $BLENDERPY -m ensurepip --default-pip
 
-rm *.png
+# $BLENDERPY -m pip install -r requirements.txt --progress-bar off
 
-coverage combine
-coverage report
+# # The following line works since the docker container has the "Python.h" file
+# # required by dependencies of distributed and zarr.
+# # TODO: Documentation on how to fully take advantages of both of these
+# #       libraries.
+# $BLENDERPY -m pip install distributed zarr
+# $BLENDERPY -m pip install dask[complete] xarray[complete]
 
-mv ".coverage" ".coverage_${blender_version}"
+# $BLENDERPY -m pip install requests --progress-bar off
 
-if [ "$test_exit" -ne 0 ] && [ "$test_nolib_exit" -ne 0 ] ; then
-  echo "Tests failed!"
-  exit 1
-fi
+# blender_version=$(blender --version | head -n 1)
+# echo ${blender_version}
+
+# cd tests
+
+# echo $PYTHONPATH
+
+# $BLENDERPY -m eccodes selfcheck
+
+# $BLENDERPY run_tests.py
+# test_exit=$?
+
+# rm *.png
+
+# coverage combine
+# coverage report
+
+# mv ".coverage" ".coverage_${blender_version}"
+
+# if [[ "$test_exit" -ne 0 ]] && [[ "$test_nolib_exit" -ne 0 ]] ; then
+#   echo "Tests failed!"
+#   exit 1
+# fi
