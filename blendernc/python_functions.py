@@ -217,10 +217,18 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300, xlim=None, ylim=[-90, 90]):
     pixel_size_figure = data.shape[1] / dpi, data.shape[0] / dpi
     fig = plt.figure(figsize=(pixel_size_figure), dpi=dpi)
     ax = fig.add_axes((0, 0, 1, 1))
+    fig.patch.set_facecolor("black")
+    ax.patch.set_facecolor("black")
 
     # normalized_data = normalize_data(data,vmax,vmin)
     image = ax.pcolormesh(
-        x.values, y.values, data, vmin=vmin, vmax=vmax, cmap="binary_r"
+        x.values,
+        y.values,
+        data[:-1, :-1],
+        vmin=vmin,
+        vmax=vmax,
+        cmap="binary_r",
+        shading="flat",
     )
 
     if not xlim:
