@@ -209,6 +209,7 @@ def rgb2gray(rgb):
 def plot_using_grid(x, y, data, vmin, vmax, dpi=300, xlim=None, ylim=[-90, 90]):
     # from matplotlib.backends.backend_agg import
     # FigureCanvasAgg as FigureCanvas
+    # TODO add option to use cartopy.
     import matplotlib
 
     matplotlib.use("agg")
@@ -220,15 +221,13 @@ def plot_using_grid(x, y, data, vmin, vmax, dpi=300, xlim=None, ylim=[-90, 90]):
     fig.patch.set_facecolor("black")
     ax.patch.set_facecolor("black")
 
-    # normalized_data = normalize_data(data,vmax,vmin)
     image = ax.pcolormesh(
         x.values,
         y.values,
-        data[:-1, :-1],
+        data,
         vmin=vmin,
         vmax=vmax,
         cmap="binary_r",
-        shading="flat",
     )
 
     if not xlim:
