@@ -96,6 +96,18 @@ def no_package(edit_text):
     return text
 
 
+def required_package(edit_text):
+    text = text = "{0} is not installed, thus BlenderNC will not work.".format(
+        edit_text
+    )
+    return text
+
+
+def path_no_exist(edit_text):
+    text = text = "{0} doesn't exist, check the provided path.".format(edit_text)
+    return text
+
+
 def unselected_datacube():
     text = "Select a variable from the datacube."
     return text
