@@ -15,17 +15,32 @@ import bpy
 # Other imports
 import numpy as np
 
-if importlib.find_loader("xarray"):
-    import xarray
-# else:
-#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
-
 import blendernc.core.update_ui as bnc_updateUI
 
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
 from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
+
+
+def ensure_xarray(func):
+    def wrapper(*args, **kwargs):
+        if "xarray" not in globals():
+            if hasattr(importlib, "find_loader"):
+                xarray_found = importlib.find_loader("xarray")
+            else:
+                xarray_found = importlib.util.find_spec("xarray")
+
+            if xarray_found:
+                globals()["xarray"] = importlib.__import__("xarray")
+            else:
+                print("ERROR")
+                # from blendernc.messages import PrintMessage
+                # PrintMessage(required_package,
+                #               title="Error", icon="ERROR",edit_text='xarray')
+        func(*args, **kwargs)
+
+    return wrapper
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -355,6 +370,7 @@ def rotate_longitude(node, context):
     refresh_cache(NodeTree, identifier, frame)
 
 
+# @ensure_xarray
 def dict_update_tutorial_datacube(node, context):
     unique_identifier = node.blendernc_dataset_identifier
     data_dictionary = node.blendernc_dict
@@ -437,6 +453,7 @@ class BlenderncEngine:
         except RuntimeError:
             raise ValueError("File isn't supported by Xarray install:", self.file_path)
 
+    @ensure_xarray
     def load_datacube(self):
         """
         Detect format and load datacube using appropriate Xarray Driver
