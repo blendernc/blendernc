@@ -259,6 +259,39 @@ class BlenderNC_OT_colorbar(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BlenderNC_OT_bake_image(bpy.types.Operator):
+    bl_idname = "blendernc.bake_image"
+    bl_label = "Bake Images"
+    bl_description = "Bake images to disk"
+    node: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
+    node_group: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
+    image: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
+    output_path: bpy.props.StringProperty()
+    """An instance of the original StringProperty."""
+    min_frame: bpy.props.IntProperty()
+    """An instance of the original StringProperty."""
+    max_frame: bpy.props.IntProperty()
+    """An instance of the original StringProperty."""
+
+    def execute(self, context):
+        prebake_frame = bpy.context.scene.frame_current
+        for frame in range(self.min_frame, self.max_frame):
+            bpy.context.scene.frame_current = frame
+            UpdateImage(context, self.node, self.node_group, frame, self.image)
+            images = bpy.data.images
+            image = images[self.image]
+            # image.alpha_mode = 'STRAIGHT'
+            image.filepath_raw = self.output_path
+            image.file_format = "PNG"
+            image.save()
+        # TODO update the node to update the image
+        bpy.context.scene.frame_current = prebake_frame
+        return {"FINISHED"}
+
+
 class BlenderNC_OT_apply_material(bpy.types.Operator):
     bl_label = "Load datacube"
     bl_idname = "blendernc.apply_material"
@@ -350,12 +383,3 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
     def apply_material(sel_obj):
         if sel_obj.type == "MESH":
             sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
-
-
-class ImportDatacubeCollection(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(
-        name="File Path",
-        description="Filepath used for importing the file",
-        maxlen=1024,
-        subtype="FILE_PATH",
-    )

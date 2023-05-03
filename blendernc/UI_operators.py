@@ -3,7 +3,7 @@
 from os.path import dirname, join
 
 import bpy
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from blendernc.get_utils import get_blendernc_nodetrees
 from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
@@ -63,7 +63,7 @@ class BlenderNC_OT_Simple_UI(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class ImportDatacubeCollection(bpy.types.PropertyGroup):
+class PathCollection(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
         name="File Path",
         description="Filepath used for importing the file",
@@ -87,7 +87,7 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
     """An instance of the original StringProperty."""
 
-    files: bpy.props.CollectionProperty(type=ImportDatacubeCollection)
+    files: bpy.props.CollectionProperty(type=PathCollection)
     """An instance of the original CollectionProperty."""
 
     node_group: bpy.props.StringProperty(
@@ -120,6 +120,62 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
             context.scene.blendernc_file = path
 
         return {"FINISHED"}
+
+
+class Export_OT_path(bpy.types.Operator, ExportHelper):
+    """ """
+
+    bl_idname = "blendernc.export_path"
+
+    bl_label = "Export Path"
+    bl_description = "Path to export data"
+
+    filter_glob: bpy.props.StringProperty(
+        default="",
+        options={"HIDDEN"},
+    )
+
+    # filename_ext = "."
+    use_filter_folder = bpy.props.BoolProperty(
+        default=True,
+        options={"HIDDEN"},
+    )
+
+    files: bpy.props.CollectionProperty(type=PathCollection)
+    """An instance of the original CollectionProperty."""
+
+    node_group: bpy.props.StringProperty(
+        name="Node group name", description="Change default node group name"
+    )
+    """An instance of the original StringProperty."""
+
+    node: bpy.props.StringProperty(name="node", description="Node calling operator")
+    """An instance of the original StringProperty."""
+
+    def execute(self, context):
+        fdir = dirname(self.properties.filepath)
+
+        # Allows user to define a new default nodegroup, other than "BlenderNC"
+        if self.node_group != "" and self.node == "":
+            context.scene.default_nodegroup = self.node_group
+        # Supports nodes when the nodetree and node have been created manually
+        elif self.node_group != "" and self.node != "":
+            bpy.data.node_groups.get(self.node_group).nodes.get(
+                self.node
+            ).output_file = fdir
+        # Default mode, where "BlenderNC" node is created.
+        else:
+            context.scene.output_file = fdir
+
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        # Open browser, take reference to 'self' read the path to selected
+        # file, put path in predetermined self fields.
+        # See: bpy.types.WindowManager.fileselect_add
+        context.window_manager.fileselect_add(self)
+        # Tells Blender to hang on for the slow user input
+        return {"RUNNING_MODAL"}
 
 
 def findCommonName(filenames):

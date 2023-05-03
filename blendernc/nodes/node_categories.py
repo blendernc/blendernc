@@ -34,7 +34,7 @@ node_dicts = {
     # },
     "Output": {
         "name": "Output",
-        "items": ["datacubeOutput"],  # datacubePreloadNode
+        "items": ["datacubeOutput", "datacubePreload"],
     },
 }
 

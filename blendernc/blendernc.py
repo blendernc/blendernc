@@ -35,6 +35,7 @@ from .nodes.shortcuts.BlenderNC_NT_basic_nodes import BlenderNC_NT_basic_nodes
 # from .nodes.vectors.BlenderNC_NT_line_int_conv import BlenderNC_NT_lic
 from .operators import (
     BlenderNC_OT_apply_material,
+    BlenderNC_OT_bake_image,
     BlenderNC_OT_colorbar,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_datacube2img,
@@ -54,8 +55,9 @@ from .sockets import bNCdatacubeSocket, bNCfloatSocket, bNCstringSocket
 from .UI_operators import (
     BlenderNC_OT_purge_all,
     BlenderNC_OT_Simple_UI,
+    Export_OT_path,
     Import_OT_mfdataset,
-    ImportDatacubeCollection,
+    PathCollection,
 )
 
 # from . nodes import BlenderNC_NT_datacube, BlenderNC_NT_preloader,\
@@ -105,12 +107,14 @@ classes = [
     BlenderNC_OT_apply_material,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_colorbar,
+    BlenderNC_OT_bake_image,
     # Operators: UI
     BlenderNC_OT_Simple_UI,
     BlenderNC_OT_purge_all,
     # Operators: files
-    ImportDatacubeCollection,
+    PathCollection,
     Import_OT_mfdataset,
+    Export_OT_path,
     # Sockets
     bNCdatacubeSocket,
     bNCstringSocket,
