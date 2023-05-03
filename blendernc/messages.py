@@ -47,7 +47,7 @@ def active_selection_preference():
 
 
 def huge_image():
-    text = "Image is larger than 4096x4096 pixels, reduce the resolution."
+    text = "Image larger than 7680 pixels in x or y, reduce the resolution."
     return text
 
 

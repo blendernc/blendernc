@@ -41,7 +41,7 @@ class UpdateImage:
 
         t, y, x = self.data_shape(var_data.shape)
 
-        if y > 5120 or x > 5120:
+        if y > 7680 or x > 7680:
             PrintMessage(huge_image, title="Error", icon="ERROR")
             return
 
