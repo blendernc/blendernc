@@ -135,7 +135,7 @@ class Export_OT_path(bpy.types.Operator, ExportHelper):
         options={"HIDDEN"},
     )
 
-    # filename_ext = "."
+    filename_ext = "."
     use_filter_folder = bpy.props.BoolProperty(
         default=True,
         options={"HIDDEN"},

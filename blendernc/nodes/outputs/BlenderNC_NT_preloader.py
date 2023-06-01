@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Imports
-import os
 from collections import defaultdict
 
 import bpy
@@ -131,8 +130,6 @@ class BlenderNC_NT_preloader(bpy.types.Node):
         row.prop(self, "max_frame", text="End")
 
         zeros_name = int(np.floor(np.log10(frame_end)) + 1)  # Order of mag + 1
-        frame = bpy.context.scene.frame_current
-        padded_num = "_" + str(frame).rjust(zeros_name, "0")
 
         if self.image:
             is_custom_image = self.image.preview.is_image_custom
@@ -145,10 +142,6 @@ class BlenderNC_NT_preloader(bpy.types.Node):
 
         if self.image and identifier in blender_dict_keys:
 
-            filename_output = os.path.join(
-                self.output_file, self.image.name + padded_num + ".png"
-            )
-
             bake_operator = layout.operator(
                 "blendernc.bake_image",
                 icon="OUTPUT",
@@ -156,9 +149,10 @@ class BlenderNC_NT_preloader(bpy.types.Node):
 
             bake_operator.node = self.name
             bake_operator.node_group = self.rna_type.id_data.name
-            bake_operator.output_path = filename_output
+            bake_operator.output_path = self.output_file
             bake_operator.min_frame = self.min_frame
             bake_operator.max_frame = self.max_frame
+            bake_operator.zeros_name = zeros_name
             bake_operator.image = self.image.name
 
             # TODO: Add an operator to bake frames.

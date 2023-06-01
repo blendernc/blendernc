@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Imports
+import os
 from os.path import abspath
 
 import bpy
@@ -275,6 +276,8 @@ class BlenderNC_OT_bake_image(bpy.types.Operator):
     """An instance of the original StringProperty."""
     max_frame: bpy.props.IntProperty()
     """An instance of the original StringProperty."""
+    zeros_name: bpy.props.IntProperty()
+    """An instance of the original StringProperty."""
 
     def execute(self, context):
         prebake_frame = bpy.context.scene.frame_current
@@ -284,7 +287,12 @@ class BlenderNC_OT_bake_image(bpy.types.Operator):
             images = bpy.data.images
             image = images[self.image]
             # image.alpha_mode = 'STRAIGHT'
-            image.filepath_raw = self.output_path
+
+            padded_num = "_" + str(frame).rjust(self.zeros_name, "0")
+            filename_output = os.path.join(
+                self.output_path, self.image + padded_num + ".png"
+            )
+            image.filepath_raw = filename_output
             image.file_format = "PNG"
             image.save()
         # TODO update the node to update the image
