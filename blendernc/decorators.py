@@ -291,10 +291,13 @@ class NodesDecorators(object):
                 node_group=node.rna_type.id_data.name,
                 node=node.name,
             )
+
         # TODO use not blenderdichasid to duplicate the
         # datacube rather than reloading again
         elif gridstrnotnovar and gridstrnotempty and blenderdichasid:
-            return True
+            has_dataset = node.persistent_dict["Dataset"]
+            if has_dataset:
+                return True
         else:
             bpy.ops.blendernc.datacubeload(
                 file_path=node.blendernc_file,

@@ -94,6 +94,9 @@ def get_var(datacubedata, str_filter=None):
     if str_filter is not None:
         variables = filter_2_string_lists(variables, str_filter)
 
+    if not variables:
+        return []
+
     if "long_name" in datacubedata[variables[0]].attrs:
         long_name_list = [
             datacubedata[var].attrs["long_name"]

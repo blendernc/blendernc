@@ -81,6 +81,7 @@ class BlenderNC_NT_input_grid(bpy.types.Node):
         self.inputs.new("bNCstringSocket", "Path")
         self.outputs.new("bNCdatacubeSocket", "Grid")
         self.blendernc_dataset_identifier = get_new_identifier(self) + "_g"
+        self.blendernc_file = None
 
     # Copy function to initialize a copied node from an existing one.
     def copy(self, node):
