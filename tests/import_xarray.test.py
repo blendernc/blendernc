@@ -24,7 +24,6 @@ def capture_render_log(func):
 
 @capture_render_log
 def render_image(file, var):
-
     node_groups = bpy.data.node_groups
     node_groups_keys = node_groups.keys()
 

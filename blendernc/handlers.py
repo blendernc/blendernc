@@ -8,7 +8,6 @@ import blendernc.preferences as preferences
 
 @persistent
 def update_all_images(scene):
-
     nodes = bnc_gutils.get_all_output_nodes()
 
     operator = bpy.ops.BlenderNC.datacube2img
