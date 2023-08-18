@@ -57,7 +57,6 @@ class SingletonUpdater:
     """
 
     def __init__(self):
-
         self._engine = GithubEngine()
         self._user = None
         self._repo = None
@@ -1339,7 +1338,6 @@ class SingletonUpdater:
         else:
             # Situation where branches not included.
             if new_version > self._current_version:
-
                 self._update_ready = True
                 self._update_version = new_version
                 self._update_link = link

@@ -20,7 +20,6 @@ class Timer:
             self.tmp.append(time.time())
             self.timestamps[label] = self.tmp
             if len(self.timestamps[label]) == 2:
-
                 self.tmp = []
 
     def print_spaces(self, text_1, text_2, total_space=30):
