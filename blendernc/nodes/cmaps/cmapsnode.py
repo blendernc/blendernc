@@ -127,7 +127,6 @@ class BlenderNC_OT_select_colormap(bpy.types.Operator):
 # for blender2.80 we should derive the class from
 # bpy.types.ShaderNodeCustomGroup
 class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
-
     bl_idname = "cmapsNode"
     bl_label = "Colormap"
     blb_type = "Blendernc"

@@ -205,7 +205,6 @@ class AddonUpdaterInstallPopup(bpy.types.Operator):
         if updater.manual_only:
             bpy.ops.wm.url_open(url=updater.website)
         elif updater.update_ready:
-
             # Action based on enum selection.
             if self.ignore_enum == "defer":
                 return {"FINISHED"}
@@ -296,7 +295,6 @@ class AddonUpdaterUpdateNow(bpy.types.Operator):
     )
 
     def execute(self, context):
-
         # in case of error importing updater
         if updater.invalid_updater:
             return {"CANCELLED"}

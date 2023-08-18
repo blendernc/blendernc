@@ -162,7 +162,6 @@ class ColorRamp(object):
         return cmap
 
     def update_colormap(self, color_ramp, selected_cmap, cmap_steps):
-
         self.color_ramp = color_ramp
 
         cmap_steps = cmap_steps

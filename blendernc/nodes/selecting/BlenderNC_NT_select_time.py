@@ -101,7 +101,6 @@ class BlenderNC_NT_select_time(bpy.types.Node):
             # Dataset is 3D.
             dataset_time = get_items_datetimes(self, context)
             if convert2dt(dataset_time) is not False:
-
                 layout.label(text="Date Format:")
                 row = layout.row(align=True)
 
