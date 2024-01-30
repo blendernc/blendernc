@@ -17,7 +17,7 @@ ecmwflibs==0.5.5
 entrypoints==0.4
 fasteners==0.18
 findlibs==0.0.5
-fonttools==4.38.0
+fonttools==4.43.0
 fsspec==2023.1.0
 idna==3.4
 importlib-metadata==5.2.0
