@@ -96,9 +96,11 @@ def get_var(datacubedata, str_filter=None):
 
     if "long_name" in datacubedata[variables[0]].attrs:
         long_name_list = [
-            datacubedata[var].attrs["long_name"]
-            if "long_name" in datacubedata[var].attrs
-            else ""
+            (
+                datacubedata[var].attrs["long_name"]
+                if "long_name" in datacubedata[var].attrs
+                else ""
+            )
             for var in variables
         ]
         var_names = bnc_pyfunc.build_enum_prop_list(
