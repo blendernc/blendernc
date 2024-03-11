@@ -24,4 +24,5 @@ class BlenderNC_NT_basic_nodes(bpy.types.Node):
         res.location = (100, 0)
         out = node_tree.nodes.new("datacubeOutput")
         out.location = (300, 0)
-        node_tree.nodes.remove(self)
+        # The following line crashes blender.
+        # node_tree.nodes.remove(self)

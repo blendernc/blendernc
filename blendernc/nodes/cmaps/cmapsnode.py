@@ -67,7 +67,11 @@ class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
 
 # Chosen operator has changed - update the nodes and links
 def update_operator(self):
-    self.__nodeinterface_setup__()
+    if bpy.app.version < (4, 0, 0):
+        self.__nodeinterface_setup_bpy3__()
+    else:
+        self.__nodeinterface_setup_bpy4__()
+    # Link nodes
     self.__nodetree_setup__()
 
 
@@ -124,7 +128,7 @@ class BlenderNC_OT_select_colormap(bpy.types.Operator):
         return {"FINISHED"}
 
 
-# for blender2.80 we should derive the class from
+# for blender > 2.80 and < 4.00 we should derive the class from
 # bpy.types.ShaderNodeCustomGroup
 class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
     bl_idname = "cmapsNode"
@@ -133,20 +137,31 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Manage the node's sockets, adding additional ones when needed,
     # and remove those no longer required
-    def __nodeinterface_setup__(self):
+    def __nodeinterface_setup_bpy3__(self):
         # Perhaps for dynamic inputs - outputs
-        if self.node_tree.inputs:
+        node_tree = self.node_tree
+        input_node = node_tree.nodes[self._get_name("Group Input")]
+        output_node = node_tree.nodes[self._get_name("Group Output")]
+
+        if hasattr(input_node, "inputs"):
             return
 
         # Add input socket if it doesn't exist
-        if not self.node_tree.inputs.keys() in ["Fac"]:
-            self.node_tree.inputs.clear()
-            self.node_tree.inputs.new("NodeSocketFloat", "Fac")
+        if not input_node.inputs.keys() in ["Fac"]:
+            input_node.inputs.clear()
+            input_node.inputs.new("NodeSocketFloat", "Fac")
 
         # Add output socket if it doesn't exist
-        if not self.node_tree.outputs.keys() in ["Color"]:
-            self.node_tree.outputs.clear()
-            self.node_tree.outputs.new("NodeSocketColor", "Color")
+        if not output_node.outputs.keys() in ["Color"]:
+            output_node.outputs.clear()
+            output_node.outputs.new("NodeSocketColor", "Color")
+
+    def __nodeinterface_setup_bpy4__(self):
+        node_tree = self.node_tree
+        interface = node_tree.interface
+
+        interface.new_socket("Fac", in_out="INPUT", socket_type="NodeSocketFloat")
+        interface.new_socket("Color", in_out="OUTPUT", socket_type="NodeSocketColor")
 
     # Manage the internal nodes to perform the chained operation:
     # clear all the nodes and build from scratch each time.
@@ -255,21 +270,57 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         return name + n_id
 
 
+class BlenderNC_OT_shadercolorbar(bpy.types.Operator):
+    bl_idname = "blendernc.shadercolorbar"
+    bl_label = "Colorbar"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        node_name = context.space_data.id.name
+        bpy.data.materials[node_name].node_tree.nodes.new("cmapsNode")
+        return {"FINISHED"}
+
+
+class BLENDERNCshadermenu(bpy.types.Menu):
+    bl_label = "BlenderNC"
+    bl_idname = "BLENDERNC_MT_shadermenu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(BlenderNC_OT_shadercolorbar.bl_idname)
+
+
+def draw_shadermenu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.menu(BLENDERNCshadermenu.bl_idname)
+
+
+# TODO Shift this to the blendernc file
+
+newcatlist = [
+    ShaderNodeCategory(
+        "SH_NEW_CUSTOM",
+        "Blendernc",
+        items=[
+            NodeItem("cmapsNode"),
+        ],
+    ),
+]
+
+
 def register():
-    newcatlist = [
-        ShaderNodeCategory(
-            "SH_NEW_CUSTOM",
-            "Blendernc",
-            items=[
-                NodeItem("cmapsNode"),
-            ],
-        ),
-    ]
-    register_node_categories("CUSTOM_NODES", newcatlist)
+    if bpy.app.version < (4, 0, 0):
+        register_node_categories("CUSTOM_NODES", newcatlist)
+    else:
+        bpy.types.NODE_MT_shader_node_add_all.append(draw_shadermenu)
 
 
 def unregister():
-    unregister_node_categories("CUSTOM_NODES")
+    if bpy.app.version < (4, 0, 0):
+        unregister_node_categories("CUSTOM_NODES")
+    else:
+        bpy.types.NODE_MT_shader_node_add_all.remove(draw_shadermenu)
 
 
 # Attempt to unregister our class

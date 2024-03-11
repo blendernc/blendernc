@@ -10,6 +10,8 @@ from .nodes.cmaps.cmapsnode import (
     BLENDERNC_CMAPS_NT_node,
     BlenderNC_MT_avail_colormaps,
     BlenderNC_OT_select_colormap,
+    BlenderNC_OT_shadercolorbar,
+    BLENDERNCshadermenu,
 )
 from .nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from .nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
@@ -97,6 +99,8 @@ classes = [
     BlenderNC_MT_avail_colormaps,
     BlenderNC_OT_select_colormap,
     BLENDERNC_CMAPS_NT_node,
+    BlenderNC_OT_shadercolorbar,
+    BLENDERNCshadermenu,
     # Operators
     BlenderNC_OT_datacubeload,
     BlenderNC_OT_var,
