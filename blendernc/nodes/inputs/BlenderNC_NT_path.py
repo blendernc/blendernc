@@ -31,6 +31,7 @@ class BlenderNC_NT_path(bpy.types.Node):
     # Initialization function, called when a new node is created.
     # This is the most common place to create the sockets for a node,
     # as shown below.
+
     def init(self, context):
         self.outputs.new("bNCstringSocket", "Path")
         self.color = (0.4, 0.8, 0.4)
