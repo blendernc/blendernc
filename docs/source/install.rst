@@ -66,6 +66,76 @@ or install the following requirements using:
 
     $BLENDERPY -m pip install numpy cython zarr ecmwflibs cfgrib xarray cmocean matplotlib colorcet dask distributed scipy netCDF4 toolz pooch psutil
 
+Personalized python environment
+===============================
+
+A more personalized environment can be created to have the full functionality of BlenderNC, first clone the repository into your computer:
+
+.. code-block:: bash
+    git clone git@github.com:blendernc/blendernc.git
+
+
+Then, we recommend you to use an environment manager, for example, `conda`:
+
+.. code-block:: bash
+
+    conda create -n blender
+    conda activate blender
+
+
+Then, we will install the python version used in Blender. Since the Blender version ``3.3.0`` the python used has been 3.10. Thus, we will install ``python==3.10`` and ``poetry`` for simplicity. ``Poetry`` will install all the requirements using the ``poetry.lock`` file.
+
+.. code-block:: bash
+
+    conda install python=3.10 poetry
+
+
+Then make sure that ``Poetry`` is in the right environment:
+
+.. code-block:: bash
+
+    poetry env info
+
+    Virtualenv
+    Python:         3.10
+    Implementation: CPython
+    Path:           $CONDA_ENV_PATH/blender
+    Executable:     $CONDA_ENV_PATH//blender/bin/python
+    Valid:          True
+
+    System
+    Platform:   XXXXX
+    OS:         posix
+    Python:     3.10
+    Path:       $CONDA_ENV_PATH/blender
+    Executable: $CONDA_ENV_PATH//blender/bin/python3.10
+
+
+Install the required packages using:
+
+.. code-block:: bash
+
+    poetry install
+
+
+Now, the last step is to find the ``site-packages`` folder of your environment and set it up in the blender preferences.
+
+.. code-block:: bash
+    which python
+
+    $CONDA_ENV_PATH/blender/bin/python
+
+
+Replace ``bin/python`` by ``lib/python3.10/site-packages`` and then add it in the ``PATH to Python libraries`` located in the ``BlenderNC`` add-on preference menu.
+
+.. image:: ../images/Blendernc_preferences.png
+    :width: 100%
+    :alt: BlenderNC preference menu
+
+
+Simbolic link to environment (Not Recommended)
+----------------------------------------------
+
 Another, but **not recommended** option is to symbolically link your python modules to blender, first find the folder `modules` within the blender.app:
 
 - macOS:
