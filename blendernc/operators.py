@@ -298,11 +298,26 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
 
         texcoord_link = self.get_projection(sel_obj.name, blendernc_material, imagetex)
 
-        blendernc_material.node_tree.links.new(imagetex.inputs[0], texcoord_link)
-        blendernc_material.node_tree.links.new(cmap.inputs[0], imagetex.outputs[0])
-        blendernc_material.node_tree.links.new(bump.inputs[2], imagetex.outputs[0])
-        blendernc_material.node_tree.links.new(P_BSDF.inputs[0], cmap.outputs[0])
-        blendernc_material.node_tree.links.new(P_BSDF.inputs[-3], bump.outputs[0])
+        blendernc_material.node_tree.links.new(
+            imagetex.inputs.get(translate("Vector")), texcoord_link
+        )
+
+        blendernc_material.node_tree.links.new(
+            cmap.inputs.get(translate("Fac")), imagetex.outputs.get(translate("Color"))
+        )
+        blendernc_material.node_tree.links.new(
+            bump.inputs.get(translate("Height")),
+            imagetex.outputs.get(translate("Color")),
+        )
+        blendernc_material.node_tree.links.new(
+            P_BSDF.inputs.get(translate("Base Color")),
+            cmap.outputs.get(translate("Color")),
+        )
+
+        blendernc_material.node_tree.links.new(
+            P_BSDF.inputs.get(translate("Normal")),
+            bump.outputs.get(translate("Normal")),
+        )
 
         imagetex.image = bpy.data.images.get("BlenderNC_default")
 
