@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import functools
+import importlib
 
 import bpy
 
 import blendernc.get_utils as bnc_gutils
-from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable
+from blendernc.messages import (
+    PrintMessage,
+    required_package,
+    unselected_datacube,
+    unselected_variable,
+)
 
 
 class NodesDecorators(object):
@@ -442,3 +448,37 @@ class MathDecorator(object):
             return unique_data_dict_node
 
         return which_calculation
+
+
+class LoadXarray:
+    """Class that ensures xarray is globally imported."""
+
+    @staticmethod
+    def ensure_xarray_imported(func):
+        """Decorator to ensure that xarray is imported globally."""
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check if 'xarray' is in globals() to make it truly global
+            if "xarray" not in globals():
+                xarray_spec = importlib.util.find_spec("xarray")
+                if xarray_spec is not None:
+                    # Import xarray globally
+                    globals()["xarray"] = importlib.import_module("xarray")
+                else:
+                    # Error handling if xarray cannot be imported
+                    PrintMessage(
+                        required_package,
+                        title="Error",
+                        icon="ERROR",
+                        edit_text="xarray",
+                    )
+                    raise ImportError(
+                        """The 'xarray' library is not installed.
+                        Please install it before proceeding."""
+                    )
+
+            # Call the wrapped function
+            return func(*args, **kwargs)
+
+        return wrapper

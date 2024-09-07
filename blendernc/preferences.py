@@ -100,6 +100,7 @@ def update_path(self, context):
 
     if os.path.exists(path) and path not in sys.path and path:
         sys.path.append(path)
+
     elif path in sys.path:
         pass
     else:

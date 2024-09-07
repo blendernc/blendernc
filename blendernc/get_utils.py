@@ -8,6 +8,8 @@ import blendernc.core.update_ui as bnc_updateUI
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.translations import translate
 
+# from blendernc.decorators import LoadXarray
+
 
 def get_blendernc_nodetrees():
     blendernc_nodetrees = [
@@ -263,10 +265,18 @@ def get_max_min_data(node):
         return var_metadata["max_value"], var_metadata["min_value"]
 
 
-def get_xarray_datasets(node, context):
-    import xarray
+@bnc_pyfunc.BlenderncEngine.ensure_xarray_imported
+def get_tutorial_dataname():
+    return xarray.tutorial.file_formats.keys()
 
-    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+
+@bnc_pyfunc.BlenderncEngine.ensure_xarray_imported
+def load_tutorial_dataset(selected_datacube):
+    return xarray.tutorial.open_dataset(selected_datacube)
+
+
+def get_xarray_datasets(node, context):
+    xarray_datacube = sorted(get_tutorial_dataname())
     datacube_names = bnc_pyfunc.build_enum_prop_list(xarray_datacube, "DISK_DRIVE")
     return bnc_pyfunc.select_datacube() + datacube_names
 

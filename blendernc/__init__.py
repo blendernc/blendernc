@@ -39,21 +39,26 @@ def register():
     """
     # Update addon by CGCookie
     addon_updater_ops.register(bl_info)
-    registerBlenderNC()
     bpy.utils.register_class(BlenderNC_Preferences)
+    # Load blendernc only at launching blender.
+    registerBlenderNC()
     # Add python path to sys.path specified in the add-on preferences.
     add_python_path()
-    prefs = bpy.context.preferences.addons.get("blendernc")
+    prefs = bpy.context.preferences.addons.get("blendernc").preferences
     if importlib.find_loader("xarray"):
         print("Registering to Change Defaults")
         bpy.app.handlers.load_factory_startup_post.append(import_workspace)
         bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
+
     elif "__addon_persistent" in globals():
         PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
     elif hasattr(prefs, "blendernc_python_path"):
-        import sys
+        if prefs.blendernc_python_path:
+            import sys
 
-        sys.path.append(prefs.blendernc_python_path)
+            sys.path.append(prefs.blendernc_python_path)
+        else:
+            bpy.app.handlers.load_factory_startup_post.append(print_error)
     else:
         bpy.app.handlers.load_factory_startup_post.append(print_error)
 

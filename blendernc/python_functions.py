@@ -4,6 +4,8 @@
 #
 # Probably for this reason I should avoid importing bpy here...
 
+import functools
+
 # import gc
 import glob
 import importlib
@@ -15,17 +17,13 @@ import bpy
 # Other imports
 import numpy as np
 
-if importlib.find_loader("xarray"):
-    import xarray
-# else:
-#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
-
 import blendernc.core.update_ui as bnc_updateUI
 
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
 from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
+from blendernc.messages import PrintMessage, required_package
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -363,7 +361,7 @@ def dict_update_tutorial_datacube(node, context):
         return
     node.blendernc_file = "Tutorial"
     data_dictionary[unique_identifier] = {
-        "Dataset": xarray.tutorial.open_dataset(selected_datacube)
+        "Dataset": load_tutorial_dataset(selected_datacube)
     }
 
 
@@ -390,6 +388,34 @@ class BlenderncEngine:
 
     def __init__(self):
         pass
+
+    def ensure_xarray_imported(func):
+        """Decorator to ensure that xarray is imported globally."""
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check if 'xarray' is in sys.modules to ensure it's globally available
+            if "xarray" not in globals():
+                xarray_spec = importlib.util.find_spec("xarray")
+                if xarray_spec is not None:
+                    # Import xarray into sys.modules
+                    globals()["xarray"] = importlib.import_module("xarray")
+                else:
+                    PrintMessage(
+                        required_package,
+                        title="Error",
+                        icon="ERROR",
+                        edit_text="xarray",
+                    )
+                    raise ImportError(
+                        """The 'xarray' library is not installed.
+                        Please install it before proceeding."""
+                    )
+
+            # Call the wrapped function
+            return func(*args, **kwargs)
+
+        return wrapper
 
     def check_files_datacube(self, file_path):
         """
@@ -436,7 +462,13 @@ class BlenderncEngine:
             self.load_datacube()
         except RuntimeError:
             raise ValueError("File isn't supported by Xarray install:", self.file_path)
+        except NameError:
+            PrintMessage(
+                required_package, title="Error", icon="ERROR", edit_text="xarray"
+            )
+            raise ValueError("Xarray was not found, make sure xarray is installed.")
 
+    @ensure_xarray_imported
     def load_datacube(self):
         """
         Detect format and load datacube using appropriate Xarray Driver

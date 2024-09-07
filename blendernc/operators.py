@@ -359,3 +359,24 @@ class ImportDatacubeCollection(bpy.types.PropertyGroup):
         maxlen=1024,
         subtype="FILE_PATH",
     )
+
+
+class WM_OT_close_blender_warning(bpy.types.Operator):
+    """Warn the user that Blender needs to close"""
+
+    bl_idname = "wm.close_blender_warning"
+    bl_label = "Blender Warning"
+
+    def execute(self, context):
+        # Perform the operation (in this case, close Blender)
+        self.report({"INFO"}, "Blender will need to close.")
+        bpy.ops.wm.quit_blender()  # This will close Blender
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        # Open a dialog before performing the operation
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Blender will need to close. Do you want to proceed?")
