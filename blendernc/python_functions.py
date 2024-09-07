@@ -361,12 +361,29 @@ def dict_update_tutorial_datacube(node, context):
         return
     node.blendernc_file = "Tutorial"
     data_dictionary[unique_identifier] = {
-        "Dataset": load_tutorial_dataset(selected_datacube)
+        "Dataset": bnc_gutils.load_tutorial_dataset(selected_datacube)
     }
 
 
 # xarray core TODO: Divide file for future computations
 # (isosurfaces, vector fields, etc.)
+
+
+# Logic to ensure xarray is imported
+def import_xarray():
+    if "xarray" not in globals():
+        xarray_spec = importlib.util.find_spec("xarray")
+        if xarray_spec is not None:
+            # Import xarray globally
+            globals()["xarray"] = importlib.import_module("xarray")
+        else:
+            PrintMessage(
+                required_package, title="Error", icon="ERROR", edit_text="xarray"
+            )
+            raise ImportError(
+                """The 'xarray' library is not installed.
+                            Please install it before proceeding."""
+            )
 
 
 class BlenderncEngine:
@@ -389,30 +406,23 @@ class BlenderncEngine:
     def __init__(self):
         pass
 
-    def ensure_xarray_imported(func):
-        """Decorator to ensure that xarray is imported globally."""
+    def ensure_xarray_imported(func=None):
+        """
+        Function/Decorator to ensure that xarray is imported globally.
+        Can be used as a decorator or as a standalone function.
+        """
+        # If being used as a standalone function, just call import_xarray
+        if func is None:
+            try:
+                import_xarray()
+                return True
+            except (NameError, ImportError):
+                return False
 
+        # Otherwise, use as a decorator
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Check if 'xarray' is in sys.modules to ensure it's globally available
-            if "xarray" not in globals():
-                xarray_spec = importlib.util.find_spec("xarray")
-                if xarray_spec is not None:
-                    # Import xarray into sys.modules
-                    globals()["xarray"] = importlib.import_module("xarray")
-                else:
-                    PrintMessage(
-                        required_package,
-                        title="Error",
-                        icon="ERROR",
-                        edit_text="xarray",
-                    )
-                    raise ImportError(
-                        """The 'xarray' library is not installed.
-                        Please install it before proceeding."""
-                    )
-
-            # Call the wrapped function
+            import_xarray()
             return func(*args, **kwargs)
 
         return wrapper

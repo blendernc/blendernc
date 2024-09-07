@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import functools
+import importlib
+
 import bpy
 import numpy as np
 
@@ -265,12 +268,27 @@ def get_max_min_data(node):
         return var_metadata["max_value"], var_metadata["min_value"]
 
 
-@bnc_pyfunc.BlenderncEngine.ensure_xarray_imported
+def ensure_xarray_imported(func):
+    """
+    Decorator to ensure xarray is imported,
+    it builds upon bnc_pyfunc.BlenderncEngine.ensure_xarray_imported"""
+
+    @functools.wraps(func)
+    def import_xarray(*args, **kwargs):
+        import_xarray = bnc_pyfunc.BlenderncEngine.ensure_xarray_imported()
+        if import_xarray and "xarray" not in globals():
+            globals()["xarray"] = importlib.import_module("xarray")
+        return func(*args, **kwargs)
+
+    return import_xarray
+
+
+@ensure_xarray_imported
 def get_tutorial_dataname():
     return xarray.tutorial.file_formats.keys()
 
 
-@bnc_pyfunc.BlenderncEngine.ensure_xarray_imported
+@ensure_xarray_imported
 def load_tutorial_dataset(selected_datacube):
     return xarray.tutorial.open_dataset(selected_datacube)
 

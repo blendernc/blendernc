@@ -100,7 +100,8 @@ def update_path(self, context):
 
     if os.path.exists(path) and path not in sys.path and path:
         sys.path.append(path)
-
+        bpy.app.handlers.load_factory_startup_post.append(import_workspace)
+        bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
     elif path in sys.path:
         pass
     else:
