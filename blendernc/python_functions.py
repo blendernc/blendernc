@@ -518,3 +518,17 @@ class BlenderncEngine:
                 make sure you select a supported file ('.nc' or '.grib')""",
                 self.file_path,
             )
+
+
+#  Delete this function.
+@staticmethod
+def delete_create_basic_node(node_tree):
+    """
+    Delete create basic node after it has been created.
+    ATTENTION: this method doesn't work, because it crashes Blender.
+    """
+
+    for node in node_tree.nodes:
+        if node.name == "Create Basic Nodes":
+            node_tree.nodes.remove(node)  # .hide=True
+            break
