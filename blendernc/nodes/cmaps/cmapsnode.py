@@ -67,7 +67,9 @@ class BlenderNC_MT_avail_colormaps(bpy.types.Menu):
 
 # Chosen operator has changed - update the nodes and links
 def update_operator(self):
-    if bpy.app.version < (4, 0, 0):
+    if bpy.app.version <= (3, 3, 0):
+        self.__nodeinterface_setup_bpy3_3__()
+    elif bpy.app.version < (4, 0, 0):
         self.__nodeinterface_setup_bpy3__()
     else:
         self.__nodeinterface_setup_bpy4__()
@@ -137,14 +139,15 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
 
     # Manage the node's sockets, adding additional ones when needed,
     # and remove those no longer required
-    def __nodeinterface_setup_bpy3__(self):
+    def __nodeinterface_setup_bpy3_3__(self):
         # Perhaps for dynamic inputs - outputs
         node_tree = self.node_tree
         input_node = node_tree.nodes[self._get_name("Group Input")]
         output_node = node_tree.nodes[self._get_name("Group Output")]
 
         if hasattr(input_node, "inputs"):
-            return
+            if input_node.inputs.__len__() != 0:
+                return
 
         # Add input socket if it doesn't exist
         if not input_node.inputs.keys() in ["Fac"]:
@@ -155,6 +158,20 @@ class BLENDERNC_CMAPS_NT_node(bpy.types.ShaderNodeCustomGroup):
         if not output_node.outputs.keys() in ["Color"]:
             output_node.outputs.clear()
             output_node.outputs.new("NodeSocketColor", "Color")
+
+    def __nodeinterface_setup_bpy3__(self):
+        # Perhaps for dynamic inputs - outputs
+        node_tree = self.node_tree
+
+        # Add input socket if it doesn't exist
+        if not node_tree.inputs.keys() in ["Fac"]:
+            node_tree.inputs.clear()
+            node_tree.inputs.new("NodeSocketFloat", "Fac")
+
+        # Add output socket if it doesn't exist
+        if not node_tree.outputs.keys() in ["Color"]:
+            node_tree.outputs.clear()
+            node_tree.outputs.new("NodeSocketColor", "Color")
 
     def __nodeinterface_setup_bpy4__(self):
         node_tree = self.node_tree

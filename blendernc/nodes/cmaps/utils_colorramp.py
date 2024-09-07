@@ -131,7 +131,7 @@ class ColorRamp(object):
         cmaps = []
 
         for cmap in expected_cmaps:
-            if importlib.find_loader(cmap):
+            if importlib.util.find_spec(cmap):
                 cmaps.append(cmap)
         return cmaps
 
