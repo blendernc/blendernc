@@ -213,9 +213,9 @@ class BlenderNC_dask_client(bpy.types.Panel):
             row = box_asts.row()
             row.label(text=c.dashboard_link)
             row = box_asts.row()
-            row.operator(
-                "wm.url_open", text="Open dask dashboard"
-            ).url = c.dashboard_link
+            row.operator("wm.url_open", text="Open dask dashboard").url = (
+                c.dashboard_link
+            )
             # TODO: Add restart, and close client.
         else:
             row.label(text="No dask client.", icon="UNLINKED")

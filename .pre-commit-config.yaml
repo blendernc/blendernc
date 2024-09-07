@@ -8,20 +8,20 @@ ci:
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0  # Use the ref you want to point at
+    rev: v4.5.0  # Use the ref you want to point at
     hooks:
     - id: trailing-whitespace
 -   repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 24.2.0
     hooks:
     - id: black
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
     - id: isort
       args: ["--profile", "black", "-l", "88"]
 -   repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.0.0
     hooks:
     - id: flake8
       args: ["--ignore", "F722,F821,E203,W503,F405", "--max-line-length", "88","--max-complexity","5"]
@@ -32,13 +32,13 @@ repos:
             ^tests/.*py
         )
 -   repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.5.0
+    rev: v9.11.0
     hooks:
     - id: commitlint
       stages: [commit-msg]
 
 -   repo: https://github.com/commitizen-tools/commitizen
-    rev: 3.6.0
+    rev: v3.15.0
     hooks:
     - id: commitizen
       stages: [commit-msg]
