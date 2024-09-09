@@ -95,16 +95,60 @@ d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 
 [[package]]
 name = "bottleneck"
-version = "1.2.1"
+version = "1.4.0"
 description = "Fast NumPy array functions written in C"
 optional = false
 python-versions = "*"
 files = [
-    {file = "Bottleneck-1.2.1.tar.gz", hash = "sha256:6efcde5f830aed64feafca0359b51db0e184c72af8ba6675b4a99f263922eb36"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2110af22aa8c2779faba8aa021d6b559df04449bdf21d510eacd7910934189fe"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:381cbd1e52338fcdf9ff01c962e6aa187b2d8b3b369d42e779b6d33ac61f8d35"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4a91e40bbb8452e77772614d882be2c34b3b514d9f15460f703293525a6e173d"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:59604949aea476f5075b965129eaa3c2d90891fd43b0dfaf2ad7621bb5db14a5"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:c2c92545e1bc8e859d8d137aefa3b24843bd374b17c9814dafa3bbcea9fc4ec0"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-win32.whl", hash = "sha256:f63e79bfa2f82a7432c8b147ed321d01ca7769bc17cc04644286a4ce58d30549"},
+    {file = "Bottleneck-1.4.0-cp310-cp310-win_amd64.whl", hash = "sha256:d69907d8d679cb5091a3f479c46bf1076f149f6311ff3298bac5089b86a2fab1"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:67347b0f01f32a232a6269c37afc1c079e08f6455fa12e91f4a1cd12eb0d11a5"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1490348b3bbc0225523dc2c00c6bb3e66168c537d62797bd29783c0826c09838"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a704165552496cbcc8bcc5921bb679fd6fa66bb1e758888de091b1223231c9f0"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:ffb4e4edf7997069719b9269926cc00a2a12c6e015422d1ebc2f621c4541396a"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:5d6bf45ed58d5e7414c0011ef2da75474fe597a51970df83596b0bcb79c14c5e"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-win32.whl", hash = "sha256:ed209f8f3cb9954773764b0fa2510a7a9247ad245593187ac90bd0747771bc5c"},
+    {file = "Bottleneck-1.4.0-cp311-cp311-win_amd64.whl", hash = "sha256:d53f1a72b12cfd76b56934c33bc0cb7c1a295f23a2d3ffba8c764514c9b5e0ff"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:e720ff24370324c84a82b1a18195274715c23181748b2b9e3dacad24198ca06f"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:44305c70c2a1539b0ae968e033f301ad868a6146b47e3cccd73fdfe3fc07c4ee"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1b4dac5d2a871b7bd296c2b92426daa27d5b07aa84ef2557db097d29135da4eb"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:fbcdd01db9e27741fb16a02b720cf02389d4b0b99cefe3c834c7df88c2d7412d"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:14b3334a39308fbb05dacd35ac100842aa9e9bc70afbdcebe43e46179d183fd0"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-win32.whl", hash = "sha256:520d7a83cd48b3f58e5df1a258acb547f8a5386a8c21ca9e1058d83a0d622fdf"},
+    {file = "Bottleneck-1.4.0-cp312-cp312-win_amd64.whl", hash = "sha256:b1339b9ad3ee217253f246cde5c3789eb527cf9dd31ff0a1f5a8bf7fc89eadad"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f2749602200aaa0e12a0f3f936dd6d4035384ad10d3acf7ac4f418c501683397"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2bb79a2ac135567694f13339f0bebcee96aec09c596b324b61cd7fd5e306f49d"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:c6097bf39723e76ff5bba160daab92ae599df212c859db8d46648548584d04a8"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:b5f72b66ccc0272de46b67346cf8490737ba2adc6a302664f5326e7741b6d5ab"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-win32.whl", hash = "sha256:9903f017b9d6f2f69ce241b424ddad7265624f64dc6eafbe257d45661febf8bd"},
+    {file = "Bottleneck-1.4.0-cp37-cp37m-win_amd64.whl", hash = "sha256:834816c316ad184cae7ecb615b69876a42cd2cafb07ee66c57a9c1ccacb63339"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:03c43150f180d86a5633a6da788660d335983f6798fca306ba7f47ff27a1b7e7"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:eea333dbcadb780356c54f5c4fa7754f143573b57508fff43d5daf63298eb26a"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6179791c0119aec3708ef74ddadab8d183e3742adb93a9028718e8696bdf572b"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:220b72405f77aebb0137b733b464c2526ded471e4289ac1e840bab8852759a55"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:8746f0f727997ce4c7457dc1fec4e4e3c0fdd8803514baa3d1c4ea6515ab04b2"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-win32.whl", hash = "sha256:6a36280ee33d9db799163f04e88b950261e590cc71d089f5e179b21680b5d491"},
+    {file = "Bottleneck-1.4.0-cp38-cp38-win_amd64.whl", hash = "sha256:de17e012694e6a987bb4eb050dd7f0cf939195a8e00cb23aa93ebee5fd5e64a8"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:28260197ab8a4a6b7adf810523147b1a3e85607f4e26a0f685eb9d155cfc75af"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:90d5d188a0cca0b9655ff2904ee61e7f183079e97550be98c2541a2eec358a72"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2861ff645d236f1a6f5c6d1ddb3db37d19af1d91057bdc4fd7b76299a15b3079"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:6136ce7dcf825c432a20b80ab1c460264a437d8430fff32536176147e0b6b832"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:889e6855b77345622b4ba927335d3118745d590492941f5f78554f157d259e92"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-win32.whl", hash = "sha256:817aa43a671ede696ea023d8f35839a391244662340cc95a0f46965dda8b35cf"},
+    {file = "Bottleneck-1.4.0-cp39-cp39-win_amd64.whl", hash = "sha256:23834d82177d6997f21fa63156550668cd07a9a6e5a1b66ea80f1a14ac6ffd07"},
+    {file = "bottleneck-1.4.0.tar.gz", hash = "sha256:beb36df519b8709e7d357c0c9639b03b885ca6355bbf5e53752c685de51605b8"},
 ]
 
 [package.dependencies]
 numpy = "*"
+
+[package.extras]
+doc = ["gitpython", "numpydoc", "sphinx"]
 
 [[package]]
 name = "certifi"
@@ -783,13 +827,26 @@ setuptools_scm = "*"
 
 [[package]]
 name = "eccodes"
-version = "1.7.1"
+version = "2.37.0"
 description = "Python interface to the ecCodes GRIB and BUFR decoder/encoder"
 optional = false
 python-versions = "*"
 files = [
-    {file = "eccodes-1.7.1-py3-none-any.whl", hash = "sha256:feef7a17e8c2535e41460de704c03ab1d14f013ffbac233a88dda937672b1173"},
-    {file = "eccodes-1.7.1.tar.gz", hash = "sha256:d3c7e9bab779d35b624cfd7b3331de111602cba6a6f6368efcc12407f30b2697"},
+    {file = "eccodes-2.37.0-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:5cdb8c8e113db2e284a43391603a6e1a1ae69b7cd4063258b2e8a23538d91f90"},
+    {file = "eccodes-2.37.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:a213138088e93cf2c17c20aafa0890d7c99d042c494836553d6b4416fd4a5235"},
+    {file = "eccodes-2.37.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4c4f980ac4664fb8324d5195dbba833c3b45513c4451791038721af1784f46f3"},
+    {file = "eccodes-2.37.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:28b6b059e5bc156e3b6814f93b291aba9c290502652fabf638972656e6ccae25"},
+    {file = "eccodes-2.37.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:ccd454d7ceecde90a092d104af9065ad7503a339b46b37719f09d9420845ee6f"},
+    {file = "eccodes-2.37.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3b963e5f9a945fa8bca18b66bdfa32cee513a6b080effd967daf4e10ba3f741f"},
+    {file = "eccodes-2.37.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:4a107567b55fa0188b7215ea0e5d78680dcd73b6b80596d38c15587fae141713"},
+    {file = "eccodes-2.37.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:1fbfad23f5f31e5f578f6a9bb46b8b5fdf6e09d033e42a600cc2212278bb7c07"},
+    {file = "eccodes-2.37.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:76d3a7dbaf5590ade2f5c45ba6d2567a7b01864a407f8be4a06bdfc9a5e2e30b"},
+    {file = "eccodes-2.37.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:12d1738c607289ab42be90e9246b1e6efd4f5aefd0cb2eaf341e8aebd70d01fe"},
+    {file = "eccodes-2.37.0-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:f43c3f90be33a2362400a589d3d086eba37f118109c2d431c735b25c5c769d88"},
+    {file = "eccodes-2.37.0-cp39-cp39-macosx_13_0_x86_64.whl", hash = "sha256:964e57ac46f9b01d3ab54acdb4cfae44bbb4c24ee9d5d76eed43892c8e5dabdf"},
+    {file = "eccodes-2.37.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1c0b5cec6dac9d2985345e79a6d29ae7e27d0a8e5b9fcd0c571081aa0f1c76f0"},
+    {file = "eccodes-2.37.0-py3-none-any.whl", hash = "sha256:434e9e832d965f23141effa28a6997c635243d4d7cb8afb7ff453c6627014fc1"},
+    {file = "eccodes-2.37.0.tar.gz", hash = "sha256:ce9e11dba82dbdfee8803a26d03fe200307b23eac08e20c029c3e84b84757305"},
 ]
 
 [package.dependencies]
@@ -1914,19 +1971,19 @@ testing = ["pytest", "pytest-cov", "wheel"]
 
 [[package]]
 name = "platformdirs"
-version = "4.3.1"
+version = "4.3.2"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "platformdirs-4.3.1-py3-none-any.whl", hash = "sha256:facaa5a3c57aa1e053e3da7b49e0cc31fe0113ca42a4659d5c2e98e545624afe"},
-    {file = "platformdirs-4.3.1.tar.gz", hash = "sha256:63b79589009fa8159973601dd4563143396b35c5f93a58b36f9049ff046949b1"},
+    {file = "platformdirs-4.3.2-py3-none-any.whl", hash = "sha256:eb1c8582560b34ed4ba105009a4badf7f6f85768b30126f351328507b2beb617"},
+    {file = "platformdirs-4.3.2.tar.gz", hash = "sha256:9e5e27a08aa095dd127b9f2e764d74254f482fef22b0970773bfba79d091ab8c"},
 ]
 
 [package.extras]
-docs = ["furo (>=2023.9.10)", "proselint (>=0.13)", "sphinx (>=7.2.6)", "sphinx-autodoc-typehints (>=1.25.2)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4.3)", "pytest-cov (>=4.1)", "pytest-mock (>=3.12)"]
-type = ["mypy (>=1.8)"]
+docs = ["furo (>=2024.8.6)", "proselint (>=0.14)", "sphinx (>=8.0.2)", "sphinx-autodoc-typehints (>=2.4)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=8.3.2)", "pytest-cov (>=5)", "pytest-mock (>=3.14)"]
+type = ["mypy (>=1.11.2)"]
 
 [[package]]
 name = "pooch"
@@ -2822,4 +2879,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9"
-content-hash = "2cfa1f4458a05c804c7fa0d1ed647a607c2c6e0e4a2919b1efb7c9ba605beb85"
+content-hash = "48cf69e3e804dd6cf618765c6325e7d835f331bb2bfbef587d51247e02410187"

@@ -44,7 +44,7 @@ def register():
     registerBlenderNC()
     # Add python path to sys.path specified in the add-on preferences.
     add_python_path()
-    prefs = bpy.context.preferences.addons.get("blendernc").preferences
+    addon = bpy.context.preferences.addons.get("blendernc")
     if importlib.find_loader("xarray"):
         print("Registering to Change Defaults")
         bpy.app.handlers.load_factory_startup_post.append(import_workspace)
@@ -52,11 +52,11 @@ def register():
 
     elif "__addon_persistent" in globals():
         PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
-    elif hasattr(prefs, "blendernc_python_path"):
-        if prefs.blendernc_python_path:
+    elif hasattr(addon, "preferences"):
+        if addon.preferences.blendernc_python_path:
             import sys
 
-            sys.path.append(prefs.blendernc_python_path)
+            sys.path.append(addon.preferences.blendernc_python_path)
         else:
             bpy.app.handlers.load_factory_startup_post.append(print_error)
     else:

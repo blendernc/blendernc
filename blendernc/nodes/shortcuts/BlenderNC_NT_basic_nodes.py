@@ -27,3 +27,6 @@ class BlenderNC_NT_basic_nodes(bpy.types.Node):
 
     def free(self):
         print("Removing node ", self, ", Goodbye!")
+
+    def copy(self, node):
+        print("Copying from node ", node)

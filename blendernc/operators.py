@@ -13,6 +13,8 @@ from blendernc.get_utils import (
     get_blendernc_nodetrees,
     get_default_material,
     get_node,
+    get_translated_link,
+    get_translated_node,
     get_var,
 )
 from blendernc.messages import (
@@ -290,33 +292,33 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
         blendernc_material = get_default_material()
         self.create_materials(blendernc_material)
 
-        imagetex = self.get_translated_node(blendernc_material, "Image Texture")
-        cmap = self.get_translated_node(blendernc_material, "Colormap")
-        bump = self.get_translated_node(blendernc_material, "Bump")
+        imagetex = get_translated_node(blendernc_material, "Image Texture")
+        cmap = get_translated_node(blendernc_material, "Colormap")
+        bump = get_translated_node(blendernc_material, "Bump")
 
-        P_BSDF = self.get_translated_node(blendernc_material, "Principled BSDF")
+        P_BSDF = get_translated_node(blendernc_material, "Principled BSDF")
 
         texcoord_link = self.get_projection(sel_obj.name, blendernc_material, imagetex)
 
         blendernc_material.node_tree.links.new(
-            imagetex.inputs.get(translate("Vector")), texcoord_link
+            get_translated_link(imagetex.inputs, "Vector"), texcoord_link
+        )
+        blendernc_material.node_tree.links.new(
+            get_translated_link(cmap.inputs, "Fac"),
+            get_translated_link(imagetex.outputs, "Color"),
+        )
+        blendernc_material.node_tree.links.new(
+            get_translated_link(bump.inputs, "Height"),
+            get_translated_link(imagetex.outputs, "Color"),
+        )
+        blendernc_material.node_tree.links.new(
+            get_translated_link(P_BSDF.inputs, "Base Color"),
+            get_translated_link(cmap.outputs, "Color"),
         )
 
         blendernc_material.node_tree.links.new(
-            cmap.inputs.get(translate("Fac")), imagetex.outputs.get(translate("Color"))
-        )
-        blendernc_material.node_tree.links.new(
-            bump.inputs.get(translate("Height")),
-            imagetex.outputs.get(translate("Color")),
-        )
-        blendernc_material.node_tree.links.new(
-            P_BSDF.inputs.get(translate("Base Color")),
-            cmap.outputs.get(translate("Color")),
-        )
-
-        blendernc_material.node_tree.links.new(
-            P_BSDF.inputs.get(translate("Normal")),
-            bump.outputs.get(translate("Normal")),
+            get_translated_link(P_BSDF.inputs, "Normal"),
+            get_translated_link(bump.outputs, "Normal"),
         )
 
         imagetex.image = bpy.data.images.get("BlenderNC_default")
@@ -338,15 +340,6 @@ class BlenderNC_OT_apply_material(bpy.types.Operator):
             bump = blendernc_material.node_tree.nodes.new("ShaderNodeBump")
             bump.inputs[0].default_value = 0.3
             bump.location = (-290, -50)
-
-    @staticmethod
-    def get_translated_node(blendernc_material, eng_node_name):
-        P_BSDF = blendernc_material.node_tree.nodes.get(translate(eng_node_name))
-        # This line is executed when a different language is selected. By
-        # default a new blender file will create a node named "Principled BSDF"
-        if not P_BSDF:
-            P_BSDF = blendernc_material.node_tree.nodes.get(eng_node_name)
-        return P_BSDF
 
     @staticmethod
     def get_projection(name, blendernc_material, imagetex):

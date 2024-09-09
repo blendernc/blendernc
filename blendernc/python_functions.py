@@ -280,8 +280,11 @@ def ui_material():
         # create material
         mat = bpy.data.materials.new(name="BlenderNC_info")
         mat.use_nodes = True
-        BSDF = mat.node_tree.nodes["Principled BSDF"]
-        emission = BSDF.inputs.get("Emission")
+        BSDF = bnc_gutils.get_translated_node(mat, "Principled BSDF")
+        if bpy.app.version < (4, 0, 0):
+            emission = bnc_gutils.get_translated_link(BSDF.inputs, "Emission")
+        else:
+            emission = bnc_gutils.get_translated_link(BSDF.inputs, "Emission Color")
         emission.default_value = (1, 1, 1, 1)
     return mat
 

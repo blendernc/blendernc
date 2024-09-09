@@ -1,7 +1,11 @@
 #!/bin/sh
-apt update
+apt-get update --fix-missing
 
-apt install libglib2.0-bin --yes
+apt-get install libglib2.0-bin --yes
+
+python -m ensurepip --default-pip
+
+python -m pip install --upgrade pip
 
 python -m pip install coverage --progress-bar off
 
@@ -17,24 +21,17 @@ echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
+echo $PYTHONPATH
+
 # Run tests before installing libraries:
 python run_tests.py "blender" "test_nolib"
 test_nolib_exit=$?
 
+rm ./sitecustomize.py
+
 cd ..
 
-python -m ensurepip --default-pip
-
 python -m pip install -r requirements.txt --progress-bar off
-
-# The following line works since the docker container has the "Python.h" file
-# required by dependencies of distributed and zarr.
-# TODO: Documentation on how to fully take advantages of both of these
-#       libraries.
-python -m pip install distributed zarr
-python -m pip install dask[complete] xarray[complete]
-
-python -m pip install requests --progress-bar off
 
 blender_version=$(blender --version | head -n 1)
 echo ${blender_version}
@@ -43,15 +40,20 @@ cd tests
 
 echo $PYTHONPATH
 
-# python -m eccodes selfcheck
+python -m cfgrib selfcheck
+
+# Create again the sitecustomize file.
+echo -e "import coverage \n\ncov=coverage.process_startup()\n"> sitecustomize.py
+echo -e "print('Initiate coverage')" >> sitecustomize.py
+echo -e "print(cov)" >> sitecustomize.py
 
 python run_tests.py
 test_exit=$?
 
 rm *.png
 
-coverage combine
-coverage report
+python -m coverage combine
+python -m coverage report
 
 mv ".coverage" ".coverage_${blender_version}"
 

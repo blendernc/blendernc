@@ -422,6 +422,24 @@ def get_default_material():
     return blendernc_material
 
 
+def get_translated_node(blendernc_material, eng_node_name):
+    node = blendernc_material.node_tree.nodes.get(translate(eng_node_name))
+    # This line is executed when a different language is selected. By
+    # default a new blender file will create a node named "Principled BSDF"
+    if not node:
+        node = blendernc_material.node_tree.nodes.get(eng_node_name)
+    return node
+
+
+def get_translated_link(node_in_or_out, eng_link_name):
+    link = node_in_or_out.get(translate(eng_link_name))
+    # This line is executed when a different language is selected. By
+    # default a new blender file will create a node named "Principled BSDF"
+    if not link:
+        link = node_in_or_out.get(eng_link_name)
+    return link
+
+
 # Delete if not use in a few months (25-Jun-2021):
 #
 # def get_selected_var(node):
