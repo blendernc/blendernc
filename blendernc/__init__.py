@@ -33,6 +33,24 @@ bl_info = {
 }
 
 
+def append_path(addon):
+    """
+    append_path If preference has a defined path, then append it to the
+                system path. Else, return error.
+
+    Parameters
+    ----------
+    addon : Object
+        Add on object from Blender
+    """
+    if addon.preferences.blendernc_python_path:
+        import sys
+
+        sys.path.append(addon.preferences.blendernc_python_path)
+    else:
+        bpy.app.handlers.load_factory_startup_post.append(print_error)
+
+
 def register():
     """
     register Register all BlenderNC functions into Blender
@@ -53,12 +71,7 @@ def register():
     elif "__addon_persistent" in globals():
         PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
     elif hasattr(addon, "preferences"):
-        if addon.preferences.blendernc_python_path:
-            import sys
-
-            sys.path.append(addon.preferences.blendernc_python_path)
-        else:
-            bpy.app.handlers.load_factory_startup_post.append(print_error)
+        append_path(addon)
     else:
         bpy.app.handlers.load_factory_startup_post.append(print_error)
 
