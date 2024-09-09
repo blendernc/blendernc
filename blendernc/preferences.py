@@ -194,10 +194,7 @@ class BlenderNC_Preferences(bpy.types.AddonPreferences):
         return build_enum_prop_list(boolean)
 
     blendernc_python_path: bpy.props.StringProperty(
-        name="",
-        description="Path to Python Libs",
-        maxlen=1024,
-        update=update_path,
+        name="", description="Path to Python Libs", maxlen=1024, update=update_path
     )
     """An instance of the original StringProperty."""
 

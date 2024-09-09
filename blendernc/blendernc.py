@@ -10,6 +10,8 @@ from .nodes.cmaps.cmapsnode import (
     BLENDERNC_CMAPS_NT_node,
     BlenderNC_MT_avail_colormaps,
     BlenderNC_OT_select_colormap,
+    BlenderNC_OT_shadercolorbar,
+    BLENDERNCshadermenu,
 )
 from .nodes.grid.BlenderNC_NT_input_grid import BlenderNC_NT_input_grid
 from .nodes.grid.BlenderNC_NT_resolution import BlenderNC_NT_resolution
@@ -41,6 +43,7 @@ from .operators import (
     BlenderNC_OT_datacubeload,
     BlenderNC_OT_preloader,
     BlenderNC_OT_var,
+    WM_OT_close_blender_warning,
 )
 from .panels import (
     BlenderNC_dask_client,
@@ -97,6 +100,8 @@ classes = [
     BlenderNC_MT_avail_colormaps,
     BlenderNC_OT_select_colormap,
     BLENDERNC_CMAPS_NT_node,
+    BlenderNC_OT_shadercolorbar,
+    BLENDERNCshadermenu,
     # Operators
     BlenderNC_OT_datacubeload,
     BlenderNC_OT_var,
@@ -105,6 +110,7 @@ classes = [
     BlenderNC_OT_apply_material,
     BlenderNC_OT_compute_range,
     BlenderNC_OT_colorbar,
+    WM_OT_close_blender_warning,
     # Operators: UI
     BlenderNC_OT_Simple_UI,
     BlenderNC_OT_purge_all,

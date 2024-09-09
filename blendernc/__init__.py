@@ -33,27 +33,45 @@ bl_info = {
 }
 
 
+def append_path(addon):
+    """
+    append_path If preference has a defined path, then append it to the
+                system path. Else, return error.
+
+    Parameters
+    ----------
+    addon : Object
+        Add on object from Blender
+    """
+    if addon.preferences.blendernc_python_path:
+        import sys
+
+        sys.path.append(addon.preferences.blendernc_python_path)
+    else:
+        bpy.app.handlers.load_factory_startup_post.append(print_error)
+
+
 def register():
     """
     register Register all BlenderNC functions into Blender
     """
     # Update addon by CGCookie
     addon_updater_ops.register(bl_info)
-    registerBlenderNC()
     bpy.utils.register_class(BlenderNC_Preferences)
+    # Load blendernc only at launching blender.
+    registerBlenderNC()
     # Add python path to sys.path specified in the add-on preferences.
     add_python_path()
-    prefs = bpy.context.preferences.addons.get("blendernc")
+    addon = bpy.context.preferences.addons.get("blendernc")
     if importlib.find_loader("xarray"):
         print("Registering to Change Defaults")
         bpy.app.handlers.load_factory_startup_post.append(import_workspace)
         bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
+
     elif "__addon_persistent" in globals():
         PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
-    elif hasattr(prefs, "blendernc_python_path"):
-        import sys
-
-        sys.path.append(prefs.blendernc_python_path)
+    elif hasattr(addon, "preferences"):
+        append_path(addon)
     else:
         bpy.app.handlers.load_factory_startup_post.append(print_error)
 

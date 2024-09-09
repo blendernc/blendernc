@@ -6,7 +6,7 @@ import bpy
 class BlenderNC_NT_basic_nodes(bpy.types.Node):
     # === Basics ===
     # Description string
-    """Select axis"""
+    """Auxiliar node to create all basic nodes at once."""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "datacubeBasicNodes"
@@ -24,4 +24,9 @@ class BlenderNC_NT_basic_nodes(bpy.types.Node):
         res.location = (100, 0)
         out = node_tree.nodes.new("datacubeOutput")
         out.location = (300, 0)
-        node_tree.nodes.remove(self)
+
+    def free(self):
+        print("Removing node ", self, ", Goodbye!")
+
+    def copy(self, node):
+        print("Copying from node ", node)

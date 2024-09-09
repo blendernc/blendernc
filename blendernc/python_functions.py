@@ -4,6 +4,8 @@
 #
 # Probably for this reason I should avoid importing bpy here...
 
+import functools
+
 # import gc
 import glob
 import importlib
@@ -15,17 +17,13 @@ import bpy
 # Other imports
 import numpy as np
 
-if importlib.find_loader("xarray"):
-    import xarray
-# else:
-#     PrintMessage(required_package, title="Error", icon="ERROR",edit_text='xarray')
-
 import blendernc.core.update_ui as bnc_updateUI
 
 # Partial import to avoid cyclic import
 import blendernc.get_utils as bnc_gutils
 from blendernc.decorators import MemoryDecorator
 from blendernc.image import from_data_to_pixel_value, normalize_data
+from blendernc.messages import PrintMessage, required_package
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
@@ -282,8 +280,11 @@ def ui_material():
         # create material
         mat = bpy.data.materials.new(name="BlenderNC_info")
         mat.use_nodes = True
-        BSDF = mat.node_tree.nodes["Principled BSDF"]
-        emission = BSDF.inputs.get("Emission")
+        BSDF = bnc_gutils.get_translated_node(mat, "Principled BSDF")
+        if bpy.app.version < (4, 0, 0):
+            emission = bnc_gutils.get_translated_link(BSDF.inputs, "Emission")
+        else:
+            emission = bnc_gutils.get_translated_link(BSDF.inputs, "Emission Color")
         emission.default_value = (1, 1, 1, 1)
     return mat
 
@@ -363,12 +364,29 @@ def dict_update_tutorial_datacube(node, context):
         return
     node.blendernc_file = "Tutorial"
     data_dictionary[unique_identifier] = {
-        "Dataset": xarray.tutorial.open_dataset(selected_datacube)
+        "Dataset": bnc_gutils.load_tutorial_dataset(selected_datacube)
     }
 
 
 # xarray core TODO: Divide file for future computations
 # (isosurfaces, vector fields, etc.)
+
+
+# Logic to ensure xarray is imported
+def import_xarray():
+    if "xarray" not in globals():
+        xarray_spec = importlib.util.find_spec("xarray")
+        if xarray_spec is not None:
+            # Import xarray globally
+            globals()["xarray"] = importlib.import_module("xarray")
+        else:
+            PrintMessage(
+                required_package, title="Error", icon="ERROR", edit_text="xarray"
+            )
+            raise ImportError(
+                """The 'xarray' library is not installed.
+                            Please install it before proceeding."""
+            )
 
 
 class BlenderncEngine:
@@ -390,6 +408,27 @@ class BlenderncEngine:
 
     def __init__(self):
         pass
+
+    def ensure_xarray_imported(func=None):
+        """
+        Function/Decorator to ensure that xarray is imported globally.
+        Can be used as a decorator or as a standalone function.
+        """
+        # If being used as a standalone function, just call import_xarray
+        if func is None:
+            try:
+                import_xarray()
+                return True
+            except (NameError, ImportError):
+                return False
+
+        # Otherwise, use as a decorator
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            import_xarray()
+            return func(*args, **kwargs)
+
+        return wrapper
 
     def check_files_datacube(self, file_path):
         """
@@ -436,7 +475,13 @@ class BlenderncEngine:
             self.load_datacube()
         except RuntimeError:
             raise ValueError("File isn't supported by Xarray install:", self.file_path)
+        except NameError:
+            PrintMessage(
+                required_package, title="Error", icon="ERROR", edit_text="xarray"
+            )
+            raise ValueError("Xarray was not found, make sure xarray is installed.")
 
+    @ensure_xarray_imported
     def load_datacube(self):
         """
         Detect format and load datacube using appropriate Xarray Driver
@@ -476,3 +521,17 @@ class BlenderncEngine:
                 make sure you select a supported file ('.nc' or '.grib')""",
                 self.file_path,
             )
+
+
+#  Delete this function.
+@staticmethod
+def delete_create_basic_node(node_tree):
+    """
+    Delete create basic node after it has been created.
+    ATTENTION: this method doesn't work, because it crashes Blender.
+    """
+
+    for node in node_tree.nodes:
+        if node.name == "Create Basic Nodes":
+            node_tree.nodes.remove(node)  # .hide=True
+            break

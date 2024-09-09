@@ -111,7 +111,11 @@ def render_image(file, var):
 
 class Test_translation(unittest.TestCase):
     def test_language_chinese(self):
-        bpy.context.preferences.view.language = "zh_CN"
+        if bpy.app.version < (4, 0, 0):
+            lang = "zh_CN"
+        else:
+            lang = "zh_HANT"
+        bpy.context.preferences.view.language = lang
         bpy.ops.wm.read_homefile()
         bpy.context.scene.render.engine = "CYCLES"
         file = os.path.abspath("./dataset/ssh_1995-01.nc")

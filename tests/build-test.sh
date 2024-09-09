@@ -1,10 +1,13 @@
 #!/bin/sh
+apt-get update --fix-missing
 
-apt update
+apt-get install libglib2.0-bin --yes
 
-apt install libglib2.0-bin --yes
+python -m ensurepip --default-pip
 
-$BLENDERPY -m pip install coverage --progress-bar off
+python -m pip install --upgrade pip
+
+python -m pip install coverage --progress-bar off
 
 COVERAGE_PROCESS_START=${PWD}"/.coveragerc"
 export COVERAGE_PROCESS_START=$COVERAGE_PROCESS_START
@@ -18,45 +21,43 @@ echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
+echo $PYTHONPATH
+
 # Run tests before installing libraries:
-$BLENDERPY run_tests.py "blender" "test_nolib"
+python run_tests.py "blender" "test_nolib"
 test_nolib_exit=$?
 
-# cd ..
+rm ./sitecustomize.py
 
-# $BLENDERPY -m ensurepip --default-pip
+cd ..
 
-# $BLENDERPY -m pip install -r requirements.txt --progress-bar off
+python -m pip install -r requirements.txt --progress-bar off
 
-# # The following line works since the docker container has the "Python.h" file
-# # required by dependencies of distributed and zarr.
-# # TODO: Documentation on how to fully take advantages of both of these
-# #       libraries.
-# $BLENDERPY -m pip install distributed zarr
-# $BLENDERPY -m pip install dask[complete] xarray[complete]
+blender_version=$(blender --version | head -n 1)
+echo ${blender_version}
 
-# $BLENDERPY -m pip install requests --progress-bar off
+cd tests
 
-# blender_version=$(blender --version | head -n 1)
-# echo ${blender_version}
+echo $PYTHONPATH
 
-# cd tests
+python -m cfgrib selfcheck
 
-# echo $PYTHONPATH
+# Create again the sitecustomize file.
+echo -e "import coverage \n\ncov=coverage.process_startup()\n"> sitecustomize.py
+echo -e "print('Initiate coverage')" >> sitecustomize.py
+echo -e "print(cov)" >> sitecustomize.py
 
-# $BLENDERPY -m eccodes selfcheck
+python run_tests.py
+test_exit=$?
 
-# $BLENDERPY run_tests.py
-# test_exit=$?
+rm *.png
 
-# rm *.png
+python -m coverage combine
+python -m coverage report
 
-# coverage combine
-# coverage report
+mv ".coverage" ".coverage_${blender_version}"
 
-# mv ".coverage" ".coverage_${blender_version}"
-
-# if [[ "$test_exit" -ne 0 ]] && [[ "$test_nolib_exit" -ne 0 ]] ; then
-#   echo "Tests failed!"
-#   exit 1
-# fi
+if [[ "$test_exit" -ne 0 ]] && [[ "$test_nolib_exit" -ne 0 ]] ; then
+  echo "Tests failed!"
+  exit 1
+fi

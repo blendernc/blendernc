@@ -62,7 +62,7 @@ def node_manipulation(action):
             existing_node_names.remove(node[-1].bl_idname)
 
     if "datacubeBasicNodes" in enum_items:
-        enum_items.remove("datacubeBasicNodes")
+        # enum_items.remove("datacubeBasicNodes")
         enum_items = enum_items + [
             "datacubePath",
             "datacubeNode",

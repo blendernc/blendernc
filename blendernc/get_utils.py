@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import functools
+import importlib
+
 import bpy
 import numpy as np
 
@@ -7,6 +10,8 @@ import blendernc.core.update_ui as bnc_updateUI
 # Partial import to avoid cyclic import
 import blendernc.python_functions as bnc_pyfunc
 from blendernc.translations import translate
+
+# from blendernc.decorators import LoadXarray
 
 
 def get_blendernc_nodetrees():
@@ -263,10 +268,33 @@ def get_max_min_data(node):
         return var_metadata["max_value"], var_metadata["min_value"]
 
 
-def get_xarray_datasets(node, context):
-    import xarray
+def ensure_xarray_imported(func):
+    """
+    Decorator to ensure xarray is imported,
+    it builds upon bnc_pyfunc.BlenderncEngine.ensure_xarray_imported"""
 
-    xarray_datacube = sorted(xarray.tutorial.file_formats.keys())
+    @functools.wraps(func)
+    def import_xarray(*args, **kwargs):
+        import_xarray = bnc_pyfunc.BlenderncEngine.ensure_xarray_imported()
+        if import_xarray and "xarray" not in globals():
+            globals()["xarray"] = importlib.import_module("xarray")
+        return func(*args, **kwargs)
+
+    return import_xarray
+
+
+@ensure_xarray_imported
+def get_tutorial_dataname():
+    return xarray.tutorial.file_formats.keys()
+
+
+@ensure_xarray_imported
+def load_tutorial_dataset(selected_datacube):
+    return xarray.tutorial.open_dataset(selected_datacube)
+
+
+def get_xarray_datasets(node, context):
+    xarray_datacube = sorted(get_tutorial_dataname())
     datacube_names = bnc_pyfunc.build_enum_prop_list(xarray_datacube, "DISK_DRIVE")
     return bnc_pyfunc.select_datacube() + datacube_names
 
@@ -392,6 +420,24 @@ def get_default_material():
         blendernc_material.name = "BlenderNC_default"
 
     return blendernc_material
+
+
+def get_translated_node(blendernc_material, eng_node_name):
+    node = blendernc_material.node_tree.nodes.get(translate(eng_node_name))
+    # This line is executed when a different language is selected. By
+    # default a new blender file will create a node named "Principled BSDF"
+    if not node:
+        node = blendernc_material.node_tree.nodes.get(eng_node_name)
+    return node
+
+
+def get_translated_link(node_in_or_out, eng_link_name):
+    link = node_in_or_out.get(translate(eng_link_name))
+    # This line is executed when a different language is selected. By
+    # default a new blender file will create a node named "Principled BSDF"
+    if not link:
+        link = node_in_or_out.get(eng_link_name)
+    return link
 
 
 # Delete if not use in a few months (25-Jun-2021):

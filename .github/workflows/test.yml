@@ -23,16 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        blender: ['3.0', '2.93', '2.92', '2.90', '2.83']
+        blender: ['4.2.0', '4.1.0', '3.6.3', '3.3.12' ,'2.93']
     steps:
       - uses: actions/checkout@v2
       - name: Pull Blender Docker Image
         run: |
-          docker pull nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04
+          docker pull ghcr.io/ranchcomputing/blender-cpu-image:${{ matrix.blender }}
 
       - name: Test addon
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:${{ matrix.blender }}-cpu-ubuntu18.04 /bin/sh -c "bash ./tests/build-test.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t ghcr.io/ranchcomputing/blender-cpu-image:${{ matrix.blender }} /bin/sh -c "bash ./tests/build-test.sh"
 
       - name: Upload math coverage results
         uses: actions/upload-artifact@v2
@@ -58,7 +58,7 @@ jobs:
 
       - name: Coverage combine and report
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t nytimes/blender:latest /bin/sh -c "bash ./tests/coverage-combine.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t ghcr.io/ranchcomputing/blender-cpu-image:3.6.15 /bin/sh -c "bash ./tests/coverage-combine.sh"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

@@ -146,7 +146,7 @@ class BlenderNC_NT_math(bpy.types.Node):
 
     @MathDecorator.math_operation
     def compute_operation(self, data1, data2=None, name=""):
-        if type(data1) != type(data2):
+        if type(data1) is not type(data2):
             dataset = ops[self.blendernc_operation](data1, data2)
         else:
             dataset = ops[self.blendernc_operation](data1, data2.values)
