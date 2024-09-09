@@ -2,6 +2,27 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2024-09-09)
+
+### Feature
+
+* Fix cmap for versions of blender > 3.0, and fix the requirements for blender4 and python >3.10 ([`ac58aee`](https://github.com/blendernc/blendernc/commit/ac58aeefb90973f79a50d3cd1c4a76a27c69079f))
+* Fix colorramp for blender > 3.3 ([`6de5bb9`](https://github.com/blendernc/blendernc/commit/6de5bb9ba9ca2c187047287a9cd38f20f0d142e9))
+* Implement xarray load check ([`2d9a495`](https://github.com/blendernc/blendernc/commit/2d9a4953ca34833cbe2dcecf1f26ce92a02f8c6a))
+* Ensure xarray load ([`b5d31c3`](https://github.com/blendernc/blendernc/commit/b5d31c368acabafc0bc329969acebb4453c1f7e8))
+* Add support to include python path in preferences and better indication when xarray is not properly installed ([`7565685`](https://github.com/blendernc/blendernc/commit/756568586f0c78885275754fb89165b46480dfa0))
+
+### Fix
+
+* Blendernc version for semantic-release ([`e0da126`](https://github.com/blendernc/blendernc/commit/e0da126fc9b665f82c2b7d5163fe16e1a47ceef0))
+* Change release number in blendernc package ([`e9483dd`](https://github.com/blendernc/blendernc/commit/e9483ddfad23c367dbf7ba855ddbb01659830b05))
+* Change release number in blendernc package ([`cc35066`](https://github.com/blendernc/blendernc/commit/cc3506610c8bb5cba096ab27db81ea1b585ccd99))
+* Crash when creating basic nodes ([`685a177`](https://github.com/blendernc/blendernc/commit/685a1774cae1ea07faefea18f15caee7dd15a9eb))
+* Crash when creating basic nodes ([`0516af8`](https://github.com/blendernc/blendernc/commit/0516af884fdf15ec49f3454d32333553b501d89e))
+* Fix vulnerabilities 08-2023 ([`4b95e62`](https://github.com/blendernc/blendernc/commit/4b95e62648bc8cdf6ccf3536076a7dca1c7379a4))
+* Adding python path only if the addon has been loaded ([`17d0d49`](https://github.com/blendernc/blendernc/commit/17d0d49eb3ffd538fffd1c30f386ad05f1a929cf))
+* Fix messages to have custom error messsages ([`eaf9dea`](https://github.com/blendernc/blendernc/commit/eaf9dea032305679e2a24dbdc9ed1be59338e4ff))
+
 ## v0.6.0 (2022-07-12)
 ### Feature
 * Fix time axis selection and fix label for node tests ([`4c909c5`](https://github.com/blendernc/blendernc/commit/4c909c59732af617f9b077788b09610fa3e5076d))

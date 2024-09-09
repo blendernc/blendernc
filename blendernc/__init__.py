@@ -13,7 +13,7 @@ from blendernc.preferences import (
     print_error,
 )
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 
 from . import addon_updater_ops
