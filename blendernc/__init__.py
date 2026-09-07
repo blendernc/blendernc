@@ -3,20 +3,19 @@ import importlib
 
 import bpy
 
-from blendernc.blendernc import registerBlenderNC, unregisterBlenderNC
-from blendernc.messages import PrintMessage, required_package
-from blendernc.preferences import (
-    BlenderNC_Preferences,
-    add_python_path,
-    import_workspace,
-    load_handler_for_startup,
-    print_error,
-)
+from .blendernc import register as BNC_register
+from .blendernc import unregister as BNC_unregister
 
-__version__ = "0.7.0"
+##############################################################################
+################################## IMPORTANT #################################
+##############################################################################
+##### This file is only used for unit testing and should not be used in ######
+# production. It is not part of the BlenderNC extension and is not intended  # ## to be used by end users. It is only used for testing purposes and may be ##
+################## removed in future versions of BlenderNC. ##################
+##############################################################################
+##############################################################################
 
-
-from . import addon_updater_ops
+__version__ = "0.8.0"
 
 bl_info = {
     "name": "BlenderNC",
@@ -33,64 +32,18 @@ bl_info = {
 }
 
 
-def append_path(addon):
-    """
-    append_path If preference has a defined path, then append it to the
-                system path. Else, return error.
-
-    Parameters
-    ----------
-    addon : Object
-        Add on object from Blender
-    """
-    if addon.preferences.blendernc_python_path:
-        import sys
-
-        sys.path.append(addon.preferences.blendernc_python_path)
-    else:
-        bpy.app.handlers.load_factory_startup_post.append(print_error)
-
-
 def register():
     """
     register Register all BlenderNC functions into Blender
     """
-    # Update addon by CGCookie
-    addon_updater_ops.register(bl_info)
-    bpy.utils.register_class(BlenderNC_Preferences)
     # Load blendernc only at launching blender.
-    registerBlenderNC()
+    BNC_register()
     # Add python path to sys.path specified in the add-on preferences.
-    add_python_path()
     addon = bpy.context.preferences.addons.get("blendernc")
-    if importlib.find_loader("xarray"):
-        print("Registering to Change Defaults")
-        bpy.app.handlers.load_factory_startup_post.append(import_workspace)
-        bpy.app.handlers.load_factory_startup_post.append(load_handler_for_startup)
-
-    elif "__addon_persistent" in globals():
-        PrintMessage(required_package, title="Error", icon="ERROR", edit_text="xarray")
-    elif hasattr(addon, "preferences"):
-        append_path(addon)
-    else:
-        bpy.app.handlers.load_factory_startup_post.append(print_error)
 
 
 def unregister():
     """
     unregister Unregister all BlenderNC functions into Blender
     """
-    # Update addon by CGCookie
-    addon_updater_ops.unregister()
-    unregisterBlenderNC()
-    bpy.utils.unregister_class(BlenderNC_Preferences)
-    if (
-        importlib.find_loader("xarray")
-        and load_handler_for_startup in bpy.app.handlers.load_factory_startup_post
-    ):
-        print("Unregistering to Change Defaults")
-        bpy.app.handlers.load_factory_startup_post.remove(load_handler_for_startup)
-        bpy.app.handlers.load_factory_startup_post.remove(import_workspace)
-
-    elif print_error in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_factory_startup_post.remove(print_error)
+    BNC_unregister()

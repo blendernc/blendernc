@@ -1,85 +1,21 @@
-#!/usr/bin/env python3
-# Imports
-from os.path import dirname, join
-
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from blendernc.get_utils import get_blendernc_nodetrees
-from blendernc.messages import PrintMessage, no_cached_image, no_cached_nodes
-from blendernc.translations import translate
+from .decorators import check_if_node_tree_exists
 
-# TODO use this across all the add-on.
-bpy.types.Scene.default_nodegroup = bpy.props.StringProperty(
-    name="BlenderNC",
-    description="Default nodegroup name",
-    default="BlenderNC",
-    maxlen=1024,
-)
-
-
-class BlenderNC_OT_Simple_UI(bpy.types.Operator):
-    bl_idname = "blendernc.datacubeload_sui"
-    bl_label = "Load datacube file"
-    bl_description = "Loads datacube file"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        scene = context.scene
-        default_node_group_name = scene.default_nodegroup
-
-        node_group = bpy.data.node_groups.get(default_node_group_name)
-        datacube = node_group.nodes.get("datacube Input")
-
-        if not node_group.nodes.get(translate("Resolution")):
-            ####################
-            resol = node_group.nodes.new("datacubeResolution")
-            resol.location[0] = 30
-            output = node_group.nodes.new("datacubeOutput")
-            output.location[0] = 190
-        else:
-            resol = node_group.nodes.get(translate("Resolution"))
-            output = node_group.nodes.get(translate("Output"))
-
-        resol.blendernc_resolution = scene.blendernc_resolution
-
-        # LINK
-        node_group.links.new(resol.inputs[0], datacube.outputs[0])
-
-        bpy.ops.image.new(
-            name=default_node_group_name + "_default",
-            width=1024,
-            height=1024,
-            color=(0.0, 0.0, 0.0, 1.0),
-            alpha=True,
-            generated_type="BLANK",
-            float=True,
-        )
-        output.image = bpy.data.images.get(default_node_group_name + "_default")
-        output.update_on_frame_change = scene.blendernc_animate
-
-        # LINK
-        node_group.links.new(output.inputs[0], resol.outputs[0])
-        return {"FINISHED"}
-
-
-class ImportDatacubeCollection(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(
-        name="File Path",
-        description="Filepath used for importing the file",
-        maxlen=1024,
-        subtype="DIR_PATH",
-    )
-    """An instance of the original StringProperty."""
-
+from .translations import translate
+from .utils import get_datacube_path, create_datastruct
 
 class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
-    """ """
+    """Import a NetCDF/GRIB/Zarr dataset into BlenderNC."""
 
     bl_idname = "blendernc.import_mfdataset"
 
     bl_label = "Load Datacube"
     bl_description = "Import Datacube with xarray"
+
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
 
     filter_glob: bpy.props.StringProperty(
         default="*.nc;*.grib;*.zarr",
@@ -87,94 +23,176 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
     """An instance of the original StringProperty."""
 
-    files: bpy.props.CollectionProperty(type=ImportDatacubeCollection)
-    """An instance of the original CollectionProperty."""
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'})
 
-    node_group: bpy.props.StringProperty(
-        name="Node group name", description="Change default node group name"
-    )
-    """An instance of the original StringProperty."""
+    @check_if_node_tree_exists
+    def execute(self, context):
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        filepath_string_node = node_tree.nodes.get(self.node_name)
 
-    node: bpy.props.StringProperty(name="node", description="Node calling operator")
-    """An instance of the original StringProperty."""
+        datacube_path = get_datacube_path(self.directory, self.files)
+
+        filepath_string_node.datacube_file = datacube_path
+        if not bpy.app.background: # Check if Blender is running in background mode
+            if context.area.type == 'VIEW_3D':
+                context.scene.datacube_file = datacube_path
+
+        create_datastruct(self, context)
+
+        return {'FINISHED'}
+
+class Import_OT_CreateGrid(bpy.types.Operator):
+    """Create mesh from datacube coordinates."""
+
+    bl_idname = "blendernc.create_grid_from_coords"
+
+    bl_label = "Create Grid"
+    bl_description = "Create mesh from datacube coordinates"
+
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
 
     def execute(self, context):
-        fdir = dirname(self.properties.filepath)
+        if self.node_name == "" or self.node_tree == "":
+            self.report({'WARNING'}, translate("blendernc", "BlenderNC: Node name or node tree is not set."))
+            return {'CANCELLED'}
+        
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        grid_node = node_tree.nodes.get(self.node_name)
+        grid_obj_name = grid_node.grid_obj_name
 
-        if len(self.files) == 1:
-            path = join(fdir, self.files[0].name)
+        grid_coords = {}
+
+        for input in grid_node.inputs:
+            if input.is_linked:
+                datastruct = grid_node.BNC_datastructs[0] 
+                linked_socket = input.links[0].from_socket
+                grid_coords[input.name] = {"name": linked_socket.name, "size": datastruct.dict[datastruct.filename][linked_socket.name].shape }
+
+        x_size = grid_coords.get("X", {}).get("size", 1)
+        y_size = grid_coords.get("Y", {}).get("size", 1)
+        z_size = grid_coords.get("Z", {}).get("size", 1)
+
+        x_size = x_size if isinstance(x_size, tuple) else (x_size,)
+        y_size = y_size if isinstance(y_size, tuple) else (y_size,)
+        z_size = z_size if isinstance(z_size, tuple) else (z_size,)
+
+        if grid_obj_name in bpy.data.meshes:
+            mesh = bpy.data.meshes.get(grid_obj_name)
+            grid_obj = bpy.data.objects.get(grid_obj_name)
         else:
-            common_name = findCommonName([f.name for f in self.files])
-            path = join(fdir, common_name)
+            mesh = bpy.data.meshes.new(grid_obj_name)
+            grid_obj = bpy.data.objects.new(grid_obj_name, mesh)
+            context.collection.objects.link(grid_obj)
 
-        # Allows user to define a new default nodegroup, other than "BlenderNC"
-        if self.node_group != "" and self.node == "":
-            context.scene.default_nodegroup = self.node_group
-        # Supports nodes when the nodetree and node have been created manually
-        elif self.node_group != "" and self.node != "":
-            bpy.data.node_groups.get(self.node_group).nodes.get(
-                self.node
-            ).blendernc_file = path
-        # Default mode, where "BlenderNC" node is created.
+        modifier = grid_obj.modifiers.new(name="BlenderNC Grid", type='NODES')
+
+        if grid_obj_name in bpy.data.node_groups:
+            grid_nodetree = bpy.data.node_groups.get(grid_obj_name)
         else:
-            context.scene.blendernc_file = path
+            grid_nodetree = bpy.data.node_groups.new(grid_obj_name, 'GeometryNodeTree')
+            
+        modifier.node_group = grid_nodetree
 
-        return {"FINISHED"}
+        if len(grid_nodetree.nodes) == 0:
 
+            geo_output = grid_nodetree.interface.new_socket(
+                name="Geometry",
+                in_out='OUTPUT',
+                socket_type='NodeSocketGeometry'
+            )
 
-def findCommonName(filenames):
-    import difflib
-
-    cfname = []
-    fcounter = 0
-    while len(filenames) - 1 > fcounter:
-        S = difflib.SequenceMatcher(None, filenames[fcounter], filenames[fcounter + 1])
-        cname = ""
-        for block in S.get_matching_blocks():
-            cname = name_match(block, cname, filenames[fcounter])
-        cfname.append(cname)
-        fcounter += 1
-    commonName = min(cfname, key=len)
-    if "*" not in commonName:
-        raise ValueError("Filenames do not match")
-    if commonName[-1] == ".":
-        raise ValueError("Filenames formats do not match")
-    return commonName
-
-
-def name_match(block, cfname, filename):
-    if not cfname and (block.a != 0 or block.b != 0):
-        raise ValueError("Start of filename strings do not match.")
-    elif block.a == block.b and block.size != 0:
-        if len(cfname) != 0 and len(cfname) != block.a:
-            cfname += "*"
-        cfname += filename[block.a : block.a + block.size]
-    elif cfname or block.a != block.b:
-        pass
-    return cfname
-
-
-class BlenderNC_OT_purge_all(bpy.types.Operator):
-    bl_idname = "blendernc.purge_all"
-    bl_label = "Purge all frames"
-    bl_description = "Purge all frames except current"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        NodeTrees = get_blendernc_nodetrees()
-        cache = bpy.context.scene.datacube_cache
-        if cache.keys():
-            for NodeTree in NodeTrees:
-                NodeTree_name = NodeTree.name
-                if not cache[NodeTree_name].keys():
-                    PrintMessage(no_cached_image, "Info", "INFO")
-                else:
-                    self.report(
-                        {"INFO"}, "Removed cache from node {0}".format(NodeTree_name)
-                    )
-                    identifiers = list(cache[NodeTree_name].keys())
-                    for identifier in identifiers[:-1]:
-                        cache[NodeTree_name].pop(identifier)
+            MeshGrid_node = grid_nodetree.nodes.new('GeometryNodeMeshGrid')
+            output_node = grid_nodetree.nodes.new('NodeGroupOutput')
         else:
-            PrintMessage(no_cached_nodes, "Info", "INFO")
-        return {"FINISHED"}
+            MeshGrid_node = grid_nodetree.nodes.get('Grid')
+            output_node = grid_nodetree.nodes.get('Group Output')
+        
+        grid_nodetree.links.new(MeshGrid_node.outputs['Mesh'], output_node.inputs['Geometry'])
+
+        if len(x_size) == 1 and len(y_size) == 1:
+            MeshGrid_node.inputs[2].default_value = x_size[0]
+            MeshGrid_node.inputs[3].default_value = y_size[0]
+        elif len(x_size) == 1 and len(z_size) == 1:
+            MeshGrid_node.inputs[2].default_value = x_size[0]
+            MeshGrid_node.inputs[3].default_value = z_size[0]
+        elif len(y_size) == 1 and len(z_size) == 1:
+            MeshGrid_node.inputs[2].default_value = y_size[0]
+            MeshGrid_node.inputs[3].default_value = z_size[0]
+        elif len(x_size) == 2 and len(y_size) == 2:
+            MeshGrid_node.inputs[2].default_value = x_size[0]
+            MeshGrid_node.inputs[3].default_value = y_size[1]
+        elif len(x_size) == 2 and len(z_size) == 2:
+            MeshGrid_node.inputs[2].default_value = x_size[0]
+            MeshGrid_node.inputs[3].default_value = z_size[1]
+        elif len(y_size) == 2 and len(z_size) == 2:
+            MeshGrid_node.inputs[2].default_value = y_size[0]
+            MeshGrid_node.inputs[3].default_value = z_size[1]
+        else:
+            self.report({'WARNING'}, translate("blendernc", "BlenderNC: No valid coordinates found"))
+            return {'CANCELLED'}
+
+        object_blendernc = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = grid_obj
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        attr = add_attribute(mesh, "Coordinates", type="FLOAT_VECTOR", domain="POINT")
+
+        import numpy as np
+
+        coords = []
+        if x_size!=1 and y_size!=1:
+            x = grid_node.datastruct[grid_node.filename][grid_coords.get("X").get("name", 1)].values
+            y = grid_node.datastruct[grid_node.filename][grid_coords.get("Y").get("name", 1)].values
+            X,Y = np.meshgrid(x, y, indexing='ij')
+            coords = ["X", "Y"]
+        elif x_size!=1 and z_size!=1:
+            x = grid_node.datastruct[grid_node.filename][grid_coords.get("X").get("name", 1)].values
+            z = grid_node.datastruct[grid_node.filename][grid_coords.get("Z").get("name", 1)].values
+            X,Z = np.meshgrid(x, z, indexing='ij')
+            coords = ["X", "Z"]
+        elif y_size!=1 and z_size!=1:
+            y = grid_node.datastruct[grid_node.filename][grid_coords.get("Y").get("name", 1)].values
+            z = grid_node.datastruct[grid_node.filename][grid_coords.get("Z").get("name", 1)].values
+            Y,Z = np.meshgrid(y, z, indexing='ij')
+            coords = ["Y", "Z"]
+        if len(x_size) == 2:
+            X = grid_node.datastruct[grid_node.filename][grid_coords.get("X").get("name", 1)].values
+            coords.append("X")
+        if len(y_size) == 2:
+            Y = grid_node.datastruct[grid_node.filename][grid_coords.get("Y").get("name", 1)].values
+            coords.append("Y")
+        if len(z_size) == 2:
+            Z = grid_node.datastruct[grid_node.filename][grid_coords.get("Z").get("name", 1)].values
+            coords.append("Z")
+
+        if len(x_size) > 2  or len(y_size) > 2 or len(z_size) >2:
+            self.report({'ERROR'}, translate("More than 2 dimensions were found, only 2D grids are supported by the Grid node. For 3D grids, please use the volume node."))
+            return {'CANCELLED'}
+
+        for coord in ["X", "Y", "Z"]:
+            if coord not in coords:
+                if coord == "X":
+                    X = np.zeros_like(Y)
+                elif coord == "Y":
+                    Y = np.zeros_like(Z)
+                elif coord == "Z":
+                    Z = np.zeros_like(X)
+        
+        coords = np.stack([X, Y, Z], axis=0).transpose(1,2,0).flatten()
+
+        attr.data.foreach_set("vector", coords)
+        grid_node.update()
+        bpy.context.view_layer.objects.active = object_blendernc
+        return {'FINISHED'}
+
+def add_attribute(mesh, attr_name, type="FLOAT", domain="POINT"):
+    """Add a custom attribute to a mesh object."""
+    attr = None
+    if mesh and mesh.id_type == 'MESH':
+        if attr_name not in mesh.attributes:
+            attr = mesh.attributes.new(name=attr_name, type=type, domain=domain)
+        else:
+            attr = mesh.attributes.get(attr_name)
+    return attr

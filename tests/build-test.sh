@@ -1,8 +1,6 @@
 #!/bin/sh
 apt-get update --fix-missing
 
-apt-get install libglib2.0-bin --yes
-
 python -m ensurepip --default-pip
 
 python -m pip install --upgrade pip
@@ -17,7 +15,7 @@ cd tests
 
 echo -e "import coverage \n\ncov=coverage.process_startup()\n"> sitecustomize.py
 echo -e "print('Initiate coverage')" >> sitecustomize.py
-echo -e "print(cov)" >> sitecustomize.py
+# echo -e "print(cov)" >> sitecustomize.py
 
 export PYTHONPATH=$PYTHONPATH:${PWD}
 
@@ -26,6 +24,7 @@ echo $PYTHONPATH
 # Run tests before installing libraries:
 python run_tests.py "blender" "test_nolib"
 test_nolib_exit=$?
+echo "Test exit code: $test_nolib_exit"
 
 rm ./sitecustomize.py
 
@@ -40,17 +39,17 @@ cd tests
 
 echo $PYTHONPATH
 
-python -m cfgrib selfcheck
+# python -m cfgrib selfcheck
 
 # Create again the sitecustomize file.
 echo -e "import coverage \n\ncov=coverage.process_startup()\n"> sitecustomize.py
 echo -e "print('Initiate coverage')" >> sitecustomize.py
-echo -e "print(cov)" >> sitecustomize.py
+# echo -e "print(cov)" >> sitecustomize.py
 
 python run_tests.py
 test_exit=$?
 
-rm *.png
+# rm *.png
 
 python -m coverage combine
 python -m coverage report

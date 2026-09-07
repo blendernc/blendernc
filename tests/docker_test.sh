@@ -3,14 +3,13 @@
 # Define the function to run Blender tests
 run_blender_tests() {
     # Define an array of Blender versions
-    ver_blender=('4.2.0' '4.1.0' '3.6.3' '3.3.12' '2.93')
+    ver_blender=('5.2.0')
 
     # Loop through each version and run the docker command
     for version in "${ver_blender[@]}"; do
-        read -rep "Version "$version" ran, do you want to continue?" -n 1
-        echo "Running tests for Blender version: $version"
+        read -rep "Run tests in Blender "$version", do you want to continue? " -n 1
         docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc \
-        -t ghcr.io/ranchcomputing/blender-cpu-image:"$version" /bin/sh -c "bash ./tests/build-test.sh"
+        -t ghcr.io/ranchcomputing/blender-cpu-image:"$version" /bin/sh -c "bash /blendernc/tests/build-test.sh"
     done
 }
 

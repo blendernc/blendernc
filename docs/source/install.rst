@@ -4,8 +4,11 @@
 Install BlenderNC
 =================
 
-.. note::
-    BlenderNC is supported by versions of **Blender > 2.8**.
+.. important::
+   - BlenderNC 0.8.0 breaks backwards compatibility, only Blender 5.2+ is supported.
+   - BlenderNC 0.7.0 works for versions lower to Blender > 2.8 - 4.2.
+
+**The installation of the extension of BlenderNC 0.8.0 is only supported for Blender 5.2+ and it includes already all the required dependencies.** For Blender < 4.2, you will need to install the required dependencies in Blender's Python environment.
 
 Setting up the Blender Python environment
 =========================================
@@ -30,8 +33,21 @@ BlenderNC requires the following python modules to be installed in Blender's Pyt
     psutil
 
 
-To install the previous python modules in your Blender distribution execute the
-following commands depending on your OS:
+For advanced users that may want to control the environment in Blender 5.2+ you can use the following commands to install the required modules in Blender's Python environment:
+
+Within blender find the path of the blender module folder:
+
+.. code-block:: bash
+
+    bpy.utils.user_resource("SCRIPTS", path="modules")
+
+Then locate the python executable and install the required modules using pip to the blender module folder:
+
+.. code-block:: bash
+
+    path_to_blender_python_executable -m pip install -r requirements.txt --target blender_module_folder
+
+For Blender < 4.2, you can use the following commands to install the required modules in Blender's Python environment:
 
 macOS
 -----
