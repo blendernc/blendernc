@@ -1,9 +1,12 @@
-import bpy
-import xarray as xr
+import glob
 import logging
 import os.path
-import glob
+
+import bpy
+import xarray as xr
+
 from .decorators import check_if_node_tree_exists
+
 
 def get_datacube_path(directory, files):
     """
@@ -15,12 +18,12 @@ def get_datacube_path(directory, files):
     """
     if len(files) == 1:
         datacube_path = os.path.join(directory, files[0].name)
-    else: 
+    else:
         filenames = [f.name for f in files]
         common_name = findCommonName(filenames)
         datacube_path = os.path.join(directory, common_name)
-    return  datacube_path
-    
+    return datacube_path
+
 
 @check_if_node_tree_exists
 def create_datastruct(self, context):
@@ -30,13 +33,15 @@ def create_datastruct(self, context):
     BNC_datastructs = filepath_string_node.BNC_datastructs[0]
     BNC_datastructs.datafile = filepath_string_node.datacube_file
     BNC_datastructs.filename = filepath_string_node.datacube_file.split("/")[-1]
-    BNC_datastructs.dict[BNC_datastructs.filename] = load_dataset(BNC_datastructs.datafile)
+    BNC_datastructs.dict[BNC_datastructs.filename] = load_dataset(
+        BNC_datastructs.datafile
+    )
 
-    
+
 def load_dataset(filepath):
     """
     Load a dataset using xarray and return the dataset object.
-    
+
     Parameters:
         filepath (str): The path to the dataset file.
     """
@@ -46,6 +51,7 @@ def load_dataset(filepath):
     else:
         raise NameError(f"File {filepath} does not exist")
     return dataset
+
 
 def name_match(block, cfname, filename):
     if not cfname and (block.a != 0 or block.b != 0):
@@ -57,6 +63,7 @@ def name_match(block, cfname, filename):
     elif cfname or block.a != block.b:
         pass
     return cfname
+
 
 def findCommonName(filenames):
     import difflib
@@ -77,6 +84,7 @@ def findCommonName(filenames):
         raise ValueError("Filenames formats do not match")
     return commonName
 
+
 def get_possible_variables(node, context):
     datastruct = node.BNC_datastructs[0]
     if not datastruct.dict and not datastruct.filename:
@@ -84,6 +92,7 @@ def get_possible_variables(node, context):
     datacubedata = datastruct.dict[datastruct.filename]
     items = get_var(datacubedata)
     return items
+
 
 def get_var(datacubedata, str_filter=None):
     """
@@ -116,9 +125,7 @@ def get_var(datacubedata, str_filter=None):
             )
             for var in variables
         ]
-        var_names = build_enum_prop_list(
-            variables, "DISK_DRIVE", long_name_list
-        )
+        var_names = build_enum_prop_list(variables, "DISK_DRIVE", long_name_list)
     else:
         var_names = build_enum_prop_list(variables, "DISK_DRIVE")
     return select_item() + [None] + var_names
@@ -137,6 +144,7 @@ def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
         ]
     return list
 
+
 def filter_2_string_lists(list, str_filter):
     tmp_list = []
     for strfit in str_filter:
@@ -145,9 +153,10 @@ def filter_2_string_lists(list, str_filter):
                 tmp_list.append(item)
     return tmp_list
 
+
 def select_item():
     return [("No var", "Select variable", "Empty", "NODE_SEL", 0)]
 
+
 def empty_item():
     return [("No var", "No variable", "Empty", "CANCEL", 0)]
-

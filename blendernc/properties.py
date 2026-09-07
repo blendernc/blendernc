@@ -1,5 +1,7 @@
-import bpy
 from collections import defaultdict
+
+import bpy
+
 
 class BNC_data(bpy.types.PropertyGroup):
     filename: bpy.props.StringProperty()

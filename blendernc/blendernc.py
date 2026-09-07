@@ -1,58 +1,46 @@
-import bpy
 import logging
 
-from .UI_operators import (
+import bpy
+
+from .menus import (
+    BlenderNCNodeAnimate,
+    BlenderNCNodeGrid,
+    BlenderNCNodeImport,
+    BlenderNCNodeMenu,
+    add_custom_node_to_menu,
+)
+from .nodes import (
+    DatacubeCoords,
+    DatacubeGrid,
+    DatacubeImport,
+    DatacubeUpdateTexture,
+    DatacubeVariable,
+    DebugNode,
+)
+from .panels import BlenderNC_UI_PT_3D_VIEW, BlenderNC_UI_PT_3D_VIEW_PARENT
+from .properties import BNC_data
+from .sockets import bNCdatacubeSocket
+from .UI_operators import Import_OT_CreateGrid, Import_OT_mfdataset
+
+classes = [
+    BNC_data,
     Import_OT_mfdataset,
     Import_OT_CreateGrid,
-    )
-
-from .panels import (
     BlenderNC_UI_PT_3D_VIEW_PARENT,
     BlenderNC_UI_PT_3D_VIEW,
-)
-
-from .nodes import (
     DatacubeImport,
     DatacubeVariable,
     DatacubeCoords,
     DatacubeGrid,
     DatacubeUpdateTexture,
-    DebugNode,
-)
-
-from .menus import (
+    bNCdatacubeSocket,
     BlenderNCNodeMenu,
     BlenderNCNodeImport,
     BlenderNCNodeGrid,
     BlenderNCNodeAnimate,
-    add_custom_node_to_menu
-)
+    DebugNode,
+]
 
-from .sockets import ( 
-    bNCdatacubeSocket 
-)
-
-from .properties import (
-    BNC_data,
-)
-
-classes = [BNC_data,
-           Import_OT_mfdataset,
-           Import_OT_CreateGrid,
-           BlenderNC_UI_PT_3D_VIEW_PARENT,
-           BlenderNC_UI_PT_3D_VIEW,
-           DatacubeImport,
-           DatacubeVariable,
-           DatacubeCoords,
-           DatacubeGrid,
-           DatacubeUpdateTexture,
-           bNCdatacubeSocket,
-           BlenderNCNodeMenu, 
-           BlenderNCNodeImport,
-           BlenderNCNodeGrid,
-           BlenderNCNodeAnimate,
-           DebugNode,
-           ]
 
 def register():
     logging.info("Registering BlenderNC")

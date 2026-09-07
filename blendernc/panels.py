@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bpy
+
 from .utils import create_datastruct
 
 bpy.types.Scene.datacube_file = bpy.props.StringProperty(
@@ -7,8 +8,9 @@ bpy.types.Scene.datacube_file = bpy.props.StringProperty(
     description="Folder with assets blend files",
     default="",
     maxlen=1024,
-    update=create_datastruct
+    update=create_datastruct,
 )
+
 
 class BlenderNC_UI_PT_3D_VIEW_PARENT(bpy.types.Panel):
     bl_idname = "BLENDERNC_UI_PT_3D_VIEW_PARENT"
