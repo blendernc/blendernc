@@ -1,7 +1,5 @@
 import bpy
-
 from .nodes import *
-
 
 class BlenderNCNodeMenu(bpy.types.Menu):
     bl_idname = "NODE_MT_category_blendernc"
@@ -13,6 +11,7 @@ class BlenderNCNodeMenu(bpy.types.Menu):
         self.layout.menu(BlenderNCNodeSelection.bl_idname)
         self.layout.menu(BlenderNCNodeGrid.bl_idname)
         self.layout.menu(BlenderNCNodeAnimate.bl_idname)
+        self.layout.separator()
         self.layout.operator(
                     "node.add_node", text="Debug Node"
                 ).type = DebugNode.bl_idname
@@ -37,14 +36,13 @@ class BlenderNCNodeGrid(bpy.types.Menu):
     bl_label = "Grid"
 
     def draw(self, context):
-        self.layout.operator("node.add_node", text="Datacube Coords").type = (
-            DatacubeCoords.bl_idname
-        )
+        self.layout.operator(
+            "node.add_node", text="Datacube Coords"
+        ).type = DatacubeCoords.bl_idname
 
-        self.layout.operator("node.add_node", text="Datacube Grid").type = (
-            DatacubeGrid.bl_idname
-        )
-
+        self.layout.operator(
+            "node.add_node", text="Datacube Grid"
+        ).type = DatacubeGrid.bl_idname
 
 class BlenderNCNodeSelection(bpy.types.Menu):
     bl_idname = "NODE_MT_category_blendernc_selection"
@@ -66,8 +64,8 @@ class BlenderNCNodeAnimate(bpy.types.Menu):
 
     def draw(self, context):
         self.layout.operator(
-            "node.add_node", text="Update Texture"
-        ).type = DatacubeUpdateTexture.bl_idname
+            "node.add_node", text="Animate Texture"
+        ).type = DatacubeAnimateTexture.bl_idname
 
 def add_custom_node_to_menu(self, context):
     self.layout.menu(BlenderNCNodeMenu.bl_idname)

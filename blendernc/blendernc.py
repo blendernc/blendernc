@@ -1,3 +1,4 @@
+import bpy
 import logging
 
 from .operators import (
@@ -12,7 +13,15 @@ from .menus import (
     BlenderNCNodeMenu,
     add_custom_node_to_menu,
 )
+
+from .panels import (
+    BlenderNC_UI_PT_3D_VIEW_PARENT,
+    BlenderNC_UI_PT_3D_VIEW,
+)
+
 from .nodes import (
+    DatacubeImport,
+    DatacubeVariable,
     DatacubeCoords,
     DatacubeGrid,
     DatacubeSlice,
@@ -58,7 +67,6 @@ classes = [BNC_data,
            BlenderNCNodeAnimate,
            DebugNode,
            ]
-
 
 def register():
     logging.info("Registering BlenderNC")

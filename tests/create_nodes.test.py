@@ -6,8 +6,6 @@ import numpy as np
 
 from blendernc.node_utils import create_geometrynodetree, create_node
 
-from blendernc.node_utils import create_geometrynodetree, create_node
-
 BlenderNCNode = np.unique(
     [
         cls.bl_idname
@@ -28,7 +26,6 @@ class test_add_and_remove_all_nodes(unittest.TestCase):
             node_tree = bpy.data.node_groups.get("BLENDERNC")
             for node in list(node_tree.nodes):
                 node_tree.nodes.remove(node)
-
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(test_add_and_remove_all_nodes)
 test = unittest.TextTestRunner().run(suite)
