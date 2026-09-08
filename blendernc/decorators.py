@@ -1,7 +1,10 @@
 import bpy
 from functools import wraps
 from collections import defaultdict
+from functools import wraps
+
 from .node_utils import create_basic_geometry_node
+
 
 
 def is_linked(update_function):
@@ -24,6 +27,7 @@ def is_linked(update_function):
 
 def is_single_input_linked(update_function):
     """Run an update only when the node has at least one linked input."""
+
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
         datastruct = self.BNC_datastructs[0]
@@ -57,39 +61,51 @@ def is_single_input_linked(update_function):
         return update_function(self, *args, **kwargs)
     return wrapper
 
+
 def initialize_BNC_datastructs(update_function):
     """Initialize a new data item before running the update function."""
+
     @wraps(update_function)
     def wrapper(self, context):
         if hasattr(self, "BNC_datastructs"):
             item = self.BNC_datastructs.add()
             item.filename = ""
             item.datafile = ""
-            item.dict = defaultdict() # This is a global dictionary that will store the datasets for all the nodes and node_trees. It can be used to access the datasets from any node or node_tree in the BlenderNC workflow. 
+            item.dict = (
+                defaultdict()
+            )  # This is a global dictionary that will store the datasets for all the nodes and node_trees. It can be used to access the datasets from any node or node_tree in the BlenderNC workflow.
         return update_function(self, context)
+
     return wrapper
+
 
 def check_if_node_tree_exists(update_function):
     """Check if the node tree exists before running the update function."""
+
     @wraps(update_function)
     def wrapper(self, context):
-        if self.name == 'Scene':
+        if self.name == "Scene":
             node_tree = create_basic_geometry_node()
-            node_tree.nodes.get("Datacube Import").datacube_file = context.scene.datacube_file
+            node_tree.nodes.get("Datacube Import").datacube_file = (
+                context.scene.datacube_file
+            )
             return
         elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
-            if (self.node_name == "" or self.node_tree == ""):
+            if self.node_name == "" or self.node_tree == "":
                 node_tree = create_basic_geometry_node()
                 self.node_tree = node_tree.name
                 self.node_name = node_tree.nodes.get("Datacube Import").name
         else:
             self.node_tree = self.id_data.name
             self.node_name = self.name
-        return update_function(self, context)        
+        return update_function(self, context)
+
     return wrapper
+
 
 def has_datastructs(update_function):
     """Check if the node has a BNC_datastructs attribute before running the update function."""
+
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
         if hasattr(self, "BNC_datastructs"):
@@ -102,4 +118,5 @@ def has_datastructs(update_function):
         else:
             for output in self.outputs:
                 self.outputs.remove(output)
+
     return wrapper

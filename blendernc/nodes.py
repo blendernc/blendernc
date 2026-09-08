@@ -1,8 +1,12 @@
+from PIL.Image import item
 import bpy 
+from collections import defaultdict
 
 from .utils import get_possible_variables, load_dataset, create_datastruct, get_possible_coordinates
 from .decorators import is_single_input_linked,initialize_BNC_datastructs,has_datastructs
 from .properties import BNC_data
+from .utils import create_datastruct, get_possible_variables, load_dataset
+
 
 class bNCNodeDefault:
     """Base class for all BlenderNC nodes. This class provides common functionality and properties that are shared across all node types."""
@@ -15,33 +19,33 @@ class bNCNodeDefault:
             cursor = space.cursor_location
             self.location = cursor
 
-# Custom node type 
+# Custom node type
 class DatacubeImport(bpy.types.Node, bNCNodeDefault):
     bl_idname = "BlenderNCNodeImport"  # Unique identifier for the node
     bl_label = "Datacube Import"  # Name that will appear on the node in the editor
-    bl_icon = 'EXPERIMENTAL'
+    bl_icon = "EXPERIMENTAL"
 
     datacube_file: bpy.props.StringProperty(
         name="",
         description="Filepath used for importing the file",
         default="",
         maxlen=1024,
-        update=create_datastruct
+        update=create_datastruct,
     )
     """An instance of the original StringProperty."""
 
     filename: bpy.props.StringProperty(update=lambda self, context: self.update())
 
     @initialize_BNC_datastructs
-    def init(self, context): 
+    def init(self, context):
         socket = self.outputs.new("bNCdatacubeSocket", "xarray datacube")
-        socket.display_shape = 'SQUARE'
+        socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
         layout.label(text="Datacube path", icon="OUTLINER_OB_GROUP_INSTANCE")
         row = layout.row(align=True)
         split = row.split(factor=0.85, align=True)
-        
+
         split.prop(self, "datacube_file")
         op = split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
         op.node_name = self.name
@@ -64,12 +68,12 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
 class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
     bl_idname = "BlenderNCNodeCoords"  # Unique identifier for the node
     bl_label = "Datacube Coords"  # Name that will appear on the node in the editor
-    bl_icon = 'EXPERIMENTAL'
+    bl_icon = "EXPERIMENTAL"
 
     @initialize_BNC_datastructs
-    def init(self, context): 
+    def init(self, context):
         socket = self.inputs.new("bNCdatacubeSocket", "xarray datacube")
-        socket.display_shape = 'SQUARE'
+        socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
         pass
@@ -88,7 +92,7 @@ class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
 class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     bl_idname = "BlenderNCNodeVariable"  # Unique identifier for the node
     bl_label = "Datacube Variable"  # Name that will appear on the node in the editor
-    bl_icon = 'EXPERIMENTAL'
+    bl_icon = "EXPERIMENTAL"
 
     datacube_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
@@ -97,9 +101,9 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     )
 
     @initialize_BNC_datastructs
-    def init(self, context): 
+    def init(self, context):
         socket = self.inputs.new("bNCdatacubeSocket", "xarray datacube")
-        socket.display_shape = 'SQUARE'
+        socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
         layout.label(text="Select Variable:")
@@ -119,18 +123,17 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
             socket.default_value = self.datacube_vars
 
 
-        
 class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     bl_idname = "BlenderNCNodeGrid"  # Unique identifier for the node
     bl_label = "Datacube Grid"  # Name that will appear on the node in the editor
-    bl_icon = 'EXPERIMENTAL'
+    bl_icon = "EXPERIMENTAL"
 
     grid_obj_name: bpy.props.StringProperty(
         default="Grid",
     )
 
     @initialize_BNC_datastructs
-    def init(self, context): 
+    def init(self, context):
         self.inputs.new("NodeSocketString", "X")
         self.inputs.new("NodeSocketString", "Y")
         self.inputs.new("NodeSocketString", "Z")
@@ -160,7 +163,7 @@ class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
     bl_icon = 'EXPERIMENTAL'
 
     @initialize_BNC_datastructs
-    def init(self, context): 
+    def init(self, context):
         self.inputs.new("NodeSocketObject", "Object")
         self.inputs.new("bNCdatacubeSocket", "xarray datacube")
 

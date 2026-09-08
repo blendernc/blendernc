@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-from bpy.types import NodeSocketFloat
-from bpy.props import StringProperty
 from collections import defaultdict
+
+from bpy.props import StringProperty
+from bpy.types import NodeSocketFloat
 
 
 class bNCSocketDefault:
     """Base class for all Sockets"""
 
     color = (0.38, 0.85, 0, 1)
-    
+
     def unlink(self, link):
         return self.id_data.links.remove(link)
 
@@ -29,7 +30,7 @@ class bNCdatacubeSocket(NodeSocketFloat, bNCSocketDefault):
     bl_label = "datacube Socket"
     display_shape = "SQUARE"
 
-    def init(self, context): 
+    def init(self, context):
         pass
 
     def draw(self, context, layout, node, text):
