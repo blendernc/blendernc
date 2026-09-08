@@ -1,21 +1,20 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from .node_utils import create_nodes
-
 from .decorators import check_if_node_tree_exists, is_linked
-
-from .utils import (assign_modifier_to_object, 
-                    extract_dimensions_of_grid, 
-                    get_2D_coords, 
-                    get_datacube_path, 
-                    get_grid_coords, 
-                    get_coords_from_datastruct,
-                    create_datastruct, 
-                    look_up_object_and_mesh, 
-                    stack_2D_coords, 
-                    add_attribute
-                    )
+from .node_utils import create_nodes
+from .utils import (
+    add_attribute,
+    assign_modifier_to_object,
+    create_datastruct,
+    extract_dimensions_of_grid,
+    get_2D_coords,
+    get_coords_from_datastruct,
+    get_datacube_path,
+    get_grid_coords,
+    look_up_object_and_mesh,
+    stack_2D_coords,
+)
 
 
 class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
@@ -35,8 +34,12 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
     """An instance of the original StringProperty."""
 
-    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'})
-    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'SKIP_SAVE', 'HIDDEN'})
+    directory: bpy.props.StringProperty(
+        subtype="DIR_PATH", options={"SKIP_SAVE", "HIDDEN"}
+    )
+    files: bpy.props.CollectionProperty(
+        type=bpy.types.OperatorFileListElement, options={"SKIP_SAVE", "HIDDEN"}
+    )
 
     @check_if_node_tree_exists
     def execute(self, context):
@@ -46,13 +49,14 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
         datacube_path = get_datacube_path(self.directory, self.files)
 
         filepath_string_node.datacube_file = datacube_path
-        if not bpy.app.background: # Check if Blender is running in background mode
-            if context.area.type == 'VIEW_3D':
+        if not bpy.app.background:  # Check if Blender is running in background mode
+            if context.area.type == "VIEW_3D":
                 context.scene.datacube_file = datacube_path
 
         create_datastruct(self, context)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
+
 
 class Import_OT_CreateGrid(bpy.types.Operator):
     """Create mesh from datacube coordinates."""
@@ -67,7 +71,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 
     @is_linked
     def execute(self, context):
-        
+
         node_tree = bpy.data.node_groups.get(self.node_tree)
         grid_node = node_tree.nodes.get(self.node_name)
         grid_obj_name = grid_node.grid_obj_name
@@ -76,10 +80,12 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 
         obj, mesh = look_up_object_and_mesh(grid_obj_name)
 
-        modifier, grid_nodetree = assign_modifier_to_object(obj,grid_obj_name)
+        modifier, grid_nodetree = assign_modifier_to_object(obj, grid_obj_name)
 
-        nodes = {"GeometryNodeMeshGrid":{"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}}
-        MeshGrid_nodes = create_nodes(grid_nodetree,nodes)
+        nodes = {
+            "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
+        }
+        MeshGrid_nodes = create_nodes(grid_nodetree, nodes)
         MeshGrid_node = MeshGrid_nodes["GeometryNodeMeshGrid"]["node"]
 
         axis1, axis2 = extract_dimensions_of_grid(grid_coords)
@@ -96,33 +102,43 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         grid_coords = get_coords_from_datastruct(datastruct, grid_coords)
 
         grid_coords = get_2D_coords(grid_coords)
-        
+
         flattened_coords = stack_2D_coords(grid_coords)
 
         attr = add_attribute(mesh, "Coordinates", type="FLOAT_VECTOR", domain="POINT")
-        
+
         attr.data.foreach_set("vector", flattened_coords)
         # grid_node.update()
 
-        modifier, grid_nodetree = assign_modifier_to_object(obj,"apply_grid_coords")
+        modifier, grid_nodetree = assign_modifier_to_object(obj, "apply_grid_coords")
 
-        nodes = {"NodeGroupInput":{
-            "links":{"Geometry":{"GeometryNodeSetPosition": "Geometry"}}},
-                 "GeometryNodeInputNamedAttribute":{
-            "links":{"Attribute":{"GeometryNodeSetPosition": "Position"}}},
-                 "GeometryNodeSetPosition":{
-            "links":{"Geometry":{"GeometryNodeRemoveAttribute": "Geometry"}}},
-                 "GeometryNodeRemoveAttribute":{
-            "links":{"Geometry":{"NodeGroupOutput": "Geometry"}}},            
-            }
+        nodes = {
+            "NodeGroupInput": {
+                "links": {"Geometry": {"GeometryNodeSetPosition": "Geometry"}}
+            },
+            "GeometryNodeInputNamedAttribute": {
+                "links": {"Attribute": {"GeometryNodeSetPosition": "Position"}}
+            },
+            "GeometryNodeSetPosition": {
+                "links": {"Geometry": {"GeometryNodeRemoveAttribute": "Geometry"}}
+            },
+            "GeometryNodeRemoveAttribute": {
+                "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
+            },
+        }
         nodes_created = create_nodes(grid_nodetree, nodes)
 
-        nodes_created["GeometryNodeInputNamedAttribute"]["node"].data_type = "FLOAT_VECTOR"
-        nodes_created["GeometryNodeInputNamedAttribute"]["node"].inputs[0].default_value = "Coordinates"
-        nodes_created["GeometryNodeRemoveAttribute"]["node"].inputs[2].default_value = "Coordinates"
+        nodes_created["GeometryNodeInputNamedAttribute"][
+            "node"
+        ].data_type = "FLOAT_VECTOR"
+        nodes_created["GeometryNodeInputNamedAttribute"]["node"].inputs[
+            0
+        ].default_value = "Coordinates"
+        nodes_created["GeometryNodeRemoveAttribute"]["node"].inputs[
+            2
+        ].default_value = "Coordinates"
         bpy.ops.object.modifier_apply(modifier=modifier.name)
 
         bpy.context.view_layer.objects.active = object_blendernc
 
-        return {'FINISHED'}
-
+        return {"FINISHED"}

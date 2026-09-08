@@ -1,11 +1,14 @@
+import glob
+import logging
+import os.path
+
 import bpy
 import numpy as np
 import xarray as xr
-import logging
-import os.path
-import glob
+
 from .decorators import check_if_node_tree_exists
 from .node_utils import create_geometrynodetree
+
 
 def get_datacube_path(directory, files):
     """
@@ -17,12 +20,12 @@ def get_datacube_path(directory, files):
     """
     if len(files) == 1:
         datacube_path = os.path.join(directory, files[0].name)
-    else: 
+    else:
         filenames = [f.name for f in files]
         common_name = findCommonName(filenames)
         datacube_path = os.path.join(directory, common_name)
-    return  datacube_path
-    
+    return datacube_path
+
 
 @check_if_node_tree_exists
 def create_datastruct(self, context):
@@ -32,13 +35,15 @@ def create_datastruct(self, context):
     BNC_datastructs = filepath_string_node.BNC_datastructs[0]
     BNC_datastructs.datafile = filepath_string_node.datacube_file
     BNC_datastructs.filename = filepath_string_node.datacube_file.split("/")[-1]
-    BNC_datastructs.dict[BNC_datastructs.filename] = load_dataset(BNC_datastructs.datafile)
+    BNC_datastructs.dict[BNC_datastructs.filename] = load_dataset(
+        BNC_datastructs.datafile
+    )
 
-    
+
 def load_dataset(filepath):
     """
     Load a dataset using xarray and return the dataset object.
-    
+
     Parameters:
         filepath (str): The path to the dataset file.
     """
@@ -48,6 +53,7 @@ def load_dataset(filepath):
     else:
         raise NameError(f"File {filepath} does not exist")
     return dataset
+
 
 def name_match(block, cfname, filename):
     if not cfname and (block.a != 0 or block.b != 0):
@@ -59,6 +65,7 @@ def name_match(block, cfname, filename):
     elif cfname or block.a != block.b:
         pass
     return cfname
+
 
 def findCommonName(filenames):
     import difflib
@@ -79,6 +86,7 @@ def findCommonName(filenames):
         raise ValueError("Filenames formats do not match")
     return commonName
 
+
 def get_grid_coords(grid_node):
     datastruct = grid_node.BNC_datastructs[0]
 
@@ -88,7 +96,7 @@ def get_grid_coords(grid_node):
             continue
 
         linked = socket.links[0].from_socket
-        dataset=datastruct.dict[datastruct.filename]
+        dataset = datastruct.dict[datastruct.filename]
 
         coords[socket.name] = {
             "name": socket.default_value,
@@ -97,8 +105,10 @@ def get_grid_coords(grid_node):
 
     return coords
 
+
 def return_tuple(value):
     return value if isinstance(value, tuple) else (value,)
+
 
 def get_possible_variables(node, context):
     datastruct = node.BNC_datastructs[0]
@@ -107,6 +117,7 @@ def get_possible_variables(node, context):
     datacubedata = datastruct.dict[datastruct.filename]
     items = get_var(datacubedata)
     return items
+
 
 def get_possible_coordinates(node, context):
     datastruct = node.BNC_datastructs[0]
@@ -129,78 +140,99 @@ def get_2D_coords(coords):
         x = coords[coord_dims[0]]["data"].values
         y = coords[coord_dims[1]]["data"].values
         if x.ndim == 1 and y.ndim == 1:
-            Y, X = np.meshgrid(y, x, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing="ij")
             coords[coord_dims[0]]["data"] = X
             coords[coord_dims[1]]["data"] = Y
-            coords[missing_dims[0]] = {"name": missing_dims[0], 
-                                       "size": X.shape, 
-                                       "data": np.zeros_like(X)}
+            coords[missing_dims[0]] = {
+                "name": missing_dims[0],
+                "size": X.shape,
+                "data": np.zeros_like(X),
+            }
         elif x.ndim == 2 and y.ndim == 2:
             coords[coord_dims[0]]["data"] = x.values
             coords[coord_dims[1]]["data"] = y.values
-            coords[missing_dims[0]] = {"name": missing_dims[0], 
-                                        "size": X.shape, 
-                                        "data": np.zeros_like(X)}
+            coords[missing_dims[0]] = {
+                "name": missing_dims[0],
+                "size": X.shape,
+                "data": np.zeros_like(X),
+            }
         else:
-            raise ValueError("Dimensions of the coordinates can be either 1D or 2D. Mixed dimensions are not supported.")
+            raise ValueError(
+                "Dimensions of the coordinates can be either 1D or 2D. Mixed dimensions are not supported."
+            )
     elif len(coord_dims) == 3:
         # Either it has to be one 2D and the rest 1D or all 2D
 
-        coords_ndim_1 =[name for name, coord in coords.items() if coord["data"].ndim == 1 ]
-        coords_ndim_2 =[name for name, coord in coords.items() if coord["data"].ndim == 2 ]
-        coords_ndim_gt2 =[name for name, coord in coords.items() if coord["data"].ndim > 2 ]
+        coords_ndim_1 = [
+            name for name, coord in coords.items() if coord["data"].ndim == 1
+        ]
+        coords_ndim_2 = [
+            name for name, coord in coords.items() if coord["data"].ndim == 2
+        ]
+        coords_ndim_gt2 = [
+            name for name, coord in coords.items() if coord["data"].ndim > 2
+        ]
 
         if sum([len(coords_ndim_1), len(coords_ndim_2), len(coords_ndim_gt2)]) != 3:
-            raise ValueError("The dimensions don't match the input coordinates, make sure your slicing is correct and that the coordinates are either 1D or 2D.")
+            raise ValueError(
+                "The dimensions don't match the input coordinates, make sure your slicing is correct and that the coordinates are either 1D or 2D."
+            )
 
-        if len(coords_ndim_1)==2 and len(coords_ndim_2)==1:
+        if len(coords_ndim_1) == 2 and len(coords_ndim_2) == 1:
             x = coords[coords_ndim_1[0]]["data"].values
             y = coords[coords_ndim_1[1]]["data"].values
-            Y, X = np.meshgrid(y, x, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing="ij")
             coords[coords_ndim_1[0]]["data"] = X
             coords[coords_ndim_1[1]]["data"] = Y
             coords[coords_ndim_2[0]]["data"] = coords[coords_ndim_2[0]]["data"].values
-        elif len(coords_ndim_2)==3:
+        elif len(coords_ndim_2) == 3:
             x = coords[coords_ndim_2[0]]["data"].values
             y = coords[coords_ndim_2[1]]["data"].values
             z = coords[coords_ndim_2[2]]["data"].values
             coords[coords_ndim_2[0]]["data"] = x
             coords[coords_ndim_2[1]]["data"] = y
             coords[coords_ndim_2[2]]["data"] = z
-        elif len(coords_ndim_1)==2  and len(coords_ndim_gt2)==1:
-            logging.warning(f"A coordinate has more than 2 dimensions. The additional dimension will be animated over time.")
+        elif len(coords_ndim_1) == 2 and len(coords_ndim_gt2) == 1:
+            logging.warning(
+                f"A coordinate has more than 2 dimensions. The additional dimension will be animated over time."
+            )
             x = coords[coords_ndim_1[0]]["data"].values
             y = coords[coords_ndim_1[1]]["data"].values
-            Y, X = np.meshgrid(y, x, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing="ij")
             coords[coords_ndim_1[0]]["data"] = X
             coords[coords_ndim_1[1]]["data"] = Y
-            coords[coords_ndim_gt2[0]]["animate"] = True 
+            coords[coords_ndim_gt2[0]]["animate"] = True
             coords[coords_ndim_gt2[0]]["data"] = np.zeros_like(X)
-        elif len(coords_ndim_gt2)>1:
+        elif len(coords_ndim_gt2) > 1:
             # Implement animation over time of the grid coordinates. This is a complex task and requires additional logic to handle the animation over time. For now, we will raise an error.
             raise ValueError("3D coordinates are not yet supported.")
         else:
-            raise ValueError("Dimensions of the coordinates can be either two 1D and one 2D or all 2D")
+            raise ValueError(
+                "Dimensions of the coordinates can be either two 1D and one 2D or all 2D"
+            )
     return coords
 
-def stack_2D_coords(coords):    
+
+def stack_2D_coords(coords):
     X = coords.get("X")["data"]
     Y = coords.get("Y")["data"]
     Z = coords.get("Z")["data"]
 
-    flatten_coords = np.stack([X, Y, Z], axis=0).transpose(2,1,0).flatten()
+    flatten_coords = np.stack([X, Y, Z], axis=0).transpose(2, 1, 0).flatten()
 
     return flatten_coords
+
 
 def add_attribute(mesh, attr_name, type="FLOAT", domain="POINT"):
     """Add a custom attribute to a mesh object."""
     attr = None
-    if mesh and mesh.id_type == 'MESH':
+    if mesh and mesh.id_type == "MESH":
         if attr_name not in mesh.attributes:
             attr = mesh.attributes.new(name=attr_name, type=type, domain=domain)
         else:
             attr = mesh.attributes.get(attr_name)
     return attr
+
 
 def look_up_object_and_mesh(object_name):
     """
@@ -218,11 +250,12 @@ def look_up_object_and_mesh(object_name):
         bpy.context.collection.objects.link(obj)
     return obj, mesh
 
+
 def assign_modifier_to_object(obj, modifier_name):
     if modifier_name in obj.modifiers:
         modifier = obj.modifiers.get(modifier_name)
     else:
-        modifier = obj.modifiers.new(name=modifier_name, type='NODES')
+        modifier = obj.modifiers.new(name=modifier_name, type="NODES")
 
     nodetree = create_geometrynodetree(modifier_name)
 
@@ -230,11 +263,14 @@ def assign_modifier_to_object(obj, modifier_name):
 
     return modifier, nodetree
 
+
 def extract_dimensions_of_grid(grid_coords):
     # Extract the dimensions of the grid based on the provided grid coordinates.
     sizes = {name: grid_coords.get(name).get("size") for name in grid_coords.keys()}
-    # Filter out dimensions with size greater than 2 and different from (1,) 
-    dims = {name: size for name, size in sizes.items() if len(size) <= 2 and size != (1,)}
+    # Filter out dimensions with size greater than 2 and different from (1,)
+    dims = {
+        name: size for name, size in sizes.items() if len(size) <= 2 and size != (1,)
+    }
     if len(dims) == 2:
         size1 = dims.get(list(dims.keys())[0])[0]
         size2 = dims.get(list(dims.keys())[1])[0]
@@ -250,8 +286,9 @@ def extract_dimensions_of_grid(grid_coords):
             size2 = dims.get(list(key[1]))[0]
     else:
         raise ValueError("Not enough dimensions with size <= 2 found.")
-    return size1,size2
-    
+    return size1, size2
+
+
 def get_data_from_datastruct(datastruct, var_name):
     """
     Get data from the datastruct for a given variable name.
@@ -269,6 +306,7 @@ def get_data_from_datastruct(datastruct, var_name):
         select_dict = {}
     return dataset[var_name].isel(select_dict).fillna(0)
 
+
 def get_coords_from_datastruct(datastruct, grid_coords):
     """
     Get coordinates from the datastruct for a given dimension.
@@ -280,8 +318,9 @@ def get_coords_from_datastruct(datastruct, grid_coords):
     for coords in grid_coords.keys():
         coord_name = grid_coords[coords].get("name")
         data = get_data_from_datastruct(datastruct, coord_name)
-        grid_coords[coords]['data'] = data
+        grid_coords[coords]["data"] = data
     return grid_coords
+
 
 def get_dims(datacubedata):
     """
@@ -293,6 +332,7 @@ def get_dims(datacubedata):
     dimensions = sorted(list(datacubedata.coords.keys()))
     dimensions_names = build_enum_prop_list(dimensions, "DISK_DRIVE")
     return select_item("Select coordinate") + [None] + dimensions_names
+
 
 def get_var(datacubedata, str_filter=None):
     """
@@ -325,9 +365,7 @@ def get_var(datacubedata, str_filter=None):
             )
             for var in variables
         ]
-        var_names = build_enum_prop_list(
-            variables, "DISK_DRIVE", long_name_list
-        )
+        var_names = build_enum_prop_list(variables, "DISK_DRIVE", long_name_list)
     else:
         var_names = build_enum_prop_list(variables, "DISK_DRIVE")
     return select_item() + [None] + var_names
@@ -346,6 +384,7 @@ def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
         ]
     return list
 
+
 def filter_2_string_lists(list, str_filter):
     tmp_list = []
     for strfit in str_filter:
@@ -354,9 +393,10 @@ def filter_2_string_lists(list, str_filter):
                 tmp_list.append(item)
     return tmp_list
 
+
 def select_item(text="Select variable"):
     return [("No var", text, "Empty", "NODE_SEL", 0)]
 
+
 def empty_item(text="No variable"):
     return [("No var", text, "Empty", "CANCEL", 0)]
-

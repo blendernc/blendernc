@@ -60,6 +60,7 @@ class Test_import(unittest.TestCase):
         for node in list(node_tree.nodes):
             node_tree.nodes.remove(node)
 
+
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_import)
 test = unittest.TextTestRunner().run(suite)
 
