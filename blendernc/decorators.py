@@ -1,36 +1,60 @@
+import bpy
 from functools import wraps
 from collections import defaultdict
 from .node_utils import create_basic_geometry_node
+
+
+def is_linked(update_function):
+    """Run an update only when the node has at least one linked input."""
+    @wraps(update_function)
+    def wrapper(self, context):
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        node = node_tree.nodes.get(self.node_name)
+        linked=any(input_socket.is_linked for input_socket in node.inputs)
+        if linked:
+            return update_function(self, context)
+        else:
+            datastruct = self.BNC_datastructs[0]
+            datastruct.filename = ""
+            datastruct.datafile = ""
+            self.outputs.clear()
+            self.report({'WARNING'}, "Node has no linked inputs. Connect to bake grid.")
+            return {"CANCELLED"}
+    return wrapper
 
 def is_single_input_linked(update_function):
     """Run an update only when the node has at least one linked input."""
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
-        linked=any(input_socket.is_linked for input_socket in self.inputs)
         datastruct = self.BNC_datastructs[0]
-        for input_socket in self.inputs:
-            if input_socket.is_linked:
-                from_node = input_socket.links[0].from_node
-                from_socket = input_socket.links[0].from_socket
-                if hasattr(self, "BNC_datastructs") and hasattr(from_node, "BNC_datastructs"):
-                    datastruct_from_node = from_node.BNC_datastructs[0]
-                    if datastruct_from_node.filename:
-                        datastruct.filename = datastruct_from_node.filename
-                        datastruct.datafile = datastruct_from_node.datafile
-                    else:
-                        self.id_data.links.remove(input_socket.links[0])
-                        datastruct.filename = ""
-                        datastruct.datafile = ""   
+        connected_inputs = [input_socket for input_socket in self.inputs if input_socket.is_linked]
+        for input_socket in connected_inputs:
+            from_node = input_socket.links[0].from_node
+            from_socket = input_socket.links[0].from_socket
+            if hasattr(from_node, "BNC_datastructs"):
+                datastruct_from_node = from_node.BNC_datastructs[0]
+                if datastruct_from_node.filename:
+                    datastruct.filename = datastruct_from_node.filename
+                    datastruct.datafile = datastruct_from_node.datafile
+                    datastruct.operations = datastruct_from_node.operations
+                    datastruct.slicing = datastruct_from_node.slicing
                 else:
-                    input_socket.default_value = from_socket.default_value
-            else:
-                datastruct.filename = ""
-                datastruct.datafile = ""
-                self.outputs.clear()
-        if linked:
-            return update_function(self, *args, **kwargs)
-        else:
-            return
+                    self.id_data.links.remove(input_socket.links[0])
+                    datastruct.filename = ""
+                    datastruct.datafile = ""
+                    datastruct.operations = ""
+                    datastruct.slicing = ""
+            if hasattr(from_socket, "default_value"):
+                input_socket.default_value = from_socket.default_value
+        if not connected_inputs:
+            for input_socket in self.inputs:
+                if hasattr(input_socket, "default_value"):
+                    input_socket.default_value = ""
+            datastruct.filename = ""
+            datastruct.datafile = ""
+            datastruct.operations = ""
+            datastruct.slicing = ""
+        return update_function(self, *args, **kwargs)
     return wrapper
 
 def initialize_BNC_datastructs(update_function):

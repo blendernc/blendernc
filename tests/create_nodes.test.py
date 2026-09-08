@@ -4,6 +4,8 @@ import unittest
 import bpy
 import numpy as np
 
+from blendernc.node_utils import create_geometrynodetree, create_node
+
 BlenderNCNode = np.unique([
     cls.bl_idname
     for cls in bpy.types.Node.__subclasses__()
@@ -12,12 +14,9 @@ BlenderNCNode = np.unique([
 
 class test_add_and_remove_all_nodes(unittest.TestCase):
     def test_create_all_nodes(self):
-        if "BLENDERNC" not in bpy.data.node_groups.keys():
-            node_tree = bpy.data.node_groups.new("BLENDERNC","GeometryNodeTree")
-        else:
-            node_tree = bpy.data.node_groups.get("BLENDERNC")
+        node_tree = create_geometrynodetree("BLENDERNC")
         for node_id in BlenderNCNode:
-            node_tree.nodes.new(type=node_id)
+            create_node(node_tree, node_id, location=(0, 0), return_if_exists=True)
 
     def test_delete_all_nodes(self):
         if "BLENDERNC" in bpy.data.node_groups.keys():

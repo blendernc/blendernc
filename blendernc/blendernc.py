@@ -1,7 +1,7 @@
 import bpy
 import logging
 
-from .UI_operators import (
+from .operators import (
     Import_OT_mfdataset,
     Import_OT_CreateGrid,
     )
@@ -16,13 +16,16 @@ from .nodes import (
     DatacubeVariable,
     DatacubeCoords,
     DatacubeGrid,
-    DatacubeUpdateTexture,
+    DatacubeSlice,
+    DatacubeSelect,
+    DatacubeAnimateTexture,
     DebugNode,
 )
 
 from .menus import (
     BlenderNCNodeMenu,
     BlenderNCNodeImport,
+    BlenderNCNodeSelection,
     BlenderNCNodeGrid,
     BlenderNCNodeAnimate,
     add_custom_node_to_menu
@@ -45,10 +48,13 @@ classes = [BNC_data,
            DatacubeVariable,
            DatacubeCoords,
            DatacubeGrid,
-           DatacubeUpdateTexture,
+           DatacubeSlice,
+           DatacubeSelect,
+           DatacubeAnimateTexture,
            bNCdatacubeSocket,
            BlenderNCNodeMenu, 
            BlenderNCNodeImport,
+           BlenderNCNodeSelection,
            BlenderNCNodeGrid,
            BlenderNCNodeAnimate,
            DebugNode,
