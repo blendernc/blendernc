@@ -48,7 +48,7 @@ def is_single_input_linked(update_function):
                 input_socket.default_value = from_socket.default_value
         if not connected_inputs:
             for input_socket in self.inputs:
-                if hasattr(input_socket, "default_value"):
+                if hasattr(input_socket, "default_value") and input_socket.bl_label != "Object":
                     input_socket.default_value = ""
             datastruct.filename = ""
             datastruct.datafile = ""

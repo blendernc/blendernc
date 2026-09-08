@@ -9,7 +9,10 @@ def create_basic_geometry_node():
     
     # APPLY TO CURRENT OBJECT
     obj = bpy.context.object
-    mod = obj.modifiers.new("BlenderNCModifier", "NODES")
+    if "BlenderNCModifier" in obj.modifiers:
+        mod = obj.modifiers.get("BlenderNCModifier")
+    else:
+        mod = obj.modifiers.new("BlenderNCModifier", "NODES")
     mod.node_group = node_tree
     
     return node_tree
@@ -35,7 +38,7 @@ def create_geometrynodetree(nodetree_name):
         nodetree = bpy.data.node_groups.new(nodetree_name, 'GeometryNodeTree')
     return nodetree
 
-def create_create_nodes(node_tree,nodes):
+def create_nodes(node_tree,nodes):
     nodes["NodeGroupOutput"] = {"links": {}}
     node_types = list(nodes.keys()) if isinstance(nodes, dict) else list(nodes)
 
@@ -59,9 +62,15 @@ def create_create_nodes(node_tree,nodes):
         nodes[node_type]["node"] = create_node(node_tree, node_type, location=locations[i])
         nodes[node_type]["name"] = nodes[node_type]["node"].name
 
+    create_links(node_tree, nodes)
+    
+    return nodes
+
+def create_links(node_tree, nodes):
     for key, value in nodes.items():
         if "links" in value:
             for output_name, input_name in value["links"].items():
                 input_node, socket = list(input_name.items())[0]
                 node_tree.links.new(nodes[key]["node"].outputs.get(output_name), nodes[input_node]["node"].inputs.get(socket))
-    return nodes
+
+    

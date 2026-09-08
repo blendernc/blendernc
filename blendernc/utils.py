@@ -129,7 +129,7 @@ def get_2D_coords(coords):
         x = coords[coord_dims[0]]["data"].values
         y = coords[coord_dims[1]]["data"].values
         if x.ndim == 1 and y.ndim == 1:
-            X, Y = np.meshgrid(x, y, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing='ij')
             coords[coord_dims[0]]["data"] = X
             coords[coord_dims[1]]["data"] = Y
             coords[missing_dims[0]] = {"name": missing_dims[0], 
@@ -156,7 +156,7 @@ def get_2D_coords(coords):
         if len(coords_ndim_1)==2 and len(coords_ndim_2)==1:
             x = coords[coords_ndim_1[0]]["data"].values
             y = coords[coords_ndim_1[1]]["data"].values
-            X, Y = np.meshgrid(x, y, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing='ij')
             coords[coords_ndim_1[0]]["data"] = X
             coords[coords_ndim_1[1]]["data"] = Y
             coords[coords_ndim_2[0]]["data"] = coords[coords_ndim_2[0]]["data"].values
@@ -171,7 +171,7 @@ def get_2D_coords(coords):
             logging.warning(f"A coordinate has more than 2 dimensions. The additional dimension will be animated over time.")
             x = coords[coords_ndim_1[0]]["data"].values
             y = coords[coords_ndim_1[1]]["data"].values
-            X, Y = np.meshgrid(x, y, indexing='ij')
+            Y, X = np.meshgrid(y, x, indexing='ij')
             coords[coords_ndim_1[0]]["data"] = X
             coords[coords_ndim_1[1]]["data"] = Y
             coords[coords_ndim_gt2[0]]["animate"] = True 
@@ -186,9 +186,9 @@ def get_2D_coords(coords):
 def stack_2D_coords(coords):    
     X = coords.get("X")["data"]
     Y = coords.get("Y")["data"]
-    Z = coords.get("Z")["data"].T
+    Z = coords.get("Z")["data"]
 
-    flatten_coords = np.stack([X, Y, Z], axis=0).transpose(1,2,0).flatten()
+    flatten_coords = np.stack([X, Y, Z], axis=0).transpose(2,1,0).flatten()
 
     return flatten_coords
 
@@ -261,7 +261,7 @@ def get_data_from_datastruct(datastruct, var_name):
         var_name (str): The name of the variable to retrieve data for.
     """
     dataset = datastruct.dict[datastruct.filename]
-    if datastruct.slicing is not "":
+    if datastruct.slicing != "":
         slicing = datastruct.slicing.split(",")
         slicing = [s.split("_") for s in slicing if var_name in s]
         select_dict = {select[1]: int(select[2]) for select in slicing}

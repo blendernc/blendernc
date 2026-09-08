@@ -55,6 +55,10 @@ class Test_import(unittest.TestCase):
             node = node_tree.nodes.get("Datacube Import")
             node.update()
 
+    def remove_all_nodes(self):
+        node_tree = bpy.data.node_groups.get("BLENDERNC")
+        for node in list(node_tree.nodes):
+            node_tree.nodes.remove(node)
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_import)
 test = unittest.TextTestRunner().run(suite)

@@ -1,7 +1,7 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from .node_utils import create_create_nodes
+from .node_utils import create_nodes
 
 from .decorators import check_if_node_tree_exists, is_linked
 
@@ -79,7 +79,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         modifier, grid_nodetree = assign_modifier_to_object(obj,grid_obj_name)
 
         nodes = {"GeometryNodeMeshGrid":{"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}}
-        MeshGrid_nodes = create_create_nodes(grid_nodetree,nodes)
+        MeshGrid_nodes = create_nodes(grid_nodetree,nodes)
         MeshGrid_node = MeshGrid_nodes["GeometryNodeMeshGrid"]["node"]
 
         axis1, axis2 = extract_dimensions_of_grid(grid_coords)
@@ -115,7 +115,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
                  "GeometryNodeRemoveAttribute":{
             "links":{"Geometry":{"NodeGroupOutput": "Geometry"}}},            
             }
-        nodes_created = create_create_nodes(grid_nodetree, nodes)
+        nodes_created = create_nodes(grid_nodetree, nodes)
 
         nodes_created["GeometryNodeInputNamedAttribute"]["node"].data_type = "FLOAT_VECTOR"
         nodes_created["GeometryNodeInputNamedAttribute"]["node"].inputs[0].default_value = "Coordinates"
