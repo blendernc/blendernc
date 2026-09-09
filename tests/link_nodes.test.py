@@ -66,16 +66,17 @@ class Test_nodes(unittest.TestCase):
         is_linked = grid_node.inputs[0].is_linked
         self.assertTrue(is_linked)
 
-    # def test_xarray_grid(self):
-    #     global nodes_dict
-    #     node_tree = create_geometrynodetree("BLENDERNC")
-    #     grid_node = nodes_dict["BlenderNCNodeGrid"]["node"]
+    def test_xarray_grid(self):
+        global nodes_dict
+        node_tree = create_geometrynodetree("BLENDERNC")
+        grid_node = nodes_dict["BlenderNCNodeGrid"]["node"]
 
-    #     bpy.ops.blendernc.create_grid_from_coords(node_name = grid_node.name, node_tree=grid_node.id_data.name)
+        bpy.ops.blendernc.create_grid_from_coords(node_name = grid_node.name, node_tree=node_tree.name)
 
-    #     object = grid_node.outputs['Object'].default_value.name
-    #     object_exists = object in bpy.data.objects
-    #     self.assertTrue(object_exists)
+        object = grid_node.grid_obj_name
+        objects_scene = [obj.name for obj in bpy.data.objects]
+        object_exists = object in objects_scene
+        self.assertTrue(object_exists)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_nodes)

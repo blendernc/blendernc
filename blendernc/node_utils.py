@@ -51,7 +51,15 @@ def create_nodes(node_tree, nodes):
         (np.linspace(-300, 300, len(node_types)), np.zeros(len(node_types)))
     ).T
     # Move below into decorator
-    if len(node_tree.nodes) == 0 and len(node_tree.interface.items_tree) > 0:
+
+    for i, node_type in enumerate(node_types):
+        nodes[node_type]["node"] = create_node(
+            node_tree, node_type, location=locations[i]
+        )
+        nodes[node_type]["name"] = nodes[node_type]["node"].name
+
+    output_node = nodes["NodeGroupOutput"]["node"]
+    if len(output_node.outputs)==0:
         geo_input = node_tree.interface.new_socket(
             name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
         )
@@ -59,12 +67,6 @@ def create_nodes(node_tree, nodes):
         geo_output = node_tree.interface.new_socket(
             name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
         )
-
-    for i, node_type in enumerate(node_types):
-        nodes[node_type]["node"] = create_node(
-            node_tree, node_type, location=locations[i]
-        )
-        nodes[node_type]["name"] = nodes[node_type]["node"].name
 
     create_links(node_tree, nodes)
 
