@@ -59,7 +59,7 @@ def create_nodes(node_tree, nodes):
         nodes[node_type]["name"] = nodes[node_type]["node"].name
 
     output_node = nodes["NodeGroupOutput"]["node"]
-    if len(output_node.outputs)==0:
+    if len(output_node.outputs) == 0:
         geo_input = node_tree.interface.new_socket(
             name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
         )

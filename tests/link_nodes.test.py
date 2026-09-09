@@ -72,7 +72,9 @@ class Test_nodes(unittest.TestCase):
         node_tree = create_geometrynodetree("BLENDERNC")
         grid_node = nodes_dict["BlenderNCNodeGrid"]["node"]
 
-        bpy.ops.blendernc.create_grid_from_coords(node_name = grid_node.name, node_tree=node_tree.name)
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid_node.name, node_tree=node_tree.name
+        )
 
         object = grid_node.grid_obj_name
         objects_scene = [obj.name for obj in bpy.data.objects]
