@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+
 import bpy
 
 from blendernc.node_utils import create_geometrynodetree, create_links, create_nodes
@@ -56,7 +57,7 @@ class Test_nodes(unittest.TestCase):
         }
         nodes_dict["BlenderNCNodeCoords"]["links"] = {
             coords_node.outputs[0].name: {"BlenderNCNodeGrid": "X"},
-            coords_node.outputs[1].name: {"BlenderNCNodeGrid": "Y"}
+            coords_node.outputs[1].name: {"BlenderNCNodeGrid": "Y"},
         }
 
         create_links(node_tree, nodes_dict)
