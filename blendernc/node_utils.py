@@ -2,18 +2,19 @@ import bpy
 import numpy as np
 
 
-
 def get_node_by_idname(node_tree, bl_idname):
     for node in node_tree.nodes:
         if node.bl_idname == bl_idname:
             return node
     return None
 
+
 def get_all_nodes_by_idname(bl_idname):
     for node_tree in bpy.data.node_groups:
         for node in node_tree.nodes:
             if node.bl_idname == bl_idname:
                 yield node
+
 
 def create_basic_geometry_node():
     node_tree = create_geometrynodetree("BLENDERNC")

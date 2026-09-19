@@ -2,6 +2,7 @@ import logging
 
 import bpy
 
+from .handlers import bNC_update_attributes
 from .menus import (
     BlenderNCNodeAnimate,
     BlenderNCNodeGrid,
@@ -24,7 +25,6 @@ from .operators import Import_OT_CreateGrid, Import_OT_mfdataset
 from .panels import BlenderNC_UI_PT_3D_VIEW, BlenderNC_UI_PT_3D_VIEW_PARENT
 from .properties import BNC_data
 from .sockets import bNCdatacubeSocket
-from .handlers import bNC_update_attributes
 
 classes = [
     BNC_data,
@@ -49,6 +49,7 @@ classes = [
 ]
 
 handlers = bpy.app.handlers
+
 
 def register():
     logging.info("Registering handlers")

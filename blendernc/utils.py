@@ -1,13 +1,12 @@
 import glob
 import logging
 import os.path
+from itertools import combinations
+from math import prod
 
 import bpy
 import numpy as np
 import xarray as xr
-
-from math import prod
-from itertools import combinations
 
 from .decorators import check_if_node_tree_exists
 from .node_utils import create_geometrynodetree
