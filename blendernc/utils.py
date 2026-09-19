@@ -6,6 +6,9 @@ import bpy
 import numpy as np
 import xarray as xr
 
+from math import prod
+from itertools import combinations
+
 from .decorators import check_if_node_tree_exists
 from .node_utils import create_geometrynodetree
 
@@ -400,3 +403,19 @@ def select_item(text="Select variable"):
 
 def empty_item(text="No variable"):
     return [("No var", text, "Empty", "CANCEL", 0)]
+
+
+def find_coord_matches(length, dims):
+    sizes = {
+        name: prod(shape) if isinstance(shape, tuple) else shape
+        for name, shape in dims.items()
+    }
+
+    matches = []
+
+    for r in range(1, len(sizes) + 1):
+        for combo in combinations(sizes, r):
+            if prod(sizes[name] for name in combo) == length:
+                matches.append(combo)
+
+    return np.squeeze(matches)

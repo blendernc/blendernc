@@ -24,6 +24,7 @@ from .operators import Import_OT_CreateGrid, Import_OT_mfdataset
 from .panels import BlenderNC_UI_PT_3D_VIEW, BlenderNC_UI_PT_3D_VIEW_PARENT
 from .properties import BNC_data
 from .sockets import bNCdatacubeSocket
+from .handlers import bNC_update_attributes
 
 classes = [
     BNC_data,
@@ -47,10 +48,14 @@ classes = [
     DebugNode,
 ]
 
+handlers = bpy.app.handlers
 
 def register():
-    logging.info("Registering BlenderNC")
+    logging.info("Registering handlers")
+    handlers.frame_change_pre.append(bNC_update_attributes)
+    handlers.render_pre.append(bNC_update_attributes)
     # Register node categories
+    logging.info("Registering BlenderNC")
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -59,6 +64,9 @@ def register():
 
 
 def unregister():
+    logging.info("Un-registering handlers")
+    handlers.frame_change_pre.remove(bNC_update_attributes)
+    handlers.render_pre.remove(bNC_update_attributes)
     logging.info("Un-registering BlenderNC")
     # Unregister node categories
     for cls in classes:

@@ -168,26 +168,6 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
                 object_socket.default_value = bpy.data.objects[self.grid_obj_name]
 
 
-class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
-    bl_idname = "BlenderNCNodeAnimateTexture"  # Unique identifier for the node
-    bl_label = (
-        "Datacube Animate Texture"  # Name that will appear on the node in the editor
-    )
-    bl_icon = "EXPERIMENTAL"
-
-    @initialize_BNC_datastructs
-    def init(self, context):
-        self.inputs.new("NodeSocketObject", "Object")
-        self.inputs.new("bNCdatacubeSocket", "xarray datacube")
-
-    def draw_buttons(self, context, layout):
-        pass
-
-    @is_single_input_linked
-    def update(self):
-        pass
-
-
 class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
     bl_idname = "BlenderNCNodeSlice"  # Unique identifier for the node
     bl_label = "Datacube Slice"  # Name that will appear on the node in the editor
@@ -273,5 +253,26 @@ class DebugNode(bpy.types.Node, bNCNodeDefault):
             layout.label(text=f"Dict keys: {list(datastruct.dict.keys())}")
 
     @is_single_input_linked
+    def update(self):
+        pass
+
+
+class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
+    bl_idname = "BlenderNCNodeAnimateTexture"  # Unique identifier for the node
+    bl_label = (
+        "Datacube Animate Texture"  # Name that will appear on the node in the editor
+    )
+    bl_icon = "EXPERIMENTAL"
+
+    @initialize_BNC_datastructs
+    def init(self, context):
+        self.inputs.new("NodeSocketObject", "Object")
+        self.inputs.new("NodeSocketString", "Variable")
+
+    def draw_buttons(self, context, layout):
+        pass
+
+    @is_single_input_linked
+    @has_datastructs
     def update(self):
         pass

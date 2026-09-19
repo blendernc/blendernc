@@ -74,4 +74,7 @@ class BlenderNCNodeAnimate(bpy.types.Menu):
 
 
 def add_custom_node_to_menu(self, context):
-    self.layout.menu(BlenderNCNodeMenu.bl_idname)
+    space = context.space_data
+    if (space.type == "NODE_EDITOR" and space.tree_type == "GeometryNodeTree"):
+        self.layout.separator()
+        self.layout.menu(BlenderNCNodeMenu.bl_idname)
