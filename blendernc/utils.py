@@ -402,7 +402,7 @@ def assign_modifier_to_object(obj, modifier_name):
     else:
         modifier = obj.modifiers.new(name=modifier_name, type="NODES")
 
-    nodetree = create_blenderncnodetree(modifier_name)
+    nodetree = create_blenderncnodetree(modifier_name, "GeometryNodeTree")
 
     modifier.node_group = nodetree
 

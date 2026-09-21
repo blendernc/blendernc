@@ -17,7 +17,7 @@ def get_all_nodes_by_idname(bl_idname):
 
 
 def create_basic_geometry_node():
-    node_tree = create_blenderncnodetree("BLENDERNC")
+    node_tree = create_blenderncnodetree("BLENDERNC", "GeometryNodeTree")
 
     create_node(node_tree, "BlenderNCNodeImport", location=(-300, 0))
     create_node(node_tree, "NodeGroupOutput", location=(300, 0))
@@ -48,11 +48,11 @@ def create_node(node_tree, node_type, location=(0, 0), return_if_exists=True):
     return node
 
 
-def create_blenderncnodetree(nodetree_name):
+def create_blenderncnodetree(nodetree_name, node_type="BlenderNCNodeTree"):
     if nodetree_name in bpy.data.node_groups:
         nodetree = bpy.data.node_groups.get(nodetree_name)
     else:
-        nodetree = bpy.data.node_groups.new(nodetree_name, "BlenderNCNodeTree")
+        nodetree = bpy.data.node_groups.new(nodetree_name, node_type)
     return nodetree
 
 
