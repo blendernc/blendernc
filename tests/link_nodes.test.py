@@ -4,7 +4,7 @@ import unittest
 
 import bpy
 
-from blendernc.node_utils import create_geometrynodetree, create_links, create_nodes
+from blendernc.node_utils import create_blenderncnodetree, create_links, create_nodes
 
 
 class Test_nodes(unittest.TestCase):
@@ -19,7 +19,7 @@ class Test_nodes(unittest.TestCase):
             "BlenderNCNodeGrid": {},
         }
 
-        node_tree = create_geometrynodetree("BLENDERNC")
+        node_tree = create_blenderncnodetree("BLENDERNC")
         nodes_dict = create_nodes(node_tree, nodes_dict)
         node_import = nodes_dict["BlenderNCNodeImport"]["node"]
         node_import.datacube_file = os.path.abspath("./dataset/ssh_1995-01.nc")
@@ -31,7 +31,7 @@ class Test_nodes(unittest.TestCase):
 
     def test_link_input_and_coords(self):
         global nodes_dict
-        node_tree = create_geometrynodetree("BLENDERNC")
+        node_tree = create_blenderncnodetree("BLENDERNC")
 
         nodes_dict["BlenderNCNodeImport"]["links"] = {
             "xarray datacube": {"BlenderNCNodeCoords": "xarray datacube"}
@@ -48,7 +48,7 @@ class Test_nodes(unittest.TestCase):
 
     def test_link_variable_and_grid(self):
         global nodes_dict
-        node_tree = create_geometrynodetree("BLENDERNC")
+        node_tree = create_blenderncnodetree("BLENDERNC")
 
         coords_node = nodes_dict["BlenderNCNodeCoords"]["node"]
 
@@ -69,7 +69,7 @@ class Test_nodes(unittest.TestCase):
 
     def test_xarray_grid(self):
         global nodes_dict
-        node_tree = create_geometrynodetree("BLENDERNC")
+        node_tree = create_blenderncnodetree("BLENDERNC")
         grid_node = nodes_dict["BlenderNCNodeGrid"]["node"]
 
         bpy.ops.blendernc.create_grid_from_coords(

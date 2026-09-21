@@ -2,12 +2,12 @@ import bpy
 import numpy as np
 
 
-
 def get_node_by_idname(node_tree, bl_idname):
     for node in node_tree.nodes:
         if node.bl_idname == bl_idname:
             return node
     return None
+
 
 def get_all_nodes_by_idname(bl_idname):
     for node_tree in bpy.data.node_groups:
@@ -15,8 +15,9 @@ def get_all_nodes_by_idname(bl_idname):
             if node.bl_idname == bl_idname:
                 yield node
 
+
 def create_basic_geometry_node():
-    node_tree = create_geometrynodetree("BLENDERNC")
+    node_tree = create_blenderncnodetree("BLENDERNC")
 
     create_node(node_tree, "BlenderNCNodeImport", location=(-300, 0))
     create_node(node_tree, "NodeGroupOutput", location=(300, 0))
@@ -47,11 +48,11 @@ def create_node(node_tree, node_type, location=(0, 0), return_if_exists=True):
     return node
 
 
-def create_geometrynodetree(nodetree_name):
+def create_blenderncnodetree(nodetree_name):
     if nodetree_name in bpy.data.node_groups:
         nodetree = bpy.data.node_groups.get(nodetree_name)
     else:
-        nodetree = bpy.data.node_groups.new(nodetree_name, "GeometryNodeTree")
+        nodetree = bpy.data.node_groups.new(nodetree_name, "BlenderNCNodeTree")
     return nodetree
 
 
@@ -73,11 +74,11 @@ def create_nodes(node_tree, nodes):
 
     output_node = nodes["NodeGroupOutput"]["node"]
     if len(output_node.outputs) == 0:
-        geo_input = node_tree.interface.new_socket(
+        node_tree.interface.new_socket(
             name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
         )
 
-        geo_output = node_tree.interface.new_socket(
+        node_tree.interface.new_socket(
             name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
         )
 

@@ -1,6 +1,15 @@
 import bpy
 
-from .nodes import *
+from .nodes import (
+    DatacubeAnimateTexture,
+    DatacubeCoords,
+    DatacubeGrid,
+    DatacubeImport,
+    DatacubeSelect,
+    DatacubeSlice,
+    DatacubeVariable,
+    DebugNode,
+)
 
 
 class BlenderNCNodeMenu(bpy.types.Menu):
@@ -75,6 +84,6 @@ class BlenderNCNodeAnimate(bpy.types.Menu):
 
 def add_custom_node_to_menu(self, context):
     space = context.space_data
-    if (space.type == "NODE_EDITOR" and space.tree_type == "GeometryNodeTree"):
+    if space.type == "NODE_EDITOR" and space.tree_type == "BlenderNCNodeTree":
         self.layout.separator()
         self.layout.menu(BlenderNCNodeMenu.bl_idname)

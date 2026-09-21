@@ -1,16 +1,15 @@
 import glob
 import logging
 import os.path
+from itertools import combinations
+from math import prod
 
 import bpy
 import numpy as np
 import xarray as xr
 
-from math import prod
-from itertools import combinations
-
 from .decorators import check_if_node_tree_exists
-from .node_utils import create_geometrynodetree
+from .node_utils import create_blenderncnodetree
 
 
 def get_datacube_path(directory, files):
@@ -98,7 +97,7 @@ def get_grid_coords(grid_node):
         if not socket.is_linked:
             continue
 
-        linked = socket.links[0].from_socket
+        # linked = socket.links[0].from_socket
         dataset = datastruct.dict[datastruct.filename]
 
         coords[socket.name] = {
@@ -131,89 +130,232 @@ def get_possible_coordinates(node, context):
     return items
 
 
+# def get_2D_coords(coords):
+# expected_dims = ["X", "Y", "Z"]
+# missing_dims = [dim for dim in expected_dims if dim not in coords]
+# coord_dims = [dim for dim in expected_dims if dim in coords]
+
+# if len(coord_dims) == 1:
+#     raise ValueError("Only one dimension is present. Expected at least two.")
+# elif len(coord_dims) == 2:
+#     # Either both have to be 1D or 2D
+#     x = coords[coord_dims[0]]["data"].values
+#     y = coords[coord_dims[1]]["data"].values
+#     if x.ndim == 1 and y.ndim == 1:
+#         Y, X = np.meshgrid(y, x, indexing="ij")
+#         coords[coord_dims[0]]["data"] = X
+#         coords[coord_dims[1]]["data"] = Y
+#         coords[missing_dims[0]] = {
+#             "name": missing_dims[0],
+#             "size": X.shape,
+#             "data": np.zeros_like(X),
+#         }
+#     elif x.ndim == 2 and y.ndim == 2:
+#         coords[coord_dims[0]]["data"] = x.values
+#         coords[coord_dims[1]]["data"] = y.values
+#         coords[missing_dims[0]] = {
+#             "name": missing_dims[0],
+#             "size": X.shape,
+#             "data": np.zeros_like(X),
+#         }
+#     else:
+#         raise ValueError(
+#             """
+#             Dimensions of the coordinates can be either 1D or 2D.
+#             Mixed dimensions are not supported.
+#             """
+#         )
+# elif len(coord_dims) == 3:
+#     # Either it has to be one 2D and the rest 1D or all 2D
+
+#     coords_ndim_1 = [
+#         name for name, coord in coords.items() if coord["data"].ndim == 1
+#     ]
+#     coords_ndim_2 = [
+#         name for name, coord in coords.items() if coord["data"].ndim == 2
+#     ]
+#     coords_ndim_gt2 = [
+#         name for name, coord in coords.items() if coord["data"].ndim > 2
+#     ]
+
+#     if sum([len(coords_ndim_1), len(coords_ndim_2), len(coords_ndim_gt2)]) != 3:
+#         raise ValueError(
+#             """
+#             The dimensions don't match the input coordinates.
+#             Make sure your slicing is correct and that the coordinates
+#             are either 1D or 2D."""
+#         )
+
+#     if len(coords_ndim_1) == 2 and len(coords_ndim_2) == 1:
+#         x = coords[coords_ndim_1[0]]["data"].values
+#         y = coords[coords_ndim_1[1]]["data"].values
+#         Y, X = np.meshgrid(y, x, indexing="ij")
+#         coords[coords_ndim_1[0]]["data"] = X
+#         coords[coords_ndim_1[1]]["data"] = Y
+#         coords[coords_ndim_2[0]]["data"] = coords[coords_ndim_2[0]]["data"].values
+#     elif len(coords_ndim_2) == 3:
+#         x = coords[coords_ndim_2[0]]["data"].values
+#         y = coords[coords_ndim_2[1]]["data"].values
+#         z = coords[coords_ndim_2[2]]["data"].values
+#         coords[coords_ndim_2[0]]["data"] = x
+#         coords[coords_ndim_2[1]]["data"] = y
+#         coords[coords_ndim_2[2]]["data"] = z
+#     elif len(coords_ndim_1) == 2 and len(coords_ndim_gt2) == 1:
+#         logging.warning(
+#             """
+#             A coordinate has more than 2 dimensions.
+#             The additional dimension will be animated over time.
+#             """
+#         )
+#         x = coords[coords_ndim_1[0]]["data"].values
+#         y = coords[coords_ndim_1[1]]["data"].values
+#         Y, X = np.meshgrid(y, x, indexing="ij")
+#         coords[coords_ndim_1[0]]["data"] = X
+#         coords[coords_ndim_1[1]]["data"] = Y
+#         coords[coords_ndim_gt2[0]]["animate"] = True
+#         coords[coords_ndim_gt2[0]]["data"] = np.zeros_like(X)
+#     elif len(coords_ndim_gt2) > 1:
+#         # Implement animation over time of the grid coordinates.
+#         # This is a complex task and requires additional logic
+#         # to handle the animation over time. For now, we will
+#         # raise an error.
+#         raise ValueError("3D coordinates are not yet supported.")
+#     else:
+#         raise ValueError(
+#             """
+#             Dimensions of the coordinates can be either two
+#             1D and one 2D or all 2D.
+#             """
+#         )
+# return coords
+
+
+def _meshgrid_coords(coords, x_name, y_name):
+    x = coords[x_name]["data"].values
+    y = coords[y_name]["data"].values
+
+    Y, X = np.meshgrid(y, x, indexing="ij")
+
+    coords[x_name]["data"] = X
+    coords[y_name]["data"] = Y
+
+    return X
+
+
+def _add_missing_coord(coords, name, template):
+    coords[name] = {
+        "name": name,
+        "size": template.shape,
+        "data": np.zeros_like(template),
+    }
+
+
+def _coords_by_ndim(coords):
+    groups = {1: [], 2: [], "gt2": []}
+
+    for name, coord in coords.items():
+        ndim = coord["data"].ndim
+
+        if ndim == 1:
+            groups[1].append(name)
+        elif ndim == 2:
+            groups[2].append(name)
+        else:
+            groups["gt2"].append(name)
+
+    return groups
+
+
 def get_2D_coords(coords):
     expected_dims = ["X", "Y", "Z"]
-    missing_dims = [dim for dim in expected_dims if dim not in coords]
+
     coord_dims = [dim for dim in expected_dims if dim in coords]
+    missing_dims = [dim for dim in expected_dims if dim not in coords]
 
-    if len(coord_dims) == 1:
-        raise ValueError("Only one dimension is present. Expected at least two.")
-    elif len(coord_dims) == 2:
-        # Either both have to be 1D or 2D
-        x = coords[coord_dims[0]]["data"].values
-        y = coords[coord_dims[1]]["data"].values
-        if x.ndim == 1 and y.ndim == 1:
-            Y, X = np.meshgrid(y, x, indexing="ij")
-            coords[coord_dims[0]]["data"] = X
-            coords[coord_dims[1]]["data"] = Y
-            coords[missing_dims[0]] = {
-                "name": missing_dims[0],
-                "size": X.shape,
-                "data": np.zeros_like(X),
-            }
-        elif x.ndim == 2 and y.ndim == 2:
-            coords[coord_dims[0]]["data"] = x.values
-            coords[coord_dims[1]]["data"] = y.values
-            coords[missing_dims[0]] = {
-                "name": missing_dims[0],
-                "size": X.shape,
-                "data": np.zeros_like(X),
-            }
-        else:
-            raise ValueError(
-                "Dimensions of the coordinates can be either 1D or 2D. Mixed dimensions are not supported."
-            )
-    elif len(coord_dims) == 3:
-        # Either it has to be one 2D and the rest 1D or all 2D
+    if len(coord_dims) < 2:
+        raise ValueError("At least two coordinates (X, Y, Z) are required.")
 
-        coords_ndim_1 = [
-            name for name, coord in coords.items() if coord["data"].ndim == 1
-        ]
-        coords_ndim_2 = [
-            name for name, coord in coords.items() if coord["data"].ndim == 2
-        ]
-        coords_ndim_gt2 = [
-            name for name, coord in coords.items() if coord["data"].ndim > 2
-        ]
+    if len(coord_dims) == 2:
+        return _handle_two_coords(coords, coord_dims, missing_dims[0])
 
-        if sum([len(coords_ndim_1), len(coords_ndim_2), len(coords_ndim_gt2)]) != 3:
-            raise ValueError(
-                "The dimensions don't match the input coordinates, make sure your slicing is correct and that the coordinates are either 1D or 2D."
-            )
+    return _handle_three_coords(coords)
 
-        if len(coords_ndim_1) == 2 and len(coords_ndim_2) == 1:
-            x = coords[coords_ndim_1[0]]["data"].values
-            y = coords[coords_ndim_1[1]]["data"].values
-            Y, X = np.meshgrid(y, x, indexing="ij")
-            coords[coords_ndim_1[0]]["data"] = X
-            coords[coords_ndim_1[1]]["data"] = Y
-            coords[coords_ndim_2[0]]["data"] = coords[coords_ndim_2[0]]["data"].values
-        elif len(coords_ndim_2) == 3:
-            x = coords[coords_ndim_2[0]]["data"].values
-            y = coords[coords_ndim_2[1]]["data"].values
-            z = coords[coords_ndim_2[2]]["data"].values
-            coords[coords_ndim_2[0]]["data"] = x
-            coords[coords_ndim_2[1]]["data"] = y
-            coords[coords_ndim_2[2]]["data"] = z
-        elif len(coords_ndim_1) == 2 and len(coords_ndim_gt2) == 1:
-            logging.warning(
-                f"A coordinate has more than 2 dimensions. The additional dimension will be animated over time."
-            )
-            x = coords[coords_ndim_1[0]]["data"].values
-            y = coords[coords_ndim_1[1]]["data"].values
-            Y, X = np.meshgrid(y, x, indexing="ij")
-            coords[coords_ndim_1[0]]["data"] = X
-            coords[coords_ndim_1[1]]["data"] = Y
-            coords[coords_ndim_gt2[0]]["animate"] = True
-            coords[coords_ndim_gt2[0]]["data"] = np.zeros_like(X)
-        elif len(coords_ndim_gt2) > 1:
-            # Implement animation over time of the grid coordinates. This is a complex task and requires additional logic to handle the animation over time. For now, we will raise an error.
-            raise ValueError("3D coordinates are not yet supported.")
-        else:
-            raise ValueError(
-                "Dimensions of the coordinates can be either two 1D and one 2D or all 2D"
-            )
+
+def _handle_two_coords(coords, coord_dims, missing_dim):
+    x_name, y_name = coord_dims
+
+    x = coords[x_name]["data"]
+    y = coords[y_name]["data"]
+
+    if x.ndim == y.ndim == 1:
+        X = _meshgrid_coords(coords, x_name, y_name)
+        _add_missing_coord(coords, missing_dim, X)
+
+    elif x.ndim == y.ndim == 2:
+        coords[x_name]["data"] = x.values
+        coords[y_name]["data"] = y.values
+        _add_missing_coord(coords, missing_dim, x.values)
+
+    else:
+        raise ValueError("Coordinates must be either all 1D or all 2D.")
+
     return coords
+
+
+def _get_coord_pattern(groups):
+    return (
+        len(groups[1]),
+        len(groups[2]),
+        len(groups["gt2"]),
+    )
+
+
+def _handle_2x1d_1x2d(coords, ndim_1, ndim_2, _):
+    _meshgrid_coords(coords, ndim_1[0], ndim_1[1])
+    name = ndim_2[0]
+    coords[name]["data"] = coords[name]["data"].values
+    return coords
+
+
+def _handle_3x2d(coords, _, ndim_2, __):
+    for name in ndim_2:
+        coords[name]["data"] = coords[name]["data"].values
+    return coords
+
+
+def _handle_animation_coord(coords, ndim_1, _, ndim_gt2):
+    logging.warning(
+        "A coordinate has more than 2 dimensions. "
+        "The additional dimension will be animated over time."
+    )
+
+    X = _meshgrid_coords(coords, ndim_1[0], ndim_1[1])
+
+    name = ndim_gt2[0]
+    coords[name]["animate"] = True
+    coords[name]["data"] = np.zeros_like(X)
+
+    return coords
+
+
+def _handle_three_coords(coords):
+    groups = _coords_by_ndim(coords)
+    pattern = _get_coord_pattern(groups)
+
+    match pattern:
+        case (2, 1, 0):
+            return _handle_2x1d_1x2d(coords, groups[1], groups[2], groups["gt2"])
+        case (0, 3, 0):
+            return _handle_3x2d(coords, groups[1], groups[2], groups["gt2"])
+        case (2, 0, 1):
+            return _handle_animation_coord(coords, groups[1], groups[2], groups["gt2"])
+        case (_, _, n) if n > 1:
+            raise ValueError("3D coordinates are not yet supported.")
+        case _:
+            raise ValueError(
+                "Expected either two 1D and one 2D coordinate "
+                "or three 2D coordinates."
+            )
 
 
 def stack_2D_coords(coords):
@@ -260,7 +402,7 @@ def assign_modifier_to_object(obj, modifier_name):
     else:
         modifier = obj.modifiers.new(name=modifier_name, type="NODES")
 
-    nodetree = create_geometrynodetree(modifier_name)
+    nodetree = create_blenderncnodetree(modifier_name)
 
     modifier.node_group = nodetree
 

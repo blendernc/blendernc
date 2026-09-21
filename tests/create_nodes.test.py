@@ -4,7 +4,7 @@ import unittest
 import bpy
 import numpy as np
 
-from blendernc.node_utils import create_geometrynodetree, create_node
+from blendernc.node_utils import create_blenderncnodetree, create_node
 
 BlenderNCNode = np.unique(
     [
@@ -17,7 +17,7 @@ BlenderNCNode = np.unique(
 
 class test_add_and_remove_all_nodes(unittest.TestCase):
     def test_create_all_nodes(self):
-        node_tree = create_geometrynodetree("BLENDERNC")
+        node_tree = create_blenderncnodetree("BLENDERNC")
         for node_id in BlenderNCNode:
             create_node(node_tree, node_id, location=(0, 0), return_if_exists=True)
 

@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import bpy
 
 from .decorators import (
@@ -17,7 +15,10 @@ from .utils import (
 
 
 class bNCNodeDefault:
-    """Base class for all BlenderNC nodes. This class provides common functionality and properties that are shared across all node types."""
+    """
+    Base class for all BlenderNC nodes. This class provides common
+    functionality and properties that are shared across all node types.
+    """
 
     BNC_datastructs: bpy.props.CollectionProperty(type=BNC_data)
 
@@ -62,7 +63,7 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
 
     def update(self):
         datastruct = self.BNC_datastructs[0]
-        if self.datacube_file and not datastruct.filename in datastruct.dict.keys():
+        if self.datacube_file and datastruct.filename not in datastruct.dict.keys():
             datastruct.datafile = self.datacube_file
             datastruct.filename = self.datacube_file.split("/")[-1]
             datastruct.dict[datastruct.filename] = load_dataset(datastruct.datafile)
@@ -191,7 +192,8 @@ class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
 
     @is_single_input_linked
     def update(self):
-        var = self.inputs[0].default_value
+        pass
+        # var = self.inputs[0].default_value
 
 
 class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
@@ -241,7 +243,7 @@ class DebugNode(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
-        socket = self.inputs.new("bNCdatacubeSocket", "xarray datacube")
+        self.inputs.new("bNCdatacubeSocket", "xarray datacube")
 
     def draw_buttons(self, context, layout):
         datastruct = self.BNC_datastructs[0]
