@@ -1,6 +1,20 @@
 import bpy
 import numpy as np
 
+basic_nodes = {
+    "BlenderNCNodeImport": {
+        "links": {
+            "xarray datacube": {
+                "BlenderNCNodeCoords": "xarray datacube",
+                "BlenderNCNodeVariable": "xarray datacube",
+            }
+        }
+    },
+    "BlenderNCNodeCoords": {},
+    "BlenderNCNodeVariable": {},
+    "BlenderNCNodeGrid": {},
+}
+
 
 def get_node_by_idname(node_tree, bl_idname):
     for node in node_tree.nodes:
@@ -14,23 +28,6 @@ def get_all_nodes_by_idname(bl_idname):
         for node in node_tree.nodes:
             if node.bl_idname == bl_idname:
                 yield node
-
-
-def create_basic_geometry_node():
-    node_tree = create_blenderncnodetree("BLENDERNC", "GeometryNodeTree")
-
-    create_node(node_tree, "BlenderNCNodeImport", location=(-300, 0))
-    create_node(node_tree, "NodeGroupOutput", location=(300, 0))
-
-    # APPLY TO CURRENT OBJECT
-    obj = bpy.context.object
-    if "BlenderNCModifier" in obj.modifiers:
-        mod = obj.modifiers.get("BlenderNCModifier")
-    else:
-        mod = obj.modifiers.new("BlenderNCModifier", "NODES")
-    mod.node_group = node_tree
-
-    return node_tree
 
 
 def create_node(node_tree, node_type, location=(0, 0), return_if_exists=True):
@@ -57,10 +54,11 @@ def create_blenderncnodetree(nodetree_name, node_type="BlenderNCNodeTree"):
 
 
 def create_nodes(node_tree, nodes):
-    nodes["NodeGroupOutput"] = {"links": {}}
+    if node_tree.bl_idname == "GeometryNodeTree":
+        nodes["NodeGroupOutput"] = {"links": {}}
+
     node_types = list(nodes.keys()) if isinstance(nodes, dict) else list(nodes)
 
-    node_types.append("NodeGroupOutput")
     locations = np.vstack(
         (np.linspace(-300, 300, len(node_types)), np.zeros(len(node_types)))
     ).T
@@ -72,15 +70,16 @@ def create_nodes(node_tree, nodes):
         )
         nodes[node_type]["name"] = nodes[node_type]["node"].name
 
-    output_node = nodes["NodeGroupOutput"]["node"]
-    if len(output_node.outputs) == 0:
-        node_tree.interface.new_socket(
-            name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
-        )
+    if node_tree.bl_idname == "GeometryNodeTree":
+        output_node = nodes["NodeGroupOutput"]["node"]
+        if len(output_node.outputs) == 0:
+            node_tree.interface.new_socket(
+                name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
+            )
 
-        node_tree.interface.new_socket(
-            name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
-        )
+            node_tree.interface.new_socket(
+                name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
+            )
 
     create_links(node_tree, nodes)
 
@@ -91,8 +90,25 @@ def create_links(node_tree, nodes):
     for key, value in nodes.items():
         if "links" in value:
             for output_name, input_name in value["links"].items():
-                input_node, socket = list(input_name.items())[0]
-                node_tree.links.new(
-                    nodes[key]["node"].outputs.get(output_name),
-                    nodes[input_node]["node"].inputs.get(socket),
-                )
+                for input_node, socket in input_name.items():
+                    create_link(
+                        node_tree,
+                        nodes[key]["node"],
+                        nodes[input_node]["node"],
+                        output_name,
+                        socket,
+                    )
+
+
+def create_link(node_tree, node_out, node_in, output_name, input_name):
+    node_tree.links.new(
+        node_out.outputs.get(output_name),
+        node_in.inputs.get(input_name),
+    )
+
+
+def delete_link(node_tree, node_out, node_in, output_name, input_name):
+    for link in node_tree.links:
+        if link.from_node == node_out and link.to_node == node_in:
+            if output_name == "No var" and link.to_socket.name == input_name:
+                node_tree.links.remove(link)

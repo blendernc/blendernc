@@ -9,7 +9,7 @@ import numpy as np
 import xarray as xr
 
 from .decorators import check_if_node_tree_exists
-from .node_utils import create_blenderncnodetree
+from .node_utils import create_blenderncnodetree, create_link, delete_link
 
 
 def get_datacube_path(directory, files):
@@ -112,12 +112,32 @@ def return_tuple(value):
     return value if isinstance(value, tuple) else (value,)
 
 
+def get_possible_variables_UI(self, context):
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    var_node = node_tree.nodes.get("Datacube Variable")
+    if not var_node:
+        return empty_item()
+    items = get_possible_variables(var_node, context)
+    return items
+
+
 def get_possible_variables(node, context):
     datastruct = node.BNC_datastructs[0]
     if not datastruct.dict or not datastruct.filename:
         return empty_item()
     datacubedata = datastruct.dict[datastruct.filename]
     items = get_var(datacubedata)
+    return items
+
+
+def get_possible_coordinates_UI(self, context):
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    coord_node = node_tree.nodes.get("Datacube Coords")
+    if not coord_node:
+        return empty_item()
+    items = get_possible_coordinates(coord_node, context)
+    items.pop(1)
+    items[0] = ("No var", "", "", "CANCEL", 0)
     return items
 
 
@@ -128,6 +148,40 @@ def get_possible_coordinates(node, context):
     datacubedata = datastruct.dict[datastruct.filename]
     items = get_dims(datacubedata)
     return items
+
+
+def update_variable_UI(self, context):
+    scene = context.scene
+    UI_props = scene.BlenderNC_UI_Properties
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    var_node = node_tree.nodes.get("Datacube Variable")
+    if not var_node:
+        return
+    var_node.datacube_vars = UI_props.variable
+
+
+def update_coords_links_UI(self, context):
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    coord_node = node_tree.nodes.get("Datacube Coords")
+    grid_node = node_tree.nodes.get("Datacube Grid")
+    if not coord_node or not grid_node:
+        return
+
+    (
+        create_link(node_tree, coord_node, grid_node, self.X, "X")
+        if self.X != "No var"
+        else delete_link(node_tree, coord_node, grid_node, self.X, "X")
+    )
+    (
+        create_link(node_tree, coord_node, grid_node, self.Y, "Y")
+        if self.Y != "No var"
+        else delete_link(node_tree, coord_node, grid_node, self.Y, "Y")
+    )
+    (
+        create_link(node_tree, coord_node, grid_node, self.Z, "Z")
+        if self.Z != "No var"
+        else delete_link(node_tree, coord_node, grid_node, self.Z, "Z")
+    )
 
 
 # def get_2D_coords(coords):

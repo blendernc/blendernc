@@ -51,7 +51,8 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
         filepath_string_node.datacube_file = datacube_path
         if not bpy.app.background:  # Check if Blender is running in background mode
             if context.area.type == "VIEW_3D":
-                context.scene.datacube_file = datacube_path
+                UI_props = context.scene.BlenderNC_UI_Properties
+                UI_props.datacube_file = datacube_path
 
         create_datastruct(self, context)
 

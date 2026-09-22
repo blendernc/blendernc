@@ -13,3 +13,7 @@ class BlenderNCNodeTree(bpy.types.NodeTree):
     bl_label = "BlenderNC"
     # Icon identifier
     bl_icon = "WORLD"
+
+    @classmethod
+    def poll(cls, context):
+        return True

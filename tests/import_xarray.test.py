@@ -6,7 +6,7 @@ import bpy
 
 
 def update_datacube_file(file):
-    bpy.data.scenes["Scene"].datacube_file = file
+    bpy.data.scenes["Scene"].BlenderNC_UI_Properties.datacube_file = file
 
 
 class Test_import(unittest.TestCase):
@@ -38,7 +38,7 @@ class Test_import(unittest.TestCase):
 
     def test_import_datacubes_multiple_files(self):
         file = os.path.abspath("./dataset/ssh_*.nc")
-        bpy.data.scenes["Scene"].datacube_file = file
+        bpy.data.scenes["Scene"].BlenderNC_UI_Properties.datacube_file = file
         node_tree = bpy.data.node_groups.get("BLENDERNC")
         node = node_tree.nodes.get("Datacube Import")
         datastruct = node.BNC_datastructs[0]
