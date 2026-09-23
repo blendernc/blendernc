@@ -2,7 +2,6 @@ import logging
 import os
 
 from .blendernc.blendernc import register as register
-from .blendernc.blendernc import unregister as unregister
 
 
 def setup_logging():

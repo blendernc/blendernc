@@ -32,7 +32,6 @@ class Test_nodes(unittest.TestCase):
         self.assertTrue(datastruct_dict_exists)
 
     def test_link_input_and_coords(self):
-        global nodes_dict
         node_tree = create_blenderncnodetree("BLENDERNC")
 
         nodes_dict["BlenderNCNodeImport"]["links"] = {
@@ -49,7 +48,6 @@ class Test_nodes(unittest.TestCase):
         self.assertEqual(list(dataset.coords), socket_coords)
 
     def test_link_variable_and_grid(self):
-        global nodes_dict
         node_tree = create_blenderncnodetree("BLENDERNC")
 
         coords_node = nodes_dict["BlenderNCNodeCoords"]["node"]
@@ -70,7 +68,6 @@ class Test_nodes(unittest.TestCase):
         self.assertTrue(is_linked)
 
     def test_xarray_grid(self):
-        global nodes_dict
         node_tree = create_blenderncnodetree("BLENDERNC")
         grid_node = nodes_dict["BlenderNCNodeGrid"]["node"]
 
