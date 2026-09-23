@@ -78,15 +78,20 @@ def _update_data_in_link(self, datastruct, input_socket):
         input_socket.default_value = from_socket.default_value
 
 
+def _connected_inputs(node):
+    connected_inputs = [
+        input_socket for input_socket in node.inputs if input_socket.is_linked
+    ]
+    return connected_inputs
+
+
 def is_single_input_linked(update_function):
     """Run an update only when the node has at least one linked input."""
 
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
         datastruct = self.BNC_datastructs[0]
-        connected_inputs = [
-            input_socket for input_socket in self.inputs if input_socket.is_linked
-        ]
+        connected_inputs = _connected_inputs(self)
         for input_socket in connected_inputs:
             _update_data_in_link(self, datastruct, input_socket)
 
