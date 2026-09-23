@@ -1,8 +1,6 @@
 import sys
 import unittest
 
-import bpy
-
 
 class Test_import_mfdataset(unittest.TestCase):
     def test_import_mfdataset(self):

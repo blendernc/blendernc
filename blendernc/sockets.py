@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-from collections import defaultdict
-
-from bpy.props import StringProperty
 from bpy.types import NodeSocketFloat
 
 

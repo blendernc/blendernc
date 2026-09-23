@@ -6,6 +6,8 @@ import bpy
 
 from blendernc.node_utils import create_blenderncnodetree, create_links, create_nodes
 
+nodes_dict = {}
+
 
 class Test_nodes(unittest.TestCase):
     def test_create_basic_nodes(self):
