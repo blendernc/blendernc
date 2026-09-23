@@ -9,6 +9,7 @@ from .node_utils import (
     create_blenderncnodetree,
     create_links,
     create_nodes,
+    disconnect_links,
 )
 from .panels_draw import draw_var_and_coords
 
@@ -124,16 +125,20 @@ def initialize_BNC_datastructs(update_function):
 
 def _create_UI_nodes(self, context):
     UI_props = context.scene.BlenderNC_UI_Properties
-    if not UI_props.datacube_file:
-        return
-    node_tree = create_blenderncnodetree("BLENDERNC")
+    node_tree = create_blenderncnodetree(self.node_tree)
     create_nodes(node_tree, basic_nodes)
     Import_node = node_tree.nodes.get("Datacube Import")
-    Import_node.datacube_file = UI_props.datacube_file
+    datacube_file = UI_props.datacube_file
+    if not datacube_file or not glob.glob(datacube_file):
+        disconnect_links(node_tree, Import_node)
+        bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_var_and_coords)
+        return Import_node
+    Import_node.datacube_file = datacube_file
     create_links(node_tree, basic_nodes)
 
     if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
         bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
+    return Import_node
 
 
 def check_if_node_tree_exists(update_function):
@@ -142,13 +147,17 @@ def check_if_node_tree_exists(update_function):
     @wraps(update_function)
     def wrapper(self, context):
         if self.bl_idname == "BlenderNC_UI_Properties":
+            self.node_tree = "BLENDERNC"
             _create_UI_nodes(self, context)
-            return
+            return None
         elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
-            _create_UI_nodes(self, context)
+            self.node_tree = "BLENDERNC"
+            node = _create_UI_nodes(self, context)
+            self.node_name = node.name
         else:
             self.node_tree = self.id_data.name
             self.node_name = self.name
+
         return update_function(self, context)
 
     return wrapper
@@ -178,9 +187,16 @@ def file_exists(update_function):
     """Check if the file exists before running the update function."""
 
     @wraps(update_function)
-    def wrapper(filepath):
+    def wrapper(*args):
+        if type(args[0]) is str:
+            filepath = args[0]
+        else:
+            self = args[0]
+            node_tree = bpy.data.node_groups.get(self.node_tree)
+            filepath_string_node = node_tree.nodes.get(self.node_name)
+            filepath = filepath_string_node.datacube_file
         if glob.glob(filepath):
-            return update_function(filepath)
+            return update_function(*args)
         else:
             raise FileNotFoundError("File {0} does not exist.".format(filepath))
 

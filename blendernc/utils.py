@@ -29,6 +29,7 @@ def get_datacube_path(directory, files):
 
 
 @check_if_node_tree_exists
+@file_exists
 def create_datastruct(self, context):
     node_tree = bpy.data.node_groups.get(self.node_tree)
     filepath_string_node = node_tree.nodes.get(self.node_name)

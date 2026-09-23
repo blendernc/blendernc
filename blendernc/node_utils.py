@@ -130,3 +130,9 @@ def delete_link(node_tree, node_out, node_in, output_name, input_name):
         if link.from_node == node_out and link.to_node == node_in:
             if output_name == "No var" and link.to_socket.name == input_name:
                 node_tree.links.remove(link)
+
+
+def disconnect_links(node_tree, node):
+    for link in node_tree.links:
+        if link.from_node == node or link.to_node == node:
+            node_tree.links.remove(link)
