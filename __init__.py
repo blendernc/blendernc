@@ -2,6 +2,7 @@ import logging
 import os
 
 from .blendernc.blendernc import register as register
+from .blendernc.blendernc import unregister as unregister
 
 
 def setup_logging():
@@ -19,3 +20,4 @@ def setup_logging():
 if __name__ == "__main__":
     setup_logging()
     register()
+    unregister()
