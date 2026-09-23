@@ -1,4 +1,3 @@
-import glob
 import logging
 import os.path
 from itertools import combinations
@@ -8,7 +7,7 @@ import bpy
 import numpy as np
 import xarray as xr
 
-from .decorators import check_if_node_tree_exists
+from .decorators import check_if_node_tree_exists, file_exists
 from .node_utils import create_blenderncnodetree, create_link, delete_link
 
 
@@ -42,6 +41,7 @@ def create_datastruct(self, context):
     )
 
 
+@file_exists
 def load_dataset(filepath):
     """
     Load a dataset using xarray and return the dataset object.
@@ -50,10 +50,7 @@ def load_dataset(filepath):
         filepath (str): The path to the dataset file.
     """
     logging.info(f"Loading dataset from {filepath}")
-    if glob.glob(filepath):
-        dataset = xr.open_mfdataset(filepath)
-    else:
-        raise NameError(f"File {filepath} does not exist")
+    dataset = xr.open_mfdataset(filepath)
     return dataset
 
 

@@ -101,10 +101,28 @@ def create_links(node_tree, nodes):
 
 
 def create_link(node_tree, node_out, node_in, output_name, input_name):
-    node_tree.links.new(
-        node_out.outputs.get(output_name),
-        node_in.inputs.get(input_name),
+    link_exists = does_link_exists(
+        node_tree, node_out, node_in, output_name, input_name
     )
+    if not link_exists:
+        node_tree.links.new(
+            node_out.outputs.get(output_name),
+            node_in.inputs.get(input_name),
+        )
+
+
+def does_link_exists(node_tree, node_out, node_in, output_name, input_name):
+    exists = False
+    for link in node_tree.links:
+        if (
+            link.from_node == node_out
+            and link.to_node == node_in
+            and link.from_socket.name == output_name
+            and link.to_socket.name == input_name
+        ):
+            exists = True
+            continue
+    return exists
 
 
 def delete_link(node_tree, node_out, node_in, output_name, input_name):

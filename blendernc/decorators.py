@@ -1,3 +1,4 @@
+import glob
 from collections import defaultdict
 from functools import wraps
 
@@ -45,7 +46,6 @@ def _clear_default_values(inputs):
     for input_socket in inputs:
         if hasattr(input_socket, "default_value") and input_socket.bl_label != "Object":
             input_socket.default_value = ""
-    return inputs
 
 
 def _copy_datastruct(source, target):
@@ -59,7 +59,7 @@ def _copy_datastruct(source, target):
 def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
     from_node = input_socket.links[0].from_node
     datastruct_from_node = from_node.BNC_datastructs[0]
-    if datastruct_from_node.filename:
+    if datastruct_from_node.filename in datastruct_from_node.dict:
         datastruct = _copy_datastruct(datastruct_from_node, datastruct)
     else:
         self.id_data.links.remove(input_socket.links[0])
@@ -91,8 +91,9 @@ def is_single_input_linked(update_function):
             _update_data_in_link(self, datastruct, input_socket)
 
         if not connected_inputs:
-            self.inputs = _clear_default_values(self.inputs)
+            _clear_default_values(self.inputs)
             datastruct = _clear_datastruct(datastruct)
+
         return update_function(self, *args, **kwargs)
 
     return wrapper
@@ -116,30 +117,30 @@ def initialize_BNC_datastructs(update_function):
     return wrapper
 
 
+def _create_UI_nodes(self, context):
+    UI_props = context.scene.BlenderNC_UI_Properties
+    if not UI_props.datacube_file:
+        return
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    create_nodes(node_tree, basic_nodes)
+    Import_node = node_tree.nodes.get("Datacube Import")
+    Import_node.datacube_file = UI_props.datacube_file
+    create_links(node_tree, basic_nodes)
+
+    if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
+        bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
+
+
 def check_if_node_tree_exists(update_function):
     """Check if the node tree exists before running the update function."""
 
-    def _create_UI_nodes(self, context):
-        node_tree = create_blenderncnodetree("BLENDERNC")
-        create_nodes(node_tree, basic_nodes)
-        UI_props = context.scene.BlenderNC_UI_Properties
-        Import_node = node_tree.nodes.get("Datacube Import")
-        Import_node.datacube_file = UI_props.datacube_file
-        create_links(node_tree, basic_nodes)
-
-        if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
-            bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
-
     @wraps(update_function)
     def wrapper(self, context):
-        if (
-            self.bl_idname == "BlenderNC_UI_Properties"
-            or self.bl_idname == "BLENDERNC_OT_import_mfdataset"
-        ):
+        if self.bl_idname == "BlenderNC_UI_Properties":
             _create_UI_nodes(self, context)
-
             return
-
+        elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
+            _create_UI_nodes(self, context)
         else:
             self.node_tree = self.id_data.name
             self.node_name = self.name
@@ -164,5 +165,18 @@ def has_datastructs(update_function):
         else:
             for output in self.outputs:
                 self.outputs.remove(output)
+
+    return wrapper
+
+
+def file_exists(update_function):
+    """Check if the file exists before running the update function."""
+
+    @wraps(update_function)
+    def wrapper(filepath):
+        if glob.glob(filepath):
+            return update_function(filepath)
+        else:
+            raise FileNotFoundError("File {0} does not exist.".format(filepath))
 
     return wrapper

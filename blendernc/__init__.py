@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-import importlib
-
 import bpy
 
 from .blendernc import register as BNC_register
 from .blendernc import unregister as BNC_unregister
 
 ##############################################################################
-################################## IMPORTANT #################################
+# .                                 IMPORTANT                                #
 ##############################################################################
-##### This file is only used for unit testing and should not be used in ######
-# production. It is not part of the BlenderNC extension and is not intended  # ## to be used by end users. It is only used for testing purposes and may be ##
-################## removed in future versions of BlenderNC. ##################
+#     This file is only used for unit testing and should not be used in      #
+# production. It is not part of the BlenderNC extension and is not intended  #
+#   to be used by end users. It is only used for testing purposes and may be #
+#                  removed in future versions of BlenderNC.                  #
 ##############################################################################
 ##############################################################################
 
@@ -39,7 +38,7 @@ def register():
     # Load blendernc only at launching blender.
     BNC_register()
     # Add python path to sys.path specified in the add-on preferences.
-    addon = bpy.context.preferences.addons.get("blendernc")
+    bpy.context.preferences.addons.get("blendernc")
 
 
 def unregister():

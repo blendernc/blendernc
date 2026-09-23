@@ -10,7 +10,7 @@ def update_datacube_file(file):
 
 
 class Test_import(unittest.TestCase):
-    def test_import_datacubes(self):
+    def test_import_datacube(self):
         file = os.path.abspath("./dataset/ssh_1995-01.nc")
         update_datacube_file(file)
         node_tree = bpy.data.node_groups.get("BLENDERNC")
@@ -21,7 +21,7 @@ class Test_import(unittest.TestCase):
         self.assertTrue(datastruct_dict_exists)
         self.assertTrue(datastruct_exists)
 
-    def test_import_import_mfdataset(self):
+    def test_import_mfdataset(self):
         bpy.ops.blendernc.import_mfdataset(
             node_name="Datacube Import",
             node_tree="BLENDERNC",
@@ -36,7 +36,7 @@ class Test_import(unittest.TestCase):
         )
         self.assertTrue(datastruct_exists)
 
-    def test_import_datacubes_multiple_files(self):
+    def test_import_mfdataset_pattern(self):
         file = os.path.abspath("./dataset/ssh_*.nc")
         bpy.data.scenes["Scene"].BlenderNC_UI_Properties.datacube_file = file
         node_tree = bpy.data.node_groups.get("BLENDERNC")
