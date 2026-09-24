@@ -1,444 +1,203 @@
-#!/usr/bin/env python3
-import functools
+import glob
+from collections import defaultdict
+from functools import wraps
 
 import bpy
 
-import blendernc.get_utils as bnc_gutils
-from blendernc.messages import PrintMessage, unselected_datacube, unselected_variable
+from .node_utils import (
+    basic_nodes,
+    create_blenderncnodetree,
+    create_links,
+    create_nodes,
+    disconnect_links,
+)
+from .panels_draw import draw_var_and_coords
 
 
-class NodesDecorators(object):
-    """
-    NodeDecorator
-    """
+def is_linked(update_function):
+    """Run an update only when the node has at least one linked input."""
 
-    @classmethod
-    def node_connections(cls, func):
-        """
-        Test node connections of nodes.
-        First it tests who is the node connected to,
-        then it updates portions depending on the
-        corresponding connections.
-        If all tests are correct, then the function is preupdated
-        (i.e. Defines the node properties).
-        """
-
-        @functools.wraps(func)
-        def wrapper_update(node):
-            update = cls.shouldIupdate(node)
-            if update:
-                # Return provided function to compute its contents.
-                return func(node)
-            else:
-                # Dummy update.
-                return cls.dummy_update(node)
-
-        # TODO add support to purge, delete or refresh
-        # cache based on type of node. Instead of having them all
-        # over the place.
-        return wrapper_update
-
-    @classmethod
-    def shouldIupdate(cls, node):
-        update = False
-        # Who am I connected?
-        connections = cls.amIconnected(node)
-        # Test types of connections.
-        if not connections["input"] and not connections["output"]:
-            pass
-        elif connections["input"] and connections["output"]:
-            update = cls.input_connections(node)
-        elif connections["input"]:
-            update = cls.input_connections(node)
-        elif connections["output"]:
-            outn = node.outputs[0].links[0].to_node
-            # Make sure to disconnect all nodes follwoing,
-            # as well as to clear dataset.
-            cls.desconnect_nodes(outn, node)
+    @wraps(update_function)
+    def wrapper(self, context):
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        node = node_tree.nodes.get(self.node_name)
+        linked = any(input_socket.is_linked for input_socket in node.inputs)
+        if linked:
+            return update_function(self, context)
         else:
-            raise AttributeError("Fail to find connections!")
-        return update
+            datastruct = self.BNC_datastructs[0]
+            datastruct.filename = ""
+            datastruct.datafile = ""
+            self.outputs.clear()
+            self.report({"WARNING"}, "Node has no linked inputs. Connect to bake grid.")
+            return {"CANCELLED"}
 
-    @staticmethod
-    def get_nodes_desconnect(outn, node):
-        node_out_list = [node]
-        while outn:
-            node_out_list.append(outn)
-            # Exit while if output node is encounter.
-            if not outn.outputs.keys():
-                outn.blendernc_dataset_identifier = ""
-                # TODO delete blendernc_dict from output.
-                outn = ""
-                node_out_list.pop()
-            # Exit while if node is not linked.
-            elif not outn.outputs[0].is_linked:
-                outn = ""
-            # Change outn to append in list.
-            else:
-                outn = outn.outputs[0].links[0].to_node
-        return node_out_list
+    return wrapper
 
-    @classmethod
-    def desconnect_nodes(cls, outn, node):
-        node_out_list = cls.get_nodes_desconnect(outn, node)
-        # If only output is connected, disconnect it.
-        for node_out in node_out_list:
-            cls.unlink_output(node_out)
-            # Only remove the identifier of the node from the global dictionary.
-            if node_out.bl_idname == "datacubeNode":
-                identifier = node_out.blendernc_dataset_identifier
-                node_out.blendernc_dict.pop(identifier, None)
-            # Purge dictionary form all other nodes.
-            else:
-                node_out.blendernc_dict = {}
-                node_out.blendernc_dataset_identifier = ""
 
-    @staticmethod
-    def unlink_input(node):
-        inputs_links = bnc_gutils.get_input_links(node)
-        inputs_links.from_socket.unlink(inputs_links)
+def _clear_datastruct(datastruct):
+    datastruct.filename = ""
+    datastruct.datafile = ""
+    datastruct.operations = ""
+    datastruct.slicing = ""
+    return datastruct
 
-    @staticmethod
-    def unlink_output(node):
-        links = node.outputs[0].links
-        for link in links:
-            link.from_socket.unlink(link)
 
-    @staticmethod
-    def amIconnected(node):
-        # Connections dictionary
-        connections = {"input": [], "output": []}
-        # Test input
-        inputs = [ii for ii in node.inputs] if node.inputs else node.inputs
-        for input in inputs:
-            if input.is_linked and input.links:
-                input_links = input.links[0]
-                connections["input"].append(input_links.from_node.bl_idname)
-        # Test output
-        outputs = [ii for ii in node.outputs] if node.outputs else node.outputs
-        # This condition is to avoid errors after init each node.
-        for output in outputs:
-            if output.is_linked and output.links:
-                output_links = output.links
-                connections["output"].append(
-                    [link.from_node.bl_idname for link in output_links]
-                )
-        return connections
+def _clear_default_values(inputs):
+    for input_socket in inputs:
+        if hasattr(input_socket, "default_value") and input_socket.bl_label != "Object":
+            input_socket.default_value = ""
 
-    @classmethod
-    def input_connections(cls, node):
-        """
-        Test only one incoming connection.
-        """
-        # TODO: Add function to check for multiple connectgions
-        inputs_links = bnc_gutils.get_input_links(node)
-        if not inputs_links:
-            return
-        elif node.bl_idname in ["datacubePath", "Datacube_tutorial"]:
-            return True
-        elif inputs_links.from_node.bl_idname == "datacubePath":
-            cls.get_blendernc_file(node)
-            return cls.get_dataset(node)
-        elif inputs_links.from_node.bl_idname == "datacubeNode":
-            # Copy from socket! Note that this socket is shared in memory at \
-            # any point in the nodetree.
-            # TODO: Create a custom property that allows to pass a dataset,
-            # currently it seems that developers can't create new bpy.types.bpy_struct
-            cls.get_data_from_socket(node)
-        else:
-            # Copy directly from node.
-            cls.get_data_from_node(node)
 
-        return cls.dataset_has_identifier(node)
+def _copy_datastruct(source, target):
+    target.filename = source.filename
+    target.datafile = source.datafile
+    target.operations = source.operations
+    target.slicing = source.slicing
+    return target
 
-    @classmethod
-    def get_dataset(cls, node):
-        if node.bl_idname == "datacubeNode":
-            return cls.select_var_dataset(node)
-        elif node.bl_idname == "datacubeInputGrid":
-            return cls.select_grid_dataset(node)
 
-    @staticmethod
-    def get_data_from_socket(node):
-        inputs_links = bnc_gutils.get_input_links(node)
-        socket = inputs_links.from_socket
-        node.blendernc_dataset_identifier = socket.unique_identifier
-        if socket.unique_identifier in socket.dataset.keys():
-            dataset = socket.dataset[node.blendernc_dataset_identifier].copy()
-            node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
+def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
+    from_node = input_socket.links[0].from_node
+    datastruct_from_node = from_node.BNC_datastructs[0]
+    if datastruct_from_node.filename in datastruct_from_node.dict:
+        datastruct = _copy_datastruct(datastruct_from_node, datastruct)
+    else:
+        self.id_data.links.remove(input_socket.links[0])
+        datastruct = _clear_datastruct(datastruct)
+    return datastruct
 
-    @staticmethod
-    def get_data_from_node(node):
-        inputs_links = bnc_gutils.get_input_links(node)
-        node_parent = inputs_links.from_node
-        output_links = bnc_gutils.get_output_links(node_parent)
-        if len(output_links) == 1:
-            node.blendernc_dataset_identifier = node_parent.blendernc_dataset_identifier
-            if (
-                node_parent.blendernc_dataset_identifier
-                in node_parent.blendernc_dict.keys()
-            ):
-                dataset = node_parent.blendernc_dict[
-                    node.blendernc_dataset_identifier
-                ].copy()
-                node.blendernc_dict[node.blendernc_dataset_identifier] = dataset
-        else:
-            unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
-                output_links, node, node_parent
-            )
-            node.blendernc_dataset_identifier = new_identifier
-            node_parent_dict = node_parent.blendernc_dict
-            node.blendernc_dict[new_identifier] = node_parent_dict[
-                unique_identifier
-            ].copy()
 
-    @classmethod
-    def force_init_load(cls, node):
-        node_walked = [node]
-        identifier = node.blendernc_dataset_identifier
-
-        # Trick to reload data when starting blender
-        blendernc_dict = node.blendernc_dict
-        while identifier not in blendernc_dict.keys():
-            cls.force_grid_load(node)
-            inputs_links = bnc_gutils.get_input_links(node_walked[-1])
-            if node_walked[-1].bl_idname in ["datacubePath", "Datacube_tutorial"]:
-                return False
-            elif node_walked[-1].bl_idname != "datacubeNode":
-                identifier = node_walked[-1].blendernc_dataset_identifier
-                node_walked.append(inputs_links.from_node)
-                continue
-            else:
-                cls.get_dataset(node_walked[-1])
-                node_walked[-1].blendernc_datacube_vars = node_walked[
-                    -1
-                ].blendernc_datacube_vars
-                # Copy from input node recursively
-                for no in node_walked[::-1][1:]:
-                    cls.get_data_from_node(no)
-                    no.update()
-                return False
-
-    @classmethod
-    def force_grid_load(cls, node):
-        nodetree = node.rna_type.id_data
-        grid_nodes = [
-            nodes for nodes in nodetree.nodes if nodes.bl_idname == "datacubeInputGrid"
-        ]
-        [grid_node.update() for grid_node in grid_nodes]
-
-    @classmethod
-    def dataset_has_identifier(cls, node):
-        identifier = node.blendernc_dataset_identifier
-        cls.force_init_load(node)
-        # If identifier exist a file has been selected.
-        if identifier in node.blendernc_dict.keys():
-            # If var is not selected disconnect and return update == False
-            if "selected_var" not in node.blendernc_dict[identifier].keys():
-                # Force definition of selected variable.
-                PrintMessage(unselected_variable, title="Error", icon="ERROR")
-                cls.unlink_input(node)
-                node.blendernc_dict.pop(identifier)
-                return False
-            # Else return update == True
-            else:
-                return True
-        # Else user should select a file.
-        else:
-            # Exception for datacubeNode to update dataset
-            PrintMessage(unselected_datacube, title="Error", icon="ERROR")
-            cls.unlink_input(node)
-            return False
-
-    @classmethod
-    def select_var_dataset(cls, node):
-        inputs_links = bnc_gutils.get_input_links(node)
-        if node.blendernc_file != inputs_links.from_socket.text:
-            node.blendernc_file = inputs_links.from_socket.text
-            bpy.ops.blendernc.datacubeload(
-                file_path=node.blendernc_file,
-                node_group=node.rna_type.id_data.name,
-                node=node.name,
-            )
-            return False
-        elif (
-            node.blendernc_datacube_vars != "No var"
-            and node.blendernc_datacube_vars != ""
-        ):
-            return True
-        else:
-            bpy.ops.blendernc.datacubeload(
-                file_path=node.blendernc_file,
-                node_group=node.rna_type.id_data.name,
-                node=node.name,
-            )
-            return False
-
-    @classmethod
-    def select_grid_dataset(cls, node):
-        inputs_links = bnc_gutils.get_input_links(node)
-        identifier = node.blendernc_dataset_identifier
-        gridstrnotnovar = (
-            node.blendernc_grid_x != "No var" and node.blendernc_grid_y != "No var"
+def _update_data_in_link(self, datastruct, input_socket):
+    from_node = input_socket.links[0].from_node
+    from_socket = input_socket.links[0].from_socket
+    if hasattr(from_node, "BNC_datastructs"):
+        datastruct = _update_datastruct_if_filename_exists(
+            self, datastruct, input_socket
         )
-        gridstrnotempty = node.blendernc_grid_x != "" and node.blendernc_grid_y != ""
-        blenderdichasid = identifier in node.blendernc_dict
+    if hasattr(from_socket, "default_value"):
+        input_socket.default_value = from_socket.default_value
 
-        if node.blendernc_file != inputs_links.from_socket.text:
-            node.blendernc_file = inputs_links.from_socket.text
-            bpy.ops.blendernc.datacubeload(
-                file_path=node.blendernc_file,
-                node_group=node.rna_type.id_data.name,
-                node=node.name,
-            )
-        # TODO use not blenderdichasid to duplicate the
-        # datacube rather than reloading again
-        elif gridstrnotnovar and gridstrnotempty and blenderdichasid:
-            return True
+
+def _connected_inputs(node):
+    connected_inputs = [
+        input_socket for input_socket in node.inputs if input_socket.is_linked
+    ]
+    return connected_inputs
+
+
+def is_single_input_linked(update_function):
+    """Run an update only when the node has at least one linked input."""
+
+    @wraps(update_function)
+    def wrapper(self, *args, **kwargs):
+        datastruct = self.BNC_datastructs[0]
+        connected_inputs = _connected_inputs(self)
+        for input_socket in connected_inputs:
+            _update_data_in_link(self, datastruct, input_socket)
+
+        if not connected_inputs:
+            _clear_default_values(self.inputs)
+            datastruct = _clear_datastruct(datastruct)
+
+        return update_function(self, *args, **kwargs)
+
+    return wrapper
+
+
+def initialize_BNC_datastructs(update_function):
+    """Initialize a new data item before running the update function."""
+
+    @wraps(update_function)
+    def wrapper(self, context):
+        if hasattr(self, "BNC_datastructs"):
+            item = self.BNC_datastructs.add()
+            item.filename = ""
+            item.datafile = ""
+            item.dict = defaultdict()
+            # This is a global dictionary that will store the datasets for all
+            # the nodes and node_trees. It can be used to access the datasets
+            # from any node or node_tree in the BlenderNC workflow.
+        return update_function(self, context)
+
+    return wrapper
+
+
+def _create_UI_nodes(self, context):
+    UI_props = context.scene.BlenderNC_UI_Properties
+    node_tree = create_blenderncnodetree(self.node_tree)
+    create_nodes(node_tree, basic_nodes)
+    Import_node = node_tree.nodes.get("Datacube Import")
+    datacube_file = UI_props.datacube_file
+    if not datacube_file or not glob.glob(datacube_file):
+        disconnect_links(node_tree, Import_node)
+        bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_var_and_coords)
+        return Import_node
+    Import_node.datacube_file = datacube_file
+    create_links(node_tree, basic_nodes)
+
+    if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
+        bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
+    return Import_node
+
+
+def check_if_node_tree_exists(update_function):
+    """Check if the node tree exists before running the update function."""
+
+    @wraps(update_function)
+    def wrapper(self, context):
+        if self.bl_idname == "BlenderNC_UI_Properties":
+            self.node_tree = "BLENDERNC"
+            _create_UI_nodes(self, context)
+            return None
+        elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
+            self.node_tree = "BLENDERNC"
+            node = _create_UI_nodes(self, context)
+            self.node_name = node.name
         else:
-            bpy.ops.blendernc.datacubeload(
-                file_path=node.blendernc_file,
-                node_group=node.rna_type.id_data.name,
-                node=node.name,
-            )
-        # Duplicate  variables to extract variables
-        node.persistent_dict["Dataset"] = node.blendernc_dict[identifier][
-            "Dataset"
-        ].copy()
-        return False
+            self.node_tree = self.id_data.name
+            self.node_name = self.name
 
-    @staticmethod
-    def get_blendernc_file(node):
-        # TODO disconnect if not connected to proper node.
-        inputs_links = bnc_gutils.get_input_links(node)
-        if not node.blendernc_file:
-            node.blendernc_file = inputs_links.from_node.blendernc_file
+        return update_function(self, context)
 
-    @staticmethod
-    def dummy_update(node):
-        """
-        Dummy update
-        """
-        return
+    return wrapper
 
 
-class DrawDecorators(object):
+def has_datastructs(update_function):
     """
-    DrawDecorators
+    Check if the node has a BNC_datastructs attribute
+    before running the update function.
     """
 
-    @classmethod
-    def is_connected(cls, func):
-        """ """
+    @wraps(update_function)
+    def wrapper(self, *args, **kwargs):
 
-        @functools.wraps(func)
-        def wrapper_update(node, context, layout):
-            func_globals = func.__globals__
-            if (
-                node.inputs[0].is_linked
-                and node.inputs[0].links
-                and node.blendernc_dataset_identifier
-            ):
-                node_parent = node.inputs[0].links[0].from_node
-                blendernc_dict = node_parent.blendernc_dict
-                output_links = bnc_gutils.get_output_links(node_parent)
-                unique_identifier, new_identifier = bnc_gutils.get_new_id_mult_outputs(
-                    output_links, node, node_parent
-                )
-                # TODO: Add condition to fix issue here
-                if unique_identifier in blendernc_dict.keys():
-                    blendernc_dict[new_identifier] = blendernc_dict[
-                        unique_identifier
-                    ].copy()
+        datastruct = getattr(self, "BNC_datastructs")[0]
 
-                if blendernc_dict:
-                    # Return provided function to compute its contents.
-                    func_globals["blendernc_dict"] = blendernc_dict
-                    return func(node, context, layout)
-                else:
-                    pass
-            else:
-                pass
+        if hasattr(datastruct, "dict") and datastruct.filename:
+            return update_function(self, *args, **kwargs)
+        else:
+            for output in self.outputs:
+                self.outputs.remove(output)
 
-        return wrapper_update
+    return wrapper
 
 
-class MemoryDecorator(object):
-    """ """
+def file_exists(update_function):
+    """Check if the file exists before running the update function."""
 
-    def nodetrees_cached(func):
-        """ """
-
-        @functools.wraps(func)
-        def unique_identifier(*args, **kwargs):
-            scene = bpy.context.scene
-            n = MemoryDecorator.number_cached_frames(scene)
-            if n != 1:
-                kwargs = {"n": n, "scene": scene}
-                return func(*args, **kwargs)
-            else:
-                pass
-
-        return unique_identifier
-
-    def number_cached_frames(scene):
-        nodetrees = bnc_gutils.get_blendernc_nodetrees()
-        n = 0
-        for node in nodetrees:
-            # Make sure the datacube_cache is loaded.
-            if node.name in scene.datacube_cache.keys():
-                cache = scene.datacube_cache[node.name]
-                for key, item in cache.items():
-                    n += len(item)
-        return n
-
-
-class MathDecorator(object):
-    """ """
-
-    def math_operation(func):
-        """ """
-
-        @functools.wraps(func)
-        def which_calculation(*args, **kwargs):
-            # Get all identifiers of the node
+    @wraps(update_function)
+    def wrapper(*args):
+        if type(args[0]) is str:
+            filepath = args[0]
+        else:
             self = args[0]
-            unique_identifier = self.blendernc_dataset_identifier
-            unique_data_dict_node = self.blendernc_dict[unique_identifier]
-            parent_node = self.inputs[0].links[0].from_node
-            parent_identifier = parent_node.blendernc_dataset_identifier
-            # Extract parent dataset
-            dataset_parent = parent_node.blendernc_dict[parent_identifier][
-                "Dataset"
-            ].copy()
-            # Computation name list
-            computation_types = self.inputs.keys()
-            # Compute with node
-            if "Float" in computation_types and "Dataset" in computation_types:
-                float = self.inputs.get("Float").Float
-                dataset = func(self, dataset_parent, float)
-            elif "Dataset" in computation_types and len(computation_types) == 2:
-                input_from_node = self.inputs[-1].links[0].from_node
-                dataset_other = (
-                    self.inputs[-1]
-                    .links[0]
-                    .from_node.blendernc_dict[
-                        input_from_node.blendernc_dataset_identifier
-                    ]
-                )
-                varname_other = dataset_other["selected_var"]["selected_var_name"]
+            node_tree = bpy.data.node_groups.get(self.node_tree)
+            filepath_string_node = node_tree.nodes.get(self.node_name)
+            filepath = filepath_string_node.datacube_file
+        if glob.glob(filepath):
+            return update_function(*args)
+        else:
+            raise FileNotFoundError("File {0} does not exist.".format(filepath))
 
-                sel_var = unique_data_dict_node["selected_var"]
-                var_name = sel_var["selected_var_name"]
-
-                dataarray_link_1 = unique_data_dict_node["Dataset"][var_name]
-                dataarray_link_2 = dataset_other["Dataset"][varname_other]
-
-                dataset = func(self, dataarray_link_1, dataarray_link_2, var_name)
-            elif "Dataset" in computation_types and len(computation_types) == 1:
-                dataset = func(self, dataset_parent)
-
-            unique_data_dict_node["Dataset"] = dataset
-            return unique_data_dict_node
-
-        return which_calculation
+    return wrapper

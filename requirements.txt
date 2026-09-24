@@ -1,55 +1,48 @@
-asciitree==0.3.3
-attrs==24.2.0
-certifi==2024.8.30
-cffi==1.17.1
-cftime==1.6.4
-charset-normalizer==3.3.2
-click==7.1.2
-cloudpickle==3.0.0
-cmocean==2.0
-colorcet==3.1.0
-contourpy==1.3.0
-cycler==0.12.1
-dask==2021.12.0
-ecmwflibs==0.6.3
-eccodes==2.37.0
-fasteners==0.19
-findlibs==0.0.5
-fonttools==4.53.1
-fsspec==2024.9.0
-idna==3.8
-importlib-resources==6.4.4
-kiwisolver==1.4.7
-locket==1.0.0
-matplotlib==3.7.3
-netcdf4==1.7.1.post2
-numcodecs==0.12.1
-numpy==1.26.4
-packaging==24.1
-pandas==2.2.2
-partd==1.4.2
-pillow==10.4.0
-platformdirs==4.3.1
-pooch==1.8.2
-psutil==5.9.8
-pycparser==2.22
-pyparsing==3.1.4
-python-dateutil==2.9.0.post0
-pytz==2024.1
-pyyaml==6.0.2
-requests==2.32.3
-scipy==1.13.1
-setuptools-scm==8.1.0
-setuptools==74.1.2
-six==1.16.0
-toml==0.10.2
-tomli==2.0.1
-toolz==0.12.1
-typing-extensions==4.12.2
-tzdata==2024.1
-urllib3==2.2.2
-cfgrib==0.9.14.0
-xarray==0.19.0
-zarr==2.18.2
-zipp==3.20.1
-bottleneck==1.4.0
+attrs==26.1.0 ; python_version >= "3.13"
+certifi==2026.7.22 ; python_version >= "3.13"
+cffi==2.1.1 ; python_version >= "3.13"
+cfgrib==0.9.15.1 ; python_version >= "3.13"
+cftime==1.6.5 ; python_version >= "3.13"
+charset-normalizer==3.5.1 ; python_version >= "3.13"
+click==8.4.2 ; python_version >= "3.13"
+cloudpickle==3.1.2 ; python_version >= "3.13"
+cmocean==4.0.3 ; python_version >= "3.13"
+colorama==0.4.6 ; python_version >= "3.13" and platform_system == "Windows"
+contourpy==1.3.3 ; python_version >= "3.13"
+cycler==0.12.1 ; python_version >= "3.13"
+dask==2026.8.0 ; python_version >= "3.13"
+donfig==0.8.1.post1 ; python_version >= "3.13"
+eccodes==2.47.0 ; python_version >= "3.13"
+ecmwflibs==0.7.0 ; python_version >= "3.13"
+findlibs==0.1.3 ; python_version >= "3.13"
+fonttools==4.63.0 ; python_version >= "3.13"
+fsspec==2026.7.0 ; python_version >= "3.13"
+google-crc32c==1.8.0 ; python_version >= "3.13"
+idna==3.19 ; python_version >= "3.13"
+kiwisolver==1.5.0 ; python_version >= "3.13"
+locket==1.0.0 ; python_version >= "3.13"
+matplotlib==3.11.1 ; python_version >= "3.13"
+netcdf4==1.7.4 ; python_version >= "3.13"
+numcodecs==0.16.5 ; python_version >= "3.13"
+numpy==2.5.2 ; python_version >= "3.13"
+packaging==26.3 ; python_version >= "3.13"
+pandas==3.0.5 ; python_version >= "3.13"
+partd==1.4.2 ; python_version >= "3.13"
+pillow==12.3.0 ; python_version >= "3.13"
+platformdirs==4.11.4 ; python_version >= "3.13"
+pooch==1.9.0 ; python_version >= "3.13"
+psutil==7.2.2 ; python_version >= "3.13"
+pycparser==3.0 ; python_version >= "3.13" and implementation_name != "PyPy"
+pyparsing==3.3.2 ; python_version >= "3.13"
+python-dateutil==2.9.0.post0 ; python_version >= "3.13"
+pyyaml==6.0.3 ; python_version >= "3.13"
+requests==2.34.2 ; python_version >= "3.13"
+scipy==1.18.1 ; python_version >= "3.13"
+six==1.17.0 ; python_version >= "3.13"
+toml==0.10.2 ; python_version >= "3.13"
+toolz==1.1.0 ; python_version >= "3.13"
+typing-extensions==4.16.0 ; python_version >= "3.13"
+tzdata==2026.3 ; python_version >= "3.13" and (sys_platform == "win32" or sys_platform == "emscripten")
+urllib3==2.7.0 ; python_version >= "3.13"
+xarray==2026.7.0 ; python_version >= "3.13"
+zarr==3.3.0 ; python_version >= "3.13"

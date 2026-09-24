@@ -1,40 +1,44 @@
 #!/usr/bin/env python3
-import bpy
 from bpy.app.handlers import persistent
 
-import blendernc.get_utils as bnc_gutils
-import blendernc.preferences as preferences
+from .node_utils import get_all_nodes_by_idname
+from .utils import add_attribute, find_coord_matches, get_data_from_datastruct
 
 
 @persistent
-def update_all_images(scene):
-    nodes = bnc_gutils.get_all_output_nodes()
+def bNC_update_attributes(scene):
+    anim_text_nodes = get_all_nodes_by_idname("BlenderNCNodeAnimateTexture")
+    if not anim_text_nodes:
+        return
 
-    operator = bpy.ops.BlenderNC.datacube2img
-    for node in nodes:
-        not_update = not node.update_on_frame_change
-        not_identif = not node.blendernc_dataset_identifier
-        not_dict = node.blendernc_dataset_identifier not in node.blendernc_dict
-        if not_update or not_identif or not_dict:
-            continue
+    frame = scene.frame_current
 
-        frame = scene.frame_current
+    for node in anim_text_nodes:
+        variable = node.inputs.get("Variable").default_value
+        object = node.inputs.get("Object").default_value
+        mesh = object.data
 
-        if frame == node.frame_loaded:
-            continue
-        node_name = node.name
-        node_group = node.rna_type.id_data.name
-        image = node.image.name
-        operator(node=node_name, node_group=node_group, frame=frame, image=image)
-        node.frame_loaded = frame
+        datastruct = node.BNC_datastructs[0]
 
+        data = get_data_from_datastruct(datastruct, variable)
+        coords = {coord: data[coord].shape for coord in data.coords}
+        matched_coords = find_coord_matches(len(mesh.vertices), coords)
 
-@persistent
-def load_handler(dummy):
-    pref = preferences.get_addon_preference()
-    if pref.blendernc_autoreload_datasets:
-        blendernc_nodetrees = bnc_gutils.get_blendernc_nodetrees()
-        for blendernc_nodetree in blendernc_nodetrees:
-            for node in blendernc_nodetree.nodes:
-                if node.bl_idname == "datacubeOutput":
-                    node.update()
+        animate_coord = [
+            coord for coord in coords.keys() if coord not in matched_coords
+        ][0]
+
+        len_animate_coord = len(data[animate_coord])
+        if frame >= len_animate_coord:
+            frame = len_animate_coord - 1
+            return
+        elif frame < 0:
+            frame = 0
+            return
+
+        var = data.isel({animate_coord: frame}).values.transpose(1, 0).flatten()
+
+        attr = add_attribute(mesh, variable, type="FLOAT", domain="POINT")
+        attr.data.foreach_set("value", var)
+        # grid_node.update()
+    # mesh, attr_name, type="FLOAT", domain="POINT"
