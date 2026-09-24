@@ -49,6 +49,10 @@ class Test_import(unittest.TestCase):
         )
         fake_context = type("obj", (object,), {"scene": bpy.data.scenes["Scene"]})
         create_datastruct(fake_self, fake_context)
+        # TODO: create_datastruct only tests for it to not
+        # raise an exception. Further validation should be added.
+        # For example test that no datastruct is created when the
+        # file is missing, and all nodes are disconnected.
 
     def test_remove_all_nodes(self):
         node_tree = bpy.data.node_groups.get("BLENDERNC")
