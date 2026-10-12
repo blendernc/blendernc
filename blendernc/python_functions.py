@@ -344,11 +344,9 @@ def rotate_longitude(node, context):
         # {lon_coords[0]: int(node.blendernc_rotation)}, roll_coords=True
         # )
     else:
-        raise ValueError(
-            """Multiple lon axis are not supported.
+        raise ValueError("""Multiple lon axis are not supported.
              The default axis names are anything containing
-             'lon' or 'x'."""
-        )
+             'lon' or 'x'.""")
     NodeTree = node.rna_type.id_data.name
     f = bpy.context.scene.frame_current
     identifier = node.blendernc_dataset_identifier
@@ -383,10 +381,8 @@ def import_xarray():
             PrintMessage(
                 required_package, title="Error", icon="ERROR", edit_text="xarray"
             )
-            raise ImportError(
-                """The 'xarray' library is not installed.
-                            Please install it before proceeding."""
-            )
+            raise ImportError("""The 'xarray' library is not installed.
+                            Please install it before proceeding.""")
 
 
 class BlenderncEngine:
