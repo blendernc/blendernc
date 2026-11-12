@@ -3,6 +3,19 @@ from .node_utils import create_blenderncnodetree
 
 
 def draw_var_and_coords(self, context):
+    """Draw the coordinate (X, Y, Z) and variable selectors in the 3D view panel.
+
+    Appended to ``BLENDERNC_UI_PT_3D_VIEW`` once a datacube has been loaded.
+    The enums expand into radio buttons when there are three or fewer
+    coordinates.
+
+    Parameters
+    ----------
+    self : bpy.types.Panel
+        Panel being drawn.
+    context : bpy.types.Context
+        Current Blender context.
+    """
     scene = context.scene
     UI_props = scene.BlenderNC_UI_Properties
     node_tree = create_blenderncnodetree("BLENDERNC")

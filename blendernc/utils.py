@@ -31,6 +31,19 @@ def get_datacube_path(directory, files):
 @check_if_node_tree_exists
 @file_exists
 def create_datastruct(self, context):
+    """Load the datacube referenced by a node into its ``BNC_data`` item.
+
+    Used as the ``update`` callback of the datacube path properties. The node
+    tree and node are resolved by the decorators, which also raise
+    ``FileNotFoundError`` when the path matches no file.
+
+    Parameters
+    ----------
+    self : bpy.types.Node, bpy.types.PropertyGroup or bpy.types.Operator
+        Owner of the path property.
+    context : bpy.types.Context
+        Current Blender context.
+    """
     node_tree = bpy.data.node_groups.get(self.node_tree)
     filepath_string_node = node_tree.nodes.get(self.node_name)
 
@@ -56,6 +69,28 @@ def load_dataset(filepath):
 
 
 def name_match(block, cfname, filename):
+    """Extend a glob pattern with one matching block from ``difflib``.
+
+    Parameters
+    ----------
+    block : difflib.Match
+        Matching block ``(a, b, size)`` between two filenames.
+    cfname : str
+        Pattern built so far.
+    filename : str
+        Filename the block indices ``a`` refer to.
+
+    Returns
+    -------
+    str
+        ``cfname`` extended with the matched text, preceded by ``"*"`` when a
+        gap separates it from the previous block.
+
+    Raises
+    ------
+    ValueError
+        If the first block does not start at the beginning of both names.
+    """
     if not cfname and (block.a != 0 or block.b != 0):
         raise ValueError("Start of filename strings do not match.")
     elif block.a == block.b and block.size != 0:
@@ -68,6 +103,27 @@ def name_match(block, cfname, filename):
 
 
 def findCommonName(filenames):
+    """Build a glob pattern matching a list of similar filenames.
+
+    Consecutive filenames are compared and the shortest common pattern is
+    kept, e.g. ``["ssh_1995-01.nc", "ssh_1995-02.nc"]`` gives
+    ``"ssh_1995-0*.nc"``.
+
+    Parameters
+    ----------
+    filenames : list of str
+        Filenames to combine.
+
+    Returns
+    -------
+    str
+        Glob pattern containing at least one ``"*"``.
+
+    Raises
+    ------
+    ValueError
+        If the names share no wildcard-able pattern or differ in extension.
+    """
     import difflib
 
     cfname = []
@@ -88,6 +144,18 @@ def findCommonName(filenames):
 
 
 def get_grid_coords(grid_node):
+    """Describe the coordinates linked to a grid node's X, Y and Z inputs.
+
+    Parameters
+    ----------
+    grid_node : DatacubeGrid
+        Grid node whose linked input sockets are inspected.
+
+    Returns
+    -------
+    dict
+        Mapping of socket name to ``{"name": coordinate_name, "size": shape}``.
+    """
     datastruct = grid_node.BNC_datastructs[0]
 
     coords = {}
@@ -107,10 +175,26 @@ def get_grid_coords(grid_node):
 
 
 def return_tuple(value):
+    """Wrap a value in a tuple unless it already is one."""
     return value if isinstance(value, tuple) else (value,)
 
 
 def get_possible_variables_UI(self, context):
+    """Enum items callback for the variable selector in the 3D view panel.
+
+    Parameters
+    ----------
+    self : BlenderNC_UI_Properties
+        Property group owning the enum.
+    context : bpy.types.Context
+        Current Blender context.
+
+    Returns
+    -------
+    list of tuple
+        Enum items from the "Datacube Variable" node of the ``BLENDERNC``
+        tree, or a single empty item when the node or dataset is missing.
+    """
     node_tree = create_blenderncnodetree("BLENDERNC")
     var_node = node_tree.nodes.get("Datacube Variable")
     if not var_node:
@@ -120,6 +204,20 @@ def get_possible_variables_UI(self, context):
 
 
 def get_possible_variables(node, context):
+    """Enum items callback listing the variables of a node's dataset.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node with a ``BNC_datastructs`` collection.
+    context : bpy.types.Context
+        Current Blender context (unused).
+
+    Returns
+    -------
+    list of tuple
+        Enum items, or a single empty item when no dataset is loaded.
+    """
     datastruct = node.BNC_datastructs[0]
     if not datastruct.dict or not datastruct.filename:
         return empty_item()
@@ -129,6 +227,23 @@ def get_possible_variables(node, context):
 
 
 def get_possible_coordinates_UI(self, context):
+    """Enum items callback for the X, Y and Z selectors in the 3D view panel.
+
+    The header entry is replaced by a ``"No var"`` item so the user can
+    unlink an axis, and the separator is dropped.
+
+    Parameters
+    ----------
+    self : BlenderNC_UI_Properties
+        Property group owning the enum.
+    context : bpy.types.Context
+        Current Blender context.
+
+    Returns
+    -------
+    list of tuple
+        Enum items from the "Datacube Coords" node of the ``BLENDERNC`` tree.
+    """
     node_tree = create_blenderncnodetree("BLENDERNC")
     coord_node = node_tree.nodes.get("Datacube Coords")
     if not coord_node:
@@ -140,6 +255,20 @@ def get_possible_coordinates_UI(self, context):
 
 
 def get_possible_coordinates(node, context):
+    """Enum items callback listing the coordinates of a node's dataset.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node with a ``BNC_datastructs`` collection.
+    context : bpy.types.Context
+        Current Blender context (unused).
+
+    Returns
+    -------
+    list of tuple
+        Enum items, or a single empty item when no dataset is loaded.
+    """
     datastruct = node.BNC_datastructs[0]
     if not datastruct.dict or not datastruct.filename:
         return empty_item(text="No Coordinate")
@@ -149,6 +278,15 @@ def get_possible_coordinates(node, context):
 
 
 def update_variable_UI(self, context):
+    """Push the variable chosen in the 3D view panel to the variable node.
+
+    Parameters
+    ----------
+    self : BlenderNC_UI_Properties
+        Property group owning the ``variable`` enum.
+    context : bpy.types.Context
+        Current Blender context.
+    """
     scene = context.scene
     UI_props = scene.BlenderNC_UI_Properties
     node_tree = create_blenderncnodetree("BLENDERNC")
@@ -159,6 +297,19 @@ def update_variable_UI(self, context):
 
 
 def update_coords_links_UI(self, context):
+    """Link or unlink coordinate outputs to the grid node from the panel enums.
+
+    For each of ``X``, ``Y`` and ``Z``, the selected coordinate output of the
+    "Datacube Coords" node is linked to the matching grid input, or the
+    existing link is removed when ``"No var"`` is selected.
+
+    Parameters
+    ----------
+    self : BlenderNC_UI_Properties
+        Property group owning the axis enums.
+    context : bpy.types.Context
+        Current Blender context.
+    """
     node_tree = create_blenderncnodetree("BLENDERNC")
     coord_node = node_tree.nodes.get("Datacube Coords")
     grid_node = node_tree.nodes.get("Datacube Grid")
@@ -283,6 +434,20 @@ def update_coords_links_UI(self, context):
 
 
 def _meshgrid_coords(coords, x_name, y_name):
+    """Replace two 1-D coordinates with their 2-D mesh grid, in place.
+
+    Parameters
+    ----------
+    coords : dict
+        Coordinate mapping as returned by :func:`get_coords_from_datastruct`.
+    x_name, y_name : str
+        Keys of the two 1-D coordinates.
+
+    Returns
+    -------
+    numpy.ndarray
+        The 2-D ``X`` array, useful as a shape template.
+    """
     x = coords[x_name]["data"].values
     y = coords[y_name]["data"].values
 
@@ -295,6 +460,17 @@ def _meshgrid_coords(coords, x_name, y_name):
 
 
 def _add_missing_coord(coords, name, template):
+    """Add a zero-filled coordinate entry shaped like ``template``.
+
+    Parameters
+    ----------
+    coords : dict
+        Coordinate mapping to extend in place.
+    name : str
+        Key of the new entry (``"X"``, ``"Y"`` or ``"Z"``).
+    template : numpy.ndarray
+        Array whose shape the new coordinate copies.
+    """
     coords[name] = {
         "name": name,
         "size": template.shape,
@@ -303,6 +479,18 @@ def _add_missing_coord(coords, name, template):
 
 
 def _coords_by_ndim(coords):
+    """Group coordinate names by the dimensionality of their data.
+
+    Parameters
+    ----------
+    coords : dict
+        Coordinate mapping with a ``"data"`` array per entry.
+
+    Returns
+    -------
+    dict
+        Keys ``1``, ``2`` and ``"gt2"`` mapping to lists of coordinate names.
+    """
     groups = {1: [], 2: [], "gt2": []}
 
     for name, coord in coords.items():
@@ -319,6 +507,26 @@ def _coords_by_ndim(coords):
 
 
 def get_2D_coords(coords):
+    """Expand the grid coordinates to 2-D arrays suitable for a mesh grid.
+
+    Parameters
+    ----------
+    coords : dict
+        Mapping of ``"X"``, ``"Y"`` and/or ``"Z"`` to coordinate entries
+        holding a ``"data"`` :class:`xarray.DataArray`.
+
+    Returns
+    -------
+    dict
+        ``coords`` with every entry's ``"data"`` replaced by a 2-D
+        :class:`numpy.ndarray`; a missing third axis is filled with zeros.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two axes are present or their dimensions cannot be
+        combined.
+    """
     expected_dims = ["X", "Y", "Z"]
 
     coord_dims = [dim for dim in expected_dims if dim in coords]
@@ -334,6 +542,27 @@ def get_2D_coords(coords):
 
 
 def _handle_two_coords(coords, coord_dims, missing_dim):
+    """Expand two coordinates and synthesise the missing third one.
+
+    Parameters
+    ----------
+    coords : dict
+        Coordinate mapping to update in place.
+    coord_dims : list of str
+        The two present axis keys.
+    missing_dim : str
+        The absent axis key, filled with zeros.
+
+    Returns
+    -------
+    dict
+        The updated mapping.
+
+    Raises
+    ------
+    ValueError
+        If one coordinate is 1-D and the other 2-D.
+    """
     x_name, y_name = coord_dims
 
     x = coords[x_name]["data"]
@@ -355,6 +584,7 @@ def _handle_two_coords(coords, coord_dims, missing_dim):
 
 
 def _get_coord_pattern(groups):
+    """Return the ``(n_1d, n_2d, n_gt2d)`` counts of a dimensionality grouping."""
     return (
         len(groups[1]),
         len(groups[2]),
@@ -363,6 +593,7 @@ def _get_coord_pattern(groups):
 
 
 def _handle_2x1d_1x2d(coords, ndim_1, ndim_2, _):
+    """Mesh-grid two 1-D coordinates and unwrap the single 2-D one."""
     _meshgrid_coords(coords, ndim_1[0], ndim_1[1])
     name = ndim_2[0]
     coords[name]["data"] = coords[name]["data"].values
@@ -370,12 +601,18 @@ def _handle_2x1d_1x2d(coords, ndim_1, ndim_2, _):
 
 
 def _handle_3x2d(coords, _, ndim_2, __):
+    """Unwrap three 2-D coordinates to plain arrays."""
     for name in ndim_2:
         coords[name]["data"] = coords[name]["data"].values
     return coords
 
 
 def _handle_animation_coord(coords, ndim_1, _, ndim_gt2):
+    """Mesh-grid two 1-D coordinates and mark the higher-dimensional one.
+
+    The coordinate with more than two dimensions is flagged with
+    ``"animate": True`` and replaced by zeros so it can be animated later.
+    """
     logging.warning(
         "A coordinate has more than 2 dimensions. "
         "The additional dimension will be animated over time."
@@ -391,6 +628,23 @@ def _handle_animation_coord(coords, ndim_1, _, ndim_gt2):
 
 
 def _handle_three_coords(coords):
+    """Dispatch three coordinates to the handler matching their dimensions.
+
+    Parameters
+    ----------
+    coords : dict
+        Coordinate mapping with ``"X"``, ``"Y"`` and ``"Z"`` entries.
+
+    Returns
+    -------
+    dict
+        The updated mapping.
+
+    Raises
+    ------
+    ValueError
+        If the combination of dimensions is not supported.
+    """
     groups = _coords_by_ndim(coords)
     pattern = _get_coord_pattern(groups)
 
@@ -411,6 +665,18 @@ def _handle_three_coords(coords):
 
 
 def stack_2D_coords(coords):
+    """Flatten X, Y and Z arrays into the layout expected by ``foreach_set``.
+
+    Parameters
+    ----------
+    coords : dict
+        Mapping with 2-D ``"data"`` arrays under ``"X"``, ``"Y"`` and ``"Z"``.
+
+    Returns
+    -------
+    numpy.ndarray
+        1-D array of interleaved ``(x, y, z)`` triplets, one per vertex.
+    """
     X = coords.get("X")["data"]
     Y = coords.get("Y")["data"]
     Z = coords.get("Z")["data"]
@@ -449,6 +715,20 @@ def look_up_object_and_mesh(object_name):
 
 
 def assign_modifier_to_object(obj, modifier_name):
+    """Get or create a Geometry Nodes modifier backed by a tree of the same name.
+
+    Parameters
+    ----------
+    obj : bpy.types.Object
+        Object receiving the modifier.
+    modifier_name : str
+        Name of the modifier and of its geometry node group.
+
+    Returns
+    -------
+    tuple
+        ``(modifier, nodetree)``.
+    """
     if modifier_name in obj.modifiers:
         modifier = obj.modifiers.get(modifier_name)
     else:
@@ -462,6 +742,27 @@ def assign_modifier_to_object(obj, modifier_name):
 
 
 def extract_dimensions_of_grid(grid_coords):
+    """Pick the two vertex counts for the Mesh Grid node.
+
+    Sizes with more than two dimensions or of length one are ignored. With
+    two remaining coordinates their first dimensions are used; with more, the
+    2-D surface coordinates are preferred.
+
+    Parameters
+    ----------
+    grid_coords : dict
+        Mapping as returned by :func:`get_grid_coords`.
+
+    Returns
+    -------
+    tuple of int
+        ``(size1, size2)``.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two usable dimensions are found.
+    """
     # Extract the dimensions of the grid based on the provided grid coordinates.
     sizes = {name: grid_coords.get(name).get("size") for name in grid_coords.keys()}
     # Filter out dimensions with size greater than 2 and different from (1,)
@@ -532,20 +833,23 @@ def get_dims(datacubedata):
 
 
 def get_var(datacubedata, str_filter=None):
-    """
-    get_var _summary_
+    """Build enum items for the data variables of a dataset.
+
+    Coordinates are excluded. When the variables carry a ``long_name``
+    attribute it is used as the item description.
 
     Parameters
     ----------
-    datacubedata : _type_
-        _description_
-    str_filter : List, optional
-        _description_, by default None
+    datacubedata : xarray.Dataset
+        Dataset to list variables from.
+    str_filter : list of str, optional
+        Substrings used to keep only matching variable names, by default
+        ``None`` (no filtering).
 
     Returns
     -------
-    _type_
-        _description_
+    list of tuple
+        A header item, a separator (``None``) and one item per variable.
     """
     dimensions = sorted(list(datacubedata.coords.keys()))
     variables = sorted(list(datacubedata.variables.keys() - dimensions))
@@ -569,6 +873,24 @@ def get_var(datacubedata, str_filter=None):
 
 
 def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
+    """Build ``EnumProperty`` item tuples from a list of names.
+
+    Parameters
+    ----------
+    list : list of str
+        Identifiers, also used as display names.
+    icon : str, optional
+        Icon identifier for every item, by default ``"NONE"``.
+    long_name_list : list of str, optional
+        Descriptions, one per item. When omitted the name is reused.
+    start : int, optional
+        Number assigned to the first item, by default 1.
+
+    Returns
+    -------
+    list of tuple
+        ``(identifier, name, description, icon, number)`` tuples.
+    """
     if long_name_list:
         list = [
             (str(list[ii]), str(list[ii]), long_name_list[ii], icon, ii + start)
@@ -583,6 +905,20 @@ def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
 
 
 def filter_2_string_lists(list, str_filter):
+    """Keep the items that contain any of the filter substrings.
+
+    Parameters
+    ----------
+    list : list of str
+        Candidate strings.
+    str_filter : list of str
+        Lower-case substrings to look for.
+
+    Returns
+    -------
+    list of str
+        Matching items, in filter order; an item may appear more than once.
+    """
     tmp_list = []
     for strfit in str_filter:
         for item in list:
@@ -592,14 +928,30 @@ def filter_2_string_lists(list, str_filter):
 
 
 def select_item(text="Select variable"):
+    """Return the placeholder enum item shown before a selection is made."""
     return [("No var", text, "Empty", "NODE_SEL", 0)]
 
 
 def empty_item(text="No variable"):
+    """Return the enum item shown when nothing can be selected."""
     return [("No var", text, "Empty", "CANCEL", 0)]
 
 
 def find_coord_matches(length, dims):
+    """Find the coordinate combinations whose total size equals ``length``.
+
+    Parameters
+    ----------
+    length : int
+        Target size, typically the vertex count of a mesh.
+    dims : dict
+        Mapping of coordinate name to its shape (tuple) or size (int).
+
+    Returns
+    -------
+    numpy.ndarray
+        Squeezed array of matching name combinations.
+    """
     sizes = {
         name: prod(shape) if isinstance(shape, tuple) else shape
         for name, shape in dims.items()

@@ -30,6 +30,10 @@ def run_command(cmd, shell=False):
 
 
 def setup_wheels():
+    """Export the poetry requirements and download their wheels into ``./wheels``.
+
+    Exits the process with status 1 if either step fails.
+    """
     print("Exporting requirements from poetry...")
     result = run_command(
         ["poetry", "export", "-f", "requirements.txt", "--output", "requirements.txt"]
@@ -60,6 +64,11 @@ def setup_wheels():
 
 
 def update_manifest_wheels():
+    """Rewrite the ``wheels`` list of ``blender_manifest.toml``.
+
+    Downloads the wheels first if the manifest is missing, then records every
+    ``wheels/*.whl`` file with forward-slash paths.
+    """
     manifest_file = "blender_manifest.toml"
 
     if not os.path.exists(manifest_file):

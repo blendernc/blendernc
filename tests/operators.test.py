@@ -6,7 +6,10 @@ import bpy
 
 
 class Test_import_mfdataset(unittest.TestCase):
+    """The import operator invoked with several files."""
+
     def test_import_mfdataset(self):
+        """Two selected files are combined into a single glob pattern."""
         bpy.ops.blendernc.import_mfdataset(
             node_name="Datacube Import",
             node_tree="BLENDERNC",

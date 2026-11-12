@@ -19,6 +19,7 @@ def is_linked(update_function):
 
     @wraps(update_function)
     def wrapper(self, context):
+        """Proceed when an input is linked; otherwise clear the node and cancel."""
         node_tree = bpy.data.node_groups.get(self.node_tree)
         node = node_tree.nodes.get(self.node_name)
         linked = any(input_socket.is_linked for input_socket in node.inputs)
@@ -36,6 +37,19 @@ def is_linked(update_function):
 
 
 def _clear_datastruct(datastruct):
+    """Reset every string field of a ``BNC_data`` item.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item attached to a node.
+
+    Returns
+    -------
+    BNC_data
+        The same item with ``filename``, ``datafile``, ``operations`` and
+        ``slicing`` set to empty strings.
+    """
     datastruct.filename = ""
     datastruct.datafile = ""
     datastruct.operations = ""
@@ -44,12 +58,34 @@ def _clear_datastruct(datastruct):
 
 
 def _clear_default_values(inputs):
+    """Blank the ``default_value`` of every input socket except ``Object`` sockets.
+
+    Parameters
+    ----------
+    inputs : bpy.types.NodeInputs
+        Input sockets of a node.
+    """
     for input_socket in inputs:
         if hasattr(input_socket, "default_value") and input_socket.bl_label != "Object":
             input_socket.default_value = ""
 
 
 def _copy_datastruct(source, target):
+    """Copy the string fields of one ``BNC_data`` item onto another.
+
+    Parameters
+    ----------
+    source : BNC_data
+        Item to copy from.
+    target : BNC_data
+        Item to copy into.
+
+    Returns
+    -------
+    BNC_data
+        ``target`` with ``filename``, ``datafile``, ``operations`` and
+        ``slicing`` taken from ``source``.
+    """
     target.filename = source.filename
     target.datafile = source.datafile
     target.operations = source.operations
@@ -58,6 +94,26 @@ def _copy_datastruct(source, target):
 
 
 def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
+    """Pull the upstream node's data item through a linked input socket.
+
+    If the upstream node has a loaded dataset, its data item is copied onto
+    ``datastruct``. Otherwise the link is removed and ``datastruct`` is
+    cleared.
+
+    Parameters
+    ----------
+    self : bpy.types.Node
+        Node that owns ``input_socket``.
+    datastruct : BNC_data
+        Data item of ``self`` to update.
+    input_socket : bpy.types.NodeSocket
+        Linked input socket whose first link is inspected.
+
+    Returns
+    -------
+    BNC_data
+        The updated (or cleared) data item.
+    """
     from_node = input_socket.links[0].from_node
     datastruct_from_node = from_node.BNC_datastructs[0]
     if datastruct_from_node.filename in datastruct_from_node.dict:
@@ -69,6 +125,17 @@ def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
 
 
 def _update_data_in_link(self, datastruct, input_socket):
+    """Propagate data item and socket value from the upstream node of a link.
+
+    Parameters
+    ----------
+    self : bpy.types.Node
+        Node that owns ``input_socket``.
+    datastruct : BNC_data
+        Data item of ``self`` to update.
+    input_socket : bpy.types.NodeSocket
+        Linked input socket to read from.
+    """
     from_node = input_socket.links[0].from_node
     from_socket = input_socket.links[0].from_socket
     if hasattr(from_node, "BNC_datastructs"):
@@ -80,6 +147,18 @@ def _update_data_in_link(self, datastruct, input_socket):
 
 
 def _connected_inputs(node):
+    """Return the input sockets of a node that currently have a link.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node to inspect.
+
+    Returns
+    -------
+    list of bpy.types.NodeSocket
+        Linked input sockets, in socket order.
+    """
     connected_inputs = [
         input_socket for input_socket in node.inputs if input_socket.is_linked
     ]
@@ -91,6 +170,7 @@ def is_single_input_linked(update_function):
 
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
+        """Sync the node's data item with its linked inputs, then run the update."""
         datastruct = self.BNC_datastructs[0]
         connected_inputs = _connected_inputs(self)
         for input_socket in connected_inputs:
@@ -110,6 +190,7 @@ def initialize_BNC_datastructs(update_function):
 
     @wraps(update_function)
     def wrapper(self, context):
+        """Add an empty ``BNC_data`` item to the node, then run the update."""
         if hasattr(self, "BNC_datastructs"):
             item = self.BNC_datastructs.add()
             item.filename = ""
@@ -124,6 +205,25 @@ def initialize_BNC_datastructs(update_function):
 
 
 def _create_UI_nodes(self, context):
+    """Build the default ``BLENDERNC`` node tree driven by the 3D view panel.
+
+    Creates the import, coordinate, variable and grid nodes. When the path in
+    the UI properties is empty or matches no file, the import node is
+    disconnected and the variable/coordinate panel section is removed. When
+    the path is valid, the nodes are linked and the section is drawn.
+
+    Parameters
+    ----------
+    self : bpy.types.PropertyGroup or bpy.types.Operator
+        Caller holding a ``node_tree`` name attribute.
+    context : bpy.types.Context
+        Current Blender context.
+
+    Returns
+    -------
+    bpy.types.Node
+        The "Datacube Import" node of the tree.
+    """
     UI_props = context.scene.BlenderNC_UI_Properties
     node_tree = create_blenderncnodetree(self.node_tree)
     create_nodes(node_tree, basic_nodes)
@@ -146,6 +246,7 @@ def check_if_node_tree_exists(update_function):
 
     @wraps(update_function)
     def wrapper(self, context):
+        """Resolve ``node_tree`` and ``node_name`` on ``self``, then run the update."""
         if self.bl_idname == "BlenderNC_UI_Properties":
             self.node_tree = "BLENDERNC"
             _create_UI_nodes(self, context)
@@ -171,6 +272,7 @@ def has_datastructs(update_function):
 
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
+        """Run the update when a dataset is loaded; otherwise remove all outputs."""
 
         datastruct = getattr(self, "BNC_datastructs")[0]
 
@@ -188,6 +290,7 @@ def file_exists(update_function):
 
     @wraps(update_function)
     def wrapper(*args):
+        """Run the function when the resolved file path matches an existing file."""
         if type(args[0]) is str:
             filepath = args[0]
         else:

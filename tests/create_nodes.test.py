@@ -16,12 +16,16 @@ BlenderNCNode = np.unique(
 
 
 class test_add_and_remove_all_nodes(unittest.TestCase):
+    """Create and delete every registered node type."""
+
     def test_create_all_nodes(self):
+        """Every registered node type can be added to the ``BLENDERNC`` tree."""
         node_tree = create_blenderncnodetree("BLENDERNC")
         for node_id in BlenderNCNode:
             create_node(node_tree, node_id, location=(0, 0), return_if_exists=True)
 
     def test_delete_all_nodes(self):
+        """All nodes can be removed from the ``BLENDERNC`` tree."""
         if "BLENDERNC" in bpy.data.node_groups.keys():
             node_tree = bpy.data.node_groups.get("BLENDERNC")
             for node in list(node_tree.nodes):

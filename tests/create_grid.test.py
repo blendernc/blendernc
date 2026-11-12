@@ -5,7 +5,10 @@ from blendernc.node_utils import create_blenderncnodetree
 
 
 class test_create_grid(unittest.TestCase):
+    """Smoke test for node tree creation."""
+
     def test_create_all_nodes(self):
+        """Creating the ``BLENDERNC`` node tree must not raise."""
         create_blenderncnodetree("BLENDERNC")
 
 

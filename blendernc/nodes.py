@@ -23,6 +23,7 @@ class bNCNodeDefault:
     BNC_datastructs: bpy.props.CollectionProperty(type=BNC_data)
 
     def invoke(self, context):
+        """Place the node at the cursor when added from the node editor."""
         space = context.space_data
         if space and space.type == "NODE_EDITOR":
             cursor = space.cursor_location
@@ -31,6 +32,12 @@ class bNCNodeDefault:
 
 # Custom node type
 class DatacubeImport(bpy.types.Node, bNCNodeDefault):
+    """Node that opens a NetCDF, GRIB or Zarr datacube from a path or pattern.
+
+    The loaded :class:`xarray.Dataset` is exposed to downstream nodes through
+    the ``"xarray datacube"`` output socket.
+    """
+
     bl_idname = "BlenderNCNodeImport"  # Unique identifier for the node
     bl_label = "Datacube Import"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
@@ -48,10 +55,12 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"xarray datacube"`` output socket."""
         socket = self.outputs.new("bNCdatacubeSocket", "xarray datacube")
         socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
+        """Draw the path field and the file browser button."""
         layout.label(text="Datacube path", icon="OUTLINER_OB_GROUP_INSTANCE")
         row = layout.row(align=True)
         split = row.split(factor=0.85, align=True)
@@ -62,6 +71,7 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         op.node_tree = self.id_data.name
 
     def update(self):
+        """Load the dataset into the shared cache if it is not already there."""
         datastruct = self.BNC_datastructs[0]
         if self.datacube_file and datastruct.filename not in datastruct.dict.keys():
             datastruct.datafile = self.datacube_file
@@ -69,6 +79,7 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
             datastruct.dict[datastruct.filename] = load_dataset(datastruct.datafile)
 
     def free(self):
+        """Drop the dataset from the cache when the node is deleted."""
         datastruct = self.BNC_datastructs[0]
         datastruct.dict.pop(datastruct.filename, None)
         datastruct.filename = ""
@@ -76,21 +87,26 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
+    """Node that exposes every coordinate of the dataset as a string output."""
+
     bl_idname = "BlenderNCNodeCoords"  # Unique identifier for the node
     bl_label = "Datacube Coords"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"xarray datacube"`` input socket."""
         socket = self.inputs.new("bNCdatacubeSocket", "xarray datacube")
         socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
+        """Nothing to draw; the node only has sockets."""
         pass
 
     @is_single_input_linked
     @has_datastructs
     def update(self):
+        """Add one string output socket per dataset coordinate."""
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict[datastruct.filename]
         for coords in dataset.coords:
@@ -100,6 +116,11 @@ class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
+    """Node that selects one variable of the dataset.
+
+    The chosen variable name becomes a string output socket.
+    """
+
     bl_idname = "BlenderNCNodeVariable"  # Unique identifier for the node
     bl_label = "Datacube Variable"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
@@ -112,14 +133,17 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"xarray datacube"`` input socket."""
         socket = self.inputs.new("bNCdatacubeSocket", "xarray datacube")
         socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
+        """Draw the variable drop-down."""
         layout.label(text="Select Variable:")
         layout.prop(self, "datacube_vars", text="")
 
     def draw_label(self):
+        """Show the loaded filename as the node label, or a placeholder."""
         if not self.BNC_datastructs[0].filename:
             return "datacube Input"
         else:
@@ -128,6 +152,7 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def update(self):
+        """Create an output socket named after the selected variable."""
         if self.datacube_vars != "No var" and self.datacube_vars not in [
             socket.name for socket in self.outputs
         ]:
@@ -136,6 +161,11 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
+    """Node that bakes a mesh from coordinates linked to its X, Y and Z inputs.
+
+    The resulting object is exposed through an ``"Object"`` output socket.
+    """
+
     bl_idname = "BlenderNCNodeGrid"  # Unique identifier for the node
     bl_label = "Datacube Grid"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
@@ -146,12 +176,14 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the hidden-value X, Y and Z string inputs."""
         self.inputs.new("NodeSocketString", "X")
         self.inputs.new("NodeSocketString", "Y")
         self.inputs.new("NodeSocketString", "Z")
         [setattr(input, "hide_value", True) for input in self.inputs]
 
     def draw_buttons(self, context, layout):
+        """Draw the object name field and the "Bake Grid" button."""
         layout.prop(self, "grid_obj_name", text="")
         op = layout.operator("blendernc.create_grid_from_coords", text="Bake Grid")
         op.node_name = self.name
@@ -160,6 +192,7 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def update(self):
+        """Expose the baked object on the ``"Object"`` output once it exists."""
         if self.grid_obj_name in bpy.data.objects:
             if "Object" not in [socket.name for socket in self.outputs]:
                 object_socket = self.outputs.new("NodeSocketObject", "Object")
@@ -170,6 +203,8 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
+    """Node intended to slice a variable along a coordinate (not yet implemented)."""
+
     bl_idname = "BlenderNCNodeSlice"  # Unique identifier for the node
     bl_label = "Datacube Slice"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
@@ -182,21 +217,31 @@ class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"Variable"`` input and output sockets."""
         self.inputs.new("NodeSocketString", "Variable")
         self.outputs.new("NodeSocketString", "Variable")
         [setattr(input, "hide_value", True) for input in self.inputs]
 
     def draw_buttons(self, context, layout):
+        """Draw the coordinate drop-down once a variable is connected."""
         if self.inputs.get("Variable").default_value:
             layout.prop(self, "datacube_coords", text="")
 
     @is_single_input_linked
     def update(self):
+        """Placeholder; slicing is not implemented yet."""
         pass
         # var = self.inputs[0].default_value
 
 
 class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
+    """Node that selects a single index along a coordinate of a variable.
+
+    The selection is recorded in the data item's ``slicing`` string as
+    ``"<variable>_<coordinate>_<index>,"`` and applied by
+    :func:`blendernc.utils.get_data_from_datastruct`.
+    """
+
     bl_idname = "BlenderNCNodeSelect"  # Unique identifier for the node
     bl_label = "Datacube Select"  # Name that will appear on the node in the editor
     bl_icon = "EXPERIMENTAL"
@@ -209,17 +254,20 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"Variable"`` input and output sockets."""
         self.inputs.new("NodeSocketString", "Variable")
         self.outputs.new("NodeSocketString", "Variable")
         [setattr(input, "hide_value", True) for input in self.inputs]
 
     def draw_buttons(self, context, layout):
+        """Draw the coordinate drop-down once a variable is connected."""
         if self.inputs.get("Variable").default_value:
             layout.prop(self, "datacube_coords", text="")
 
     @is_single_input_linked
     @has_datastructs
     def update(self):
+        """Forward the variable and append the index selection to ``slicing``."""
         if "Variable" not in [socket.name for socket in self.outputs]:
             socket = self.outputs.new("NodeSocketString", "Variable")
             socket.default_value = self.inputs[0].default_value
@@ -238,6 +286,12 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
+    """Node that animates a variable as a point attribute on an object.
+
+    The actual work is done per frame by
+    :func:`blendernc.handlers.bNC_update_attributes`.
+    """
+
     bl_idname = "BlenderNCNodeAnimateTexture"  # Unique identifier for the node
     bl_label = (
         "Datacube Animate Texture"  # Name that will appear on the node in the editor
@@ -246,27 +300,34 @@ class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"Object"`` and ``"Variable"`` input sockets."""
         self.inputs.new("NodeSocketObject", "Object")
         self.inputs.new("NodeSocketString", "Variable")
 
     def draw_buttons(self, context, layout):
+        """Nothing to draw; the node only has sockets."""
         pass
 
     @is_single_input_linked
     @has_datastructs
     def update(self):
+        """Nothing to update; the frame handler reads the inputs directly."""
         pass
 
 
 class DebugNode(bpy.types.Node, bNCNodeDefault):
+    """Node that displays the fields of the connected data item."""
+
     bl_idname = "BlenderNCNodeDebugNode"
     bl_label = "Debug Node"
 
     @initialize_BNC_datastructs
     def init(self, context):
+        """Create the ``"xarray datacube"`` input socket."""
         self.inputs.new("bNCdatacubeSocket", "xarray datacube")
 
     def draw_buttons(self, context, layout):
+        """Draw every data item field and the cached dataset keys."""
         datastruct = self.BNC_datastructs[0]
         layout.prop(datastruct, "filename")
         layout.prop(datastruct, "datafile")
@@ -277,4 +338,5 @@ class DebugNode(bpy.types.Node, bNCNodeDefault):
 
     @is_single_input_linked
     def update(self):
+        """Nothing to update beyond syncing the data item."""
         pass

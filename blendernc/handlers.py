@@ -7,6 +7,18 @@ from .utils import add_attribute, find_coord_matches, get_data_from_datastruct
 
 @persistent
 def bNC_update_attributes(scene):
+    """Write the current frame of each animated variable onto its mesh.
+
+    Registered as a ``frame_change_pre`` and ``render_pre`` handler. For every
+    "Datacube Animate Texture" node, the variable is sliced along the
+    coordinate that does not match the mesh vertex count and the result is
+    stored in a per-point float attribute named after the variable.
+
+    Parameters
+    ----------
+    scene : bpy.types.Scene
+        Scene whose ``frame_current`` selects the slice.
+    """
     anim_text_nodes = get_all_nodes_by_idname("BlenderNCNodeAnimateTexture")
     if not anim_text_nodes:
         return

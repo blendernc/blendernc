@@ -43,6 +43,21 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
 
     @check_if_node_tree_exists
     def execute(self, context):
+        """Store the chosen file path on the import node and load the dataset.
+
+        Multiple selected files are collapsed into a single glob pattern. When
+        invoked from the 3D view, the path is mirrored to the UI properties.
+
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
+
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``.
+        """
         node_tree = bpy.data.node_groups.get(self.node_tree)
         filepath_string_node = node_tree.nodes.get(self.node_name)
 
@@ -72,6 +87,23 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 
     @is_linked
     def execute(self, context):
+        """Bake a mesh grid from the coordinates linked to a grid node.
+
+        A Mesh Grid geometry node sized from the coordinate dimensions is applied
+        to the target object, the 2-D coordinate arrays are written to a
+        ``Coordinates`` vector attribute, and a second geometry node modifier
+        moves the vertices to those positions before removing the attribute.
+
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
+
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` if no input is linked.
+        """
 
         node_tree = bpy.data.node_groups.get(self.node_tree)
         grid_node = node_tree.nodes.get(self.node_name)

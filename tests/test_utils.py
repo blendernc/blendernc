@@ -5,6 +5,7 @@ import sys
 
 @contextlib.contextmanager
 def suppress_stdout():
+    """Context manager that silences ``sys.stdout`` for the enclosed block."""
     with open(os.devnull, "w") as devnull:
         old_stdout = sys.stdout
         sys.stdout = devnull

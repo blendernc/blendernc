@@ -16,4 +16,11 @@ class BlenderNCNodeTree(bpy.types.NodeTree):
 
     @classmethod
     def poll(cls, context):
+        """Allow the tree type in every context.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
+        """
         return True

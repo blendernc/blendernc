@@ -3,6 +3,8 @@ import bpy
 
 
 class BlenderNC_UI_PT_3D_VIEW_PARENT(bpy.types.Panel):
+    """Parent panel of the BlenderNC tab in the 3D viewport sidebar."""
+
     bl_idname = "BLENDERNC_UI_PT_3D_VIEW_PARENT"
     bl_label = "BlenderNC"
     bl_category = "BlenderNC"
@@ -10,10 +12,13 @@ class BlenderNC_UI_PT_3D_VIEW_PARENT(bpy.types.Panel):
     bl_region_type = "UI"
 
     def draw(self, context):
+        """Draw the informational header label."""
         self.layout.label(text="Import *.nc, *.zarr, and *.grib files.", icon="INFO")
 
 
 class BlenderNC_UI_PT_3D_VIEW(bpy.types.Panel):
+    """Sub-panel with the datacube path field and file browser button."""
+
     bl_idname = "BLENDERNC_UI_PT_3D_VIEW"
     bl_label = "Datacube Load"
     bl_category = "BlenderNC"
@@ -22,6 +27,7 @@ class BlenderNC_UI_PT_3D_VIEW(bpy.types.Panel):
     bl_parent_id = "BLENDERNC_UI_PT_3D_VIEW_PARENT"
 
     def draw(self, context):
+        """Draw the datacube path property and the import operator button."""
         # box_asts = self.layout.box()
         # Open blender file selection
         scene = context.scene

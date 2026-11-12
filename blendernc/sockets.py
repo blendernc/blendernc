@@ -8,6 +8,13 @@ class bNCSocketDefault:
     color = (0.38, 0.85, 0, 1)
 
     def unlink(self, link):
+        """Remove a link from the owning node tree.
+
+        Parameters
+        ----------
+        link : bpy.types.NodeLink
+            Link to remove.
+        """
         return self.id_data.links.remove(link)
 
 
@@ -28,10 +35,13 @@ class bNCdatacubeSocket(NodeSocketFloat, bNCSocketDefault):
     display_shape = "SQUARE"
 
     def init(self, context):
+        """Initialise the socket; nothing to set up."""
         pass
 
     def draw(self, context, layout, node, text):
+        """Draw the socket label."""
         layout.label(text=text)
 
     def draw_color(self, context, node):
+        """Return the RGBA colour used to draw the socket."""
         return self.color

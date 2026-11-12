@@ -12,6 +12,12 @@ from .utils import (
 
 
 class BNC_data(bpy.types.PropertyGroup):
+    """Per-node record of the loaded datacube.
+
+    ``dict`` is a class-level cache shared by every node and node tree; it maps
+    ``filename`` to the opened :class:`xarray.Dataset`.
+    """
+
     filename: bpy.props.StringProperty()
     datafile: bpy.props.StringProperty()
     operations: bpy.props.StringProperty()
@@ -20,6 +26,8 @@ class BNC_data(bpy.types.PropertyGroup):
 
 
 class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
+    """Scene-level properties backing the BlenderNC 3D view panel."""
+
     bl_idname = "BlenderNC_UI_Properties"
 
     datacube_file: bpy.props.StringProperty(

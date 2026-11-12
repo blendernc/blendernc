@@ -55,6 +55,17 @@ handlers = bpy.app.handlers
 
 
 def register():
+    """Register BlenderNC with Blender.
+
+    Adds the frame-change and render handlers, registers every class in
+    ``classes``, attaches the UI property group to ``bpy.types.Scene`` and
+    extends the node editor "Add" menu.
+
+    Returns
+    -------
+    set
+        ``{"FINISHED"}`` once registration is complete.
+    """
     logging.info("Registering handlers")
     handlers.frame_change_pre.append(bNC_update_attributes)
     handlers.render_pre.append(bNC_update_attributes)
@@ -71,6 +82,13 @@ def register():
 
 
 def unregister():
+    """Remove everything that :func:`register` added to Blender.
+
+    Returns
+    -------
+    set
+        ``{"FINISHED"}`` once every class, handler and menu entry is removed.
+    """
     logging.info("Un-registering handlers")
     handlers.frame_change_pre.remove(bNC_update_attributes)
     handlers.render_pre.remove(bNC_update_attributes)
