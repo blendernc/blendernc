@@ -1,5 +1,6 @@
 import logging
 import os.path
+import re
 from itertools import combinations
 from math import prod
 
@@ -164,11 +165,12 @@ def get_grid_coords(grid_node):
             continue
 
         # linked = socket.links[0].from_socket
-        dataset = datastruct.dict[datastruct.filename]
+        data = get_data_from_datastruct(datastruct, socket.default_value)
 
         coords[socket.name] = {
             "name": socket.default_value,
-            "size": return_tuple(dataset[socket.default_value].shape),
+            "size": return_tuple(data.shape),
+            "data": data,
         }
 
     return coords
@@ -780,29 +782,108 @@ def extract_dimensions_of_grid(grid_coords):
         else:
             key2ignore = surface_dims.keys()
             key = [key for key in dims.keys() if key not in key2ignore]
-            size1 = dims.get(list(key[0]))[0]
-            size2 = dims.get(list(key[1]))[0]
+            size1 = dims.get(key[0])[0]
+            size2 = dims.get(key[1])[0]
     else:
         raise ValueError("Not enough dimensions with size <= 2 found.")
     return size1, size2
 
 
-def get_data_from_datastruct(datastruct, var_name):
-    """
-    Get data from the datastruct for a given variable name.
+SLICING_RECORD_SEP = ","
+SLICING_FIELD_SEP = "|"
+SLICING_ANY_VARIABLE = "*"
 
-    Parameters:
-        datastruct: The datastruct containing the dataset.
-        var_name (str): The name of the variable to retrieve data for.
+
+def encode_slicing_record(var_name, coord, selector):
+    """Encode one ``slicing`` record as ``"<var>|<coord>|<spec>,"``.
+
+    Parameters
+    ----------
+    var_name : str
+        Variable the record applies to, or ``SLICING_ANY_VARIABLE`` for every
+        array that has the dimension (coordinates included).
+    coord : str
+        Dimension or coordinate name.
+    selector : int or slice
+        Index to pick, or stride to apply. ``slice(0, None, 2)`` is stored as
+        ``"0::2"``; ``None`` bounds are left empty.
+
+    Returns
+    -------
+    str
+        The record, including its trailing separator.
+    """
+    if isinstance(selector, slice):
+        bounds = (selector.start, selector.stop, selector.step)
+        spec = ":".join("" if b is None else str(b) for b in bounds)
+    else:
+        spec = str(int(selector))
+    return SLICING_FIELD_SEP.join((var_name, coord, spec)) + SLICING_RECORD_SEP
+
+
+def _decode_selector(spec):
+    """Turn ``"i"`` into ``int`` and ``"start:stop:step"`` into ``slice``."""
+    if ":" not in spec:
+        return int(spec)
+    parts = [int(p) if p else None for p in spec.split(":")]
+    parts += [None] * (3 - len(parts))
+    return slice(*parts[:3])
+
+
+def parse_slicing(slicing, var_name):
+    """Collect the selectors in ``slicing`` that apply to ``var_name``.
+
+    Later records override earlier ones for the same coordinate.
+
+    Returns
+    -------
+    dict
+        Mapping of dimension or coordinate name to ``int`` or ``slice``.
+    """
+    indexers = {}
+    for record in filter(None, slicing.split(SLICING_RECORD_SEP)):
+        fields = record.split(SLICING_FIELD_SEP)
+        if len(fields) != 3:
+            logging.warning(f"Ignoring malformed slicing record {record!r}")
+            continue
+        target, coord, spec = fields
+        if target in (var_name, SLICING_ANY_VARIABLE):
+            indexers[coord] = _decode_selector(spec)
+    return indexers
+
+
+def _dims_for_key(dataset, key):
+    """Dimensions a slicing key refers to: itself, or those of a coordinate."""
+    if key in dataset.dims:
+        return (key,)
+    if key in dataset.coords:
+        return dataset[key].dims
+    return ()
+
+
+def build_indexers(dataset, data, slicing, var_name):
+    """Map the slicing records for ``var_name`` onto the dims ``data`` has."""
+    selectors = parse_slicing(slicing, var_name)
+    return {
+        dim: selector
+        for key, selector in selectors.items()
+        for dim in _dims_for_key(dataset, key)
+        if dim in data.dims
+    }
+
+
+def get_data_from_datastruct(datastruct, var_name):
+    """Return ``var_name`` from the cached dataset with its slicing applied.
+
+    Records may name a dimension directly or a coordinate; a coordinate is
+    resolved to the dimensions it spans, so a 2-D coordinate strides both.
+    Selections on dimensions the array does not have are ignored, which is
+    what lets wildcard records apply safely to coordinates.
     """
     dataset = datastruct.dict[datastruct.filename]
-    if datastruct.slicing != "":
-        slicing = datastruct.slicing.split(",")
-        slicing = [s.split("_") for s in slicing if var_name in s]
-        select_dict = {select[1]: int(select[2]) for select in slicing}
-    else:
-        select_dict = {}
-    return dataset[var_name].isel(select_dict).fillna(0)
+    data = dataset[var_name]
+    indexers = build_indexers(dataset, data, datastruct.slicing, var_name)
+    return data.isel(indexers).fillna(0)
 
 
 def get_coords_from_datastruct(datastruct, grid_coords):
@@ -965,3 +1046,52 @@ def find_coord_matches(length, dims):
                 matches.append(combo)
 
     return np.squeeze(matches)
+
+
+def _record_stride(datastruct, dims, step):
+    """Append one wildcard stride record per dimension to ``slicing``."""
+    for dim in dims:
+        datastruct.slicing += encode_slicing_record(
+            SLICING_ANY_VARIABLE, dim, slice(0, None, step)
+        )
+
+
+# Names that mark a horizontal dimension. ``lon``/``lat`` anywhere in the
+# name; ``x``/``y`` only as a token, optionally with one trailing letter so
+# that ``xc``, ``xu``, ``xi_rho`` and ``y_rho`` match but ``index`` does not.
+SURFACE_DIM_PATTERNS = (
+    re.compile(r"lon"),
+    re.compile(r"lat"),
+    re.compile(r"(^|[^a-z])x[a-z]?([^a-z]|$)"),
+    re.compile(r"(^|[^a-z])y[a-z]?([^a-z]|$)"),
+)
+
+
+def is_surface_name(name):
+    """Return ``True`` when ``name`` looks like a horizontal dimension."""
+    lowered = name.lower()
+    return any(pattern.search(lowered) for pattern in SURFACE_DIM_PATTERNS)
+
+
+def get_surface_dims(dataset):
+    """Dimensions that span the horizontal surface of a dataset.
+
+    A dimension qualifies when its name matches ``SURFACE_DIM_PATTERNS`` or
+    when any 2-D coordinate is defined over it.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset to inspect.
+
+    Returns
+    -------
+    list of str
+        Surface dimension names in dataset order.
+    """
+    surface = {dim for dim in dataset.dims if is_surface_name(dim)}
+    for coord in dataset.coords.values():
+        if coord.ndim == 2:
+            surface.update(coord.dims)
+    order = list(dataset.dims)
+    return sorted(surface, key=order.index)

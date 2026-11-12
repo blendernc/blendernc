@@ -1,7 +1,7 @@
-.. _pro_mode:
+.. _in_depth_guide:
 
-PRO mode!
-#########
+In-Depth Guide
+##############
 
 The first step to becoming a PRO is to access the **BlenderNC** node editor
 on the top left corner (drop down menu) and select BlenderNC:

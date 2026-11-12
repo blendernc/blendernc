@@ -1,7 +1,7 @@
-.. _beginner_mode:
+.. _quickstart_guide:
 
-Beginner mode!
-##############
+Quickstart Guide
+################
 
 .. raw:: html
 
@@ -24,23 +24,25 @@ Beginner mode!
 
 .. role:: teal
 
-Open Blender (>2.83), in the 3D view open the :red:`sidebar` by pressing "n".
+This guide will help you with the introductory steps to import datacubes and to visualize them. This is intended for first-time users of BlenderNC and visualization of 2D fields (e.g. bathymetry and ).
 
-.. image:: ../images/right_panel.png
+Open Blender (>5.2) and in the 3D view pressing "n" to open the :red:`sidebar`.
+
+.. image:: ../images/3D_view.png
   :width: 100%
-  :alt: Blender panel
+  :alt: Blender 3D view
 
 Switch to the :purple:`BlenderNC panel`.
 
-.. image:: ../images/blendernc_ui.png
+.. image:: ../images/BlenderNC_panel.png
   :width: 100%
   :alt: BlenderNC panel
 
 Within the :purple:`BlenderNC panel` click on `Load datacube`, then select a
 datacube by clicking the :green:`folder icon`.
 
-.. image:: ../images/blendernc_panel.png
-  :width: 30%
+.. image:: ../images/BlenderNC_path.png
+  :width: 100%
   :alt: BlenderNC search
 
 :teal:`Select a variable` and the :teal:`resolution` to load.

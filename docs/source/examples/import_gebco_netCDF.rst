@@ -5,7 +5,7 @@ Import Gebco Topography
 .. important::
   For this first example, it is important to be familiar with the simple UI of BlenderNC (:ref:`beginner_mode`).
 
-Download the GEBCO bathymetry dataset (`for more info click here <https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2020/>`__) or download it directly by clicking `here <https://www.bodc.ac.uk/data/open_download/gebco/gebco_2020/zip/>`__!
+Download the GEBCO bathymetry dataset (`for more info click here <https://www.gebco.net/data-products/gridded-bathymetry-data>`__) or download it directly by clicking `here <https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/sub_ice_topography_bathymetry/netcdf/GEBCO_2026_sub_ice.zip?download=1>`__ (it is approximately 7 Gb uncompressed)!
 
 Open Blender (>2.83), in the 3D view, open the `sidebar` by pressing "n".
 

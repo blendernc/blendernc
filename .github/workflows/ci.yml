@@ -12,6 +12,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: copy README.md
       run: rsync -av ./README.md ./release/
+    - name: remove docs
+      run: rm -rf ./release/docs
     - name: creates zip release
       run: zip -r ./release/blendernc.zip ./blendernc -x "*__pycache__*"
     - name: modify README.md

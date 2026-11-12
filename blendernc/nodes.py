@@ -7,9 +7,13 @@ from .decorators import (
 )
 from .properties import BNC_data
 from .utils import (
+    SLICING_ANY_VARIABLE,
+    _record_stride,
     create_datastruct,
+    encode_slicing_record,
     get_possible_coordinates,
     get_possible_variables,
+    get_surface_dims,
     load_dataset,
 )
 
@@ -275,13 +279,10 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict[datastruct.filename]
         if self.datacube_coords and self.datacube_coords in dataset.coords.keys():
-            datastruct.slicing += (
-                self.inputs[0].default_value
-                + "_"
-                + self.datacube_coords
-                + "_"
-                + str(value)
-                + ","
+            datastruct.slicing += encode_slicing_record(
+                SLICING_ANY_VARIABLE,
+                self.datacube_coords,
+                str(value),
             )
 
 
@@ -340,3 +341,126 @@ class DebugNode(bpy.types.Node, bNCNodeDefault):
     def update(self):
         """Nothing to update beyond syncing the data item."""
         pass
+
+
+class DatacubeSubsample(bpy.types.Node, bNCNodeDefault):
+    """Node that lowers resolution by striding a coordinate.
+
+    Appends a ``"*|<coordinate>|0::<step>,"`` record to the data item's
+    ``slicing`` string. The stride is applied lazily by
+    :func:`blendernc.utils.get_data_from_datastruct` to the variable and to
+    every coordinate sharing the dimension, so the baked grid and the
+    animated attribute keep matching sizes.
+    """
+
+    bl_idname = "BlenderNCNodeSubsample"
+    bl_label = "Datacube Subsample"
+    bl_icon = "EXPERIMENTAL"
+
+    datacube_coords: bpy.props.EnumProperty(
+        items=get_possible_coordinates,
+        name="Coordinate",
+        update=lambda self, context: self.update(),
+    )
+    step: bpy.props.IntProperty(
+        name="Step",
+        description="Keep one sample every N indices (1 = full resolution)",
+        default=2,
+        min=1,
+        soft_max=20,
+        update=lambda self, context: self.update(),
+    )
+
+    @initialize_BNC_datastructs
+    def init(self, context):
+        """Create the ``"Variable"`` input and output sockets."""
+        self.inputs.new("NodeSocketString", "Variable")
+        self.outputs.new("NodeSocketString", "Variable")
+        for socket in self.inputs:
+            socket.hide_value = True
+
+    def draw_buttons(self, context, layout):
+        """Draw the coordinate drop-down and step once a variable is linked."""
+        if self.inputs.get("Variable").default_value:
+            layout.prop(self, "datacube_coords", text="")
+            layout.prop(self, "step")
+
+    @is_single_input_linked
+    @has_datastructs
+    def update(self):
+        """Forward the variable and record the stride in ``slicing``."""
+        if "Variable" not in [socket.name for socket in self.outputs]:
+            self.outputs.new("NodeSocketString", "Variable")
+        self.outputs["Variable"].default_value = self.inputs[0].default_value
+
+        datastruct = self.BNC_datastructs[0]
+        dataset = datastruct.dict[datastruct.filename]
+        if self.step > 1 and self.datacube_coords in dataset.coords:
+            datastruct.slicing += encode_slicing_record(
+                SLICING_ANY_VARIABLE,
+                self.datacube_coords,
+                slice(0, None, self.step),
+            )
+
+        # Refresh nodes already connected downstream so they copy the new
+        # slicing string instead of waiting for the next link change.
+        for link in self.outputs["Variable"].links:
+            link.to_node.update()
+
+
+class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
+    """Node that lowers the horizontal resolution of the dataset.
+
+    Every dimension identified by :func:`blendernc.utils.get_surface_dims`
+    receives a ``"*|<dim>|0::<step>,"`` record, so the variable, the grid
+    coordinates and the animated attribute are all strided by the same
+    factor while time and depth are left untouched.
+    """
+
+    bl_idname = "BlenderNCNodeResolution"
+    bl_label = "Datacube Resolution"
+    bl_icon = "EXPERIMENTAL"
+
+    step: bpy.props.IntProperty(
+        name="Step",
+        description="Keep one surface sample every N indices (1 = full)",
+        default=2,
+        min=1,
+        soft_max=20,
+        update=lambda self, context: self.update(),
+    )
+
+    @initialize_BNC_datastructs
+    def init(self, context):
+        """Create the ``"xarray datacube"`` input and output sockets."""
+        self.inputs.new("bNCdatacubeSocket", "xarray datacube")
+        self.outputs.new("bNCdatacubeSocket", "xarray datacube")
+        for socket in self.inputs:
+            socket.hide_value = True
+
+    def draw_buttons(self, context, layout):
+        """Draw the step and list the dimensions it will apply to."""
+        if not self.inputs.get("xarray datacube"):
+            return
+        layout.prop(self, "step")
+        datastruct = self.BNC_datastructs[0]
+        dataset = datastruct.dict.get(datastruct.filename)
+        if dataset is not None:
+            dims = get_surface_dims(dataset)
+            text = ", ".join(dims) if dims else "no surface dimensions found"
+            layout.label(text=text, icon="MESH_GRID")
+
+    @is_single_input_linked
+    @has_datastructs
+    def update(self):
+        """Forward the variable and record one stride per surface dimension."""
+        if "xarray datacube" not in [socket.name for socket in self.outputs]:
+            self.outputs.new("bNCdatacubeSocket", "xarray datacube")
+
+        datastruct = self.BNC_datastructs[0]
+        dataset = datastruct.dict[datastruct.filename]
+        if self.step > 1:
+            _record_stride(datastruct, get_surface_dims(dataset), self.step)
+
+        for link in self.outputs["xarray datacube"].links:
+            link.to_node.update()

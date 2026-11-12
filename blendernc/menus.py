@@ -5,8 +5,10 @@ from .nodes import (
     DatacubeCoords,
     DatacubeGrid,
     DatacubeImport,
+    DatacubeResolution,
     DatacubeSelect,
     DatacubeSlice,
+    DatacubeSubsample,
     DatacubeVariable,
     DebugNode,
 )
@@ -81,6 +83,12 @@ class BlenderNCNodeSelection(bpy.types.Menu):
         )
         self.layout.operator("node.add_node", text="Slice Coordinate").type = (
             DatacubeSlice.bl_idname
+        )
+        self.layout.operator("node.add_node", text="Subsample Coordinate").type = (
+            DatacubeSubsample.bl_idname
+        )
+        self.layout.operator("node.add_node", text="Resolution").type = (
+            DatacubeResolution.bl_idname
         )
 
 
