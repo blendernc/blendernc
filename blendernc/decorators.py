@@ -4,6 +4,7 @@ from functools import wraps
 
 import bpy
 
+from .messages import report_error
 from .node_utils import (
     basic_nodes,
     create_blenderncnodetree,
@@ -27,14 +28,14 @@ def is_linked(update_function):
         node_tree = bpy.data.node_groups.get(self.node_tree)
         node = node_tree.nodes.get(self.node_name) if node_tree else None
         if node is None:
-            self.report({"ERROR"}, f"Node {self.node_name!r} not found.")
-            return {"CANCELLED"}
+            return report_error(self, f"Node {self.node_name!r} not found.")
         if any(input_socket.is_linked for input_socket in node.inputs):
             return update_function(self, context)
         _clear_datastruct(node.BNC_datastructs[0])
         node.outputs.clear()
-        self.report({"WARNING"}, "Node has no linked inputs. Connect to bake grid.")
-        return {"CANCELLED"}
+        return report_error(
+            self, "Node has no linked inputs. Connect to bake grid.", "WARNING"
+        )
 
     return wrapper
 
@@ -229,6 +230,8 @@ def _create_UI_nodes(self, context):
     create_nodes(node_tree, basic_nodes, locations)
     import_node = node_tree.nodes.get("Datacube Import")
     if not datacube_file or not glob.glob(datacube_file):
+        if datacube_file:
+            report_error(self, f"No file matches {datacube_file!r}.", "WARNING")
         disconnect_links(node_tree, import_node)
         show_section(draw_var_and_coords, False)
         return import_node
@@ -276,26 +279,5 @@ def has_datastructs(update_function):
         if hasattr(datastruct, "dict") and datastruct.filename:
             return update_function(self, *args, **kwargs)
         self.outputs.clear()
-
-    return wrapper
-
-
-def file_exists(update_function):
-    """Check if the file exists before running the update function."""
-
-    @wraps(update_function)
-    def wrapper(*args):
-        """Run the function when the resolved file path matches an existing file."""
-        if isinstance(args[0], str):
-            filepath = args[0]
-        else:
-            self = args[0]
-            node_tree = bpy.data.node_groups.get(self.node_tree)
-            filepath_string_node = node_tree.nodes.get(self.node_name)
-            filepath = filepath_string_node.datacube_file
-        if glob.glob(filepath):
-            return update_function(*args)
-        else:
-            raise FileNotFoundError("File {0} does not exist.".format(filepath))
 
     return wrapper

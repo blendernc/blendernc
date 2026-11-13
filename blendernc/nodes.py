@@ -15,10 +15,11 @@ from .utils import (
     delete_point_attribute,
     encode_slicing_record,
     field_to_point_values,
+    get_dataset,
     get_possible_coordinates,
     get_possible_variables,
     get_surface_dims,
-    load_dataset,
+    store_dataset,
     suggested_stride,
     texture_field,
     write_point_attribute,
@@ -86,12 +87,18 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         op.node_tree = self.id_data.name
 
     def update(self):
-        """Load the dataset into the shared cache if it is not already there."""
+        """Load the dataset when the path changed or the cache lost it.
+
+        A path that failed to open is left alone until it is edited, so the
+        failure is logged once rather than on every tree update.
+        """
         datastruct = self.BNC_datastructs[0]
-        if self.datacube_file and datastruct.filename not in datastruct.dict.keys():
-            datastruct.datafile = self.datacube_file
-            datastruct.filename = self.datacube_file.split("/")[-1]
-            datastruct.dict[datastruct.filename] = load_dataset(datastruct.datafile)
+        if not self.datacube_file:
+            return
+        changed = self.datacube_file != datastruct.datafile
+        evicted = datastruct.filename and get_dataset(datastruct) is None
+        if changed or evicted:
+            store_dataset(datastruct, self.datacube_file)
 
     def free(self):
         """Drop the dataset from the cache when the node is deleted."""

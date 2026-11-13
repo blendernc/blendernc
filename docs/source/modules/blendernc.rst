@@ -20,6 +20,7 @@ Submodules
    blendernc.utils
    blendernc.blendernc
    blendernc.handlers
+   blendernc.messages
    blendernc.operators
    blendernc.panels
    blendernc.sockets

@@ -2,14 +2,15 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from .decorators import check_if_node_tree_exists, is_linked
+from .messages import report_error, report_errors
 from .node_utils import create_links, create_nodes
 from .utils import (
     add_attribute,
     assign_modifier_to_object,
-    create_datastruct,
     extract_dimensions_of_grid,
     get_2D_coords,
     get_datacube_path,
+    get_dataset,
     get_grid_coords,
     look_up_object_and_mesh,
     stack_2D_coords,
@@ -40,12 +41,15 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
         type=bpy.types.OperatorFileListElement, options={"SKIP_SAVE", "HIDDEN"}
     )
 
+    @report_errors
     @check_if_node_tree_exists
     def execute(self, context):
         """Store the chosen file path on the import node and load the dataset.
 
-        Multiple selected files are collapsed into a single glob pattern. When
-        invoked from the 3D view, the path is mirrored to the UI properties.
+        Multiple selected files are collapsed into a single glob pattern.
+        Assigning the path to the node loads the dataset through the
+        property's update callback. When invoked from the 3D view, the path
+        is mirrored to the UI properties.
 
         Parameters
         ----------
@@ -55,20 +59,20 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
         Returns
         -------
         set
-            ``{"FINISHED"}``.
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report when the
+            files share no pattern or the dataset cannot be opened.
         """
         node_tree = bpy.data.node_groups.get(self.node_tree)
-        filepath_string_node = node_tree.nodes.get(self.node_name)
+        import_node = node_tree.nodes.get(self.node_name)
 
         datacube_path = get_datacube_path(self.directory, self.files)
+        import_node.datacube_file = datacube_path
+        if get_dataset(import_node.BNC_datastructs[0]) is None:
+            return report_error(self, f"Could not open {datacube_path}.")
 
-        filepath_string_node.datacube_file = datacube_path
-        if not bpy.app.background:  # Check if Blender is running in background mode
-            if context.area.type == "VIEW_3D":
-                UI_props = context.scene.BlenderNC_UI_Properties
-                UI_props.datacube_file = datacube_path
-
-        create_datastruct(self, context)
+        area = context.area
+        if not bpy.app.background and area is not None and area.type == "VIEW_3D":
+            context.scene.BlenderNC_UI_Properties.datacube_file = datacube_path
 
         return {"FINISHED"}
 
@@ -84,6 +88,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
     node_name: bpy.props.StringProperty(default="")
     node_tree: bpy.props.StringProperty(default="")
 
+    @report_errors
     @is_linked
     def execute(self, context):
         """Bake a mesh grid from the coordinates linked to a grid node.
@@ -101,7 +106,8 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         Returns
         -------
         set
-            ``{"FINISHED"}``, or ``{"CANCELLED"}`` if no input is linked.
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report if no input
+            is linked or the coordinates cannot form a grid.
         """
 
         node_tree = bpy.data.node_groups.get(self.node_tree)

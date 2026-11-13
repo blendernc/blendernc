@@ -29,10 +29,6 @@ entries were fixed on 2026-11-13; they are listed at the end.
   `*.grib` and `*.zarr` but `xr.open_mfdataset` is called without
   `engine="cfgrib"` or `engine="zarr"`, so neither opens. Datasets are
   never closed either.
-- **`file_exists` raises inside a property update.** `decorators.py:302`:
-  on a node, a typo in `datacube_file` produces a `FileNotFoundError`
-  traceback in the console instead of a message. (The UI panel path is
-  spared only because `check_if_node_tree_exists` returns early for it.)
 - **Handlers appended unconditionally.** `blendernc.py:83-84` and
   `106-107`: reloading the extension registers `bNC_update_attributes`
   twice, and `unregister` raises `ValueError` if a handler is already gone.
@@ -52,15 +48,6 @@ entries were fixed on 2026-11-13; they are listed at the end.
   `358-363` build fresh tuples on every draw. Blender warns that `items`
   callbacks must keep the returned strings referenced or the enum can show
   garbage. Cache the last list on the module.
-- **`Import_OT_mfdataset.execute` assumes `context.area`.**
-  `operators.py:67`: outside background mode but invoked from a script,
-  `context.area` is `None`.
-
-## Fixed on 2026-11-13
-
-Verified by `tests/synthetic_grid.test.py` and the new
-`tests/ui_panel.test.py`, which drives the panel properties end to end.
-
 - **CI exit logic** (`tests/build-test.sh`): `&&` became `||`, so a failing
   `run_tests.py` now fails the job.
 - **`decorators.is_linked`** looks the node up by name, clears *its* data
@@ -103,3 +90,12 @@ Verified by `tests/synthetic_grid.test.py` and the new
   removes before appending, so `_create_UI_nodes` no longer relies on
   `Panel.is_extended()` and the coordinate section comes back after a
   file change.
+- **Errors are reported, not raised.** `file_exists` is gone. `store_dataset`
+  catches the xarray `OSError`/`ValueError`, logs it and leaves the item
+  without a dataset; `DatacubeImport.update` does not retry a path that
+  failed until it is edited. Operators wrap `execute` in
+  `messages.report_errors`, which turns `ValueError`/`OSError` from the
+  helpers into `self.report({"ERROR"}, ...)`, a log entry and
+  `{"CANCELLED"}`; `messages.report_error` is the shared helper. The import operator
+  also reports when the dataset could not be opened and no longer touches
+  `context.area` when it is `None`.

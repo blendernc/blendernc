@@ -9,7 +9,8 @@ import bpy
 import numpy as np
 import xarray as xr
 
-from .decorators import check_if_node_tree_exists, file_exists
+from .decorators import check_if_node_tree_exists
+from .messages import report_error
 from .node_utils import create_blenderncnodetree, create_link, delete_link
 from .panels_draw import draw_resolution_grid_and_texture, show_section
 
@@ -64,21 +65,35 @@ def get_datacube_path(directory, files):
     return datacube_path
 
 
-@file_exists
 def load_dataset(filepath):
-    """
-    Load a dataset using xarray and return the dataset object.
+    """Open a file or glob pattern with xarray.
 
-    Parameters:
-        filepath (str): The path to the dataset file.
+    Parameters
+    ----------
+    filepath : str
+        Path or pattern accepted by :func:`xarray.open_mfdataset`.
+
+    Returns
+    -------
+    xarray.Dataset
+
+    Raises
+    ------
+    OSError
+        If nothing matches ``filepath`` or a file cannot be read.
+    ValueError
+        If no xarray backend understands the file.
     """
     logger.info(f"Loading dataset from {filepath}")
-    dataset = xr.open_mfdataset(filepath)
-    return dataset
+    return xr.open_mfdataset(filepath)
 
 
 def store_dataset(datastruct, path):
     """Load ``path`` and register it on a ``BNC_data`` item.
+
+    Loading the path the item already holds is a no-op. On failure the item
+    keeps ``datafile`` so the path is not retried on every node update, but
+    ``filename`` is cleared so downstream nodes see no dataset.
 
     Parameters
     ----------
@@ -86,10 +101,24 @@ def store_dataset(datastruct, path):
         Data item that will reference the dataset.
     path : str
         File path or glob pattern accepted by :func:`load_dataset`.
+
+    Returns
+    -------
+    bool
+        ``True`` when the dataset is available on the item.
     """
+    if datastruct.datafile == path and get_dataset(datastruct) is not None:
+        return True
     datastruct.datafile = path
+    try:
+        dataset = load_dataset(path)
+    except (OSError, ValueError) as exc:
+        datastruct.filename = ""
+        report_error(None, f"Could not open {path}: {exc}")
+        return False
     datastruct.filename = os.path.basename(path)
-    datastruct.dict[datastruct.filename] = load_dataset(path)
+    datastruct.dict[datastruct.filename] = dataset
+    return True
 
 
 def get_dataset(datastruct):
@@ -111,13 +140,13 @@ def get_dataset(datastruct):
 
 
 @check_if_node_tree_exists
-@file_exists
 def create_datastruct(self, context):
     """Load the datacube referenced by a node into its ``BNC_data`` item.
 
     Used as the ``update`` callback of the datacube path properties. The node
-    tree and node are resolved by the decorators, which also raise
-    ``FileNotFoundError`` when the path matches no file.
+    tree and node are resolved by the decorator. A path that cannot be
+    opened is logged by :func:`store_dataset`; an update callback has no
+    way to report to the user.
 
     Parameters
     ----------
@@ -504,7 +533,7 @@ def update_step_UI(self, context):
 
 
 # Largest number of samples a surface dimension keeps with the suggested stride.
-MAX_SURFACE_SAMPLES = 1000
+MAX_VERTEX_SAMPLES = 1000
 
 
 def suggested_stride(sizes):
@@ -518,11 +547,11 @@ def suggested_stride(sizes):
     Returns
     -------
     int
-        ``ceil(max(sizes) / MAX_SURFACE_SAMPLES)``, at least 1.
+        ``ceil(min(sizes) / MAX_VERTEX_SAMPLES)``, at least 1.
     """
     if not sizes:
         return 1
-    return max(1, ceil(max(sizes) / MAX_SURFACE_SAMPLES))
+    return max(1, ceil(min(sizes) / MAX_VERTEX_SAMPLES))
 
 
 def encode_slicing_record(var_name, coord, selector):
