@@ -7,7 +7,6 @@ from .nodes import (
     DatacubeImport,
     DatacubeResolution,
     DatacubeSelect,
-    DatacubeSlice,
     DatacubeSubsample,
     DatacubeVariable,
     DebugNode,
@@ -47,7 +46,6 @@ class BlenderNCNodeImport(bpy.types.Menu):
         self.layout.operator("node.add_node", text="Datacube Variables").type = (
             DatacubeVariable.bl_idname
         )
-        # self.layout.separator()
 
 
 class BlenderNCNodeGrid(bpy.types.Menu):
@@ -68,7 +66,11 @@ class BlenderNCNodeGrid(bpy.types.Menu):
 
 
 class BlenderNCNodeSelection(bpy.types.Menu):
-    """ "Selection" sub-menu with the variable, select and slice nodes."""
+    """ "Selection" sub-menu with the variable, select and resolution nodes.
+
+    ``DatacubeSlice`` stays registered but is not listed until it is
+    implemented.
+    """
 
     bl_idname = "NODE_MT_category_blendernc_selection"
     bl_label = "Selection"
@@ -80,9 +82,6 @@ class BlenderNCNodeSelection(bpy.types.Menu):
         )
         self.layout.operator("node.add_node", text="Select Index").type = (
             DatacubeSelect.bl_idname
-        )
-        self.layout.operator("node.add_node", text="Slice Coordinate").type = (
-            DatacubeSlice.bl_idname
         )
         self.layout.operator("node.add_node", text="Subsample Coordinate").type = (
             DatacubeSubsample.bl_idname
@@ -116,6 +115,6 @@ def add_custom_node_to_menu(self, context):
         Current Blender context; the menu is only added in a node editor.
     """
     space = context.space_data
-    if space.type == "NODE_EDITOR":  # and space.tree_type == "BlenderNCNodeTree":
+    if space.type == "NODE_EDITOR":
         self.layout.separator()
         self.layout.menu(BlenderNCNodeMenu.bl_idname)

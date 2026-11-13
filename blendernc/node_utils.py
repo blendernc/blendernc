@@ -16,27 +16,6 @@ basic_nodes = {
 }
 
 
-def get_node_by_idname(node_tree, bl_idname):
-    """Return the first node of a given type in a node tree.
-
-    Parameters
-    ----------
-    node_tree : bpy.types.NodeTree
-        Tree to search.
-    bl_idname : str
-        Node type identifier, e.g. ``"BlenderNCNodeImport"``.
-
-    Returns
-    -------
-    bpy.types.Node or None
-        The first matching node, or ``None`` if there is none.
-    """
-    for node in node_tree.nodes:
-        if node.bl_idname == bl_idname:
-            return node
-    return None
-
-
 def get_all_nodes_by_idname(bl_idname):
     """Yield every node of a given type across all node groups.
 
@@ -234,7 +213,6 @@ def does_link_exists(node_tree, node_out, node_in, output_name, input_name):
     bool
         ``True`` if such a link exists.
     """
-    exists = False
     for link in node_tree.links:
         if (
             link.from_node == node_out
@@ -242,9 +220,8 @@ def does_link_exists(node_tree, node_out, node_in, output_name, input_name):
             and link.from_socket.name == output_name
             and link.to_socket.name == input_name
         ):
-            exists = True
-            continue
-    return exists
+            return True
+    return False
 
 
 def delete_link(node_tree, node_out, node_in, output_name, input_name):

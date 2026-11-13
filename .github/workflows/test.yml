@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        blender: ['4.2.0', '4.1.0', '3.6.3', '3.3.12' ,'2.93']
+        blender: ['5.2.0']
     steps:
       - uses: actions/checkout@v2
       - name: Pull Blender Docker Image
@@ -44,6 +44,9 @@ jobs:
   coverage:
     needs: test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        blender: ['5.2.0']
     steps:
       - uses: actions/checkout@v2
       - name: Install coverage
@@ -58,7 +61,7 @@ jobs:
 
       - name: Coverage combine and report
         run: |
-          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t ghcr.io/ranchcomputing/blender-cpu-image:3.6.15 /bin/sh -c "bash ./tests/coverage-combine.sh"
+          docker run -w /blendernc --rm --mount type=bind,source="$(pwd)",target=/blendernc -t ghcr.io/ranchcomputing/blender-cpu-image:${{ matrix.blender }} /bin/sh -c "bash ./tests/coverage-combine.sh"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

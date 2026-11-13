@@ -44,7 +44,5 @@ def draw_var_and_coords(self, context):
     row = split.row()
     row.prop(UI_props, "Z", expand=expand)
 
-    # self.layout.label(text=", ".join(coords), icon="WORLD_DATA")
-
     self.layout.label(text="Select variable:", icon="WORLD_DATA")
     self.layout.prop(UI_props, "variable", text="")

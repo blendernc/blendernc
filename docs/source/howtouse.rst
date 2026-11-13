@@ -19,3 +19,4 @@ Once you are confident with the basics, then follow the quickstart guide and the
 
   quickstart_guide
   in_depth_guide
+  terminal

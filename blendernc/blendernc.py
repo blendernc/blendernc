@@ -57,6 +57,8 @@ classes = [
 
 handlers = bpy.app.handlers
 
+logger = logging.getLogger(__name__)
+
 
 def register():
     """Register BlenderNC with Blender.
@@ -70,11 +72,11 @@ def register():
     set
         ``{"FINISHED"}`` once registration is complete.
     """
-    logging.info("Registering handlers")
+    logger.info("Registering handlers")
     handlers.frame_change_pre.append(bNC_update_attributes)
     handlers.render_pre.append(bNC_update_attributes)
     # Register node categories
-    logging.info("Registering BlenderNC")
+    logger.info("Registering BlenderNC")
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -93,10 +95,10 @@ def unregister():
     set
         ``{"FINISHED"}`` once every class, handler and menu entry is removed.
     """
-    logging.info("Un-registering handlers")
+    logger.info("Un-registering handlers")
     handlers.frame_change_pre.remove(bNC_update_attributes)
     handlers.render_pre.remove(bNC_update_attributes)
-    logging.info("Un-registering BlenderNC")
+    logger.info("Un-registering BlenderNC")
     # Unregister node categories
     for cls in classes:
         bpy.utils.unregister_class(cls)

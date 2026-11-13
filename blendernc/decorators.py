@@ -47,12 +47,11 @@ def _clear_datastruct(datastruct):
     Returns
     -------
     BNC_data
-        The same item with ``filename``, ``datafile``, ``operations`` and
-        ``slicing`` set to empty strings.
+        The same item with ``filename``, ``datafile`` and ``slicing`` set to
+        empty strings.
     """
     datastruct.filename = ""
     datastruct.datafile = ""
-    datastruct.operations = ""
     datastruct.slicing = ""
     return datastruct
 
@@ -83,12 +82,11 @@ def _copy_datastruct(source, target):
     Returns
     -------
     BNC_data
-        ``target`` with ``filename``, ``datafile``, ``operations`` and
-        ``slicing`` taken from ``source``.
+        ``target`` with ``filename``, ``datafile`` and ``slicing`` taken from
+        ``source``.
     """
     target.filename = source.filename
     target.datafile = source.datafile
-    target.operations = source.operations
     target.slicing = source.slicing
     return target
 
@@ -139,9 +137,7 @@ def _update_data_in_link(self, datastruct, input_socket):
     from_node = input_socket.links[0].from_node
     from_socket = input_socket.links[0].from_socket
     if hasattr(from_node, "BNC_datastructs"):
-        datastruct = _update_datastruct_if_filename_exists(
-            self, datastruct, input_socket
-        )
+        _update_datastruct_if_filename_exists(self, datastruct, input_socket)
     if hasattr(from_socket, "default_value"):
         input_socket.default_value = from_socket.default_value
 
@@ -227,18 +223,18 @@ def _create_UI_nodes(self, context):
     UI_props = context.scene.BlenderNC_UI_Properties
     node_tree = create_blenderncnodetree(self.node_tree)
     create_nodes(node_tree, basic_nodes)
-    Import_node = node_tree.nodes.get("Datacube Import")
+    import_node = node_tree.nodes.get("Datacube Import")
     datacube_file = UI_props.datacube_file
     if not datacube_file or not glob.glob(datacube_file):
-        disconnect_links(node_tree, Import_node)
+        disconnect_links(node_tree, import_node)
         bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_var_and_coords)
-        return Import_node
-    Import_node.datacube_file = datacube_file
+        return import_node
+    import_node.datacube_file = datacube_file
     create_links(node_tree, basic_nodes)
 
     if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
         bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
-    return Import_node
+    return import_node
 
 
 def check_if_node_tree_exists(update_function):
@@ -291,7 +287,7 @@ def file_exists(update_function):
     @wraps(update_function)
     def wrapper(*args):
         """Run the function when the resolved file path matches an existing file."""
-        if type(args[0]) is str:
+        if isinstance(args[0], str):
             filepath = args[0]
         else:
             self = args[0]

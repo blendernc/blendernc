@@ -28,7 +28,6 @@ class BlenderNC_UI_PT_3D_VIEW(bpy.types.Panel):
 
     def draw(self, context):
         """Draw the datacube path property and the import operator button."""
-        # box_asts = self.layout.box()
         # Open blender file selection
         scene = context.scene
         UI_props = scene.BlenderNC_UI_Properties

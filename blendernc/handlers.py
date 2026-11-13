@@ -27,8 +27,8 @@ def bNC_update_attributes(scene):
 
     for node in anim_text_nodes:
         variable = node.inputs.get("Variable").default_value
-        object = node.inputs.get("Object").default_value
-        mesh = object.data
+        obj = node.inputs.get("Object").default_value
+        mesh = obj.data
 
         datastruct = node.BNC_datastructs[0]
 
@@ -50,7 +50,5 @@ def bNC_update_attributes(scene):
 
         var = data.isel({animate_coord: frame}).values.transpose(1, 0).flatten()
 
-        attr = add_attribute(mesh, variable, type="FLOAT", domain="POINT")
+        attr = add_attribute(mesh, variable, attr_type="FLOAT", domain="POINT")
         attr.data.foreach_set("value", var)
-        # grid_node.update()
-    # mesh, attr_name, type="FLOAT", domain="POINT"

@@ -7,16 +7,6 @@ class bNCSocketDefault:
 
     color = (0.38, 0.85, 0, 1)
 
-    def unlink(self, link):
-        """Remove a link from the owning node tree.
-
-        Parameters
-        ----------
-        link : bpy.types.NodeLink
-            Link to remove.
-        """
-        return self.id_data.links.remove(link)
-
 
 class bNCdatacubeSocket(NodeSocketFloat, bNCSocketDefault):
     """

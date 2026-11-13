@@ -124,36 +124,17 @@ Grouped by priority; line numbers refer to the current `Blender5.2` branch.
 
 ## 4. Dead code and cleanup
 
-- Unused: `translations.translate`, `node_utils.get_node_by_idname`,
-  `bNCSocketDefault.unlink`, `bNCNodeDefault.invoke` (Blender never calls
-  `invoke` on a node), the `DatacubeImport.filename` property, and the
-  `BNC_data.operations` field (written but never read).
-- `nodes.DatacubeSlice` is a placeholder whose `update` does nothing; either
-  implement it or hide it from the menu until it does.
-- Commented-out code: the old `get_2D_coords` block in `utils.py`
-  (roughly 100 lines), trailing comments in `handlers.py`, `menus.py`,
-  `nodes.py` and `operators.py`.
-- `node_utils.does_link_exists` sets `exists = True; continue` instead of
-  returning early.
-- `decorators._update_data_in_link` assigns the result of
-  `_update_datastruct_if_filename_exists` and never uses it.
-- Side-effect list comprehensions:
-  `[setattr(input, "hide_value", True) for input in self.inputs]` in three
-  nodes; a `for` loop reads better and does not build a throwaway list.
-- Conditional expressions used as statements in `update_coords_links_UI`.
-- Built-in names shadowed: `list` (`build_enum_prop_list`,
-  `filter_2_string_lists`), `type` (`add_attribute`), `object`
-  (`handlers.py`), `input` (`nodes.py`).
-- `file_exists` uses `type(args[0]) is str`; prefer `isinstance`.
-- Inconsistent naming: `findCommonName`, `get_2D_coords`,
-  `bNC_update_attributes`, `BNC_datastructs`, `Import_node`, `MeshGrid_node`
-  next to snake_case everywhere else.
-- `import difflib` inside `findCommonName`; move to module level.
-- `blendernc/__init__.py` says it exists only for tests yet carries a stale
-  `bl_info` (`"blender": (2, 83, 0)`, `"version": (0, 7, 0)`) that disagrees
-  with `__version__ = "0.8.0"` and `blender_manifest.toml`.
-- Logging goes to the root logger; use `logging.getLogger(__name__)` so the
-  extension's messages can be filtered.
+Most of this section was applied on 2026-11-13: unused symbols, commented-out
+code, the `operations` field, shadowed builtins, `isinstance` in
+`file_exists`, the early return in `does_link_exists`, module-level
+`difflib`, named loggers, and the local camelCase names. What remains:
+
+- `nodes.DatacubeSlice` is still a placeholder. It is registered but hidden
+  from the "Selection" menu until `update` does something.
+- Public names left as they are to avoid breaking callers and saved files:
+  `get_2D_coords` (imported by `operators.py`), `bNC_update_attributes`
+  (registered handler) and the `BNC_datastructs` property (stored in
+  .blend files). Rename these only with a deliberate migration.
 
 ## 5. Blender API usage
 

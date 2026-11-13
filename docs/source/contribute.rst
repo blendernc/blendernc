@@ -7,6 +7,14 @@ If you want to contribute to the development of BlenderNC, please submit a pull 
 Development workflow
 ####################
 
+The log file for BlenderNC is located at the user extension path, typically in the Blender configuration directory. You can access it programmatically using the :func:`blendernc.log_path` function. If you are using the suggested development workflow with Visual Studio Code, you need to import blendernc by doing
+
+.. code-block:: python
+
+    import bl_ext.vscode_development.blendernc as blendernc
+    print(blendernc.log_path())
+
+
 |vscode badge|
 
 .. |vscode badge| image:: https://open.vscode.dev/badges/open-in-vscode.svg

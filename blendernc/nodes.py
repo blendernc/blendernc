@@ -26,13 +26,6 @@ class bNCNodeDefault:
 
     BNC_datastructs: bpy.props.CollectionProperty(type=BNC_data)
 
-    def invoke(self, context):
-        """Place the node at the cursor when added from the node editor."""
-        space = context.space_data
-        if space and space.type == "NODE_EDITOR":
-            cursor = space.cursor_location
-            self.location = cursor
-
 
 # Custom node type
 class DatacubeImport(bpy.types.Node, bNCNodeDefault):
@@ -54,8 +47,6 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         update=create_datastruct,
     )
     """An instance of the original StringProperty."""
-
-    filename: bpy.props.StringProperty(update=lambda self, context: self.update())
 
     @initialize_BNC_datastructs
     def init(self, context):
@@ -184,7 +175,8 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
         self.inputs.new("NodeSocketString", "X")
         self.inputs.new("NodeSocketString", "Y")
         self.inputs.new("NodeSocketString", "Z")
-        [setattr(input, "hide_value", True) for input in self.inputs]
+        for socket in self.inputs:
+            socket.hide_value = True
 
     def draw_buttons(self, context, layout):
         """Draw the object name field and the "Bake Grid" button."""
@@ -224,7 +216,8 @@ class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
         """Create the ``"Variable"`` input and output sockets."""
         self.inputs.new("NodeSocketString", "Variable")
         self.outputs.new("NodeSocketString", "Variable")
-        [setattr(input, "hide_value", True) for input in self.inputs]
+        for socket in self.inputs:
+            socket.hide_value = True
 
     def draw_buttons(self, context, layout):
         """Draw the coordinate drop-down once a variable is connected."""
@@ -235,7 +228,6 @@ class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
     def update(self):
         """Placeholder; slicing is not implemented yet."""
         pass
-        # var = self.inputs[0].default_value
 
 
 class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
@@ -261,7 +253,8 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
         """Create the ``"Variable"`` input and output sockets."""
         self.inputs.new("NodeSocketString", "Variable")
         self.outputs.new("NodeSocketString", "Variable")
-        [setattr(input, "hide_value", True) for input in self.inputs]
+        for socket in self.inputs:
+            socket.hide_value = True
 
     def draw_buttons(self, context, layout):
         """Draw the coordinate drop-down once a variable is connected."""
@@ -332,7 +325,6 @@ class DebugNode(bpy.types.Node, bNCNodeDefault):
         datastruct = self.BNC_datastructs[0]
         layout.prop(datastruct, "filename")
         layout.prop(datastruct, "datafile")
-        layout.prop(datastruct, "operations")
         layout.prop(datastruct, "slicing")
         if hasattr(datastruct, "dict"):
             layout.label(text=f"Dict keys: {list(datastruct.dict.keys())}")

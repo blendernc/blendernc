@@ -1,3 +1,4 @@
+import difflib
 import logging
 import os.path
 import re
@@ -10,6 +11,8 @@ import xarray as xr
 
 from .decorators import check_if_node_tree_exists, file_exists
 from .node_utils import create_blenderncnodetree, create_link, delete_link
+
+logger = logging.getLogger(__name__)
 
 # Identifier of the enum entry that means "nothing selected".
 NO_SELECTION = "No var"
@@ -53,7 +56,7 @@ def get_datacube_path(directory, files):
         datacube_path = os.path.join(directory, files[0].name)
     else:
         filenames = [f.name for f in files]
-        common_name = findCommonName(filenames)
+        common_name = find_common_name(filenames)
         datacube_path = os.path.join(directory, common_name)
     return datacube_path
 
@@ -66,7 +69,7 @@ def load_dataset(filepath):
     Parameters:
         filepath (str): The path to the dataset file.
     """
-    logging.info(f"Loading dataset from {filepath}")
+    logger.info(f"Loading dataset from {filepath}")
     dataset = xr.open_mfdataset(filepath)
     return dataset
 
@@ -159,7 +162,7 @@ def name_match(block, cfname, filename):
     return cfname
 
 
-def findCommonName(filenames):
+def find_common_name(filenames):
     """Build a glob pattern matching a list of similar filenames.
 
     Consecutive filenames are compared and the shortest common pattern is
@@ -181,8 +184,6 @@ def findCommonName(filenames):
     ValueError
         If the names share no wildcard-able pattern or differ in extension.
     """
-    import difflib
-
     cfname = []
     fcounter = 0
     while len(filenames) - 1 > fcounter:
@@ -507,7 +508,7 @@ def parse_slicing(slicing, var_name):
     for record in filter(None, slicing.split(SLICING_RECORD_SEP)):
         fields = record.split(SLICING_FIELD_SEP)
         if len(fields) != 3:
-            logging.warning(f"Ignoring malformed slicing record {record!r}")
+            logger.warning(f"Ignoring malformed slicing record {record!r}")
             continue
         target, coord, spec = fields
         if target in (var_name, SLICING_ANY_VARIABLE):
@@ -804,7 +805,7 @@ def _handle_animation_coord(coords, groups):
     The coordinate with more than two dimensions is flagged with
     ``"animate": True`` and replaced by zeros so it can be animated later.
     """
-    logging.warning(
+    logger.warning(
         "A coordinate has more than 2 dimensions. "
         "The additional dimension will be animated over time."
     )
@@ -953,12 +954,29 @@ def find_coord_matches(length, dims):
 # --------------------------------------------------------------------------
 
 
-def add_attribute(mesh, attr_name, type="FLOAT", domain="POINT"):
-    """Add a custom attribute to a mesh object."""
+def add_attribute(mesh, attr_name, attr_type="FLOAT", domain="POINT"):
+    """Add a custom attribute to a mesh object.
+
+    Parameters
+    ----------
+    mesh : bpy.types.Mesh
+        Mesh receiving the attribute.
+    attr_name : str
+        Attribute name.
+    attr_type : str, optional
+        Blender attribute data type, by default ``"FLOAT"``.
+    domain : str, optional
+        Attribute domain, by default ``"POINT"``.
+
+    Returns
+    -------
+    bpy.types.Attribute or None
+        The existing or new attribute, or ``None`` if ``mesh`` is not a mesh.
+    """
     attr = None
     if mesh and mesh.id_type == "MESH":
         if attr_name not in mesh.attributes:
-            attr = mesh.attributes.new(name=attr_name, type=type, domain=domain)
+            attr = mesh.attributes.new(name=attr_name, type=attr_type, domain=domain)
         else:
             attr = mesh.attributes.get(attr_name)
     return attr

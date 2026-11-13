@@ -117,13 +117,13 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         nodes = {
             "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
         }
-        MeshGrid_nodes = create_nodes(grid_nodetree, nodes)
-        MeshGrid_node = MeshGrid_nodes["GeometryNodeMeshGrid"]["node"]
+        mesh_grid_nodes = create_nodes(grid_nodetree, nodes)
+        mesh_grid_node = mesh_grid_nodes["GeometryNodeMeshGrid"]["node"]
 
         axis1, axis2 = extract_dimensions_of_grid(grid_coords)
 
-        MeshGrid_node.inputs[2].default_value = axis1
-        MeshGrid_node.inputs[3].default_value = axis2
+        mesh_grid_node.inputs[2].default_value = axis1
+        mesh_grid_node.inputs[3].default_value = axis2
 
         object_blendernc = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = obj
@@ -133,10 +133,11 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 
         flattened_coords = stack_2D_coords(grid_coords)
 
-        attr = add_attribute(mesh, "Coordinates", type="FLOAT_VECTOR", domain="POINT")
+        attr = add_attribute(
+            mesh, "Coordinates", attr_type="FLOAT_VECTOR", domain="POINT"
+        )
 
         attr.data.foreach_set("vector", flattened_coords)
-        # grid_node.update()
 
         modifier, grid_nodetree = assign_modifier_to_object(obj, "apply_grid_coords")
 
