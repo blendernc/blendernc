@@ -20,6 +20,7 @@ from .nodes import (
     DatacubeSelect,
     DatacubeSlice,
     DatacubeSubsample,
+    DatacubeTexture,
     DatacubeVariable,
     DebugNode,
 )
@@ -45,6 +46,7 @@ classes = [
     DatacubeSubsample,
     DatacubeResolution,
     DatacubeSelect,
+    DatacubeTexture,
     DatacubeAnimateTexture,
     bNCdatacubeSocket,
     BlenderNCNodeMenu,

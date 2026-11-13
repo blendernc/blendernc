@@ -2,7 +2,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from .decorators import check_if_node_tree_exists, is_linked
-from .node_utils import create_nodes
+from .node_utils import create_links, create_nodes
 from .utils import (
     add_attribute,
     assign_modifier_to_object,
@@ -118,6 +118,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
             "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
         }
         mesh_grid_nodes = create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, mesh_grid_nodes)
         mesh_grid_node = mesh_grid_nodes["GeometryNodeMeshGrid"]["node"]
 
         axis1, axis2 = extract_dimensions_of_grid(grid_coords)
@@ -156,6 +157,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
             },
         }
         nodes_created = create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, nodes_created)
 
         nodes_created["GeometryNodeInputNamedAttribute"][
             "node"

@@ -1,3 +1,5 @@
+import logging
+
 import bpy
 
 from .decorators import (
@@ -10,12 +12,19 @@ from .utils import (
     SLICING_ANY_VARIABLE,
     _record_stride,
     create_datastruct,
+    delete_point_attribute,
     encode_slicing_record,
+    field_to_point_values,
+    get_data_from_datastruct,
     get_possible_coordinates,
     get_possible_variables,
     get_surface_dims,
     load_dataset,
+    texture_field_error,
+    write_point_attribute,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class bNCNodeDefault:
@@ -307,6 +316,104 @@ class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
     def update(self):
         """Nothing to update; the frame handler reads the inputs directly."""
         pass
+
+
+class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
+    """Node that writes a 2-D variable onto an object as a point attribute.
+
+    The counterpart of :class:`DatacubeAnimateTexture` for fields without an
+    extra dimension: the attribute is written once, whenever the node
+    updates, and does not depend on the frame. A variable with the wrong
+    number of dimensions is refused and the reason is shown on the node and
+    written to the log. A 3-D field is pointed to the Datacube Animate
+    Texture node and a 4-D field to the Datacube Select node. Unlinking the
+    ``Variable`` input removes the attribute from the object again.
+    """
+
+    bl_idname = "BlenderNCNodeTexture"  # Unique identifier for the node
+    bl_label = "Datacube Texture"  # Name that will appear on the node in the editor
+    bl_icon = "EXPERIMENTAL"
+
+    message: bpy.props.StringProperty(
+        name="Message",
+        description="Why the variable was not written onto the object",
+        default="",
+    )
+    written: bpy.props.StringProperty(
+        name="Written attribute",
+        description="Point attribute this node last wrote onto the object",
+        default="",
+    )
+
+    @initialize_BNC_datastructs
+    def init(self, context):
+        """Create the ``"Object"`` and ``"Variable"`` input sockets."""
+        self.inputs.new("NodeSocketObject", "Object")
+        self.inputs.new("NodeSocketString", "Variable")
+
+    def draw_buttons(self, context, layout):
+        """Show the last message on the node, one label per line."""
+        if not self.message:
+            return
+        lines = self.message.split("\n")
+        layout.label(text=lines[0], icon="ERROR")
+        for line in lines[1:]:
+            layout.label(text=line)
+
+    def _refuse(self, message):
+        """Keep ``message`` for the UI and write it to the log."""
+        self.message = message
+        logger.warning(f"{self.name}: {message.replace(chr(10), ' ')}")
+
+    def _delete_written(self):
+        """Remove the attribute this node wrote, if it is still on the object."""
+        if not self.written:
+            return
+        socket = self.inputs.get("Object")
+        obj = socket.default_value if socket is not None else None
+        if obj is not None and obj.data is not None:
+            if delete_point_attribute(obj.data, self.written):
+                logger.info(f"{self.name}: removed {self.written} from {obj.name}")
+        self.written = ""
+
+    def update(self):
+        """Drop the attribute when the variable is unlinked, then write it."""
+        # Blender also calls update() before init() has created the sockets.
+        socket = self.inputs.get("Variable")
+        if socket is not None and not socket.is_linked:
+            # The socket keeps the last linked name, which would be rewritten.
+            socket.default_value = ""
+            self._delete_written()
+            self.message = ""
+        self._write_texture()
+
+    @is_single_input_linked
+    @has_datastructs
+    def _write_texture(self):
+        """Write the variable onto the mesh when it is a 2-D field."""
+        obj = self.inputs["Object"].default_value
+        variable = self.inputs["Variable"].default_value
+        if obj is None or not variable:
+            self.message = ""
+            return
+
+        # A different variable replaces the attribute of the previous one.
+        if self.written and self.written != variable:
+            self._delete_written()
+
+        mesh = obj.data
+        datastruct = self.BNC_datastructs[0]
+
+        data = get_data_from_datastruct(datastruct, variable)
+        error = texture_field_error(data, mesh)
+        if error:
+            self._refuse(error)
+            return
+
+        write_point_attribute(mesh, variable, field_to_point_values(data))
+        self.written = variable
+        self.message = ""
+        logger.info(f"{self.name}: wrote {variable} onto {obj.name}")
 
 
 class DebugNode(bpy.types.Node, bNCNodeDefault):

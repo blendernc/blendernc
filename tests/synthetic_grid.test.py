@@ -8,6 +8,10 @@ Three datasets are generated on the fly with a random-noise variable:
 * ``(X, Y, Z, time)``: a Datacube Select node picks one vertical level before
   the variable is animated as above.
 
+The Datacube Texture node is run against the same three datasets: it writes
+the 2-D field and refuses the 3-D and 4-D ones with a message naming the
+node to use instead.
+
 Axis names are never hard coded: the horizontal axes come from the dataset
 through :func:`blendernc.utils.get_surface_dims`, the time axis from its
 ``datetime64`` dtype and the vertical axis is whatever remains.
@@ -157,8 +161,12 @@ class TestSyntheticGrids(unittest.TestCase):
 
     # -- pipeline -----------------------------------------------------------
 
-    def build_pipeline(self, key, select_level=False, animate=False):
-        """Create the nodes, link them and bake the grid for dataset ``key``."""
+    def build_pipeline(self, key, select_level=False, animate=False, texture=False):
+        """Create the nodes, link them and bake the grid for dataset ``key``.
+
+        With ``texture=True`` a Datacube Texture node is linked last and kept
+        as ``self.texture_node``.
+        """
         tree = self.tree
         import_node = tree.nodes.new("BlenderNCNodeImport")
         coords = tree.nodes.new("BlenderNCNodeCoords")
@@ -198,7 +206,27 @@ class TestSyntheticGrids(unittest.TestCase):
             node = tree.nodes.new("BlenderNCNodeAnimateTexture")
             tree.links.new(grid.outputs["Object"], node.inputs["Object"])
             tree.links.new(z_source, node.inputs["Variable"])
+        if texture:
+            self.texture_node = tree.nodes.new("BlenderNCNodeTexture")
+            tree.links.new(grid.outputs["Object"], self.texture_node.inputs["Object"])
+            tree.links.new(z_source, self.texture_node.inputs["Variable"])
         return obj, dataset, var_name
+
+    def build_refused_texture(self, key, select_level=False):
+        """Build a texture pipeline that must be refused; return the warning."""
+        logger_name = bpy.types.Node.bl_rna_get_subclass_py(
+            "BlenderNCNodeTexture"
+        ).__module__
+        with self.assertLogs(logger_name, level="WARNING") as logs:
+            obj, _, _ = self.build_pipeline(key, select_level, texture=True)
+        self.assertNotIn(VARIABLE, obj.data.attributes)
+        message = self.texture_node.message
+        self.assertTrue(message, "node shows no message")
+        self.assertTrue(
+            any(message.replace("\n", " ") in line for line in logs.output),
+            f"message not logged: {message!r} not in {logs.output}",
+        )
+        return message
 
     # -- shared assertions --------------------------------------------------
 
@@ -252,6 +280,44 @@ class TestSyntheticGrids(unittest.TestCase):
         for frame in (0, NT - 1):
             expected = dataset[var_name].isel({t_name: frame}).values
             self.assert_frame_attribute(obj, expected, frame)
+
+    def test_xy_static_texture(self):
+        """(X, Y): the texture node writes the field with no frame change."""
+        obj, dataset, var_name = self.build_pipeline("xy", texture=True)
+        self.assertEqual(self.texture_node.message, "")
+        self.assertIn(VARIABLE, obj.data.attributes)
+        values = point_attribute(obj, VARIABLE)
+        np.testing.assert_allclose(
+            np.sort(values), np.sort(dataset[var_name].values.ravel()), rtol=1e-6
+        )
+
+    def test_xy_texture_removed_when_variable_unlinked(self):
+        """Unlinking the Variable input deletes the attribute it wrote."""
+        obj, _, _ = self.build_pipeline("xy", texture=True)
+        self.assertIn(VARIABLE, obj.data.attributes)
+        socket = self.texture_node.inputs["Variable"]
+        self.tree.links.remove(socket.links[0])
+        self.assertNotIn(VARIABLE, obj.data.attributes)
+        self.assertEqual(self.texture_node.written, "")
+        self.assertEqual(self.texture_node.message, "")
+
+    def test_xyt_texture_refused_suggests_animate(self):
+        """(X, Y, time): a 3-D field is refused and Animate Texture suggested."""
+        message = self.build_refused_texture("xyt")
+        self.assertIn("3D", message)
+        self.assertIn("Animate Texture", message)
+
+    def test_xyzt_texture_refused_suggests_select(self):
+        """(X, Y, Z, time): a 4-D field is refused and Datacube Select suggested."""
+        message = self.build_refused_texture("xyzt")
+        self.assertIn("4D", message)
+        self.assertIn("Datacube Select", message)
+
+    def test_xyzt_selected_level_texture_suggests_animate(self):
+        """A selected level leaves a 3-D field, so Animate Texture is suggested."""
+        message = self.build_refused_texture("xyzt", select_level=True)
+        self.assertIn("3D", message)
+        self.assertIn("Animate Texture", message)
 
     def test_xyzt_select_level_and_animate(self):
         """(X, Y, Z, time): one level is selected, then animated in time."""

@@ -8,6 +8,7 @@ from .nodes import (
     DatacubeResolution,
     DatacubeSelect,
     DatacubeSubsample,
+    DatacubeTexture,
     DatacubeVariable,
     DebugNode,
 )
@@ -92,13 +93,16 @@ class BlenderNCNodeSelection(bpy.types.Menu):
 
 
 class BlenderNCNodeAnimate(bpy.types.Menu):
-    """ "Animate" sub-menu with the animate texture node."""
+    """ "Texture" sub-menu with the static and animated texture nodes."""
 
     bl_idname = "NODE_MT_category_blendernc_animate"
-    bl_label = "Animate"
+    bl_label = "Texture"
 
     def draw(self, context):
-        """Draw the animation node entries."""
+        """Draw the texture node entries."""
+        self.layout.operator("node.add_node", text="Texture").type = (
+            DatacubeTexture.bl_idname
+        )
         self.layout.operator("node.add_node", text="Animate Texture").type = (
             DatacubeAnimateTexture.bl_idname
         )

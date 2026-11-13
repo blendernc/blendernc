@@ -2,7 +2,12 @@
 from bpy.app.handlers import persistent
 
 from .node_utils import get_all_nodes_by_idname
-from .utils import add_attribute, find_coord_matches, get_data_from_datastruct
+from .utils import (
+    field_to_point_values,
+    find_coord_matches,
+    get_data_from_datastruct,
+    write_point_attribute,
+)
 
 
 @persistent
@@ -45,7 +50,5 @@ def bNC_update_attributes(scene):
         last = data.sizes[animate_coord] - 1
         frame = min(max(scene.frame_current, 0), last)
 
-        var = data.isel({animate_coord: frame}).values.transpose(1, 0).flatten()
-
-        attr = add_attribute(mesh, variable, attr_type="FLOAT", domain="POINT")
-        attr.data.foreach_set("value", var)
+        values = field_to_point_values(data.isel({animate_coord: frame}))
+        write_point_attribute(mesh, variable, values)

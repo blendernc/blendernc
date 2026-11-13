@@ -11,6 +11,7 @@ import xarray as xr
 
 from .decorators import check_if_node_tree_exists, file_exists
 from .node_utils import create_blenderncnodetree, create_link, delete_link
+from .panels_draw import draw_resolution_grid_and_texture
 
 logger = logging.getLogger(__name__)
 
@@ -417,6 +418,12 @@ def update_variable_UI(self, context):
     var_node = _get_ui_node(UI_VARIABLE_NODE)
     if var_node:
         var_node.datacube_vars = context.scene.BlenderNC_UI_Properties.variable
+        if var_node.datacube_vars != "No var":
+            # Remove the draw function to refresh the UI before re-adding it
+            bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
+            bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_resolution_grid_and_texture)
+        else:
+            bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
 
 
 def update_coords_links_UI(self, context):
@@ -945,6 +952,115 @@ def find_coord_matches(length, dims):
         for combo in combinations(sizes, r)
         if prod(sizes[name] for name in combo) == length
     ]
+
+
+# --------------------------------------------------------------------------
+# Textures
+# --------------------------------------------------------------------------
+
+# Advice given when a variable has too many dimensions to be written onto a
+# mesh as a static texture, keyed by its number of dimensions. Anything
+# above four falls back to the four-dimensional hint.
+TEXTURE_DIM_HINTS = {
+    3: "Use a Datacube Animate Texture node to animate the extra dimension.",
+    4: "Use a Datacube Select node to pick a slice first.",
+}
+
+
+def field_to_point_values(data):
+    """Flatten a 2-D field into the vertex order of a baked grid.
+
+    Parameters
+    ----------
+    data : xarray.DataArray
+        Two-dimensional array whose dimensions span the mesh.
+
+    Returns
+    -------
+    numpy.ndarray
+        1-D array with one value per vertex.
+    """
+    return data.values.transpose(1, 0).flatten()
+
+
+def write_point_attribute(mesh, name, values):
+    """Store ``values`` in a float point attribute of ``mesh`` called ``name``.
+
+    Parameters
+    ----------
+    mesh : bpy.types.Mesh
+        Mesh receiving the attribute.
+    name : str
+        Attribute name, usually the variable name.
+    values : numpy.ndarray
+        One value per vertex, in mesh order.
+
+    Returns
+    -------
+    bpy.types.Attribute
+        The attribute that was written.
+    """
+    attr = add_attribute(mesh, name, attr_type="FLOAT", domain="POINT")
+    attr.data.foreach_set("value", values)
+    return attr
+
+
+def delete_point_attribute(mesh, name):
+    """Delete a point attribute from a mesh.
+
+    Parameters
+    ----------
+    mesh : bpy.types.Mesh
+        Mesh from which to delete the attribute.
+    name : str
+        Name of the attribute to delete.
+
+    Returns
+    -------
+    bool
+        True if the attribute was found and deleted, False otherwise.
+    """
+    if name in mesh.attributes:
+        mesh.attributes.remove(mesh.attributes[name])
+        return True
+    return False
+
+
+def texture_field_error(data, mesh):
+    """Explain why ``data`` cannot be written onto ``mesh`` as a 2-D texture.
+
+    Only dimensions are counted, so an index picked with a Datacube Select
+    node, which xarray keeps as a scalar coordinate, does not add to the
+    total.
+
+    Parameters
+    ----------
+    data : xarray.DataArray
+        Variable with its slicing already applied.
+    mesh : bpy.types.Mesh
+        Mesh the field would be written onto.
+
+    Returns
+    -------
+    str
+        Empty when the field is 2-D and has one value per vertex. Otherwise
+        two lines: what is wrong, then what to do about it.
+    """
+    ndim = len(data.dims)
+    dims = ", ".join(str(dim) for dim in data.dims)
+    problem = f"{data.name} is {ndim}D ({dims})."
+    if ndim == 2:
+        size, vertices = prod(data.shape), len(mesh.vertices)
+        if size != vertices:
+            return (
+                f"{data.name} has {size} values ({dims}), mesh has {vertices} vertices."
+                "\nBake the grid from the coordinates of this variable."
+            )
+        return ""
+    if ndim < 2:
+        return problem + "\nA texture needs a 2D field."
+    hint = TEXTURE_DIM_HINTS.get(ndim, TEXTURE_DIM_HINTS[4])
+    return problem + "\n" + hint
 
 
 # --------------------------------------------------------------------------

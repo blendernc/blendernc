@@ -1,8 +1,14 @@
 import bpy
-import numpy as np
 
 basic_nodes = {
     "BlenderNCNodeImport": {
+        "links": {
+            "xarray datacube": {
+                "BlenderNCNodeResolution": "xarray datacube",
+            }
+        }
+    },
+    "BlenderNCNodeResolution": {
         "links": {
             "xarray datacube": {
                 "BlenderNCNodeCoords": "xarray datacube",
@@ -13,7 +19,17 @@ basic_nodes = {
     "BlenderNCNodeCoords": {},
     "BlenderNCNodeVariable": {},
     "BlenderNCNodeGrid": {},
+    "BlenderNCNodeTexture": {},
 }
+
+locations = [
+    (-400, 0),
+    (-200, 0),
+    (0, 100),
+    (0, -100),
+    (200, 100),
+    (400, -100),
+]
 
 
 def get_all_nodes_by_idname(bl_idname):
@@ -91,18 +107,39 @@ def create_blenderncnodetree(nodetree_name, node_type="BlenderNCNodeTree"):
     return nodetree
 
 
-def create_nodes(node_tree, nodes):
-    """Create a set of nodes laid out in a row and link them.
+def _row_locations(count, spread=300):
+    """Evenly spaced ``(x, 0)`` positions from ``-spread`` to ``spread``."""
+    if count < 2:
+        return [(0, 0)] * count
+    step = 2 * spread / (count - 1)
+    return [(-spread + i * step, 0) for i in range(count)]
+
+
+def _ensure_geometry_interface(node_tree):
+    """Give a geometry node tree its ``Geometry`` input and output sockets once."""
+    if node_tree.interface.items_tree:
+        return
+    for in_out in ("INPUT", "OUTPUT"):
+        node_tree.interface.new_socket(
+            name="Geometry", in_out=in_out, socket_type="NodeSocketGeometry"
+        )
+
+
+def create_nodes(node_tree, nodes, locations=None):
+    """Create the nodes of a mapping, or return those that already exist.
 
     Parameters
     ----------
     node_tree : bpy.types.NodeTree
-        Tree in which to create the nodes. For a geometry node tree a group
-        output node and matching geometry interface sockets are added.
+        Tree in which to create the nodes. A geometry node tree also gets a
+        group output node and ``Geometry`` interface sockets.
     nodes : dict
         Mapping of node type identifier to a dict that may hold a ``"links"``
         entry (see :func:`create_links`). Each entry is updated in place with
-        the created ``"node"`` and its ``"name"``.
+        the created ``"node"``.
+    locations : list of tuple, optional
+        One ``(x, y)`` position per node, in mapping order. By default the
+        nodes are spread along a row.
 
     Returns
     -------
@@ -110,33 +147,14 @@ def create_nodes(node_tree, nodes):
         The same ``nodes`` mapping, populated with node references.
     """
     if node_tree.bl_idname == "GeometryNodeTree":
-        nodes["NodeGroupOutput"] = {"links": {}}
+        nodes.setdefault("NodeGroupOutput", {"links": {}})
+        _ensure_geometry_interface(node_tree)
 
-    node_types = list(nodes.keys()) if isinstance(nodes, dict) else list(nodes)
+    if locations is None:
+        locations = _row_locations(len(nodes))
 
-    locations = np.vstack(
-        (np.linspace(-300, 300, len(node_types)), np.zeros(len(node_types)))
-    ).T
-    # Move below into decorator
-
-    for i, node_type in enumerate(node_types):
-        nodes[node_type]["node"] = create_node(
-            node_tree, node_type, location=locations[i]
-        )
-        nodes[node_type]["name"] = nodes[node_type]["node"].name
-
-    if node_tree.bl_idname == "GeometryNodeTree":
-        output_node = nodes["NodeGroupOutput"]["node"]
-        if len(output_node.outputs) == 0:
-            node_tree.interface.new_socket(
-                name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
-            )
-
-            node_tree.interface.new_socket(
-                name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
-            )
-
-    create_links(node_tree, nodes)
+    for node_type, location in zip(nodes, locations, strict=True):
+        nodes[node_type]["node"] = create_node(node_tree, node_type, location)
 
     return nodes
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from .node_utils import create_blenderncnodetree
 
 
@@ -46,3 +47,24 @@ def draw_var_and_coords(self, context):
 
     self.layout.label(text="Select variable:", icon="WORLD_DATA")
     self.layout.prop(UI_props, "variable", text="")
+
+
+def draw_resolution_grid_and_texture(self, context):
+    """Draw the resolution, grid, and texture options in the 3D view panel.
+
+    Appended to ``BLENDERNC_UI_PT_3D_VIEW`` once a datacube has been loaded.
+
+    Parameters
+    ----------
+    self : bpy.types.Panel
+        Panel being drawn.
+    context : bpy.types.Context
+        Current Blender context.
+    """
+    scene = context.scene
+    UI_props = scene.BlenderNC_UI_Properties
+
+    self.layout.label(text="Resolution and Grid:", icon="MOD_SUBSURF")
+    self.layout.prop(UI_props, "resolution", text="Resolution")
+    self.layout.prop(UI_props, "grid", text="Grid")
+    self.layout.prop(UI_props, "texture", text="Texture")

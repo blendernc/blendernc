@@ -30,7 +30,6 @@ should support the load of any datacube.
 
    install
    howtouse
-   preferences
    remote_render
 
 .. toctree::

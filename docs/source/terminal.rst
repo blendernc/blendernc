@@ -157,6 +157,12 @@ Each node in the editor is a Blender node type that you create with
      - Inputs ``X``, ``Y``, ``Z`` take coordinate outputs; ``grid_obj_name``
        names the mesh. Baked with
        ``bpy.ops.blendernc.create_grid_from_coords``. Output ``Object``.
+   * - Datacube Texture
+     - ``BlenderNCNodeTexture``
+     - Inputs ``Object`` and ``Variable``. A 2-D variable is written once to
+       a point attribute of the mesh named after it, and removed again when
+       ``Variable`` is unlinked. A 3-D or 4-D variable is refused and
+       ``message`` says which node to use instead.
    * - Datacube Animate Texture
      - ``BlenderNCNodeAnimateTexture``
      - Inputs ``Object`` and ``Variable``. On every frame change the

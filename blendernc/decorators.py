@@ -10,6 +10,7 @@ from .node_utils import (
     create_links,
     create_nodes,
     disconnect_links,
+    locations,
 )
 from .panels_draw import draw_var_and_coords
 
@@ -222,9 +223,9 @@ def _create_UI_nodes(self, context):
     """
     UI_props = context.scene.BlenderNC_UI_Properties
     node_tree = create_blenderncnodetree(self.node_tree)
-    create_nodes(node_tree, basic_nodes)
-    import_node = node_tree.nodes.get("Datacube Import")
     datacube_file = UI_props.datacube_file
+    create_nodes(node_tree, basic_nodes, locations)
+    import_node = node_tree.nodes.get("Datacube Import")
     if not datacube_file or not glob.glob(datacube_file):
         disconnect_links(node_tree, import_node)
         bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_var_and_coords)
@@ -234,6 +235,7 @@ def _create_UI_nodes(self, context):
 
     if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
         bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
+
     return import_node
 
 
