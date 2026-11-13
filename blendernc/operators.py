@@ -126,7 +126,6 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         mesh_grid_node.inputs[2].default_value = axis1
         mesh_grid_node.inputs[3].default_value = axis2
 
-        object_blendernc = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = obj
         bpy.ops.object.modifier_apply(modifier=modifier.name)
 
@@ -170,6 +169,13 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         ].default_value = "Coordinates"
         bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-        bpy.context.view_layer.objects.active = object_blendernc
+        return {"FINISHED"}
 
+
+class BlenderNCBakeFromAttribute(bpy.types.Operator):
+    bl_idname = "blendernc.bake_from_attribute"
+    bl_label = "Bake From Attribute"
+
+    def execute(self, context):
+        # Implement the baking logic here
         return {"FINISHED"}

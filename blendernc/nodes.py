@@ -20,6 +20,7 @@ from .utils import (
     get_possible_variables,
     get_surface_dims,
     load_dataset,
+    suggested_stride,
     texture_field_error,
     write_point_attribute,
 )
@@ -529,6 +530,13 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         update=lambda self, context: self.update(),
     )
 
+    suggested_step: bpy.props.BoolProperty(
+        name="Suggested Step",
+        description="Use the suggested step based on the surface dimensions",
+        default=True,
+        update=lambda self, context: self.update(),
+    )
+
     @initialize_BNC_datastructs
     def init(self, context):
         """Create the ``"xarray datacube"`` input and output sockets."""
@@ -545,6 +553,7 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict.get(datastruct.filename)
         if dataset is not None:
+            layout.prop(self, "suggested_step")
             dims = get_surface_dims(dataset)
             text = ", ".join(dims) if dims else "no surface dimensions found"
             layout.label(text=text, icon="MESH_GRID")
@@ -558,8 +567,16 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
 
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict[datastruct.filename]
+        surface_dims = get_surface_dims(dataset)
+        sizes = [get_data_from_datastruct(datastruct, dim).size for dim in surface_dims]
+        stride = suggested_stride(sizes)
+        if self.suggested_step and self.step != stride:
+            self.step = stride
+        else:
+            logger.info(f"Using manually set step: {self.step}")
+
         if self.step > 1:
-            _record_stride(datastruct, get_surface_dims(dataset), self.step)
+            _record_stride(datastruct, surface_dims, self.step)
 
         for link in self.outputs["xarray datacube"].links:
             link.to_node.update()

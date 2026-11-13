@@ -7,6 +7,7 @@ from .utils import (
     get_possible_coordinates_UI,
     get_possible_variables_UI,
     update_coords_links_UI,
+    update_step_UI,
     update_variable_UI,
 )
 
@@ -50,4 +51,13 @@ class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
         items=get_possible_variables_UI,
         name="Select Variable",
         update=update_variable_UI,
+    )
+
+    step: bpy.props.IntProperty(
+        name="Step",
+        description="Keep one sample every N indices (1 = full resolution)",
+        default=2,
+        min=1,
+        soft_max=20,
+        update=update_step_UI,
     )

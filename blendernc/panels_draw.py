@@ -65,6 +65,5 @@ def draw_resolution_grid_and_texture(self, context):
     UI_props = scene.BlenderNC_UI_Properties
 
     self.layout.label(text="Resolution and Grid:", icon="MOD_SUBSURF")
-    self.layout.prop(UI_props, "resolution", text="Resolution")
-    self.layout.prop(UI_props, "grid", text="Grid")
-    self.layout.prop(UI_props, "texture", text="Texture")
+    self.layout.prop(UI_props, "step", text="Steps for coords")
+    self.layout.operator("blendernc.bake_from_attribute", text="Apply Texture")

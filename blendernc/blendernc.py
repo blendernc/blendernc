@@ -25,7 +25,11 @@ from .nodes import (
     DebugNode,
 )
 from .nodetree import BlenderNCNodeTree
-from .operators import Import_OT_CreateGrid, Import_OT_mfdataset
+from .operators import (
+    BlenderNCBakeFromAttribute,
+    Import_OT_CreateGrid,
+    Import_OT_mfdataset,
+)
 from .panels import BlenderNC_UI_PT_3D_VIEW, BlenderNC_UI_PT_3D_VIEW_PARENT
 from .properties import BlenderNC_UI_Properties, BNC_data
 from .sockets import bNCdatacubeSocket
@@ -35,6 +39,7 @@ classes = [
     BNC_data,
     Import_OT_mfdataset,
     Import_OT_CreateGrid,
+    BlenderNCBakeFromAttribute,
     BlenderNC_UI_PT_3D_VIEW_PARENT,
     BlenderNC_UI_PT_3D_VIEW,
     BlenderNC_UI_Properties,

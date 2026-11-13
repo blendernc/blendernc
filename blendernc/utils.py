@@ -23,6 +23,8 @@ UI_NODE_TREE = "BLENDERNC"
 UI_VARIABLE_NODE = "Datacube Variable"
 UI_COORDS_NODE = "Datacube Coords"
 UI_GRID_NODE = "Datacube Grid"
+UI_TEXTURE_NODE = "Datacube Texture"
+UI_STEP_NODE = "Datacube Resolution"
 
 # Encoding of the ``BNC_data.slicing`` string: ``"<var>|<coord>|<spec>,"``.
 SLICING_RECORD_SEP = ","
@@ -415,15 +417,28 @@ def update_variable_UI(self, context):
     context : bpy.types.Context
         Current Blender context.
     """
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
     var_node = _get_ui_node(UI_VARIABLE_NODE)
+    texture_node = node_tree.nodes.get(UI_TEXTURE_NODE)
+    grid_node = node_tree.nodes.get(UI_GRID_NODE)
+
     if var_node:
         var_node.datacube_vars = context.scene.BlenderNC_UI_Properties.variable
-        if var_node.datacube_vars != "No var":
+        selected = var_node.datacube_vars
+        if selected != NO_SELECTION:
             # Remove the draw function to refresh the UI before re-adding it
             bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
             bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_resolution_grid_and_texture)
+            action = create_link
+            bpy.ops.blendernc.create_grid_from_coords(
+                node_name=UI_GRID_NODE, node_tree=UI_NODE_TREE
+            )
         else:
             bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
+            action = delete_link
+
+    action(node_tree, var_node, texture_node, selected, "Variable")
+    action(node_tree, grid_node, texture_node, "Object", "Object")
 
 
 def update_coords_links_UI(self, context):
@@ -452,9 +467,33 @@ def update_coords_links_UI(self, context):
         action(node_tree, coord_node, grid_node, selected, axis)
 
 
+def update_step_UI(self, context):
+    """Update the grid node when the step property changes."""
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
+    step_node = node_tree.nodes.get(UI_STEP_NODE)
+    if self.step != step_node.step and step_node.suggested_step:
+        self.step = step_node.step
+    else:
+        step_node.step = self.step
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=UI_GRID_NODE, node_tree=UI_NODE_TREE
+        )
+
+
 # --------------------------------------------------------------------------
 # Slicing records
 # --------------------------------------------------------------------------
+
+
+def suggested_stride(sizes):
+    """Suggest a stride based on the sizes of the surface dimensions."""
+    stride = 1
+    if not sizes:
+        return stride
+    min_size = min(sizes)
+    while min_size // stride > 1000:
+        stride += 10
+    return stride - 1
 
 
 def encode_slicing_record(var_name, coord, selector):
