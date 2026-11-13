@@ -11,6 +11,35 @@ import xarray as xr
 from .decorators import check_if_node_tree_exists, file_exists
 from .node_utils import create_blenderncnodetree, create_link, delete_link
 
+# Identifier of the enum entry that means "nothing selected".
+NO_SELECTION = "No var"
+
+# Node tree and node labels driven by the 3D view panel.
+UI_NODE_TREE = "BLENDERNC"
+UI_VARIABLE_NODE = "Datacube Variable"
+UI_COORDS_NODE = "Datacube Coords"
+UI_GRID_NODE = "Datacube Grid"
+
+# Encoding of the ``BNC_data.slicing`` string: ``"<var>|<coord>|<spec>,"``.
+SLICING_RECORD_SEP = ","
+SLICING_FIELD_SEP = "|"
+SLICING_ANY_VARIABLE = "*"
+
+# Names that mark a horizontal dimension. ``lon``/``lat`` anywhere in the
+# name; ``x``/``y`` only as a token, optionally with one trailing letter so
+# that ``xc``, ``xu``, ``xi_rho`` and ``y_rho`` match but ``index`` does not.
+SURFACE_DIM_PATTERNS = (
+    re.compile(r"lon"),
+    re.compile(r"lat"),
+    re.compile(r"(^|[^a-z])x[a-z]?([^a-z]|$)"),
+    re.compile(r"(^|[^a-z])y[a-z]?([^a-z]|$)"),
+)
+
+
+# --------------------------------------------------------------------------
+# Loading datasets
+# --------------------------------------------------------------------------
+
 
 def get_datacube_path(directory, files):
     """
@@ -27,6 +56,52 @@ def get_datacube_path(directory, files):
         common_name = findCommonName(filenames)
         datacube_path = os.path.join(directory, common_name)
     return datacube_path
+
+
+@file_exists
+def load_dataset(filepath):
+    """
+    Load a dataset using xarray and return the dataset object.
+
+    Parameters:
+        filepath (str): The path to the dataset file.
+    """
+    logging.info(f"Loading dataset from {filepath}")
+    dataset = xr.open_mfdataset(filepath)
+    return dataset
+
+
+def store_dataset(datastruct, path):
+    """Load ``path`` and register it on a ``BNC_data`` item.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item that will reference the dataset.
+    path : str
+        File path or glob pattern accepted by :func:`load_dataset`.
+    """
+    datastruct.datafile = path
+    datastruct.filename = os.path.basename(path)
+    datastruct.dict[datastruct.filename] = load_dataset(path)
+
+
+def get_dataset(datastruct):
+    """Return the dataset cached for a ``BNC_data`` item, or ``None``.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item to read.
+
+    Returns
+    -------
+    xarray.Dataset or None
+        ``None`` when no file is registered or the cache has no entry.
+    """
+    if not datastruct.dict or not datastruct.filename:
+        return None
+    return datastruct.dict.get(datastruct.filename)
 
 
 @check_if_node_tree_exists
@@ -46,27 +121,8 @@ def create_datastruct(self, context):
         Current Blender context.
     """
     node_tree = bpy.data.node_groups.get(self.node_tree)
-    filepath_string_node = node_tree.nodes.get(self.node_name)
-
-    BNC_datastructs = filepath_string_node.BNC_datastructs[0]
-    BNC_datastructs.datafile = filepath_string_node.datacube_file
-    BNC_datastructs.filename = filepath_string_node.datacube_file.split("/")[-1]
-    BNC_datastructs.dict[BNC_datastructs.filename] = load_dataset(
-        BNC_datastructs.datafile
-    )
-
-
-@file_exists
-def load_dataset(filepath):
-    """
-    Load a dataset using xarray and return the dataset object.
-
-    Parameters:
-        filepath (str): The path to the dataset file.
-    """
-    logging.info(f"Loading dataset from {filepath}")
-    dataset = xr.open_mfdataset(filepath)
-    return dataset
+    node = node_tree.nodes.get(self.node_name)
+    store_dataset(node.BNC_datastructs[0], node.datacube_file)
 
 
 def name_match(block, cfname, filename):
@@ -144,41 +200,163 @@ def findCommonName(filenames):
     return commonName
 
 
-def get_grid_coords(grid_node):
-    """Describe the coordinates linked to a grid node's X, Y and Z inputs.
+# --------------------------------------------------------------------------
+# Enum items
+# --------------------------------------------------------------------------
+
+
+def _placeholder_item(text, icon):
+    """Return a single-entry enum list whose identifier is ``NO_SELECTION``."""
+    return [(NO_SELECTION, text, "Empty", icon, 0)]
+
+
+def select_item(text="Select variable"):
+    """Return the placeholder enum item shown before a selection is made."""
+    return _placeholder_item(text, "NODE_SEL")
+
+
+def empty_item(text="No variable"):
+    """Return the enum item shown when nothing can be selected."""
+    return _placeholder_item(text, "CANCEL")
+
+
+def _with_header(items, text):
+    """Prepend a header entry and a separator to a list of enum items."""
+    return select_item(text) + [None] + items
+
+
+def build_enum_prop_list(names, icon="NONE", long_name_list=None, start=1):
+    """Build ``EnumProperty`` item tuples from a list of names.
 
     Parameters
     ----------
-    grid_node : DatacubeGrid
-        Grid node whose linked input sockets are inspected.
+    names : list of str
+        Identifiers, also used as display names.
+    icon : str, optional
+        Icon identifier for every item, by default ``"NONE"``.
+    long_name_list : list of str, optional
+        Descriptions, one per item. When omitted the name is reused.
+    start : int, optional
+        Number assigned to the first item, by default 1.
 
     Returns
     -------
-    dict
-        Mapping of socket name to ``{"name": coordinate_name, "size": shape}``.
+    list of tuple
+        ``(identifier, name, description, icon, number)`` tuples.
     """
-    datastruct = grid_node.BNC_datastructs[0]
-
-    coords = {}
-    for socket in grid_node.inputs:
-        if not socket.is_linked:
-            continue
-
-        # linked = socket.links[0].from_socket
-        data = get_data_from_datastruct(datastruct, socket.default_value)
-
-        coords[socket.name] = {
-            "name": socket.default_value,
-            "size": return_tuple(data.shape),
-            "data": data,
-        }
-
-    return coords
+    descriptions = long_name_list or names
+    return [
+        (str(name), str(name), str(description), icon, number)
+        for number, (name, description) in enumerate(zip(names, descriptions), start)
+    ]
 
 
-def return_tuple(value):
-    """Wrap a value in a tuple unless it already is one."""
-    return value if isinstance(value, tuple) else (value,)
+def _coordinate_names(dataset):
+    """Sorted coordinate names of a dataset."""
+    return sorted(dataset.coords.keys())
+
+
+def get_dims(datacubedata):
+    """Build enum items for the coordinates of a dataset.
+
+    Parameters
+    ----------
+    datacubedata : xarray.Dataset
+        Dataset to list coordinates from.
+
+    Returns
+    -------
+    list of tuple
+        A header item, a separator (``None``) and one item per coordinate.
+    """
+    names = _coordinate_names(datacubedata)
+    return _with_header(build_enum_prop_list(names, "DISK_DRIVE"), "Select coordinate")
+
+
+def get_var(datacubedata):
+    """Build enum items for the data variables of a dataset.
+
+    Coordinates are excluded. A variable's ``long_name`` attribute is used as
+    the item description when present, otherwise its name.
+
+    Parameters
+    ----------
+    datacubedata : xarray.Dataset
+        Dataset to list variables from.
+
+    Returns
+    -------
+    list of tuple
+        A header item, a separator (``None``) and one item per variable.
+    """
+    coordinates = _coordinate_names(datacubedata)
+    variables = sorted(datacubedata.variables.keys() - coordinates)
+    descriptions = [datacubedata[var].attrs.get("long_name", var) for var in variables]
+    items = build_enum_prop_list(variables, "DISK_DRIVE", descriptions)
+    return _with_header(items, "Select variable")
+
+
+def _enum_items(node, builder, empty_text):
+    """Build enum items from a node's dataset, or a placeholder without one."""
+    dataset = get_dataset(node.BNC_datastructs[0])
+    if dataset is None:
+        return empty_item(empty_text)
+    return builder(dataset)
+
+
+def get_possible_variables(node, context):
+    """Enum items callback listing the variables of a node's dataset.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node with a ``BNC_datastructs`` collection.
+    context : bpy.types.Context
+        Current Blender context (unused).
+
+    Returns
+    -------
+    list of tuple
+        Enum items, or a single empty item when no dataset is loaded.
+    """
+    return _enum_items(node, get_var, "No variable")
+
+
+def get_possible_coordinates(node, context):
+    """Enum items callback listing the coordinates of a node's dataset.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node with a ``BNC_datastructs`` collection.
+    context : bpy.types.Context
+        Current Blender context (unused).
+
+    Returns
+    -------
+    list of tuple
+        Enum items, or a single empty item when no dataset is loaded.
+    """
+    return _enum_items(node, get_dims, "No Coordinate")
+
+
+# --------------------------------------------------------------------------
+# 3D view panel callbacks
+# --------------------------------------------------------------------------
+
+
+def _get_ui_node(label):
+    """Return the node called ``label`` in the panel's node tree, or ``None``."""
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
+    return node_tree.nodes.get(label)
+
+
+def _enum_items_UI(label, items_callback, context):
+    """Delegate an enum items callback to a node of the panel's node tree."""
+    node = _get_ui_node(label)
+    if not node:
+        return empty_item()
+    return items_callback(node, context)
 
 
 def get_possible_variables_UI(self, context):
@@ -197,41 +375,13 @@ def get_possible_variables_UI(self, context):
         Enum items from the "Datacube Variable" node of the ``BLENDERNC``
         tree, or a single empty item when the node or dataset is missing.
     """
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    var_node = node_tree.nodes.get("Datacube Variable")
-    if not var_node:
-        return empty_item()
-    items = get_possible_variables(var_node, context)
-    return items
-
-
-def get_possible_variables(node, context):
-    """Enum items callback listing the variables of a node's dataset.
-
-    Parameters
-    ----------
-    node : bpy.types.Node
-        Node with a ``BNC_datastructs`` collection.
-    context : bpy.types.Context
-        Current Blender context (unused).
-
-    Returns
-    -------
-    list of tuple
-        Enum items, or a single empty item when no dataset is loaded.
-    """
-    datastruct = node.BNC_datastructs[0]
-    if not datastruct.dict or not datastruct.filename:
-        return empty_item()
-    datacubedata = datastruct.dict[datastruct.filename]
-    items = get_var(datacubedata)
-    return items
+    return _enum_items_UI(UI_VARIABLE_NODE, get_possible_variables, context)
 
 
 def get_possible_coordinates_UI(self, context):
     """Enum items callback for the X, Y and Z selectors in the 3D view panel.
 
-    The header entry is replaced by a ``"No var"`` item so the user can
+    The header entry is replaced by a ``NO_SELECTION`` item so the user can
     unlink an axis, and the separator is dropped.
 
     Parameters
@@ -246,36 +396,10 @@ def get_possible_coordinates_UI(self, context):
     list of tuple
         Enum items from the "Datacube Coords" node of the ``BLENDERNC`` tree.
     """
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    coord_node = node_tree.nodes.get("Datacube Coords")
-    if not coord_node:
-        return empty_item()
-    items = get_possible_coordinates(coord_node, context)
-    items.pop(1)
-    items[0] = ("No var", "", "", "CANCEL", 0)
-    return items
-
-
-def get_possible_coordinates(node, context):
-    """Enum items callback listing the coordinates of a node's dataset.
-
-    Parameters
-    ----------
-    node : bpy.types.Node
-        Node with a ``BNC_datastructs`` collection.
-    context : bpy.types.Context
-        Current Blender context (unused).
-
-    Returns
-    -------
-    list of tuple
-        Enum items, or a single empty item when no dataset is loaded.
-    """
-    datastruct = node.BNC_datastructs[0]
-    if not datastruct.dict or not datastruct.filename:
-        return empty_item(text="No Coordinate")
-    datacubedata = datastruct.dict[datastruct.filename]
-    items = get_dims(datacubedata)
+    items = _enum_items_UI(UI_COORDS_NODE, get_possible_coordinates, context)
+    if len(items) > 1 and items[1] is None:
+        items.pop(1)
+    items[0] = _placeholder_item("", "CANCEL")[0]
     return items
 
 
@@ -289,13 +413,9 @@ def update_variable_UI(self, context):
     context : bpy.types.Context
         Current Blender context.
     """
-    scene = context.scene
-    UI_props = scene.BlenderNC_UI_Properties
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    var_node = node_tree.nodes.get("Datacube Variable")
-    if not var_node:
-        return
-    var_node.datacube_vars = UI_props.variable
+    var_node = _get_ui_node(UI_VARIABLE_NODE)
+    if var_node:
+        var_node.datacube_vars = context.scene.BlenderNC_UI_Properties.variable
 
 
 def update_coords_links_UI(self, context):
@@ -303,7 +423,7 @@ def update_coords_links_UI(self, context):
 
     For each of ``X``, ``Y`` and ``Z``, the selected coordinate output of the
     "Datacube Coords" node is linked to the matching grid input, or the
-    existing link is removed when ``"No var"`` is selected.
+    existing link is removed when ``NO_SELECTION`` is selected.
 
     Parameters
     ----------
@@ -312,127 +432,218 @@ def update_coords_links_UI(self, context):
     context : bpy.types.Context
         Current Blender context.
     """
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    coord_node = node_tree.nodes.get("Datacube Coords")
-    grid_node = node_tree.nodes.get("Datacube Grid")
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
+    coord_node = node_tree.nodes.get(UI_COORDS_NODE)
+    grid_node = node_tree.nodes.get(UI_GRID_NODE)
     if not coord_node or not grid_node:
         return
 
-    (
-        create_link(node_tree, coord_node, grid_node, self.X, "X")
-        if self.X != "No var"
-        else delete_link(node_tree, coord_node, grid_node, self.X, "X")
-    )
-    (
-        create_link(node_tree, coord_node, grid_node, self.Y, "Y")
-        if self.Y != "No var"
-        else delete_link(node_tree, coord_node, grid_node, self.Y, "Y")
-    )
-    (
-        create_link(node_tree, coord_node, grid_node, self.Z, "Z")
-        if self.Z != "No var"
-        else delete_link(node_tree, coord_node, grid_node, self.Z, "Z")
-    )
+    for axis in ("X", "Y", "Z"):
+        selected = getattr(self, axis)
+        action = delete_link if selected == NO_SELECTION else create_link
+        action(node_tree, coord_node, grid_node, selected, axis)
 
 
-# def get_2D_coords(coords):
-# expected_dims = ["X", "Y", "Z"]
-# missing_dims = [dim for dim in expected_dims if dim not in coords]
-# coord_dims = [dim for dim in expected_dims if dim in coords]
+# --------------------------------------------------------------------------
+# Slicing records
+# --------------------------------------------------------------------------
 
-# if len(coord_dims) == 1:
-#     raise ValueError("Only one dimension is present. Expected at least two.")
-# elif len(coord_dims) == 2:
-#     # Either both have to be 1D or 2D
-#     x = coords[coord_dims[0]]["data"].values
-#     y = coords[coord_dims[1]]["data"].values
-#     if x.ndim == 1 and y.ndim == 1:
-#         Y, X = np.meshgrid(y, x, indexing="ij")
-#         coords[coord_dims[0]]["data"] = X
-#         coords[coord_dims[1]]["data"] = Y
-#         coords[missing_dims[0]] = {
-#             "name": missing_dims[0],
-#             "size": X.shape,
-#             "data": np.zeros_like(X),
-#         }
-#     elif x.ndim == 2 and y.ndim == 2:
-#         coords[coord_dims[0]]["data"] = x.values
-#         coords[coord_dims[1]]["data"] = y.values
-#         coords[missing_dims[0]] = {
-#             "name": missing_dims[0],
-#             "size": X.shape,
-#             "data": np.zeros_like(X),
-#         }
-#     else:
-#         raise ValueError(
-#             """
-#             Dimensions of the coordinates can be either 1D or 2D.
-#             Mixed dimensions are not supported.
-#             """
-#         )
-# elif len(coord_dims) == 3:
-#     # Either it has to be one 2D and the rest 1D or all 2D
 
-#     coords_ndim_1 = [
-#         name for name, coord in coords.items() if coord["data"].ndim == 1
-#     ]
-#     coords_ndim_2 = [
-#         name for name, coord in coords.items() if coord["data"].ndim == 2
-#     ]
-#     coords_ndim_gt2 = [
-#         name for name, coord in coords.items() if coord["data"].ndim > 2
-#     ]
+def encode_slicing_record(var_name, coord, selector):
+    """Encode one ``slicing`` record as ``"<var>|<coord>|<spec>,"``.
 
-#     if sum([len(coords_ndim_1), len(coords_ndim_2), len(coords_ndim_gt2)]) != 3:
-#         raise ValueError(
-#             """
-#             The dimensions don't match the input coordinates.
-#             Make sure your slicing is correct and that the coordinates
-#             are either 1D or 2D."""
-#         )
+    Parameters
+    ----------
+    var_name : str
+        Variable the record applies to, or ``SLICING_ANY_VARIABLE`` for every
+        array that has the dimension (coordinates included).
+    coord : str
+        Dimension or coordinate name.
+    selector : int or slice
+        Index to pick, or stride to apply. ``slice(0, None, 2)`` is stored as
+        ``"0::2"``; ``None`` bounds are left empty.
 
-#     if len(coords_ndim_1) == 2 and len(coords_ndim_2) == 1:
-#         x = coords[coords_ndim_1[0]]["data"].values
-#         y = coords[coords_ndim_1[1]]["data"].values
-#         Y, X = np.meshgrid(y, x, indexing="ij")
-#         coords[coords_ndim_1[0]]["data"] = X
-#         coords[coords_ndim_1[1]]["data"] = Y
-#         coords[coords_ndim_2[0]]["data"] = coords[coords_ndim_2[0]]["data"].values
-#     elif len(coords_ndim_2) == 3:
-#         x = coords[coords_ndim_2[0]]["data"].values
-#         y = coords[coords_ndim_2[1]]["data"].values
-#         z = coords[coords_ndim_2[2]]["data"].values
-#         coords[coords_ndim_2[0]]["data"] = x
-#         coords[coords_ndim_2[1]]["data"] = y
-#         coords[coords_ndim_2[2]]["data"] = z
-#     elif len(coords_ndim_1) == 2 and len(coords_ndim_gt2) == 1:
-#         logging.warning(
-#             """
-#             A coordinate has more than 2 dimensions.
-#             The additional dimension will be animated over time.
-#             """
-#         )
-#         x = coords[coords_ndim_1[0]]["data"].values
-#         y = coords[coords_ndim_1[1]]["data"].values
-#         Y, X = np.meshgrid(y, x, indexing="ij")
-#         coords[coords_ndim_1[0]]["data"] = X
-#         coords[coords_ndim_1[1]]["data"] = Y
-#         coords[coords_ndim_gt2[0]]["animate"] = True
-#         coords[coords_ndim_gt2[0]]["data"] = np.zeros_like(X)
-#     elif len(coords_ndim_gt2) > 1:
-#         # Implement animation over time of the grid coordinates.
-#         # This is a complex task and requires additional logic
-#         # to handle the animation over time. For now, we will
-#         # raise an error.
-#         raise ValueError("3D coordinates are not yet supported.")
-#     else:
-#         raise ValueError(
-#             """
-#             Dimensions of the coordinates can be either two
-#             1D and one 2D or all 2D.
-#             """
-#         )
-# return coords
+    Returns
+    -------
+    str
+        The record, including its trailing separator.
+    """
+    if isinstance(selector, slice):
+        bounds = (selector.start, selector.stop, selector.step)
+        spec = ":".join("" if b is None else str(b) for b in bounds)
+    else:
+        spec = str(int(selector))
+    return SLICING_FIELD_SEP.join((var_name, coord, spec)) + SLICING_RECORD_SEP
+
+
+def _record_stride(datastruct, dims, step):
+    """Append one wildcard stride record per dimension to ``slicing``."""
+    for dim in dims:
+        datastruct.slicing += encode_slicing_record(
+            SLICING_ANY_VARIABLE, dim, slice(0, None, step)
+        )
+
+
+def _decode_selector(spec):
+    """Turn ``"i"`` into ``int`` and ``"start:stop:step"`` into ``slice``."""
+    if ":" not in spec:
+        return int(spec)
+    parts = [int(p) if p else None for p in spec.split(":")]
+    parts += [None] * (3 - len(parts))
+    return slice(*parts[:3])
+
+
+def parse_slicing(slicing, var_name):
+    """Collect the selectors in ``slicing`` that apply to ``var_name``.
+
+    Later records override earlier ones for the same coordinate.
+
+    Returns
+    -------
+    dict
+        Mapping of dimension or coordinate name to ``int`` or ``slice``.
+    """
+    indexers = {}
+    for record in filter(None, slicing.split(SLICING_RECORD_SEP)):
+        fields = record.split(SLICING_FIELD_SEP)
+        if len(fields) != 3:
+            logging.warning(f"Ignoring malformed slicing record {record!r}")
+            continue
+        target, coord, spec = fields
+        if target in (var_name, SLICING_ANY_VARIABLE):
+            indexers[coord] = _decode_selector(spec)
+    return indexers
+
+
+def _dims_for_key(dataset, key):
+    """Dimensions a slicing key refers to: itself, or those of a coordinate."""
+    if key in dataset.dims:
+        return (key,)
+    if key in dataset.coords:
+        return dataset[key].dims
+    return ()
+
+
+def build_indexers(dataset, data, slicing, var_name):
+    """Map the slicing records for ``var_name`` onto the dims ``data`` has.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset used to resolve coordinate names to dimensions.
+    data : xarray.DataArray
+        Array the indexers will be applied to.
+    slicing : str
+        Encoded ``slicing`` string of a ``BNC_data`` item.
+    var_name : str
+        Name of ``data`` inside ``dataset``.
+
+    Returns
+    -------
+    dict
+        Mapping of dimension name to ``int`` or ``slice`` for ``isel``.
+    """
+    selectors = parse_slicing(slicing, var_name)
+    return {
+        dim: selector
+        for key, selector in selectors.items()
+        for dim in _dims_for_key(dataset, key)
+        if dim in data.dims
+    }
+
+
+def get_data_from_datastruct(datastruct, var_name):
+    """Return ``var_name`` from the cached dataset with its slicing applied.
+
+    Records may name a dimension directly or a coordinate; a coordinate is
+    resolved to the dimensions it spans, so a 2-D coordinate strides both.
+    Selections on dimensions the array does not have are ignored, which is
+    what lets wildcard records apply safely to coordinates.
+    """
+    dataset = get_dataset(datastruct)
+    data = dataset[var_name]
+    indexers = build_indexers(dataset, data, datastruct.slicing, var_name)
+    return data.isel(indexers).fillna(0)
+
+
+# --------------------------------------------------------------------------
+# Surface dimensions
+# --------------------------------------------------------------------------
+
+
+def is_surface_name(name):
+    """Return ``True`` when ``name`` looks like a horizontal dimension."""
+    lowered = name.lower()
+    return any(pattern.search(lowered) for pattern in SURFACE_DIM_PATTERNS)
+
+
+def get_surface_dims(dataset):
+    """Dimensions that span the horizontal surface of a dataset.
+
+    A dimension qualifies when its name matches ``SURFACE_DIM_PATTERNS`` or
+    when any 2-D coordinate is defined over it.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset to inspect.
+
+    Returns
+    -------
+    list of str
+        Surface dimension names in dataset order.
+    """
+    surface = {dim for dim in dataset.dims if is_surface_name(dim)}
+    for coord in dataset.coords.values():
+        if coord.ndim == 2:
+            surface.update(coord.dims)
+    order = list(dataset.dims)
+    return sorted(surface, key=order.index)
+
+
+# --------------------------------------------------------------------------
+# Grid coordinates
+# --------------------------------------------------------------------------
+
+
+def get_grid_coords(grid_node):
+    """Describe the coordinates linked to a grid node's X, Y and Z inputs.
+
+    Sizes and data are both taken from the lazily sliced arrays, so the Mesh
+    Grid vertex counts always match the coordinate values written to the
+    mesh, whatever ``slicing`` records are active.
+
+    Parameters
+    ----------
+    grid_node : DatacubeGrid
+        Grid node whose linked input sockets are inspected.
+
+    Returns
+    -------
+    dict
+        Mapping of socket name to
+        ``{"name": coordinate_name, "size": shape, "data": DataArray}``.
+    """
+    datastruct = grid_node.BNC_datastructs[0]
+
+    coords = {}
+    for socket in grid_node.inputs:
+        if not socket.is_linked:
+            continue
+        data = get_data_from_datastruct(datastruct, socket.default_value)
+        coords[socket.name] = {
+            "name": socket.default_value,
+            "size": data.shape,
+            "data": data,
+        }
+
+    return coords
+
+
+def _unwrap(coords, *names):
+    """Replace the ``"data"`` DataArray of each named entry by its values."""
+    for name in names:
+        coords[name]["data"] = coords[name]["data"].values
 
 
 def _meshgrid_coords(coords, x_name, y_name):
@@ -441,7 +652,7 @@ def _meshgrid_coords(coords, x_name, y_name):
     Parameters
     ----------
     coords : dict
-        Coordinate mapping as returned by :func:`get_coords_from_datastruct`.
+        Coordinate mapping as returned by :func:`get_grid_coords`.
     x_name, y_name : str
         Keys of the two 1-D coordinates.
 
@@ -494,17 +705,9 @@ def _coords_by_ndim(coords):
         Keys ``1``, ``2`` and ``"gt2"`` mapping to lists of coordinate names.
     """
     groups = {1: [], 2: [], "gt2": []}
-
     for name, coord in coords.items():
         ndim = coord["data"].ndim
-
-        if ndim == 1:
-            groups[1].append(name)
-        elif ndim == 2:
-            groups[2].append(name)
-        else:
-            groups["gt2"].append(name)
-
+        groups[ndim if ndim in (1, 2) else "gt2"].append(name)
     return groups
 
 
@@ -571,45 +774,31 @@ def _handle_two_coords(coords, coord_dims, missing_dim):
     y = coords[y_name]["data"]
 
     if x.ndim == y.ndim == 1:
-        X = _meshgrid_coords(coords, x_name, y_name)
-        _add_missing_coord(coords, missing_dim, X)
-
+        template = _meshgrid_coords(coords, x_name, y_name)
     elif x.ndim == y.ndim == 2:
-        coords[x_name]["data"] = x.values
-        coords[y_name]["data"] = y.values
-        _add_missing_coord(coords, missing_dim, x.values)
-
+        _unwrap(coords, x_name, y_name)
+        template = coords[x_name]["data"]
     else:
         raise ValueError("Coordinates must be either all 1D or all 2D.")
 
+    _add_missing_coord(coords, missing_dim, template)
     return coords
 
 
-def _get_coord_pattern(groups):
-    """Return the ``(n_1d, n_2d, n_gt2d)`` counts of a dimensionality grouping."""
-    return (
-        len(groups[1]),
-        len(groups[2]),
-        len(groups["gt2"]),
-    )
-
-
-def _handle_2x1d_1x2d(coords, ndim_1, ndim_2, _):
+def _handle_2x1d_1x2d(coords, groups):
     """Mesh-grid two 1-D coordinates and unwrap the single 2-D one."""
-    _meshgrid_coords(coords, ndim_1[0], ndim_1[1])
-    name = ndim_2[0]
-    coords[name]["data"] = coords[name]["data"].values
+    _meshgrid_coords(coords, *groups[1])
+    _unwrap(coords, *groups[2])
     return coords
 
 
-def _handle_3x2d(coords, _, ndim_2, __):
+def _handle_3x2d(coords, groups):
     """Unwrap three 2-D coordinates to plain arrays."""
-    for name in ndim_2:
-        coords[name]["data"] = coords[name]["data"].values
+    _unwrap(coords, *groups[2])
     return coords
 
 
-def _handle_animation_coord(coords, ndim_1, _, ndim_gt2):
+def _handle_animation_coord(coords, groups):
     """Mesh-grid two 1-D coordinates and mark the higher-dimensional one.
 
     The coordinate with more than two dimensions is flagged with
@@ -620,9 +809,9 @@ def _handle_animation_coord(coords, ndim_1, _, ndim_gt2):
         "The additional dimension will be animated over time."
     )
 
-    X = _meshgrid_coords(coords, ndim_1[0], ndim_1[1])
+    X = _meshgrid_coords(coords, *groups[1])
 
-    name = ndim_gt2[0]
+    name = groups["gt2"][0]
     coords[name]["animate"] = True
     coords[name]["data"] = np.zeros_like(X)
 
@@ -648,15 +837,15 @@ def _handle_three_coords(coords):
         If the combination of dimensions is not supported.
     """
     groups = _coords_by_ndim(coords)
-    pattern = _get_coord_pattern(groups)
+    pattern = (len(groups[1]), len(groups[2]), len(groups["gt2"]))
 
     match pattern:
         case (2, 1, 0):
-            return _handle_2x1d_1x2d(coords, groups[1], groups[2], groups["gt2"])
+            return _handle_2x1d_1x2d(coords, groups)
         case (0, 3, 0):
-            return _handle_3x2d(coords, groups[1], groups[2], groups["gt2"])
+            return _handle_3x2d(coords, groups)
         case (2, 0, 1):
-            return _handle_animation_coord(coords, groups[1], groups[2], groups["gt2"])
+            return _handle_animation_coord(coords, groups)
         case (_, _, n) if n > 1:
             raise ValueError("3D coordinates are not yet supported.")
         case _:
@@ -686,6 +875,82 @@ def stack_2D_coords(coords):
     flatten_coords = np.stack([X, Y, Z], axis=0).transpose(2, 1, 0).flatten()
 
     return flatten_coords
+
+
+def extract_dimensions_of_grid(grid_coords):
+    """Pick the two vertex counts for the Mesh Grid node.
+
+    Sizes with more than two dimensions or of length one are ignored. With
+    two remaining coordinates their first dimensions are used; with more, the
+    2-D surface coordinates are preferred.
+
+    Parameters
+    ----------
+    grid_coords : dict
+        Mapping as returned by :func:`get_grid_coords`.
+
+    Returns
+    -------
+    tuple of int
+        ``(size1, size2)``.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two usable dimensions are found.
+    """
+    dims = {
+        name: coord["size"]
+        for name, coord in grid_coords.items()
+        if len(coord["size"]) <= 2 and coord["size"] != (1,)
+    }
+    if len(dims) < 2:
+        raise ValueError("Not enough dimensions with size <= 2 found.")
+
+    surface_dims = {name: size for name, size in dims.items() if len(size) == 2}
+    if len(dims) > 2 and surface_dims != dims:
+        # Mixed 1-D and 2-D coordinates: the 1-D ones define the grid.
+        sizes = [size for name, size in dims.items() if name not in surface_dims]
+        return sizes[0][0], sizes[1][0]
+
+    first, second = list(dims.values())[:2]
+    second_index = 1 if len(dims) > 2 else 0
+    return first[0], second[second_index]
+
+
+def find_coord_matches(length, dims):
+    """Find the coordinate combinations whose total size equals ``length``.
+
+    Parameters
+    ----------
+    length : int
+        Target size, typically the vertex count of a mesh.
+    dims : dict
+        Mapping of coordinate name to its shape (tuple) or size (int).
+
+    Returns
+    -------
+    numpy.ndarray
+        Squeezed array of matching name combinations.
+    """
+    sizes = {
+        name: prod(shape) if isinstance(shape, tuple) else shape
+        for name, shape in dims.items()
+    }
+
+    matches = []
+
+    for r in range(1, len(sizes) + 1):
+        for combo in combinations(sizes, r):
+            if prod(sizes[name] for name in combo) == length:
+                matches.append(combo)
+
+    return np.squeeze(matches)
+
+
+# --------------------------------------------------------------------------
+# Blender objects
+# --------------------------------------------------------------------------
 
 
 def add_attribute(mesh, attr_name, type="FLOAT", domain="POINT"):
@@ -741,357 +1006,3 @@ def assign_modifier_to_object(obj, modifier_name):
     modifier.node_group = nodetree
 
     return modifier, nodetree
-
-
-def extract_dimensions_of_grid(grid_coords):
-    """Pick the two vertex counts for the Mesh Grid node.
-
-    Sizes with more than two dimensions or of length one are ignored. With
-    two remaining coordinates their first dimensions are used; with more, the
-    2-D surface coordinates are preferred.
-
-    Parameters
-    ----------
-    grid_coords : dict
-        Mapping as returned by :func:`get_grid_coords`.
-
-    Returns
-    -------
-    tuple of int
-        ``(size1, size2)``.
-
-    Raises
-    ------
-    ValueError
-        If fewer than two usable dimensions are found.
-    """
-    # Extract the dimensions of the grid based on the provided grid coordinates.
-    sizes = {name: grid_coords.get(name).get("size") for name in grid_coords.keys()}
-    # Filter out dimensions with size greater than 2 and different from (1,)
-    dims = {
-        name: size for name, size in sizes.items() if len(size) <= 2 and size != (1,)
-    }
-    if len(dims) == 2:
-        size1 = dims.get(list(dims.keys())[0])[0]
-        size2 = dims.get(list(dims.keys())[1])[0]
-    elif len(dims) > 2:
-        surface_dims = {name: size for name, size in dims.items() if len(size) == 2}
-        if surface_dims == dims:
-            size1 = dims.get(list(dims.keys())[0])[0]
-            size2 = dims.get(list(dims.keys())[1])[1]
-        else:
-            key2ignore = surface_dims.keys()
-            key = [key for key in dims.keys() if key not in key2ignore]
-            size1 = dims.get(key[0])[0]
-            size2 = dims.get(key[1])[0]
-    else:
-        raise ValueError("Not enough dimensions with size <= 2 found.")
-    return size1, size2
-
-
-SLICING_RECORD_SEP = ","
-SLICING_FIELD_SEP = "|"
-SLICING_ANY_VARIABLE = "*"
-
-
-def encode_slicing_record(var_name, coord, selector):
-    """Encode one ``slicing`` record as ``"<var>|<coord>|<spec>,"``.
-
-    Parameters
-    ----------
-    var_name : str
-        Variable the record applies to, or ``SLICING_ANY_VARIABLE`` for every
-        array that has the dimension (coordinates included).
-    coord : str
-        Dimension or coordinate name.
-    selector : int or slice
-        Index to pick, or stride to apply. ``slice(0, None, 2)`` is stored as
-        ``"0::2"``; ``None`` bounds are left empty.
-
-    Returns
-    -------
-    str
-        The record, including its trailing separator.
-    """
-    if isinstance(selector, slice):
-        bounds = (selector.start, selector.stop, selector.step)
-        spec = ":".join("" if b is None else str(b) for b in bounds)
-    else:
-        spec = str(int(selector))
-    return SLICING_FIELD_SEP.join((var_name, coord, spec)) + SLICING_RECORD_SEP
-
-
-def _decode_selector(spec):
-    """Turn ``"i"`` into ``int`` and ``"start:stop:step"`` into ``slice``."""
-    if ":" not in spec:
-        return int(spec)
-    parts = [int(p) if p else None for p in spec.split(":")]
-    parts += [None] * (3 - len(parts))
-    return slice(*parts[:3])
-
-
-def parse_slicing(slicing, var_name):
-    """Collect the selectors in ``slicing`` that apply to ``var_name``.
-
-    Later records override earlier ones for the same coordinate.
-
-    Returns
-    -------
-    dict
-        Mapping of dimension or coordinate name to ``int`` or ``slice``.
-    """
-    indexers = {}
-    for record in filter(None, slicing.split(SLICING_RECORD_SEP)):
-        fields = record.split(SLICING_FIELD_SEP)
-        if len(fields) != 3:
-            logging.warning(f"Ignoring malformed slicing record {record!r}")
-            continue
-        target, coord, spec = fields
-        if target in (var_name, SLICING_ANY_VARIABLE):
-            indexers[coord] = _decode_selector(spec)
-    return indexers
-
-
-def _dims_for_key(dataset, key):
-    """Dimensions a slicing key refers to: itself, or those of a coordinate."""
-    if key in dataset.dims:
-        return (key,)
-    if key in dataset.coords:
-        return dataset[key].dims
-    return ()
-
-
-def build_indexers(dataset, data, slicing, var_name):
-    """Map the slicing records for ``var_name`` onto the dims ``data`` has."""
-    selectors = parse_slicing(slicing, var_name)
-    return {
-        dim: selector
-        for key, selector in selectors.items()
-        for dim in _dims_for_key(dataset, key)
-        if dim in data.dims
-    }
-
-
-def get_data_from_datastruct(datastruct, var_name):
-    """Return ``var_name`` from the cached dataset with its slicing applied.
-
-    Records may name a dimension directly or a coordinate; a coordinate is
-    resolved to the dimensions it spans, so a 2-D coordinate strides both.
-    Selections on dimensions the array does not have are ignored, which is
-    what lets wildcard records apply safely to coordinates.
-    """
-    dataset = datastruct.dict[datastruct.filename]
-    data = dataset[var_name]
-    indexers = build_indexers(dataset, data, datastruct.slicing, var_name)
-    return data.isel(indexers).fillna(0)
-
-
-def get_coords_from_datastruct(datastruct, grid_coords):
-    """
-    Get coordinates from the datastruct for a given dimension.
-
-    Parameters:
-        datastruct: The datastruct containing the dataset.
-        grid_coords: The grid coordinates containing dimension information.
-    """
-    for coords in grid_coords.keys():
-        coord_name = grid_coords[coords].get("name")
-        data = get_data_from_datastruct(datastruct, coord_name)
-        grid_coords[coords]["data"] = data
-    return grid_coords
-
-
-def get_dims(datacubedata):
-    """
-    Get the dimensions of the datacube data.
-
-    Parameters:
-        datacubedata: The datacube data object.
-    """
-    dimensions = sorted(list(datacubedata.coords.keys()))
-    dimensions_names = build_enum_prop_list(dimensions, "DISK_DRIVE")
-    return select_item("Select coordinate") + [None] + dimensions_names
-
-
-def get_var(datacubedata, str_filter=None):
-    """Build enum items for the data variables of a dataset.
-
-    Coordinates are excluded. When the variables carry a ``long_name``
-    attribute it is used as the item description.
-
-    Parameters
-    ----------
-    datacubedata : xarray.Dataset
-        Dataset to list variables from.
-    str_filter : list of str, optional
-        Substrings used to keep only matching variable names, by default
-        ``None`` (no filtering).
-
-    Returns
-    -------
-    list of tuple
-        A header item, a separator (``None``) and one item per variable.
-    """
-    dimensions = sorted(list(datacubedata.coords.keys()))
-    variables = sorted(list(datacubedata.variables.keys() - dimensions))
-
-    if str_filter is not None:
-        variables = filter_2_string_lists(variables, str_filter)
-
-    if "long_name" in datacubedata[variables[0]].attrs:
-        long_name_list = [
-            (
-                datacubedata[var].attrs["long_name"]
-                if "long_name" in datacubedata[var].attrs
-                else ""
-            )
-            for var in variables
-        ]
-        var_names = build_enum_prop_list(variables, "DISK_DRIVE", long_name_list)
-    else:
-        var_names = build_enum_prop_list(variables, "DISK_DRIVE")
-    return select_item() + [None] + var_names
-
-
-def build_enum_prop_list(list, icon="NONE", long_name_list=None, start=1):
-    """Build ``EnumProperty`` item tuples from a list of names.
-
-    Parameters
-    ----------
-    list : list of str
-        Identifiers, also used as display names.
-    icon : str, optional
-        Icon identifier for every item, by default ``"NONE"``.
-    long_name_list : list of str, optional
-        Descriptions, one per item. When omitted the name is reused.
-    start : int, optional
-        Number assigned to the first item, by default 1.
-
-    Returns
-    -------
-    list of tuple
-        ``(identifier, name, description, icon, number)`` tuples.
-    """
-    if long_name_list:
-        list = [
-            (str(list[ii]), str(list[ii]), long_name_list[ii], icon, ii + start)
-            for ii in range(len(list))
-        ]
-    else:
-        list = [
-            (str(list[ii]), str(list[ii]), str(list[ii]), icon, ii + start)
-            for ii in range(len(list))
-        ]
-    return list
-
-
-def filter_2_string_lists(list, str_filter):
-    """Keep the items that contain any of the filter substrings.
-
-    Parameters
-    ----------
-    list : list of str
-        Candidate strings.
-    str_filter : list of str
-        Lower-case substrings to look for.
-
-    Returns
-    -------
-    list of str
-        Matching items, in filter order; an item may appear more than once.
-    """
-    tmp_list = []
-    for strfit in str_filter:
-        for item in list:
-            if strfit in item.lower() and "" in item.lower().split(strfit):
-                tmp_list.append(item)
-    return tmp_list
-
-
-def select_item(text="Select variable"):
-    """Return the placeholder enum item shown before a selection is made."""
-    return [("No var", text, "Empty", "NODE_SEL", 0)]
-
-
-def empty_item(text="No variable"):
-    """Return the enum item shown when nothing can be selected."""
-    return [("No var", text, "Empty", "CANCEL", 0)]
-
-
-def find_coord_matches(length, dims):
-    """Find the coordinate combinations whose total size equals ``length``.
-
-    Parameters
-    ----------
-    length : int
-        Target size, typically the vertex count of a mesh.
-    dims : dict
-        Mapping of coordinate name to its shape (tuple) or size (int).
-
-    Returns
-    -------
-    numpy.ndarray
-        Squeezed array of matching name combinations.
-    """
-    sizes = {
-        name: prod(shape) if isinstance(shape, tuple) else shape
-        for name, shape in dims.items()
-    }
-
-    matches = []
-
-    for r in range(1, len(sizes) + 1):
-        for combo in combinations(sizes, r):
-            if prod(sizes[name] for name in combo) == length:
-                matches.append(combo)
-
-    return np.squeeze(matches)
-
-
-def _record_stride(datastruct, dims, step):
-    """Append one wildcard stride record per dimension to ``slicing``."""
-    for dim in dims:
-        datastruct.slicing += encode_slicing_record(
-            SLICING_ANY_VARIABLE, dim, slice(0, None, step)
-        )
-
-
-# Names that mark a horizontal dimension. ``lon``/``lat`` anywhere in the
-# name; ``x``/``y`` only as a token, optionally with one trailing letter so
-# that ``xc``, ``xu``, ``xi_rho`` and ``y_rho`` match but ``index`` does not.
-SURFACE_DIM_PATTERNS = (
-    re.compile(r"lon"),
-    re.compile(r"lat"),
-    re.compile(r"(^|[^a-z])x[a-z]?([^a-z]|$)"),
-    re.compile(r"(^|[^a-z])y[a-z]?([^a-z]|$)"),
-)
-
-
-def is_surface_name(name):
-    """Return ``True`` when ``name`` looks like a horizontal dimension."""
-    lowered = name.lower()
-    return any(pattern.search(lowered) for pattern in SURFACE_DIM_PATTERNS)
-
-
-def get_surface_dims(dataset):
-    """Dimensions that span the horizontal surface of a dataset.
-
-    A dimension qualifies when its name matches ``SURFACE_DIM_PATTERNS`` or
-    when any 2-D coordinate is defined over it.
-
-    Parameters
-    ----------
-    dataset : xarray.Dataset
-        Dataset to inspect.
-
-    Returns
-    -------
-    list of str
-        Surface dimension names in dataset order.
-    """
-    surface = {dim for dim in dataset.dims if is_surface_name(dim)}
-    for coord in dataset.coords.values():
-        if coord.ndim == 2:
-            surface.update(coord.dims)
-    order = list(dataset.dims)
-    return sorted(surface, key=order.index)

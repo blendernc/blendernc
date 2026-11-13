@@ -9,7 +9,6 @@ from .utils import (
     create_datastruct,
     extract_dimensions_of_grid,
     get_2D_coords,
-    get_coords_from_datastruct,
     get_datacube_path,
     get_grid_coords,
     look_up_object_and_mesh,
@@ -129,10 +128,6 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         object_blendernc = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = obj
         bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-        datastruct = grid_node.BNC_datastructs[0]
-
-        grid_coords = get_coords_from_datastruct(datastruct, grid_coords)
 
         grid_coords = get_2D_coords(grid_coords)
 
