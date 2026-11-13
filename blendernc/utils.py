@@ -468,17 +468,11 @@ def update_variable_UI(self, context):
 
 
 def _bake_ui_grid(node_tree, grid_node):
-    """Bake the panel's grid when it has coordinates, then expose the object.
-
-    The operator only applies the modifiers; the node's ``update`` is what
-    creates the ``Object`` output socket afterwards.
-    """
-    if not any(socket.is_linked for socket in grid_node.inputs):
-        return
-    bpy.ops.blendernc.create_grid_from_coords(
-        node_name=grid_node.name, node_tree=node_tree.name
-    )
-    grid_node.update()
+    """Bake the panel's grid when it has coordinates linked."""
+    if any(socket.is_linked for socket in grid_node.inputs):
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid_node.name, node_tree=node_tree.name
+        )
 
 
 def update_coords_links_UI(self, context):
@@ -510,11 +504,11 @@ def update_coords_links_UI(self, context):
 
 
 def update_step_UI(self, context):
-    """Push the step typed in the panel to the resolution node and rebake.
+    """Push the step typed in the panel to the resolution node.
 
     Typing a step is a manual choice, so the node's ``suggested_step`` is
-    switched off before the value is pushed; each assignment runs the node's
-    update once.
+    switched off before the value is pushed. The new slicing travels down the
+    tree and a grid that was already baked rebakes itself.
     """
     node_tree = bpy.data.node_groups.get(UI_NODE_TREE)
     step_node = node_tree.nodes.get(UI_STEP_NODE) if node_tree else None
@@ -522,9 +516,6 @@ def update_step_UI(self, context):
         return
     step_node.suggested_step = False
     step_node.step = self.step
-    grid_node = node_tree.nodes.get(UI_GRID_NODE)
-    if grid_node is not None:
-        _bake_ui_grid(node_tree, grid_node)
 
 
 # --------------------------------------------------------------------------

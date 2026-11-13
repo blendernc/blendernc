@@ -97,6 +97,8 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         to the target object, the 2-D coordinate arrays are written to a
         ``Coordinates`` vector attribute, and a second geometry node modifier
         moves the vertices to those positions before removing the attribute.
+        Finally the grid node is updated so its ``Object`` output exists and
+        downstream texture nodes are rewritten for the new mesh.
 
         Parameters
         ----------
@@ -174,6 +176,12 @@ class Import_OT_CreateGrid(bpy.types.Operator):
             2
         ].default_value = "Coordinates"
         bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        # Remember what was baked so the node can tell when it is stale, then
+        # let it expose the object and refresh the nodes reading from it.
+        grid_node.baked_object = grid_obj_name
+        grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
+        grid_node.update()
 
         return {"FINISHED"}
 

@@ -65,10 +65,9 @@ def build_node_tree(args):
     tree.links.new(coords.outputs[args.x], grid.inputs["X"])
     tree.links.new(coords.outputs[args.y], grid.inputs["Y"])
 
-    # Bake the mesh, then let the grid node expose the object it created.
+    # Bake the mesh; the operator also exposes it on the node's Object output.
     grid.grid_obj_name = "Grid"
     bpy.ops.blendernc.create_grid_from_coords(node_name=grid.name, node_tree=tree.name)
-    grid.update()
 
     tree.links.new(grid.outputs["Object"], animate.inputs["Object"])
     tree.links.new(variable.outputs[args.variable], animate.inputs["Variable"])

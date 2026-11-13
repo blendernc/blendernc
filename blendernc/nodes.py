@@ -188,6 +188,9 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     """Node that bakes a mesh from coordinates linked to its X, Y and Z inputs.
 
     The resulting object is exposed through an ``"Object"`` output socket.
+    Once baked, the grid follows the tree: when the slicing in force differs
+    from the one used for the last bake (a resolution or subsample node
+    changed), ``update`` bakes again so the mesh keeps one vertex per sample.
     """
 
     bl_idname = "BlenderNCNodeGrid"  # Unique identifier for the node
@@ -196,6 +199,12 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
 
     grid_obj_name: bpy.props.StringProperty(
         default="Grid",
+    )
+    baked_object: bpy.props.StringProperty(
+        description="Object this node baked last; only that object is rebaked",
+    )
+    baked_slicing: bpy.props.StringProperty(
+        description="Slicing records in force when the grid was last baked",
     )
 
     @initialize_BNC_datastructs
@@ -214,17 +223,33 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
         op.node_name = self.name
         op.node_tree = self.id_data.name
 
+    def is_stale(self):
+        """True when the object this node baked no longer matches the slicing."""
+        baked = bpy.data.objects.get(self.baked_object) if self.baked_object else None
+        slicing = self.BNC_datastructs[0].slicing
+        return baked is not None and slicing != self.baked_slicing
+
     @is_single_input_linked
     @has_datastructs
     def update(self):
-        """Expose the baked object on the ``"Object"`` output once it exists."""
-        if self.grid_obj_name in bpy.data.objects:
-            if "Object" not in [socket.name for socket in self.outputs]:
-                object_socket = self.outputs.new("NodeSocketObject", "Object")
-                object_socket.default_value = bpy.data.objects[self.grid_obj_name]
-            else:
-                object_socket = self.outputs.get("Object")
-                object_socket.default_value = bpy.data.objects[self.grid_obj_name]
+        """Expose the baked object, rebaking first when the slicing changed."""
+        if self.is_stale():
+            # The operator records the new slicing and calls update() again.
+            try:
+                bpy.ops.blendernc.create_grid_from_coords(
+                    node_name=self.name, node_tree=self.id_data.name
+                )
+            except RuntimeError:
+                pass  # already reported and logged by the operator
+            return
+        obj = bpy.data.objects.get(self.grid_obj_name)
+        if obj is None:
+            return
+        socket = self.outputs.get("Object") or self.outputs.new(
+            "NodeSocketObject", "Object"
+        )
+        socket.default_value = obj
+        self.refresh_downstream()
 
 
 class DatacubeSlice(bpy.types.Node, bNCNodeDefault):

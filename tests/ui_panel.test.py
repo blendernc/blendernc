@@ -87,6 +87,20 @@ class TestUIPanel(unittest.TestCase):
         expected = len(range(0, NX, 3)) * len(range(0, NY, 3))
         self.assertEqual(len(obj.data.vertices), expected)
 
+    def test_5_texture_follows_step_change(self):
+        """With a texture linked, a new step rebakes the grid and rewrites it."""
+        self.props.variable = VARIABLE
+        texture = self.node("Datacube Texture")
+        self.assertEqual(texture.message, "")
+
+        self.props.step = 2
+        obj = bpy.data.objects["Grid"]
+        expected = len(range(0, NX, 2)) * len(range(0, NY, 2))
+        self.assertEqual(len(obj.data.vertices), expected)
+        self.assertEqual(texture.message, "")
+        self.assertIn(VARIABLE, obj.data.attributes)
+        self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestUIPanel)
 test = unittest.TextTestRunner(verbosity=2).run(suite)

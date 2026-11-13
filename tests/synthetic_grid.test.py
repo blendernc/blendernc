@@ -29,7 +29,7 @@ import xarray as xr
 
 from blendernc.handlers import bNC_update_attributes
 from blendernc.node_utils import create_blenderncnodetree
-from blendernc.utils import get_dataset, get_surface_dims
+from blendernc.utils import MAX_VERTEX_SAMPLES, get_dataset, get_surface_dims
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
@@ -337,12 +337,50 @@ class TestSyntheticGrids(unittest.TestCase):
                 )
                 self.assert_frame_attribute(obj, expected, frame)
 
+    def test_resolution_change_rebakes_grid_and_texture(self):
+        """Changing the step on the node rebakes the grid and the texture."""
+        tree = self.tree
+        import_node = tree.nodes.new("BlenderNCNodeImport")
+        resolution = tree.nodes.new("BlenderNCNodeResolution")
+        coords = tree.nodes.new("BlenderNCNodeCoords")
+        variable = tree.nodes.new("BlenderNCNodeVariable")
+        grid = tree.nodes.new("BlenderNCNodeGrid")
+        texture = tree.nodes.new("BlenderNCNodeTexture")
+
+        resolution.suggested_step = False
+        resolution.step = 1  # full resolution for the first bake
+        import_node.datacube_file = self.files["xy"]
+        datacube = "xarray datacube"
+        tree.links.new(import_node.outputs[datacube], resolution.inputs[datacube])
+        tree.links.new(resolution.outputs[datacube], coords.inputs[datacube])
+        tree.links.new(resolution.outputs[datacube], variable.inputs[datacube])
+        variable.datacube_vars = VARIABLE
+        x_name, y_name = horizontal_axes(self.datasets["xy"])
+        tree.links.new(coords.outputs[x_name], grid.inputs["X"])
+        tree.links.new(coords.outputs[y_name], grid.inputs["Y"])
+        grid.grid_obj_name = self.grid_name
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid.name, node_tree=tree.name
+        )
+        obj = bpy.data.objects[self.grid_name]
+        tree.links.new(grid.outputs["Object"], texture.inputs["Object"])
+        tree.links.new(variable.outputs[VARIABLE], texture.inputs["Variable"])
+        self.assertEqual(len(obj.data.vertices), NX * NY)
+        self.assertEqual(texture.message, "")
+
+        resolution.step = 2
+        expected = len(range(0, NX, 2)) * len(range(0, NY, 2))
+        self.assertEqual(len(obj.data.vertices), expected)
+        self.assertEqual(texture.message, "")
+        self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
     def test_resolution_suggested_step(self):
-        """The resolution node picks ceil(max_size / 1000) once, not twice."""
+        """The node picks ceil(smallest surface size / budget) once, not twice."""
+        ny, nx = MAX_VERTEX_SAMPLES + 1, 2 * MAX_VERTEX_SAMPLES
         path = f"{self.tmpdir}/wide.nc"
         wide = xr.Dataset(
-            {VARIABLE: (("Y", "X"), np.zeros((4, 2500)))},
-            coords={"X": np.arange(2500.0), "Y": np.arange(4.0)},
+            {VARIABLE: (("Y", "X"), np.zeros((ny, nx), dtype=np.int8))},
+            coords={"X": np.arange(float(nx)), "Y": np.arange(float(ny))},
         )
         wide.to_netcdf(path)
         tree = self.tree
@@ -355,9 +393,9 @@ class TestSyntheticGrids(unittest.TestCase):
         tree.links.new(resolution.outputs[datacube], coords.inputs[datacube])
 
         self.assertTrue(resolution.suggested_step)
-        self.assertEqual(resolution.step, 3)
+        self.assertEqual(resolution.step, 2)  # ceil((budget + 1) / budget)
         records = [r for r in resolution.BNC_datastructs[0].slicing.split(",") if r]
-        self.assertEqual(sorted(records), ["*|X|0::3", "*|Y|0::3"])
+        self.assertEqual(sorted(records), ["*|X|0::2", "*|Y|0::2"])
         downstream = coords.BNC_datastructs[0].slicing
         self.assertEqual(downstream, "".join(f"{r}," for r in records))
 

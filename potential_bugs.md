@@ -62,8 +62,8 @@ entries were fixed on 2026-11-13; they are listed at the end.
   unconditionally; the "No var" policy moved to `update_coords_links_UI`.
   Deselecting the variable therefore unlinks both texture inputs, and the
   texture node removes its attribute.
-- **`utils.suggested_stride`** returns `max(1, ceil(max(sizes) / 1000))`,
-  with the budget named `MAX_SURFACE_SAMPLES`.
+- **`utils.suggested_stride`** returns `max(1, ceil(min(sizes) /
+  MAX_VERTEX_SAMPLES))`: no more zero, no more jumps of ten.
 - **`DatacubeResolution`**: the `step` property's callback is a no-op while
   `suggested_step` is on, so `update()` can assign the suggestion without
   re-entering itself; sizes come from `dataset.sizes`; the misleading log
@@ -99,3 +99,10 @@ entries were fixed on 2026-11-13; they are listed at the end.
   `{"CANCELLED"}`; `messages.report_error` is the shared helper. The import operator
   also reports when the dataset could not be opened and no longer touches
   `context.area` when it is `None`.
+- **Grid did not follow resolution changes** (reported 2026-11-13): the
+  grid node now remembers `baked_object` and `baked_slicing`; when the
+  slicing in force differs, `update()` rebakes through the operator, which
+  in turn calls `update()` so the `Object` socket exists and the texture
+  nodes linked to it are rewritten. Covered by the panel test
+  `test_5_texture_follows_step_change` and the node-tree test
+  `test_resolution_change_rebakes_grid_and_texture`.

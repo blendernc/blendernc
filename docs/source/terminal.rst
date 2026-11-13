@@ -175,9 +175,10 @@ Three details matter when scripting:
 
 - **Set the path before linking.** Assigning ``datacube_file`` loads the
   dataset. Links created afterwards propagate it to the connected nodes.
-- **Bake, then update the grid node.** The create-grid operator builds the
-  mesh, but the ``Object`` output socket is only created by the node's
-  ``update()``, so call it once after the operator.
+- **Bake once; the grid then follows the tree.** The create-grid operator
+  builds the mesh and exposes it on the ``Object`` output. Changing the
+  resolution or subsample step afterwards rebakes the grid automatically and
+  rewrites the textures linked to it.
 - **Nothing is written to the mesh until a frame changes.** The animate node
   works through a ``frame_change_pre`` handler. Call
   ``scene.frame_set(index)`` for a still, or render an animation and every
