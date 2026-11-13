@@ -185,7 +185,7 @@ class TestSyntheticGrids(unittest.TestCase):
         z_source = variable.outputs[var_name]
 
         if select_level:
-            select = tree.nodes.new("BlenderNCNodeSelect")
+            select = self.select_node = tree.nodes.new("BlenderNCNodeSelect")
             tree.links.new(z_source, select.inputs["Variable"])
             select.datacube_coords = vertical_axis(dataset)
             z_source = select.outputs["Variable"]
@@ -328,10 +328,43 @@ class TestSyntheticGrids(unittest.TestCase):
         np.testing.assert_allclose(vertex_positions(obj)[:, 2], 0.0)
 
         t_name, z_name = time_axis(dataset), vertical_axis(dataset)
-        level = 0  # DatacubeSelect currently records index 0
-        for frame in (0, NT - 1):
-            expected = dataset[var_name].isel({t_name: frame, z_name: level}).values
-            self.assert_frame_attribute(obj, expected, frame)
+        for level in (0, NZ - 1, NZ + 5):  # the last one is clamped to NZ - 1
+            self.select_node.index = level
+            clamped = min(level, NZ - 1)
+            for frame in (0, NT - 1):
+                expected = (
+                    dataset[var_name].isel({t_name: frame, z_name: clamped}).values
+                )
+                self.assert_frame_attribute(obj, expected, frame)
+
+    def test_resolution_suggested_step(self):
+        """The resolution node picks ceil(max_size / 1000) once, not twice."""
+        path = f"{self.tmpdir}/wide.nc"
+        wide = xr.Dataset(
+            {VARIABLE: (("Y", "X"), np.zeros((4, 2500)))},
+            coords={"X": np.arange(2500.0), "Y": np.arange(4.0)},
+        )
+        wide.to_netcdf(path)
+        tree = self.tree
+        import_node = tree.nodes.new("BlenderNCNodeImport")
+        resolution = tree.nodes.new("BlenderNCNodeResolution")
+        coords = tree.nodes.new("BlenderNCNodeCoords")
+        import_node.datacube_file = path
+        datacube = "xarray datacube"
+        tree.links.new(import_node.outputs[datacube], resolution.inputs[datacube])
+        tree.links.new(resolution.outputs[datacube], coords.inputs[datacube])
+
+        self.assertTrue(resolution.suggested_step)
+        self.assertEqual(resolution.step, 3)
+        records = [r for r in resolution.BNC_datastructs[0].slicing.split(",") if r]
+        self.assertEqual(sorted(records), ["*|X|0::3", "*|Y|0::3"])
+        downstream = coords.BNC_datastructs[0].slicing
+        self.assertEqual(downstream, "".join(f"{r}," for r in records))
+
+        resolution.suggested_step = False
+        resolution.step = 5
+        records = [r for r in resolution.BNC_datastructs[0].slicing.split(",") if r]
+        self.assertEqual(sorted(records), ["*|X|0::5", "*|Y|0::5"])
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestSyntheticGrids)

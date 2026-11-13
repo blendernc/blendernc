@@ -6,6 +6,7 @@ from .utils import (
     field_to_point_values,
     find_coord_matches,
     get_data_from_datastruct,
+    get_dataset,
     write_point_attribute,
 )
 
@@ -24,16 +25,18 @@ def bNC_update_attributes(scene):
     scene : bpy.types.Scene
         Scene whose ``frame_current`` selects the slice.
     """
-    anim_text_nodes = get_all_nodes_by_idname("BlenderNCNodeAnimateTexture")
-    if not anim_text_nodes:
-        return
-
-    for node in anim_text_nodes:
-        variable = node.inputs.get("Variable").default_value
-        obj = node.inputs.get("Object").default_value
-        mesh = obj.data
-
+    for node in get_all_nodes_by_idname("BlenderNCNodeAnimateTexture"):
+        variable = node.inputs["Variable"].default_value
+        obj = node.inputs["Object"].default_value
         datastruct = node.BNC_datastructs[0]
+        dataset = get_dataset(datastruct)
+
+        # A half-connected node must not break playback for the whole scene.
+        if obj is None or obj.type != "MESH" or dataset is None:
+            continue
+        if not variable or variable not in dataset:
+            continue
+        mesh = obj.data
 
         data = get_data_from_datastruct(datastruct, variable)
         # Only dimensions count: selected levels survive as scalar coordinates

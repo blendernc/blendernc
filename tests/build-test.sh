@@ -56,7 +56,7 @@ python -m coverage report
 
 mv ".coverage" ".coverage_${blender_version}"
 
-if [[ "$test_exit" -ne 0 ]] && [[ "$test_nolib_exit" -ne 0 ]] ; then
+if [[ "$test_exit" -ne 0 ]] || [[ "$test_nolib_exit" -ne 0 ]] ; then
   echo "Tests failed!"
   exit 1
 fi

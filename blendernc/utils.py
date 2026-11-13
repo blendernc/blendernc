@@ -3,7 +3,7 @@ import logging
 import os.path
 import re
 from itertools import combinations
-from math import prod
+from math import ceil, prod
 
 import bpy
 import numpy as np
@@ -11,7 +11,7 @@ import xarray as xr
 
 from .decorators import check_if_node_tree_exists, file_exists
 from .node_utils import create_blenderncnodetree, create_link, delete_link
-from .panels_draw import draw_resolution_grid_and_texture
+from .panels_draw import draw_resolution_grid_and_texture, show_section
 
 logger = logging.getLogger(__name__)
 
@@ -417,28 +417,39 @@ def update_variable_UI(self, context):
     context : bpy.types.Context
         Current Blender context.
     """
-    node_tree = create_blenderncnodetree(UI_NODE_TREE)
-    var_node = _get_ui_node(UI_VARIABLE_NODE)
-    texture_node = node_tree.nodes.get(UI_TEXTURE_NODE)
+    node_tree = bpy.data.node_groups.get(UI_NODE_TREE)
+    var_node = node_tree.nodes.get(UI_VARIABLE_NODE) if node_tree else None
+    if var_node is None:
+        return
+    var_node.datacube_vars = self.variable
+    selected = var_node.datacube_vars  # the node may have rejected the value
+    show_section(draw_resolution_grid_and_texture, selected != NO_SELECTION)
+
     grid_node = node_tree.nodes.get(UI_GRID_NODE)
+    texture_node = node_tree.nodes.get(UI_TEXTURE_NODE)
+    if grid_node is None or texture_node is None:
+        return
+    if selected == NO_SELECTION:
+        delete_link(node_tree, var_node, texture_node, "Variable")
+        delete_link(node_tree, grid_node, texture_node, "Object")
+        return
+    _bake_ui_grid(node_tree, grid_node)
+    create_link(node_tree, grid_node, texture_node, "Object", "Object")
+    create_link(node_tree, var_node, texture_node, selected, "Variable")
 
-    if var_node:
-        var_node.datacube_vars = context.scene.BlenderNC_UI_Properties.variable
-        selected = var_node.datacube_vars
-        if selected != NO_SELECTION:
-            # Remove the draw function to refresh the UI before re-adding it
-            bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
-            bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_resolution_grid_and_texture)
-            action = create_link
-            bpy.ops.blendernc.create_grid_from_coords(
-                node_name=UI_GRID_NODE, node_tree=UI_NODE_TREE
-            )
-        else:
-            bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_resolution_grid_and_texture)
-            action = delete_link
 
-    action(node_tree, var_node, texture_node, selected, "Variable")
-    action(node_tree, grid_node, texture_node, "Object", "Object")
+def _bake_ui_grid(node_tree, grid_node):
+    """Bake the panel's grid when it has coordinates, then expose the object.
+
+    The operator only applies the modifiers; the node's ``update`` is what
+    creates the ``Object`` output socket afterwards.
+    """
+    if not any(socket.is_linked for socket in grid_node.inputs):
+        return
+    bpy.ops.blendernc.create_grid_from_coords(
+        node_name=grid_node.name, node_tree=node_tree.name
+    )
+    grid_node.update()
 
 
 def update_coords_links_UI(self, context):
@@ -463,21 +474,28 @@ def update_coords_links_UI(self, context):
 
     for axis in ("X", "Y", "Z"):
         selected = getattr(self, axis)
-        action = delete_link if selected == NO_SELECTION else create_link
-        action(node_tree, coord_node, grid_node, selected, axis)
+        if selected == NO_SELECTION:
+            delete_link(node_tree, coord_node, grid_node, axis)
+        else:
+            create_link(node_tree, coord_node, grid_node, selected, axis)
 
 
 def update_step_UI(self, context):
-    """Update the grid node when the step property changes."""
-    node_tree = create_blenderncnodetree(UI_NODE_TREE)
-    step_node = node_tree.nodes.get(UI_STEP_NODE)
-    if self.step != step_node.step and step_node.suggested_step:
-        self.step = step_node.step
-    else:
-        step_node.step = self.step
-        bpy.ops.blendernc.create_grid_from_coords(
-            node_name=UI_GRID_NODE, node_tree=UI_NODE_TREE
-        )
+    """Push the step typed in the panel to the resolution node and rebake.
+
+    Typing a step is a manual choice, so the node's ``suggested_step`` is
+    switched off before the value is pushed; each assignment runs the node's
+    update once.
+    """
+    node_tree = bpy.data.node_groups.get(UI_NODE_TREE)
+    step_node = node_tree.nodes.get(UI_STEP_NODE) if node_tree else None
+    if step_node is None or step_node.step == self.step:
+        return
+    step_node.suggested_step = False
+    step_node.step = self.step
+    grid_node = node_tree.nodes.get(UI_GRID_NODE)
+    if grid_node is not None:
+        _bake_ui_grid(node_tree, grid_node)
 
 
 # --------------------------------------------------------------------------
@@ -485,15 +503,26 @@ def update_step_UI(self, context):
 # --------------------------------------------------------------------------
 
 
+# Largest number of samples a surface dimension keeps with the suggested stride.
+MAX_SURFACE_SAMPLES = 1000
+
+
 def suggested_stride(sizes):
-    """Suggest a stride based on the sizes of the surface dimensions."""
-    stride = 1
+    """Smallest stride keeping every surface dimension within the sample budget.
+
+    Parameters
+    ----------
+    sizes : list of int
+        Sizes of the surface dimensions.
+
+    Returns
+    -------
+    int
+        ``ceil(max(sizes) / MAX_SURFACE_SAMPLES)``, at least 1.
+    """
     if not sizes:
-        return stride
-    min_size = min(sizes)
-    while min_size // stride > 1000:
-        stride += 10
-    return stride - 1
+        return 1
+    return max(1, ceil(max(sizes) / MAX_SURFACE_SAMPLES))
 
 
 def encode_slicing_record(var_name, coord, selector):
@@ -1063,6 +1092,36 @@ def delete_point_attribute(mesh, name):
         mesh.attributes.remove(mesh.attributes[name])
         return True
     return False
+
+
+def texture_field(datastruct, obj, variable):
+    """Return the 2-D field to write onto ``obj``, or why there is none.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item of the texture node.
+    obj : bpy.types.Object
+        Object linked to the node.
+    variable : str
+        Variable linked to the node.
+
+    Returns
+    -------
+    tuple
+        ``(data, "")`` when ``variable`` is a 2-D field with one value per
+        vertex of ``obj``, otherwise ``(None, message)`` with the message
+        from :func:`texture_field_error` or a shorter one for a non-mesh
+        object or an unknown variable.
+    """
+    if obj.type != "MESH":
+        return None, f"{obj.name} is not a mesh.\nLink a baked Datacube Grid."
+    dataset = get_dataset(datastruct)
+    if dataset is None or variable not in dataset:
+        return None, f"{variable} is not in the datacube."
+    data = get_data_from_datastruct(datastruct, variable)
+    error = texture_field_error(data, obj.data)
+    return (None, error) if error else (data, "")
 
 
 def texture_field_error(data, mesh):

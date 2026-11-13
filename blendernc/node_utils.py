@@ -185,7 +185,7 @@ def create_links(node_tree, nodes):
 
 
 def create_link(node_tree, node_out, node_in, output_name, input_name):
-    """Link two sockets by name unless that link already exists.
+    """Link two sockets by name unless that link exists or a socket is missing.
 
     Parameters
     ----------
@@ -200,14 +200,12 @@ def create_link(node_tree, node_out, node_in, output_name, input_name):
     input_name : str
         Name of the input socket on ``node_in``.
     """
-    link_exists = does_link_exists(
-        node_tree, node_out, node_in, output_name, input_name
-    )
-    if not link_exists:
-        node_tree.links.new(
-            node_out.outputs.get(output_name),
-            node_in.inputs.get(input_name),
-        )
+    out_socket = node_out.outputs.get(output_name)
+    in_socket = node_in.inputs.get(input_name)
+    if out_socket is None or in_socket is None:
+        return
+    if not does_link_exists(node_tree, node_out, node_in, output_name, input_name):
+        node_tree.links.new(out_socket, in_socket)
 
 
 def does_link_exists(node_tree, node_out, node_in, output_name, input_name):
@@ -242,11 +240,8 @@ def does_link_exists(node_tree, node_out, node_in, output_name, input_name):
     return False
 
 
-def delete_link(node_tree, node_out, node_in, output_name, input_name):
-    """Remove the link feeding a named input when the output is ``"No var"``.
-
-    Used by the 3D view panel to unlink a coordinate from the grid node when
-    the user picks the "No var" entry.
+def delete_link(node_tree, node_out, node_in, input_name):
+    """Remove the link from ``node_out`` into a named input of ``node_in``.
 
     Parameters
     ----------
@@ -256,15 +251,16 @@ def delete_link(node_tree, node_out, node_in, output_name, input_name):
         Node on the output side of the link.
     node_in : bpy.types.Node
         Node on the input side of the link.
-    output_name : str
-        Selected output name; only ``"No var"`` triggers removal.
     input_name : str
         Name of the input socket on ``node_in`` to disconnect.
     """
-    for link in node_tree.links:
-        if link.from_node == node_out and link.to_node == node_in:
-            if output_name == "No var" and link.to_socket.name == input_name:
-                node_tree.links.remove(link)
+    for link in list(node_tree.links):
+        if (
+            link.from_node == node_out
+            and link.to_node == node_in
+            and link.to_socket.name == input_name
+        ):
+            node_tree.links.remove(link)
 
 
 def disconnect_links(node_tree, node):
@@ -277,6 +273,6 @@ def disconnect_links(node_tree, node):
     node : bpy.types.Node
         Node whose incoming and outgoing links are removed.
     """
-    for link in node_tree.links:
+    for link in list(node_tree.links):
         if link.from_node == node or link.to_node == node:
             node_tree.links.remove(link)

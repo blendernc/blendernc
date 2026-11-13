@@ -15,13 +15,12 @@ from .utils import (
     delete_point_attribute,
     encode_slicing_record,
     field_to_point_values,
-    get_data_from_datastruct,
     get_possible_coordinates,
     get_possible_variables,
     get_surface_dims,
     load_dataset,
     suggested_stride,
-    texture_field_error,
+    texture_field,
     write_point_attribute,
 )
 
@@ -35,6 +34,17 @@ class bNCNodeDefault:
     """
 
     BNC_datastructs: bpy.props.CollectionProperty(type=BNC_data)
+
+    def refresh_downstream(self):
+        """Run ``update`` on every node linked to an output of this node.
+
+        Downstream nodes copy the data item (filename and slicing) from their
+        inputs when they update, so a change here has to be pushed to them
+        instead of waiting for the next link change.
+        """
+        for socket in self.outputs:
+            for link in socket.links:
+                link.to_node.update()
 
 
 # Custom node type
@@ -118,6 +128,7 @@ class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
             if coords not in [socket.name for socket in self.outputs]:
                 socket = self.outputs.new("NodeSocketString", coords)
                 socket.default_value = coords
+        self.refresh_downstream()
 
 
 class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
@@ -163,6 +174,7 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
         ]:
             socket = self.outputs.new("NodeSocketString", self.datacube_vars)
             socket.default_value = self.datacube_vars
+        self.refresh_downstream()
 
 
 class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
@@ -244,7 +256,7 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
     """Node that selects a single index along a coordinate of a variable.
 
     The selection is recorded in the data item's ``slicing`` string as
-    ``"<variable>_<coordinate>_<index>,"`` and applied by
+    ``"*|<coordinate>|<index>,"`` and applied by
     :func:`blendernc.utils.get_data_from_datastruct`.
     """
 
@@ -254,7 +266,14 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
 
     datacube_coords: bpy.props.EnumProperty(
         items=get_possible_coordinates,
-        name="Select Variable",
+        name="Coordinate",
+        update=lambda self, context: self.update(),
+    )
+    index: bpy.props.IntProperty(
+        name="Index",
+        description="Position along the coordinate to keep (clamped to its size)",
+        default=0,
+        min=0,
         update=lambda self, context: self.update(),
     )
 
@@ -267,26 +286,30 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
             socket.hide_value = True
 
     def draw_buttons(self, context, layout):
-        """Draw the coordinate drop-down once a variable is connected."""
+        """Draw the coordinate drop-down and index once a variable is connected."""
         if self.inputs.get("Variable").default_value:
             layout.prop(self, "datacube_coords", text="")
+            layout.prop(self, "index")
 
     @is_single_input_linked
     @has_datastructs
     def update(self):
         """Forward the variable and append the index selection to ``slicing``."""
         if "Variable" not in [socket.name for socket in self.outputs]:
-            socket = self.outputs.new("NodeSocketString", "Variable")
-            socket.default_value = self.inputs[0].default_value
-        value = 0
+            self.outputs.new("NodeSocketString", "Variable")
+        self.outputs["Variable"].default_value = self.inputs[0].default_value
+
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict[datastruct.filename]
-        if self.datacube_coords and self.datacube_coords in dataset.coords.keys():
+        if self.datacube_coords in dataset.coords:
+            last = dataset[self.datacube_coords].shape[0] - 1
             datastruct.slicing += encode_slicing_record(
                 SLICING_ANY_VARIABLE,
                 self.datacube_coords,
-                str(value),
+                min(self.index, last),
             )
+
+        self.refresh_downstream()
 
 
 class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
@@ -361,29 +384,19 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
         for line in lines[1:]:
             layout.label(text=line)
 
-    def _refuse(self, message):
-        """Keep ``message`` for the UI and write it to the log."""
-        self.message = message
-        logger.warning(f"{self.name}: {message.replace(chr(10), ' ')}")
-
     def _delete_written(self):
-        """Remove the attribute this node wrote, if it is still on the object."""
-        if not self.written:
-            return
+        """Remove the attribute this node last wrote, if any."""
         socket = self.inputs.get("Object")
-        obj = socket.default_value if socket is not None else None
-        if obj is not None and obj.data is not None:
-            if delete_point_attribute(obj.data, self.written):
-                logger.info(f"{self.name}: removed {self.written} from {obj.name}")
+        obj = socket.default_value if socket else None
+        if self.written and obj is not None and obj.data is not None:
+            delete_point_attribute(obj.data, self.written)
         self.written = ""
 
     def update(self):
         """Drop the attribute when the variable is unlinked, then write it."""
-        # Blender also calls update() before init() has created the sockets.
-        socket = self.inputs.get("Variable")
+        socket = self.inputs.get("Variable")  # None until init() has run
         if socket is not None and not socket.is_linked:
-            # The socket keeps the last linked name, which would be rewritten.
-            socket.default_value = ""
+            socket.default_value = ""  # else the stale name would be rewritten
             self._delete_written()
             self.message = ""
         self._write_texture()
@@ -391,29 +404,21 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def _write_texture(self):
-        """Write the variable onto the mesh when it is a 2-D field."""
+        """Write the variable onto the object, or show why it cannot be."""
         obj = self.inputs["Object"].default_value
         variable = self.inputs["Variable"].default_value
         if obj is None or not variable:
             self.message = ""
             return
+        if self.written != variable:
+            self._delete_written()  # a new variable replaces the old attribute
 
-        # A different variable replaces the attribute of the previous one.
-        if self.written and self.written != variable:
-            self._delete_written()
-
-        mesh = obj.data
-        datastruct = self.BNC_datastructs[0]
-
-        data = get_data_from_datastruct(datastruct, variable)
-        error = texture_field_error(data, mesh)
-        if error:
-            self._refuse(error)
+        data, self.message = texture_field(self.BNC_datastructs[0], obj, variable)
+        if data is None:
+            logger.warning(f"{self.name}: {self.message.replace(chr(10), ' ')}")
             return
-
-        write_point_attribute(mesh, variable, field_to_point_values(data))
+        write_point_attribute(obj.data, variable, field_to_point_values(data))
         self.written = variable
-        self.message = ""
         logger.info(f"{self.name}: wrote {variable} onto {obj.name}")
 
 
@@ -502,10 +507,7 @@ class DatacubeSubsample(bpy.types.Node, bNCNodeDefault):
                 slice(0, None, self.step),
             )
 
-        # Refresh nodes already connected downstream so they copy the new
-        # slicing string instead of waiting for the next link change.
-        for link in self.outputs["Variable"].links:
-            link.to_node.update()
+        self.refresh_downstream()
 
 
 class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
@@ -521,13 +523,15 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
     bl_label = "Datacube Resolution"
     bl_icon = "EXPERIMENTAL"
 
+    # While the step is suggested, ``update`` assigns it itself; running
+    # ``update`` again from the property callback would recurse.
     step: bpy.props.IntProperty(
         name="Step",
         description="Keep one surface sample every N indices (1 = full)",
         default=2,
         min=1,
         soft_max=20,
-        update=lambda self, context: self.update(),
+        update=lambda self, context: None if self.suggested_step else self.update(),
     )
 
     suggested_step: bpy.props.BoolProperty(
@@ -568,15 +572,13 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         datastruct = self.BNC_datastructs[0]
         dataset = datastruct.dict[datastruct.filename]
         surface_dims = get_surface_dims(dataset)
-        sizes = [get_data_from_datastruct(datastruct, dim).size for dim in surface_dims]
-        stride = suggested_stride(sizes)
-        if self.suggested_step and self.step != stride:
-            self.step = stride
-        else:
-            logger.info(f"Using manually set step: {self.step}")
+        if self.suggested_step:
+            stride = suggested_stride([dataset.sizes[dim] for dim in surface_dims])
+            if self.step != stride:
+                self.step = stride  # the property callback is a no-op here
+                logger.info(f"{self.name}: suggested step {stride}")
 
         if self.step > 1:
             _record_stride(datastruct, surface_dims, self.step)
 
-        for link in self.outputs["xarray datacube"].links:
-            link.to_node.update()
+        self.refresh_downstream()

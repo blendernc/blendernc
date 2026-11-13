@@ -50,7 +50,9 @@ def build_node_tree(args):
     # Setting the path loads the dataset lazily through xarray.
     import_node.datacube_file = args.datacube
 
-    # Stride the horizontal dimensions before any node reads the data.
+    # Stride the horizontal dimensions before any node reads the data. The
+    # node suggests a step by default; a step given on the command line wins.
+    resolution.suggested_step = False
     resolution.step = args.step
     datacube = "xarray datacube"
     tree.links.new(import_node.outputs[datacube], resolution.inputs[datacube])

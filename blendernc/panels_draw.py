@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
+import bpy
 
 from .node_utils import create_blenderncnodetree
+
+
+def show_section(draw_func, show):
+    """Append ``draw_func`` to the BlenderNC panel exactly once, or remove it.
+
+    ``Panel.remove`` ignores functions that are not appended, so removing
+    first keeps a single copy however often this is called. Checking
+    ``Panel.is_extended()`` would not do: it is true as soon as *any* section
+    is appended.
+    """
+    panel = bpy.types.BLENDERNC_UI_PT_3D_VIEW
+    panel.remove(draw_func)
+    if show:
+        panel.append(draw_func)
 
 
 def draw_var_and_coords(self, context):
@@ -65,5 +80,15 @@ def draw_resolution_grid_and_texture(self, context):
     UI_props = scene.BlenderNC_UI_Properties
 
     self.layout.label(text="Resolution and Grid:", icon="MOD_SUBSURF")
-    self.layout.prop(UI_props, "step", text="Steps for coords")
+    node_tree = create_blenderncnodetree("BLENDERNC")
+    step_node = node_tree.nodes.get("Datacube Resolution")
+    if step_node is not None:
+        row = self.layout.row(align=True)
+        row.prop(step_node, "suggested_step", text="Suggest step")
+        if step_node.suggested_step:
+            row.label(text=f"Step {step_node.step}")
+        else:
+            row.prop(UI_props, "step", text="Step")
+    else:
+        self.layout.prop(UI_props, "step", text="Steps for coords")
     self.layout.operator("blendernc.bake_from_attribute", text="Apply Texture")

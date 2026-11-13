@@ -13,9 +13,10 @@ and docs. Line numbers refer to the current tree.
   it as "Apply Texture" (`panels_draw.py:69`). Either wire it to the
   `Datacube Texture` node or hide the button until it works.
 - **The panel bakes on every variable change.** `utils.update_variable_UI`
-  calls `create_grid_from_coords` (`utils.py:433`) although the variable
-  only affects the texture unless it is linked to Z. Bake from the coords
-  and step callbacks only, and let the texture node react to the link.
+  still rebakes the grid when a variable is picked, although the variable
+  only affects the texture unless it is linked to Z. It now skips the bake
+  when no coordinate is linked; baking from the coords and step callbacks
+  only would remove the redundant work.
 - **`DatacubeSlice` is still a placeholder** (`nodes.py:211-240`),
   registered but hidden from the menu.
 - **Texture sub-menu id.** `menus.BlenderNCNodeAnimate` now shows "Texture"
@@ -72,11 +73,6 @@ and docs. Line numbers refer to the current tree.
   into the mapping it is given, which for `basic_nodes` is module state, so
   stale node references survive across trees and reloads. Return a new
   mapping.
-- **`delete_link` encodes caller policy.** The `output_name == "No var"`
-  test (`node_utils.py:266`) belongs in `update_coords_links_UI`;
-  `delete_link` should simply remove the link into a named input. This is
-  also what makes the Object link to the texture node impossible to remove
-  (see `potential_bugs.md`).
 - **`utils.py` mixes pure helpers with `bpy` code.** `name_match`,
   `find_common_name`, the slicing codec, `get_surface_dims`,
   `get_2D_coords` and its handlers, `stack_2D_coords`,
@@ -96,7 +92,8 @@ and docs. Line numbers refer to the current tree.
   `DatacubeImport.update`.
 - **Two step properties.** `BlenderNC_UI_Properties.step`
   (`properties.py:56`) mirrors `DatacubeResolution.step` through
-  `update_step_UI`; the panel could draw the node's property directly.
+  `update_step_UI`. The panel already draws the node's `suggested_step`
+  directly; drawing its `step` the same way would remove the mirror.
 
 ## 4. Dead code and cleanup
 
@@ -149,14 +146,14 @@ and docs. Line numbers refer to the current tree.
   assumption listed in `potential_bugs.md`.
 - No test opens a dataset whose variable dims are `(x, y)` ordered, has
   2-D coordinates, or has more than one import node.
-- The UI panel path (`update_variable_UI`, `update_step_UI`,
-  `_create_UI_nodes`) has no coverage at all, and three of the confirmed
-  bugs live there.
-- `tests/build-test.sh` runs a `test_nolib` pass that matches no files,
-  and its exit logic hides failures (see `potential_bugs.md`).
+- The UI panel path is covered by `tests/ui_panel.test.py` for one 2-D
+  dataset; it does not yet exercise a file change, Z linking or the
+  "Apply Texture" button.
+- `tests/build-test.sh` still runs a `test_nolib` pass that matches no
+  files; drop it or add the tests it was meant to run.
 - Pure helpers could run under `pytest` without Blender once split out of
-  `utils.py` (section 3); `suggested_stride`, the slicing codec and
-  `extract_dimensions_of_grid` are all untested today.
+  `utils.py` (section 3); the slicing codec and
+  `extract_dimensions_of_grid` are still untested.
 - `test_file_missing` only asserts that nothing raises; it should check
   that the data item is cleared and the import node disconnected (the
   TODO in the test says so).
@@ -167,9 +164,7 @@ and docs. Line numbers refer to the current tree.
   `operators`, `panels`, `sockets` and `nodes`, but none for `decorators`,
   `node_utils`, `menus`, `nodetree`, `properties` or `panels_draw`, so
   half of the numpydoc docstrings are not rendered.
-- `docs/source/terminal.rst` documents `BlenderNCNodeTexture` but not
-  `BlenderNCNodeResolution.suggested_step`, and nothing documents the
-  panel's step field.
+- Nothing documents the panel's step field and suggestion toggle.
 - Type hints are absent throughout; adding them to the pure helpers would
   let `autodoc_typehints = "description"` do useful work.
 

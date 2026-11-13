@@ -12,7 +12,7 @@ from .node_utils import (
     disconnect_links,
     locations,
 )
-from .panels_draw import draw_var_and_coords
+from .panels_draw import draw_var_and_coords, show_section
 
 
 def is_linked(update_function):
@@ -20,19 +20,21 @@ def is_linked(update_function):
 
     @wraps(update_function)
     def wrapper(self, context):
-        """Proceed when an input is linked; otherwise clear the node and cancel."""
+        """Proceed when an input is linked; otherwise clear the node and cancel.
+
+        ``self`` is the operator; the node it acts on is looked up by name.
+        """
         node_tree = bpy.data.node_groups.get(self.node_tree)
-        node = node_tree.nodes.get(self.node_name)
-        linked = any(input_socket.is_linked for input_socket in node.inputs)
-        if linked:
-            return update_function(self, context)
-        else:
-            datastruct = self.BNC_datastructs[0]
-            datastruct.filename = ""
-            datastruct.datafile = ""
-            self.outputs.clear()
-            self.report({"WARNING"}, "Node has no linked inputs. Connect to bake grid.")
+        node = node_tree.nodes.get(self.node_name) if node_tree else None
+        if node is None:
+            self.report({"ERROR"}, f"Node {self.node_name!r} not found.")
             return {"CANCELLED"}
+        if any(input_socket.is_linked for input_socket in node.inputs):
+            return update_function(self, context)
+        _clear_datastruct(node.BNC_datastructs[0])
+        node.outputs.clear()
+        self.report({"WARNING"}, "Node has no linked inputs. Connect to bake grid.")
+        return {"CANCELLED"}
 
     return wrapper
 
@@ -228,14 +230,11 @@ def _create_UI_nodes(self, context):
     import_node = node_tree.nodes.get("Datacube Import")
     if not datacube_file or not glob.glob(datacube_file):
         disconnect_links(node_tree, import_node)
-        bpy.types.BLENDERNC_UI_PT_3D_VIEW.remove(draw_var_and_coords)
+        show_section(draw_var_and_coords, False)
         return import_node
     import_node.datacube_file = datacube_file
     create_links(node_tree, basic_nodes)
-
-    if not bpy.types.BLENDERNC_UI_PT_3D_VIEW.is_extended():
-        bpy.types.BLENDERNC_UI_PT_3D_VIEW.append(draw_var_and_coords)
-
+    show_section(draw_var_and_coords, True)
     return import_node
 
 
@@ -276,9 +275,7 @@ def has_datastructs(update_function):
 
         if hasattr(datastruct, "dict") and datastruct.filename:
             return update_function(self, *args, **kwargs)
-        else:
-            for output in self.outputs:
-                self.outputs.remove(output)
+        self.outputs.clear()
 
     return wrapper
 

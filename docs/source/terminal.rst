@@ -135,8 +135,10 @@ Each node in the editor is a Blender node type that you create with
      - ``datacube_file`` (path or glob pattern). Output ``xarray datacube``.
    * - Datacube Resolution
      - ``BlenderNCNodeResolution``
-     - ``step`` strides every horizontal dimension. In and out
-       ``xarray datacube``.
+     - ``step`` strides every horizontal dimension. While ``suggested_step``
+       is on (the default) the node picks the smallest step that keeps each
+       dimension within 1000 samples; set it to ``False`` before assigning
+       ``step``. In and out ``xarray datacube``.
    * - Datacube Subsample
      - ``BlenderNCNodeSubsample``
      - ``datacube_coords`` and ``step`` stride one coordinate. In and out
@@ -150,8 +152,9 @@ Each node in the editor is a Blender node type that you create with
        appears.
    * - Datacube Select
      - ``BlenderNCNodeSelect``
-     - ``datacube_coords`` picks the coordinate along which an index is
-       selected. In and out ``Variable``.
+     - ``datacube_coords`` picks the coordinate and ``index`` the position
+       kept along it (clamped to the coordinate size). In and out
+       ``Variable``.
    * - Datacube Grid
      - ``BlenderNCNodeGrid``
      - Inputs ``X``, ``Y``, ``Z`` take coordinate outputs; ``grid_obj_name``
