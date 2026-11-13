@@ -11,16 +11,12 @@ Grouped by priority; line numbers refer to the current `Blender5.2` branch.
   `TypeError: unhashable type: 'list'`. It should be `dims[key[0]][0]`.
   The `len(dims) == 2` branch also takes `[0]` of both shapes, so two 2-D
   coordinates of shape `(ny, nx)` yield `(ny, ny)` instead of `(nx, ny)`.
-- **`handlers.bNC_update_attributes` returns instead of clamping.** When the
-  frame is outside the animated coordinate's range, `frame` is clamped and
-  then the function `return`s, so the clamped value is never used and every
-  remaining Animate Texture node is skipped. Use `continue` or drop the
-  `return`.
-- **`handlers.bNC_update_attributes` has no guards.** `object.data` fails when
-  the Object socket is empty, `add_attribute` returns `None` for non-mesh
-  objects and the next line dereferences it, and
-  `[... if coord not in matched_coords][0]` raises `IndexError` when every
-  coordinate matches the vertex count.
+- **`handlers.bNC_update_attributes` has no guards for empty inputs.**
+  `obj.data` fails when the Object socket is empty and `add_attribute`
+  returns `None` for non-mesh objects, which the next line dereferences.
+  (Fixed on 2026-11-13: the out-of-range frame is now clamped instead of
+  aborting the handler, and a variable with no animated dimension is
+  skipped rather than raising `IndexError`.)
 - **`decorators.has_datastructs` removes outputs while iterating.**
   `for output in self.outputs: self.outputs.remove(output)` skips every
   other socket. `is_linked` already does it right with `self.outputs.clear()`.
@@ -35,20 +31,19 @@ Grouped by priority; line numbers refer to the current `Blender5.2` branch.
 - **`utils.get_var` fails on datasets with no data variables.**
   `datacubedata[variables[0]]` raises `IndexError` when `variables` is empty
   (coordinate-only files, or a `str_filter` that matches nothing).
-- **`utils.find_coord_matches` returns an inconsistent shape.** `np.squeeze`
-  yields a 0-d array, a 1-d array of names or a 2-d array depending on how
-  many combinations match. The handler then uses `in` on it, which behaves
-  differently in each case. Return a plain `list[tuple[str, ...]]`.
+- ~~`utils.find_coord_matches` returns an inconsistent shape.~~ Fixed on
+  2026-11-13: it returns a list of tuples, and the handler matches on
+  `data.dims` so a selected level (scalar coordinate) or a 2-D coordinate
+  can no longer be mistaken for a mesh axis. Covered by
+  `tests/synthetic_grid.test.py`.
 - **Dataset cache is keyed by basename only.** `create_datastruct` and
   `DatacubeImport.update` use `datacube_file.split("/")[-1]` as the key, so
   two files with the same name in different folders collide, and the split
   is not Windows-safe. Use `os.path.basename` and key by the full path.
-- **Vertex ordering on non-square grids is unverified.** `stack_2D_coords`
-  flattens as `(nx, ny, 3)` (y fastest) while `extract_dimensions_of_grid`
-  feeds `Vertices X = nx`, `Vertices Y = ny` to the Mesh Grid node, whose
-  vertices are ordered x fastest. On square grids this is an invisible
-  transpose; on rectangular grids it may scramble positions. A test with a
-  rectangular dataset would settle it.
+- ~~Vertex ordering on non-square grids is unverified.~~ Verified on
+  2026-11-13 by `tests/synthetic_grid.test.py`, which bakes a 12 by 8 grid
+  and asserts that every mesh edge joins horizontally or vertically adjacent
+  points. The ordering is consistent.
 
 ## 2. Robustness
 

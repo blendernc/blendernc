@@ -23,8 +23,6 @@ def bNC_update_attributes(scene):
     if not anim_text_nodes:
         return
 
-    frame = scene.frame_current
-
     for node in anim_text_nodes:
         variable = node.inputs.get("Variable").default_value
         obj = node.inputs.get("Object").default_value
@@ -33,20 +31,19 @@ def bNC_update_attributes(scene):
         datastruct = node.BNC_datastructs[0]
 
         data = get_data_from_datastruct(datastruct, variable)
-        coords = {coord: data[coord].shape for coord in data.coords}
-        matched_coords = find_coord_matches(len(mesh.vertices), coords)
+        # Only dimensions count: selected levels survive as scalar coordinates
+        # and 2-D coordinates span the grid on their own, so neither may be
+        # mistaken for an axis of the mesh.
+        sizes = {dim: data.sizes[dim] for dim in data.dims}
+        matches = find_coord_matches(len(mesh.vertices), sizes)
+        grid_dims = set(matches[0]) if matches else set()
+        animate_dims = [dim for dim in data.dims if dim not in grid_dims]
+        if not animate_dims:
+            continue
 
-        animate_coord = [
-            coord for coord in coords.keys() if coord not in matched_coords
-        ][0]
-
-        len_animate_coord = len(data[animate_coord])
-        if frame >= len_animate_coord:
-            frame = len_animate_coord - 1
-            return
-        elif frame < 0:
-            frame = 0
-            return
+        animate_coord = animate_dims[0]
+        last = data.sizes[animate_coord] - 1
+        frame = min(max(scene.frame_current, 0), last)
 
         var = data.isel({animate_coord: frame}).values.transpose(1, 0).flatten()
 

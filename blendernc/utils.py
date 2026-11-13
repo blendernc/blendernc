@@ -920,33 +920,31 @@ def extract_dimensions_of_grid(grid_coords):
 
 
 def find_coord_matches(length, dims):
-    """Find the coordinate combinations whose total size equals ``length``.
+    """Find the dimension combinations whose total size equals ``length``.
 
     Parameters
     ----------
     length : int
         Target size, typically the vertex count of a mesh.
     dims : dict
-        Mapping of coordinate name to its shape (tuple) or size (int).
+        Mapping of dimension name to its shape (tuple) or size (int).
 
     Returns
     -------
-    numpy.ndarray
-        Squeezed array of matching name combinations.
+    list of tuple of str
+        Matching name combinations, shortest first. Empty when none matches.
     """
     sizes = {
         name: prod(shape) if isinstance(shape, tuple) else shape
         for name, shape in dims.items()
     }
 
-    matches = []
-
-    for r in range(1, len(sizes) + 1):
-        for combo in combinations(sizes, r):
-            if prod(sizes[name] for name in combo) == length:
-                matches.append(combo)
-
-    return np.squeeze(matches)
+    return [
+        combo
+        for r in range(1, len(sizes) + 1)
+        for combo in combinations(sizes, r)
+        if prod(sizes[name] for name in combo) == length
+    ]
 
 
 # --------------------------------------------------------------------------
