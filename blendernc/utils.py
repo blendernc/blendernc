@@ -1435,6 +1435,26 @@ def add_attribute(mesh, attr_name, attr_type="FLOAT", domain="POINT"):
     return attr
 
 
+def grid_material(grid_node):
+    """Material the grid baked by ``grid_node`` should carry, or ``None``.
+
+    Looks for a Datacube Texture node in the same tree whose ``Object`` input
+    is linked from ``grid_node``, and returns the material named after that
+    node's variable, as created by "Apply Texture". ``None`` makes the Set
+    Material node assign no material.
+    """
+    for link in grid_node.id_data.links:
+        texture = link.to_node
+        if link.from_node != grid_node or link.to_socket.name != "Object":
+            continue
+        if texture.bl_idname != "BlenderNCNodeTexture":
+            continue
+        material = bpy.data.materials.get(texture.inputs["Variable"].default_value)
+        if material is not None:
+            return material
+    return None
+
+
 def look_up_object_and_mesh(object_name):
     """Return ``(object, mesh)`` for the grid object, creating what is missing.
 

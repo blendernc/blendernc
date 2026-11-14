@@ -674,6 +674,26 @@ class TestSyntheticGrids(unittest.TestCase):
         finally:
             settings.lock_range = False
 
+    def test_grid_material_follows_linked_texture(self):
+        """Set Material gets the material named after the linked texture's variable."""
+        obj, dataset, var_name = self.build_pipeline("xy", texture=True)
+        grid = next(n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeGrid")
+        set_material = bpy.data.node_groups["apply_grid_coords"].nodes["Set Material"]
+        rebake = {"node_name": grid.name, "node_tree": self.tree.name}
+
+        bpy.ops.blendernc.create_grid_from_coords(**rebake)
+        self.assertIsNone(set_material.inputs["Material"].default_value)
+
+        material = bpy.data.materials.new(var_name)
+        try:
+            bpy.ops.blendernc.create_grid_from_coords(**rebake)
+            self.assertIs(set_material.inputs["Material"].default_value, material)
+            self.assertIn(material, list(obj.data.materials))
+            used = {p.material_index for p in obj.data.polygons}
+            self.assertEqual({obj.data.materials[i] for i in used}, {material})
+        finally:
+            bpy.data.materials.remove(material)
+
     def test_resolution_suggested_step(self):
         """The node picks ceil(smallest surface size / budget) once, not twice."""
         ny, nx = MAX_VERTEX_SAMPLES + 1, 2 * MAX_VERTEX_SAMPLES

@@ -14,6 +14,7 @@ from .utils import (
     get_dataset,
     get_grid_coords,
     grid_dims,
+    grid_material,
     look_up_object_and_mesh,
     stack_2D_coords,
 )
@@ -155,6 +156,9 @@ class Import_OT_CreateGrid(bpy.types.Operator):
                 "links": {"Geometry": {"GeometryNodeRemoveAttribute": "Geometry"}}
             },
             "GeometryNodeRemoveAttribute": {
+                "links": {"Geometry": {"GeometryNodeSetMaterial": "Geometry"}}
+            },
+            "GeometryNodeSetMaterial": {
                 "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
             },
         }
@@ -165,6 +169,8 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         named_attribute.inputs["Name"].default_value = "Coordinates"
         remove_attribute = nodes["GeometryNodeRemoveAttribute"]["node"]
         remove_attribute.inputs["Name"].default_value = "Coordinates"
+        set_material = nodes["GeometryNodeSetMaterial"]["node"]
+        set_material.inputs["Material"].default_value = grid_material(grid_node)
         _apply_modifier(context, obj, modifier)
 
         # Texture nodes read the dims to orient fields the same way.
