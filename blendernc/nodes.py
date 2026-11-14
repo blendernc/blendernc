@@ -1,4 +1,5 @@
 import logging
+import os
 
 import bpy
 
@@ -20,6 +21,8 @@ from .utils import (
     get_possible_coordinates,
     get_possible_variables,
     get_surface_dims,
+    mesh_grid_dims,
+    release_dataset,
     store_dataset,
     suggested_stride,
     texture_field,
@@ -103,9 +106,9 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
             store_dataset(datastruct, self.datacube_file)
 
     def free(self):
-        """Drop the dataset from the cache when the node is deleted."""
+        """Release the dataset unless another import node still uses it."""
         datastruct = self.BNC_datastructs[0]
-        datastruct.dict.pop(datastruct.filename, None)
+        release_dataset(datastruct, datastruct.filename, ignore=self)
         datastruct.filename = ""
         datastruct.datafile = ""
 
@@ -132,7 +135,9 @@ class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
     def update(self):
         """Add one string output socket per dataset coordinate."""
         datastruct = self.BNC_datastructs[0]
-        dataset = datastruct.dict[datastruct.filename]
+        dataset = get_dataset(datastruct)
+        if dataset is None:
+            return
         for coords in dataset.coords:
             if coords not in [socket.name for socket in self.outputs]:
                 socket = self.outputs.new("NodeSocketString", coords)
@@ -172,7 +177,7 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
         if not self.BNC_datastructs[0].filename:
             return "datacube Input"
         else:
-            return self.BNC_datastructs[0].filename
+            return os.path.basename(self.BNC_datastructs[0].filename)
 
     @is_single_input_linked
     @has_datastructs
@@ -334,7 +339,9 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
         self.outputs["Variable"].default_value = self.inputs[0].default_value
 
         datastruct = self.BNC_datastructs[0]
-        dataset = datastruct.dict[datastruct.filename]
+        dataset = get_dataset(datastruct)
+        if dataset is None:
+            return
         if self.datacube_coords in dataset.coords:
             last = dataset[self.datacube_coords].shape[0] - 1
             datastruct.slicing += encode_slicing_record(
@@ -451,7 +458,7 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
         if data is None:
             logger.warning(f"{self.name}: {self.message.replace(chr(10), ' ')}")
             return
-        values = field_to_point_values(data)  # the one dask compute
+        values = field_to_point_values(data, mesh_grid_dims(obj.data))
         write_field_range(obj.data, values)
         write_point_attribute(obj.data, variable, values)
         self.written = variable
@@ -535,7 +542,9 @@ class DatacubeSubsample(bpy.types.Node, bNCNodeDefault):
         self.outputs["Variable"].default_value = self.inputs[0].default_value
 
         datastruct = self.BNC_datastructs[0]
-        dataset = datastruct.dict[datastruct.filename]
+        dataset = get_dataset(datastruct)
+        if dataset is None:
+            return
         if self.step > 1 and self.datacube_coords in dataset.coords:
             datastruct.slicing += encode_slicing_record(
                 SLICING_ANY_VARIABLE,
@@ -602,19 +611,22 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
     @has_datastructs
     def update(self):
         """Forward the variable and record one stride per surface dimension."""
-        if "xarray datacube" not in [socket.name for socket in self.outputs]:
+        if "xarray datacube" not in self.outputs:
             self.outputs.new("bNCdatacubeSocket", "xarray datacube")
 
         datastruct = self.BNC_datastructs[0]
-        dataset = datastruct.dict[datastruct.filename]
+        dataset = get_dataset(datastruct)
+        if dataset is None:
+            return
         surface_dims = get_surface_dims(dataset)
         if self.suggested_step:
-            stride = suggested_stride([dataset.sizes[dim] for dim in surface_dims])
-            if self.step != stride:
-                self.step = stride  # the property callback is a no-op here
-                logger.info(f"{self.name}: suggested step {stride}")
-
-        if self.step > 1:
-            _record_stride(datastruct, surface_dims, self.step)
-
+            self._use_suggested_step([dataset.sizes[dim] for dim in surface_dims])
+        _record_stride(datastruct, surface_dims, self.step)
         self.refresh_downstream()
+
+    def _use_suggested_step(self, sizes):
+        """Set ``step`` to the stride suggested for these surface sizes."""
+        stride = suggested_stride(sizes)
+        if self.step != stride:
+            self.step = stride  # the property callback is a no-op here
+            logger.info(f"{self.name}: suggested step {stride}")

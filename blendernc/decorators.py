@@ -101,8 +101,8 @@ def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
     """Pull the upstream node's data item through a linked input socket.
 
     If the upstream node has a loaded dataset, its data item is copied onto
-    ``datastruct``. Otherwise the link is removed and ``datastruct`` is
-    cleared.
+    ``datastruct``. Otherwise ``datastruct`` is cleared; the link stays, so
+    the tree is not edited from inside ``update``.
 
     Parameters
     ----------
@@ -121,11 +121,9 @@ def _update_datastruct_if_filename_exists(self, datastruct, input_socket):
     from_node = input_socket.links[0].from_node
     datastruct_from_node = from_node.BNC_datastructs[0]
     if datastruct_from_node.filename in datastruct_from_node.dict:
-        datastruct = _copy_datastruct(datastruct_from_node, datastruct)
-    else:
-        self.id_data.links.remove(input_socket.links[0])
-        datastruct = _clear_datastruct(datastruct)
-    return datastruct
+        return _copy_datastruct(datastruct_from_node, datastruct)
+    # Keep the link: it becomes useful again once the upstream file loads.
+    return _clear_datastruct(datastruct)
 
 
 def _update_data_in_link(self, datastruct, input_socket):
@@ -159,21 +157,66 @@ def _connected_inputs(node):
     Returns
     -------
     list of bpy.types.NodeSocket
-        Linked input sockets, in socket order.
+        Linked input sockets, in socket order, leaving out links between
+        sockets of different types (they are queued for removal).
     """
-    connected_inputs = [
-        input_socket for input_socket in node.inputs if input_socket.is_linked
+    return [
+        input_socket
+        for input_socket in node.inputs
+        if input_socket.is_linked and _compatible(input_socket.links[0])
     ]
-    return connected_inputs
 
 
-def _drop_mismatched_links(node):
-    """Remove links between sockets of different types and log each one.
+# Links joining sockets of different types are removed from a timer rather
+# than from inside ``update``: Blender is still walking the tree when it
+# calls ``update``, and editing links there is not supported. Until then the
+# link is ignored, so its value is never copied.
+_pending_unlinks = []
+
+
+def _compatible(link):
+    """True when both ends of ``link`` are sockets of the same type."""
+    return link.from_socket.bl_idname == link.to_socket.bl_idname
+
+
+def _link_key(link):
+    """Identify a link by tree, nodes and socket identifiers."""
+    return (
+        link.id_data.name,
+        link.from_node.name,
+        link.from_socket.identifier,
+        link.to_node.name,
+        link.to_socket.identifier,
+    )
+
+
+def flush_pending_unlinks():
+    """Remove the links queued by :func:`_queue_mismatched_links`.
+
+    Registered with ``bpy.app.timers`` so it runs once Blender has finished
+    updating the tree. Timers do not run in background mode, so scripts and
+    tests call it directly.
+
+    Returns
+    -------
+    None
+        So the timer does not repeat.
+    """
+    while _pending_unlinks:
+        key = _pending_unlinks.pop()
+        tree = bpy.data.node_groups.get(key[0])
+        for link in list(tree.links) if tree else []:
+            if _link_key(link) == key:
+                tree.links.remove(link)
+    return None
+
+
+def _queue_mismatched_links(node):
+    """Queue links between sockets of different types and warn once each.
 
     A custom node tree accepts any link, but copying an ``Object`` into a
     ``String`` socket (or the other way round) raises ``TypeError`` when the
-    value is synced. Links are compared by socket type identifier, so only
-    like-for-like links survive.
+    value is synced.
 
     Parameters
     ----------
@@ -181,11 +224,12 @@ def _drop_mismatched_links(node):
         Node whose input links are checked.
     """
     for input_socket in node.inputs:
-        for link in list(input_socket.links):
-            from_socket = link.from_socket
-            if from_socket.bl_idname == input_socket.bl_idname:
+        for link in input_socket.links:
+            key = _link_key(link)
+            if _compatible(link) or key in _pending_unlinks:
                 continue
-            node.id_data.links.remove(link)
+            _pending_unlinks.append(key)
+            from_socket = link.from_socket
             report_error(
                 node,
                 f"{node.name}: {from_socket.bl_label} output "
@@ -193,6 +237,8 @@ def _drop_mismatched_links(node):
                 f"{input_socket.name!r}; link removed.",
                 "WARNING",
             )
+    if _pending_unlinks and not bpy.app.timers.is_registered(flush_pending_unlinks):
+        bpy.app.timers.register(flush_pending_unlinks, first_interval=0.0)
 
 
 def is_single_input_linked(update_function):
@@ -203,7 +249,7 @@ def is_single_input_linked(update_function):
         """Sync the node's data item with its linked inputs, then run the update."""
         if not node_updates_enabled():
             return None
-        _drop_mismatched_links(self)
+        _queue_mismatched_links(self)
         datastruct = self.BNC_datastructs[0]
         connected_inputs = _connected_inputs(self)
         for input_socket in connected_inputs:

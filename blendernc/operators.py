@@ -5,6 +5,7 @@ from .decorators import check_if_node_tree_exists, create_Shader_nodes, is_linke
 from .messages import report_error, report_errors
 from .node_utils import create_links, create_nodes
 from .utils import (
+    GRID_DIMS_PROPERTY,
     add_attribute,
     assign_modifier_to_object,
     extract_dimensions_of_grid,
@@ -12,6 +13,7 @@ from .utils import (
     get_datacube_path,
     get_dataset,
     get_grid_coords,
+    grid_dims,
     look_up_object_and_mesh,
     stack_2D_coords,
 )
@@ -114,41 +116,34 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 
         node_tree = bpy.data.node_groups.get(self.node_tree)
         grid_node = node_tree.nodes.get(self.node_name)
-        grid_obj_name = grid_node.grid_obj_name
 
+        # Work out the vertex layout before touching Blender data, so a
+        # dataset that cannot form a grid is reported without side effects.
         grid_coords = get_grid_coords(grid_node)
+        dims = grid_dims(grid_coords)
+        grid_coords = get_2D_coords(grid_coords)
+        vertices_x, vertices_y = extract_dimensions_of_grid(grid_coords)
+        flattened_coords = stack_2D_coords(grid_coords)
 
-        obj, mesh = look_up_object_and_mesh(grid_obj_name)
+        obj, mesh = look_up_object_and_mesh(grid_node.grid_obj_name)
 
-        modifier, grid_nodetree = assign_modifier_to_object(obj, grid_obj_name)
-
+        modifier, grid_nodetree = assign_modifier_to_object(obj, obj.name)
         nodes = {
             "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
         }
-        mesh_grid_nodes = create_nodes(grid_nodetree, nodes)
-        create_links(grid_nodetree, mesh_grid_nodes)
-        mesh_grid_node = mesh_grid_nodes["GeometryNodeMeshGrid"]["node"]
-
-        axis1, axis2 = extract_dimensions_of_grid(grid_coords)
-
-        mesh_grid_node.inputs[2].default_value = axis1
-        mesh_grid_node.inputs[3].default_value = axis2
-
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-        grid_coords = get_2D_coords(grid_coords)
-
-        flattened_coords = stack_2D_coords(grid_coords)
+        create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, nodes)
+        mesh_grid_node = nodes["GeometryNodeMeshGrid"]["node"]
+        mesh_grid_node.inputs["Vertices X"].default_value = vertices_x
+        mesh_grid_node.inputs["Vertices Y"].default_value = vertices_y
+        _apply_modifier(context, obj, modifier)
 
         attr = add_attribute(
             mesh, "Coordinates", attr_type="FLOAT_VECTOR", domain="POINT"
         )
-
         attr.data.foreach_set("vector", flattened_coords)
 
         modifier, grid_nodetree = assign_modifier_to_object(obj, "apply_grid_coords")
-
         nodes = {
             "NodeGroupInput": {
                 "links": {"Geometry": {"GeometryNodeSetPosition": "Geometry"}}
@@ -163,27 +158,34 @@ class Import_OT_CreateGrid(bpy.types.Operator):
                 "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
             },
         }
-        nodes_created = create_nodes(grid_nodetree, nodes)
-        create_links(grid_nodetree, nodes_created)
+        create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, nodes)
+        named_attribute = nodes["GeometryNodeInputNamedAttribute"]["node"]
+        named_attribute.data_type = "FLOAT_VECTOR"
+        named_attribute.inputs["Name"].default_value = "Coordinates"
+        remove_attribute = nodes["GeometryNodeRemoveAttribute"]["node"]
+        remove_attribute.inputs["Name"].default_value = "Coordinates"
+        _apply_modifier(context, obj, modifier)
 
-        nodes_created["GeometryNodeInputNamedAttribute"][
-            "node"
-        ].data_type = "FLOAT_VECTOR"
-        nodes_created["GeometryNodeInputNamedAttribute"]["node"].inputs[
-            0
-        ].default_value = "Coordinates"
-        nodes_created["GeometryNodeRemoveAttribute"]["node"].inputs[
-            2
-        ].default_value = "Coordinates"
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        # Texture nodes read the dims to orient fields the same way.
+        if dims:
+            mesh[GRID_DIMS_PROPERTY] = ",".join(dims)
+        else:
+            mesh.pop(GRID_DIMS_PROPERTY, None)
 
         # Remember what was baked so the node can tell when it is stale, then
         # let it expose the object and refresh the nodes reading from it.
-        grid_node.baked_object = grid_obj_name
+        grid_node.baked_object = obj.name
         grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
         grid_node.update()
 
         return {"FINISHED"}
+
+
+def _apply_modifier(context, obj, modifier):
+    """Apply ``modifier`` on ``obj`` without changing the active object."""
+    with context.temp_override(object=obj, active_object=obj):
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
 
 
 class BlenderNCBakeFromAttribute(bpy.types.Operator):

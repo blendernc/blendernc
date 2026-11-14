@@ -2,9 +2,9 @@
 
 Findings from a re-read of every module, test, doc and CI file on
 2026-11-13 (branch `Blender5.2`, working tree including uncommitted
-changes). Crashes and wrong results are listed separately in
-`potential_bugs.md`; this file covers design, robustness, cleanup, tests
-and docs. Line numbers refer to the current tree.
+changes). It covers design, robustness, cleanup, tests and docs; the
+crashes and wrong results found in the same review have all been fixed.
+Line numbers refer to the current tree.
 
 ## 1. Work in progress to finish
 
@@ -137,13 +137,10 @@ and docs. Line numbers refer to the current tree.
 
 ## 6. Testing
 
-- **Assertions compare sorted arrays**, so a transposed or scrambled field
-  passes: `assert_frame_attribute` and the texture tests in
-  `tests/synthetic_grid.test.py` sort both sides, and
-  `test_xy_variable_as_z` sorts the Z values. Compare against the expected
-  array in mesh order (build it with the same `meshgrid` the operator
-  uses). This is the one test that would catch the dimension-order
-  assumption listed in `potential_bugs.md`.
+- **Some assertions still compare sorted arrays**, so a transposed field
+  would pass them: `assert_frame_attribute` and `test_xy_variable_as_z`.
+  `test_field_values_follow_vertices_for_both_dim_orders` already compares
+  in mesh order with `field_at_vertices`; the older tests could use it too.
 - No test opens a dataset whose variable dims are `(x, y)` ordered, has
   2-D coordinates, or has more than one import node.
 - The UI panel path is covered by `tests/ui_panel.test.py` for one 2-D

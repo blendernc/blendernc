@@ -2,6 +2,7 @@ import difflib
 import logging
 import os.path
 import re
+from functools import wraps
 from itertools import combinations
 from math import ceil, prod
 
@@ -11,7 +12,12 @@ import xarray as xr
 
 from .decorators import check_if_node_tree_exists
 from .messages import report_error
-from .node_utils import create_blenderncnodetree, create_link, delete_link
+from .node_utils import (
+    create_blenderncnodetree,
+    create_link,
+    delete_link,
+    get_all_nodes_by_idname,
+)
 from .panels_draw import draw_resolution_grid_and_texture, show_section
 
 logger = logging.getLogger(__name__)
@@ -65,13 +71,38 @@ def get_datacube_path(directory, files):
     return datacube_path
 
 
+# xarray engine by file extension; anything else is left to xarray to detect.
+DATASET_ENGINES = {
+    ".zarr": "zarr",
+    ".grib": "cfgrib",
+    ".grib2": "cfgrib",
+    ".grb": "cfgrib",
+    ".grb2": "cfgrib",
+}
+
+
+def dataset_engine(path):
+    """Return the xarray engine for ``path``, or ``None`` to let xarray choose."""
+    extension = os.path.splitext(path.rstrip("/\\"))[1].lower()
+    return DATASET_ENGINES.get(extension)
+
+
+def dataset_key(path):
+    """Cache key for ``path``: the absolute, normalised path or pattern.
+
+    Two files with the same name in different folders get different keys.
+    """
+    return os.path.normcase(os.path.abspath(path))
+
+
 def load_dataset(filepath):
-    """Open a file or glob pattern with xarray.
+    """Open a file, Zarr store or glob pattern with xarray.
 
     Parameters
     ----------
     filepath : str
-        Path or pattern accepted by :func:`xarray.open_mfdataset`.
+        Path or pattern accepted by :func:`xarray.open_mfdataset`. GRIB and
+        Zarr inputs get their engine from :func:`dataset_engine`.
 
     Returns
     -------
@@ -84,15 +115,51 @@ def load_dataset(filepath):
     ValueError
         If no xarray backend understands the file.
     """
-    logger.info(f"Loading dataset from {filepath}")
-    return xr.open_mfdataset(filepath)
+    engine = dataset_engine(filepath)
+    logger.info(f"Loading dataset from {filepath} (engine: {engine or 'auto'})")
+    kwargs = {"engine": engine} if engine else {}
+    return xr.open_mfdataset(filepath, **kwargs)
+
+
+def dataset_in_use(key, ignore=None):
+    """True when an import node other than ``ignore`` references ``key``."""
+    skip = ignore.as_pointer() if ignore is not None else None
+    for node in get_all_nodes_by_idname("BlenderNCNodeImport"):
+        if node.as_pointer() == skip or not len(node.BNC_datastructs):
+            continue
+        if node.BNC_datastructs[0].filename == key:
+            return True
+    return False
+
+
+def release_dataset(datastruct, key, ignore=None):
+    """Close and drop the cached dataset ``key`` once no import node uses it.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Any data item; only its shared ``dict`` cache is used.
+    key : str
+        Cache key, as stored in ``BNC_data.filename``.
+    ignore : bpy.types.Node, optional
+        Import node to leave out of the search, typically the one being
+        deleted.
+    """
+    if not key or dataset_in_use(key, ignore):
+        return
+    dataset = datastruct.dict.pop(key, None)
+    if dataset is not None:
+        dataset.close()
+        logger.info(f"Closed {key}")
 
 
 def store_dataset(datastruct, path):
     """Load ``path`` and register it on a ``BNC_data`` item.
 
-    Loading the path the item already holds is a no-op. On failure the item
-    keeps ``datafile`` so the path is not retried on every node update, but
+    The cache is keyed by :func:`dataset_key`, so an already open dataset is
+    shared instead of opened twice, and the dataset the item held before is
+    released when nothing else uses it. On failure the item keeps
+    ``datafile`` so the path is not retried on every node update, but
     ``filename`` is cleared so downstream nodes see no dataset.
 
     Parameters
@@ -109,16 +176,30 @@ def store_dataset(datastruct, path):
     """
     if datastruct.datafile == path and get_dataset(datastruct) is not None:
         return True
+    previous, key = datastruct.filename, dataset_key(path)
     datastruct.datafile = path
+    dataset = _open_cached(datastruct, path, key)
+    datastruct.filename = key if dataset is not None else ""
+    if datastruct.filename != previous:
+        release_dataset(datastruct, previous)
+    return dataset is not None
+
+
+def _open_cached(datastruct, path, key):
+    """Return the cached dataset ``key``, opening ``path`` on a miss.
+
+    Returns ``None`` after reporting when the file cannot be opened; a broken
+    ``cfgrib`` install raises ``RuntimeError`` or ``ImportError``.
+    """
+    if key in datastruct.dict:
+        return datastruct.dict[key]
     try:
         dataset = load_dataset(path)
-    except (OSError, ValueError) as exc:
-        datastruct.filename = ""
+    except (OSError, ValueError, RuntimeError, ImportError) as exc:
         report_error(None, f"Could not open {path}: {exc}")
-        return False
-    datastruct.filename = os.path.basename(path)
-    datastruct.dict[datastruct.filename] = dataset
-    return True
+        return None
+    datastruct.dict[key] = dataset
+    return dataset
 
 
 def get_dataset(datastruct):
@@ -329,6 +410,26 @@ def get_var(datacubedata):
     return _with_header(items, "Select variable")
 
 
+# Blender only borrows the strings an EnumProperty ``items`` callback
+# returns: Python must keep them referenced, or the drop-down can show
+# garbage or crash. The last list per callback and owner is kept here.
+_ENUM_ITEMS = {}
+
+
+def keep_enum_items(callback):
+    """Keep the list returned by an enum ``items`` callback referenced."""
+
+    @wraps(callback)
+    def wrapper(owner, context):
+        """Run the callback and store its result under the owner."""
+        items = callback(owner, context)
+        owner_id = owner.as_pointer() if hasattr(owner, "as_pointer") else id(owner)
+        _ENUM_ITEMS[(callback.__name__, owner_id)] = items
+        return items
+
+    return wrapper
+
+
 def _enum_items(node, builder, empty_text):
     """Build enum items from a node's dataset, or a placeholder without one."""
     dataset = get_dataset(node.BNC_datastructs[0])
@@ -337,6 +438,7 @@ def _enum_items(node, builder, empty_text):
     return builder(dataset)
 
 
+@keep_enum_items
 def get_possible_variables(node, context):
     """Enum items callback listing the variables of a node's dataset.
 
@@ -355,6 +457,7 @@ def get_possible_variables(node, context):
     return _enum_items(node, get_var, "No variable")
 
 
+@keep_enum_items
 def get_possible_coordinates(node, context):
     """Enum items callback listing the coordinates of a node's dataset.
 
@@ -392,6 +495,7 @@ def _enum_items_UI(label, items_callback, context):
     return items_callback(node, context)
 
 
+@keep_enum_items
 def get_possible_variables_UI(self, context):
     """Enum items callback for the variable selector in the 3D view panel.
 
@@ -411,6 +515,7 @@ def get_possible_variables_UI(self, context):
     return _enum_items_UI(UI_VARIABLE_NODE, get_possible_variables, context)
 
 
+@keep_enum_items
 def get_possible_coordinates_UI(self, context):
     """Enum items callback for the X, Y and Z selectors in the 3D view panel.
 
@@ -429,7 +534,8 @@ def get_possible_coordinates_UI(self, context):
     list of tuple
         Enum items from the "Datacube Coords" node of the ``BLENDERNC`` tree.
     """
-    items = _enum_items_UI(UI_COORDS_NODE, get_possible_coordinates, context)
+    # Copy: the node's own list is kept alive and must not be edited.
+    items = list(_enum_items_UI(UI_COORDS_NODE, get_possible_coordinates, context))
     if len(items) > 1 and items[1] is None:
         items.pop(1)
     items[0] = _placeholder_item("", "CANCEL")[0]
@@ -573,7 +679,12 @@ def encode_slicing_record(var_name, coord, selector):
 
 
 def _record_stride(datastruct, dims, step):
-    """Append one wildcard stride record per dimension to ``slicing``."""
+    """Append one wildcard stride record per dimension to ``slicing``.
+
+    A step of 1 keeps every sample, so nothing is recorded.
+    """
+    if step <= 1:
+        return
     for dim in dims:
         datastruct.slicing += encode_slicing_record(
             SLICING_ANY_VARIABLE, dim, slice(0, None, step)
@@ -811,6 +922,36 @@ def _coords_by_ndim(coords):
     return groups
 
 
+def grid_dims(coords):
+    """Return the ``(rows, columns)`` dimensions of the grid, or ``None``.
+
+    Two 1-D coordinates give ``(y_dim, x_dim)``, the layout of their mesh
+    grid; otherwise the dimensions of the first 2-D coordinate are used.
+
+    Parameters
+    ----------
+    coords : dict
+        Mapping as returned by :func:`get_grid_coords`, still holding
+        :class:`xarray.DataArray` objects.
+    """
+    arrays = [coords[k]["data"] for k in ("X", "Y", "Z") if k in coords]
+    if len(arrays) < 2 or not all(hasattr(a, "dims") for a in arrays):
+        return None
+    first, second = arrays[:2]
+    if first.ndim == 1 and second.ndim == 1:
+        return (second.dims[0], first.dims[0])
+    return next((tuple(a.dims) for a in arrays if a.ndim == 2), None)
+
+
+def _align_to_grid(coords, dims):
+    """Transpose every 2-D array spanning ``dims`` into ``dims`` order."""
+    for coord in coords.values():
+        data = coord["data"]
+        if hasattr(data, "dims") and data.ndim == 2 and set(data.dims) == set(dims):
+            coord["data"] = data.transpose(*dims)
+            coord["size"] = coord["data"].shape
+
+
 def get_2D_coords(coords):
     """Expand the grid coordinates to 2-D arrays suitable for a mesh grid.
 
@@ -832,6 +973,12 @@ def get_2D_coords(coords):
         If fewer than two axes are present or their dimensions cannot be
         combined.
     """
+    dims = grid_dims(coords)
+    if dims:
+        # A variable stored as (x, y) must land on the same vertices as one
+        # stored as (y, x), so every 2-D array follows the grid's order.
+        _align_to_grid(coords, dims)
+
     expected_dims = ["X", "Y", "Z"]
 
     coord_dims = [dim for dim in expected_dims if dim in coords]
@@ -977,45 +1124,36 @@ def stack_2D_coords(coords):
     return flatten_coords
 
 
-def extract_dimensions_of_grid(grid_coords):
-    """Pick the two vertex counts for the Mesh Grid node.
+def extract_dimensions_of_grid(coords):
+    """Return ``(vertices_x, vertices_y)`` for the Mesh Grid node.
 
-    Sizes with more than two dimensions or of length one are ignored. With
-    two remaining coordinates their first dimensions are used; with more, the
-    2-D surface coordinates are preferred.
+    Takes the coordinates after :func:`get_2D_coords`, where X, Y and Z are
+    2-D arrays of shape ``(rows, columns)``. :func:`stack_2D_coords` emits
+    the vertices column by column, which is the order Mesh Grid uses along
+    its X axis, so ``vertices_x`` is the number of columns.
 
     Parameters
     ----------
-    grid_coords : dict
-        Mapping as returned by :func:`get_grid_coords`.
+    coords : dict
+        Mapping with 2-D ``"data"`` arrays under ``"X"``, ``"Y"`` and ``"Z"``.
 
     Returns
     -------
     tuple of int
-        ``(size1, size2)``.
+        ``(columns, rows)``.
 
     Raises
     ------
     ValueError
-        If fewer than two usable dimensions are found.
+        If the arrays do not share one 2-D shape.
     """
-    dims = {
-        name: coord["size"]
-        for name, coord in grid_coords.items()
-        if len(coord["size"]) <= 2 and coord["size"] != (1,)
-    }
-    if len(dims) < 2:
-        raise ValueError("Not enough dimensions with size <= 2 found.")
-
-    surface_dims = {name: size for name, size in dims.items() if len(size) == 2}
-    if len(dims) > 2 and surface_dims != dims:
-        # Mixed 1-D and 2-D coordinates: the 1-D ones define the grid.
-        sizes = [size for name, size in dims.items() if name not in surface_dims]
-        return sizes[0][0], sizes[1][0]
-
-    first, second = list(dims.values())[:2]
-    second_index = 1 if len(dims) > 2 else 0
-    return first[0], second[second_index]
+    shapes = {name: coord["data"].shape for name, coord in coords.items()}
+    unique = set(shapes.values())
+    if len(unique) != 1 or len(next(iter(unique))) != 2:
+        listed = ", ".join(f"{name} {shape}" for name, shape in shapes.items())
+        raise ValueError(f"X, Y and Z do not form one 2D grid: {listed}.")
+    rows, columns = unique.pop()
+    return columns, rows
 
 
 def find_coord_matches(length, dims):
@@ -1059,13 +1197,28 @@ TEXTURE_DIM_HINTS = {
 }
 
 
-def field_to_point_values(data):
+# Mesh custom property recording the (rows, columns) dimensions of a grid.
+GRID_DIMS_PROPERTY = "BlenderNC grid dims"
+
+
+def mesh_grid_dims(mesh):
+    """Return the ``(rows, columns)`` dims ``mesh`` was baked on, or ``None``."""
+    value = mesh.get(GRID_DIMS_PROPERTY) if mesh is not None else None
+    return tuple(value.split(",")) if value else None
+
+
+def field_to_point_values(data, dims=None):
     """Flatten a 2-D field into the vertex order of a baked grid.
 
     Parameters
     ----------
     data : xarray.DataArray
         Two-dimensional array whose dimensions span the mesh.
+    dims : tuple of str, optional
+        ``(rows, columns)`` dimensions the grid was baked with (see
+        :func:`mesh_grid_dims`). When ``data`` has the same dimensions in
+        another order it is transposed first, so ``(x, y)`` and ``(y, x)``
+        fields land on the same vertices.
 
     Returns
     -------
@@ -1073,6 +1226,8 @@ def field_to_point_values(data):
         1-D ``float32`` array with one value per vertex. Missing values stay
         NaN; :func:`write_point_attribute` zeroes them when writing.
     """
+    if dims and set(dims) == set(data.dims):
+        data = data.transpose(*dims)
     return np.ascontiguousarray(data.values.transpose(1, 0).ravel(), dtype=np.float32)
 
 
@@ -1210,6 +1365,12 @@ def texture_field_error(data, mesh):
                 f"{data.name} has {size} values ({dims}), mesh has {vertices} vertices."
                 "\nBake the grid from the coordinates of this variable."
             )
+        baked = mesh_grid_dims(mesh)
+        if baked and set(baked) != set(data.dims):
+            return (
+                f"{data.name} spans ({dims}), the grid spans ({', '.join(baked)})."
+                "\nBake the grid from the coordinates of this variable."
+            )
         return ""
     if ndim < 2:
         return problem + "\nA texture needs a 2D field."
@@ -1251,20 +1412,36 @@ def add_attribute(mesh, attr_name, attr_type="FLOAT", domain="POINT"):
 
 
 def look_up_object_and_mesh(object_name):
-    """
-    Look up an object in the current Blender context by name.
+    """Return ``(object, mesh)`` for the grid object, creating what is missing.
 
-    Parameters:
-        object_name (str): The name of the object to look up.
+    An existing mesh object is reused with its own mesh. When the object was
+    deleted, an orphan mesh of the same name is reused, and an object that
+    is in no collection is linked to the active one.
+
+    Parameters
+    ----------
+    object_name : str
+        Name of the grid object.
+
+    Raises
+    ------
+    ValueError
+        If ``object_name`` belongs to an object that is not a mesh.
     """
-    if object_name in bpy.data.meshes:
+    obj = bpy.data.objects.get(object_name)
+    if obj is not None and obj.type != "MESH":
+        raise ValueError(
+            f"{object_name} is not a mesh ({obj.type.lower()}); "
+            "choose another grid name."
+        )
+    if obj is None:
         mesh = bpy.data.meshes.get(object_name)
-        obj = bpy.data.objects.get(object_name)
-    else:
-        mesh = bpy.data.meshes.new(object_name)
+        if mesh is None or mesh.users:
+            mesh = bpy.data.meshes.new(object_name)
         obj = bpy.data.objects.new(object_name, mesh)
+    if not obj.users_collection:
         bpy.context.collection.objects.link(obj)
-    return obj, mesh
+    return obj, obj.data
 
 
 def assign_modifier_to_object(obj, modifier_name):

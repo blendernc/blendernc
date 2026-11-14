@@ -7,6 +7,7 @@ from .utils import (
     find_coord_matches,
     get_data_from_datastruct,
     get_dataset,
+    mesh_grid_dims,
     write_point_attribute,
 )
 
@@ -53,5 +54,6 @@ def bNC_update_attributes(scene):
         last = data.sizes[animate_coord] - 1
         frame = min(max(scene.frame_current, 0), last)
 
-        values = field_to_point_values(data.isel({animate_coord: frame}))
+        frame_data = data.isel({animate_coord: frame})
+        values = field_to_point_values(frame_data, mesh_grid_dims(mesh))
         write_point_attribute(mesh, variable, values)

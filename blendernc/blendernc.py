@@ -2,6 +2,7 @@ import logging
 
 import bpy
 
+from .decorators import flush_pending_unlinks
 from .handlers import bNC_update_attributes
 from .menus import (
     BlenderNCNodeAnimate,
@@ -63,7 +64,32 @@ classes = [
     DebugNode,
 ]
 
-handlers = bpy.app.handlers
+# Handler lists that run :func:`bNC_update_attributes`.
+HANDLER_LISTS = ("frame_change_pre", "render_pre")
+
+
+def _is_frame_handler(func):
+    """Match by name and module, so a copy left by an add-on reload matches."""
+    return (
+        getattr(func, "__name__", None) == bNC_update_attributes.__name__
+        and getattr(func, "__module__", None) == bNC_update_attributes.__module__
+    )
+
+
+def unregister_handlers():
+    """Remove every copy of the frame handler; absent handlers are ignored."""
+    for name in HANDLER_LISTS:
+        handler_list = getattr(bpy.app.handlers, name)
+        for func in [f for f in handler_list if _is_frame_handler(f)]:
+            handler_list.remove(func)
+
+
+def register_handlers():
+    """Add the frame handler exactly once to each list."""
+    unregister_handlers()
+    for name in HANDLER_LISTS:
+        getattr(bpy.app.handlers, name).append(bNC_update_attributes)
+
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +107,7 @@ def register():
         ``{"FINISHED"}`` once registration is complete.
     """
     logger.info("Registering handlers")
-    handlers.frame_change_pre.append(bNC_update_attributes)
-    handlers.render_pre.append(bNC_update_attributes)
+    register_handlers()
     # Register node categories
     logger.info("Registering BlenderNC")
     for cls in classes:
@@ -108,8 +133,9 @@ def unregister():
     # at quit time Python's thread pools are already gone, so skip the work.
     enable_node_updates(False)
     logger.info("Un-registering handlers")
-    handlers.frame_change_pre.remove(bNC_update_attributes)
-    handlers.render_pre.remove(bNC_update_attributes)
+    unregister_handlers()
+    if bpy.app.timers.is_registered(flush_pending_unlinks):
+        bpy.app.timers.unregister(flush_pending_unlinks)
     logger.info("Un-registering BlenderNC")
     # Unregister node categories
     for cls in classes:

@@ -17,6 +17,7 @@ through :func:`blendernc.utils.get_surface_dims`, the time axis from its
 ``datetime64`` dtype and the vertical axis is whatever remains.
 """
 
+import os
 import re
 import shutil
 import sys
@@ -27,11 +28,15 @@ import bpy
 import numpy as np
 import xarray as xr
 
+from blendernc.blendernc import register_handlers
+from blendernc.decorators import flush_pending_unlinks
 from blendernc.handlers import bNC_update_attributes
 from blendernc.node_utils import create_blenderncnodetree
 from blendernc.utils import (
+    GRID_DIMS_PROPERTY,
     MAX_VERTEX_SAMPLES,
     RANGE_PROPERTIES,
+    dataset_engine,
     get_dataset,
     get_surface_dims,
 )
@@ -102,6 +107,31 @@ def vertex_positions(obj):
     positions = np.empty(count * 3)
     obj.data.vertices.foreach_get("co", positions)
     return positions.reshape(count, 3)
+
+
+def field_at_vertices(obj, field, x_name, y_name):
+    """Values of ``field`` at each vertex's (x, y), in mesh order."""
+    positions = vertex_positions(obj)
+    points = {
+        x_name: xr.DataArray(positions[:, 0], dims="vertex"),
+        y_name: xr.DataArray(positions[:, 1], dims="vertex"),
+    }
+    return field.sel(points, method="nearest").values
+
+
+def write_field(path, dims, seed=0):
+    """Write a noise variable with the given dimension order; return it."""
+    rng = np.random.default_rng(seed)
+    sizes = {"X": NX, "Y": NY}
+    dataset = xr.Dataset(
+        {VARIABLE: (dims, rng.standard_normal([sizes[d] for d in dims]))},
+        coords={
+            "X": np.linspace(0.0, 330.0, NX),
+            "Y": np.linspace(-70.0, 70.0, NY),
+        },
+    )
+    dataset.to_netcdf(path)
+    return dataset
 
 
 def point_attribute(obj, name):
@@ -383,6 +413,9 @@ class TestSyntheticGrids(unittest.TestCase):
         with self.assertLogs(logger_name, level="WARNING") as logs:
             self.tree.links.new(grid.outputs["Object"], texture.inputs["Variable"])
             self.tree.links.new(variable.outputs[var_name], texture.inputs["Object"])
+        # Removal happens from a timer once Blender is done updating the tree;
+        # timers do not run in background mode, so run it here.
+        flush_pending_unlinks()
         self.assertFalse(texture.inputs["Variable"].is_linked)
         self.assertFalse(texture.inputs["Object"].is_linked)
         self.assertEqual(sum("link removed" in line for line in logs.output), 2)
@@ -392,6 +425,183 @@ class TestSyntheticGrids(unittest.TestCase):
         self.tree.links.new(variable.outputs[var_name], texture.inputs["Variable"])
         self.assertEqual(texture.message, "")
         self.assertIn(VARIABLE, obj.data.attributes)
+
+    # -- dimension order (potential bug: transpose assumed (y, x)) ----------
+
+    def test_field_values_follow_vertices_for_both_dim_orders(self):
+        """(Y, X) and (X, Y) variables give the same value at each vertex."""
+        for dims in (("Y", "X"), ("X", "Y")):
+            with self.subTest(dims=dims):
+                key = "order_" + "".join(dims)
+                path = f"{self.tmpdir}/{key}.nc"
+                self.datasets[key] = write_field(path, dims)
+                self.files[key] = path
+                obj, dataset, var_name = self.build_pipeline(key, texture=True)
+                self.assertEqual(self.texture_node.message, "")
+                self.assertEqual(obj.data[GRID_DIMS_PROPERTY], "Y,X")
+                expected = field_at_vertices(obj, dataset[var_name], "X", "Y")
+                # Z comes from the variable, and so does the texture.
+                np.testing.assert_allclose(
+                    vertex_positions(obj)[:, 2], expected, rtol=1e-5, atol=1e-6
+                )
+                np.testing.assert_allclose(
+                    point_attribute(obj, VARIABLE), expected, rtol=1e-5, atol=1e-6
+                )
+                self.tearDown()
+                self.setUp()
+
+    # -- two 2-D coordinates (potential bug: (ny, ny) vertex counts) --------
+
+    def test_curvilinear_2d_coords_bake_a_connected_grid(self):
+        """2-D lon/lat of shape (ny, nx) give nx * ny vertices, edges adjacent."""
+        ny, nx = 5, 9
+        j, i = np.meshgrid(np.arange(ny), np.arange(nx), indexing="ij")
+        lon, lat = i * 10.0 + j * 1.0, j * 10.0 + i * 0.5
+        path = f"{self.tmpdir}/curvilinear.nc"
+        xr.Dataset(
+            {VARIABLE: (("y", "x"), np.zeros((ny, nx)))},
+            coords={"lon": (("y", "x"), lon), "lat": (("y", "x"), lat)},
+        ).to_netcdf(path)
+
+        tree = self.tree
+        import_node = tree.nodes.new("BlenderNCNodeImport")
+        coords = tree.nodes.new("BlenderNCNodeCoords")
+        grid = tree.nodes.new("BlenderNCNodeGrid")
+        import_node.datacube_file = path
+        tree.links.new(import_node.outputs[0], coords.inputs[0])
+        tree.links.new(coords.outputs["lon"], grid.inputs["X"])
+        tree.links.new(coords.outputs["lat"], grid.inputs["Y"])
+        grid.grid_obj_name = self.grid_name
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid.name, node_tree=tree.name
+        )
+        obj = bpy.data.objects[self.grid_name]
+
+        self.assertEqual(len(obj.data.vertices), nx * ny)
+        self.assertEqual(len(obj.data.edges), (nx - 1) * ny + nx * (ny - 1))
+        index = {
+            (round(float(a), 3), round(float(b), 3)): (jj, ii)
+            for (jj, ii), a, b in zip(np.ndindex(ny, nx), lon.ravel(), lat.ravel())
+        }
+        cells = [index[(round(p[0], 3), round(p[1], 3))] for p in vertex_positions(obj)]
+        pairs = np.empty(len(obj.data.edges) * 2, dtype=np.int64)
+        obj.data.edges.foreach_get("vertices", pairs)
+        for a, b in pairs.reshape(-1, 2):
+            (ja, ia), (jb, ib) = cells[a], cells[b]
+            self.assertEqual(abs(ja - jb) + abs(ia - ib), 1)
+
+    # -- dataset cache (potential bugs: basename keys, free, engines) -------
+
+    def test_same_basename_in_two_folders(self):
+        """Files with one name in two folders are two datasets, not one."""
+        nodes = []
+        for value in (1.0, 2.0):
+            folder = f"{self.tmpdir}/folder{int(value)}"
+            os.makedirs(folder, exist_ok=True)
+            xr.Dataset({VARIABLE: (("Y", "X"), np.full((NY, NX), value))}).to_netcdf(
+                f"{folder}/same.nc"
+            )
+            node = self.tree.nodes.new("BlenderNCNodeImport")
+            node.datacube_file = f"{folder}/same.nc"
+            nodes.append(node)
+        datasets = [get_dataset(n.BNC_datastructs[0]) for n in nodes]
+        means = [float(d[VARIABLE].mean()) for d in datasets]
+        self.assertEqual(means, [1.0, 2.0])
+
+    def test_deleting_one_import_node_keeps_shared_dataset(self):
+        """The cache entry lives until the last import node using it is gone."""
+        first = self.tree.nodes.new("BlenderNCNodeImport")
+        second = self.tree.nodes.new("BlenderNCNodeImport")
+        first.datacube_file = second.datacube_file = self.files["xy"]
+        key = second.BNC_datastructs[0].filename
+        cache = second.BNC_datastructs[0].dict
+        self.assertIs(get_dataset(first.BNC_datastructs[0]), cache[key])
+
+        self.tree.nodes.remove(first)
+        self.assertIsNotNone(get_dataset(second.BNC_datastructs[0]))
+        self.tree.nodes.remove(second)
+        self.assertNotIn(key, cache)
+
+    def test_zarr_store_opens_with_zarr_engine(self):
+        """A .zarr store is opened with the zarr engine."""
+        path = f"{self.tmpdir}/cube.zarr"
+        self.datasets["xy"].to_zarr(path, mode="w")
+        self.assertEqual(dataset_engine(path), "zarr")
+        self.assertEqual(dataset_engine("a/b.GRIB2"), "cfgrib")
+        self.assertIsNone(dataset_engine("a/b.nc"))
+        node = self.tree.nodes.new("BlenderNCNodeImport")
+        node.datacube_file = path
+        dataset = get_dataset(node.BNC_datastructs[0])
+        self.assertIsNotNone(dataset)
+        self.assertIn(VARIABLE, dataset)
+
+    # -- registration and baking side effects --------------------------------
+
+    def test_frame_handler_registered_once(self):
+        """Registering handlers again leaves exactly one copy in each list."""
+        register_handlers()
+        register_handlers()
+        for handler_list in (
+            bpy.app.handlers.frame_change_pre,
+            bpy.app.handlers.render_pre,
+        ):
+            copies = [
+                f
+                for f in handler_list
+                if getattr(f, "__module__", None) == bNC_update_attributes.__module__
+                and getattr(f, "__name__", None) == bNC_update_attributes.__name__
+            ]
+            self.assertEqual(len(copies), 1)
+
+    def test_bake_keeps_active_object(self):
+        """Baking applies its modifiers without changing the active object."""
+        other = bpy.data.objects.new(f"Other_{self._testMethodName}", None)
+        bpy.context.collection.objects.link(other)
+        bpy.context.view_layer.objects.active = other
+        try:
+            self.build_pipeline("xy")
+            self.assertEqual(bpy.context.view_layer.objects.active, other)
+        finally:
+            bpy.data.objects.remove(other)
+
+    def test_rebake_after_grid_object_deleted(self):
+        """Deleting the grid object but not its mesh still lets it rebake."""
+        obj, dataset, _ = self.build_pipeline("xy")
+        grid = next(n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeGrid")
+        bpy.data.objects.remove(obj)
+        self.assertIn(self.grid_name, bpy.data.meshes)
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid.name, node_tree=self.tree.name
+        )
+        self.assert_grid_topology(bpy.data.objects[self.grid_name], dataset)
+
+    def test_grid_name_taken_by_non_mesh_is_reported(self):
+        """A non-mesh object with the grid's name cancels with a report."""
+        empty = bpy.data.objects.new(self.grid_name, None)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "choose another grid name"):
+                self.build_pipeline("xy")
+        finally:
+            bpy.data.objects.remove(empty)
+
+    def test_enum_items_are_kept_alive(self):
+        """Enum callbacks keep their lists referenced; the panel copy is separate."""
+        from blendernc import utils
+
+        obj, dataset, var_name = self.build_pipeline("xy")
+        variable = next(
+            n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeVariable"
+        )
+        items = utils.get_possible_variables(variable, bpy.context)
+        self.assertIn(var_name, [item[0] for item in items if item])
+        self.assertTrue(any(kept is items for kept in utils._ENUM_ITEMS.values()))
+
+        coords = next(
+            n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeCoords"
+        )
+        before = list(utils.get_possible_coordinates(coords, bpy.context))
+        utils.get_possible_coordinates_UI(None, bpy.context)  # edits its own copy
+        self.assertEqual(utils.get_possible_coordinates(coords, bpy.context), before)
 
     def test_resolution_change_rebakes_grid_and_texture(self):
         """Changing the step on the node rebakes the grid and the texture."""
