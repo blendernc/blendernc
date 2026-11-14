@@ -7,6 +7,7 @@ from .utils import (
     get_possible_coordinates_UI,
     get_possible_variables_UI,
     update_coords_links_UI,
+    update_lock_range,
     update_step_UI,
     update_variable_UI,
 )
@@ -60,4 +61,25 @@ class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
         min=1,
         soft_max=20,
         update=update_step_UI,
+    )
+
+
+class BlenderNC_Settings(bpy.types.PropertyGroup):
+    """Scene-wide BlenderNC settings, shown in the node editor's Settings panel.
+
+    New preferences belong here, so they are saved with the .blend file and
+    drawn by :class:`blendernc.panels.BlenderNC_NODE_PT_SETTINGS` in the
+    sidebar of the BlenderNC node editor.
+    """
+
+    bl_idname = "BlenderNC_Settings"
+
+    lock_range: bpy.props.BoolProperty(
+        name="Lock range",
+        description=(
+            "Keep the stored min and max of each texture, so the colour scale "
+            "stays fixed when the resolution or the data changes"
+        ),
+        default=True,
+        update=update_lock_range,
     )

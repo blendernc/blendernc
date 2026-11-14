@@ -22,6 +22,7 @@ from .utils import (
     get_possible_variables,
     get_surface_dims,
     mesh_grid_dims,
+    range_locked,
     release_dataset,
     store_dataset,
     suggested_stride,
@@ -459,7 +460,7 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
             logger.warning(f"{self.name}: {self.message.replace(chr(10), ' ')}")
             return
         values = field_to_point_values(data, mesh_grid_dims(obj.data))
-        write_field_range(obj.data, values)
+        write_field_range(obj.data, values, locked=range_locked())
         write_point_attribute(obj.data, variable, values)
         self.written = variable
         logger.info(f"{self.name}: wrote {variable} onto {obj.name}")

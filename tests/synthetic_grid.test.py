@@ -23,6 +23,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 import bpy
 import numpy as np
@@ -603,8 +604,8 @@ class TestSyntheticGrids(unittest.TestCase):
         utils.get_possible_coordinates_UI(None, bpy.context)  # edits its own copy
         self.assertEqual(utils.get_possible_coordinates(coords, bpy.context), before)
 
-    def test_resolution_change_rebakes_grid_and_texture(self):
-        """Changing the step on the node rebakes the grid and the texture."""
+    def build_resolution_texture_tree(self):
+        """Full-resolution tree with a resolution node and a linked texture."""
         tree = self.tree
         import_node = tree.nodes.new("BlenderNCNodeImport")
         resolution = tree.nodes.new("BlenderNCNodeResolution")
@@ -631,6 +632,11 @@ class TestSyntheticGrids(unittest.TestCase):
         obj = bpy.data.objects[self.grid_name]
         tree.links.new(grid.outputs["Object"], texture.inputs["Object"])
         tree.links.new(variable.outputs[VARIABLE], texture.inputs["Variable"])
+        return obj, resolution, texture
+
+    def test_resolution_change_rebakes_grid_and_texture(self):
+        """Changing the step on the node rebakes the grid and the texture."""
+        obj, resolution, texture = self.build_resolution_texture_tree()
         self.assertEqual(len(obj.data.vertices), NX * NY)
         self.assertEqual(texture.message, "")
 
@@ -639,6 +645,34 @@ class TestSyntheticGrids(unittest.TestCase):
         self.assertEqual(len(obj.data.vertices), expected)
         self.assertEqual(texture.message, "")
         self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
+    def test_lock_range_setting(self):
+        """Unlocked, the range follows the data; locked, it stays fixed."""
+        settings = bpy.context.scene.BlenderNC_Settings
+        panel = getattr(bpy.types, "BLENDERNC_NODE_PT_SETTINGS")
+        self.assertEqual(panel.bl_space_type, "NODE_EDITOR")
+        editing = SimpleNamespace(space_data=SimpleNamespace(tree_type=""))
+        cases = (("BlenderNCNodeTree", True), ("ShaderNodeTree", False))
+        for tree_type, shown in cases:
+            editing.space_data.tree_type = tree_type
+            self.assertEqual(panel.poll(editing), shown)
+        field = self.datasets["xy"][VARIABLE].values
+        strided = field[::2, ::2]
+        low, high = RANGE_PROPERTIES
+        obj, resolution, _ = self.build_resolution_texture_tree()
+        try:
+            settings.lock_range = True
+            resolution.step = 2
+            self.assertAlmostEqual(obj.data[low], float(field.min()), places=5)
+
+            settings.lock_range = False  # releasing the lock recomputes
+            self.assertAlmostEqual(obj.data[low], float(strided.min()), places=5)
+            self.assertAlmostEqual(obj.data[high], float(strided.max()), places=5)
+
+            resolution.step = 1
+            self.assertAlmostEqual(obj.data[low], float(field.min()), places=5)
+        finally:
+            settings.lock_range = False
 
     def test_resolution_suggested_step(self):
         """The node picks ceil(smallest surface size / budget) once, not twice."""

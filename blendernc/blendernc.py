@@ -32,8 +32,12 @@ from .operators import (
     Import_OT_CreateGrid,
     Import_OT_mfdataset,
 )
-from .panels import BlenderNC_UI_PT_3D_VIEW, BlenderNC_UI_PT_3D_VIEW_PARENT
-from .properties import BlenderNC_UI_Properties, BNC_data
+from .panels import (
+    BlenderNC_NODE_PT_SETTINGS,
+    BlenderNC_UI_PT_3D_VIEW,
+    BlenderNC_UI_PT_3D_VIEW_PARENT,
+)
+from .properties import BlenderNC_Settings, BlenderNC_UI_Properties, BNC_data
 from .sockets import bNCdatacubeSocket
 
 classes = [
@@ -44,7 +48,9 @@ classes = [
     BlenderNCBakeFromAttribute,
     BlenderNC_UI_PT_3D_VIEW_PARENT,
     BlenderNC_UI_PT_3D_VIEW,
+    BlenderNC_NODE_PT_SETTINGS,
     BlenderNC_UI_Properties,
+    BlenderNC_Settings,
     DatacubeImport,
     DatacubeVariable,
     DatacubeCoords,
@@ -116,6 +122,9 @@ def register():
     bpy.types.Scene.BlenderNC_UI_Properties = bpy.props.PointerProperty(
         type=BlenderNC_UI_Properties
     )
+    bpy.types.Scene.BlenderNC_Settings = bpy.props.PointerProperty(
+        type=BlenderNC_Settings
+    )
     bpy.types.NODE_MT_add.append(add_custom_node_to_menu)
     enable_node_updates(True)
     return {"FINISHED"}
@@ -142,5 +151,6 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     del bpy.types.Scene.BlenderNC_UI_Properties
+    del bpy.types.Scene.BlenderNC_Settings
     bpy.types.NODE_MT_add.remove(add_custom_node_to_menu)
     return {"FINISHED"}

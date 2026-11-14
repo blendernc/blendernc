@@ -36,3 +36,29 @@ class BlenderNC_UI_PT_3D_VIEW(bpy.types.Panel):
         split = row.split(factor=0.85, align=True)
         split.prop(UI_props, "datacube_file")
         split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
+
+
+class BlenderNC_NODE_PT_SETTINGS(bpy.types.Panel):
+    """Scene-wide BlenderNC settings in the node editor's sidebar (N panel).
+
+    Shown under a "BlenderNC" tab, and only while a BlenderNC node tree is
+    being edited.
+    """
+
+    bl_idname = "BLENDERNC_NODE_PT_SETTINGS"
+    bl_label = "Settings"
+    bl_category = "BlenderNC"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+
+    @classmethod
+    def poll(cls, context):
+        """Only in a node editor showing a ``BlenderNCNodeTree``."""
+        space = context.space_data
+        return getattr(space, "tree_type", None) == "BlenderNCNodeTree"
+
+    def draw(self, context):
+        """Draw one heading per group of settings."""
+        settings = context.scene.BlenderNC_Settings
+        column = self.layout.column(heading="Texture")
+        column.prop(settings, "lock_range")

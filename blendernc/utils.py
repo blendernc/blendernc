@@ -1271,17 +1271,41 @@ def field_range(values):
     return float(finite.min()), float(finite.max())
 
 
-def write_field_range(mesh, values):
+def write_field_range(mesh, values, locked=False):
     """Store the range of ``values`` as custom properties of ``mesh``.
 
     Shaders read ``mesh["Min value"]`` and ``mesh["Max value"]`` to map the
     attribute onto a colour ramp.
+
+    Parameters
+    ----------
+    mesh : bpy.types.Mesh
+        Mesh receiving the properties.
+    values : numpy.ndarray
+        Field written onto the mesh.
+    locked : bool, optional
+        Keep a range that is already stored, so the colour scale stays fixed
+        while the field changes (see :func:`range_locked`). A mesh without a
+        range always gets one.
     """
+    if locked and all(key in mesh for key in RANGE_PROPERTIES):
+        return
     for key, value in zip(RANGE_PROPERTIES, field_range(values)):
-        # Skip setting the property if it already exists.
-        if mesh.get(key) is not None:
-            continue
         mesh[key] = value
+
+
+def range_locked():
+    """Return the scene's "Lock range" setting, ``False`` when unavailable."""
+    settings = getattr(bpy.context.scene, "BlenderNC_Settings", None)
+    return bool(settings and settings.lock_range)
+
+
+def update_lock_range(self, context):
+    """Recompute the stored ranges as soon as the lock is released."""
+    if self.lock_range:
+        return
+    for node in list(get_all_nodes_by_idname("BlenderNCNodeTexture")):
+        node.update()
 
 
 def delete_point_attribute(mesh, name):
