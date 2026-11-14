@@ -165,12 +165,41 @@ def _connected_inputs(node):
     return connected_inputs
 
 
+def _drop_mismatched_links(node):
+    """Remove links between sockets of different types and log each one.
+
+    A custom node tree accepts any link, but copying an ``Object`` into a
+    ``String`` socket (or the other way round) raises ``TypeError`` when the
+    value is synced. Links are compared by socket type identifier, so only
+    like-for-like links survive.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node whose input links are checked.
+    """
+    for input_socket in node.inputs:
+        for link in list(input_socket.links):
+            from_socket = link.from_socket
+            if from_socket.bl_idname == input_socket.bl_idname:
+                continue
+            node.id_data.links.remove(link)
+            report_error(
+                node,
+                f"{node.name}: {from_socket.bl_label} output "
+                f"{from_socket.name!r} cannot feed {input_socket.bl_label} input "
+                f"{input_socket.name!r}; link removed.",
+                "WARNING",
+            )
+
+
 def is_single_input_linked(update_function):
     """Run an update only when the node has at least one linked input."""
 
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
         """Sync the node's data item with its linked inputs, then run the update."""
+        _drop_mismatched_links(self)
         datastruct = self.BNC_datastructs[0]
         connected_inputs = _connected_inputs(self)
         for input_socket in connected_inputs:

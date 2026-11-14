@@ -99,10 +99,3 @@ entries were fixed on 2026-11-13; they are listed at the end.
   `{"CANCELLED"}`; `messages.report_error` is the shared helper. The import operator
   also reports when the dataset could not be opened and no longer touches
   `context.area` when it is `None`.
-- **Grid did not follow resolution changes** (reported 2026-11-13): the
-  grid node now remembers `baked_object` and `baked_slicing`; when the
-  slicing in force differs, `update()` rebakes through the operator, which
-  in turn calls `update()` so the `Object` socket exists and the texture
-  nodes linked to it are rewritten. Covered by the panel test
-  `test_5_texture_follows_step_change` and the node-tree test
-  `test_resolution_change_rebakes_grid_and_texture`.

@@ -337,6 +337,31 @@ class TestSyntheticGrids(unittest.TestCase):
                 )
                 self.assert_frame_attribute(obj, expected, frame)
 
+    def test_mismatched_link_is_removed(self):
+        """Linking sockets of different types unlinks them with a warning."""
+        obj, _, var_name = self.build_pipeline("xy")
+        grid = next(n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeGrid")
+        variable = next(
+            n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeVariable"
+        )
+        texture = self.tree.nodes.new("BlenderNCNodeTexture")
+        logger_name = bpy.types.Node.bl_rna_get_subclass_py(
+            "BlenderNCNodeTexture"
+        ).__module__.rsplit(".", 1)[0]
+
+        with self.assertLogs(logger_name, level="WARNING") as logs:
+            self.tree.links.new(grid.outputs["Object"], texture.inputs["Variable"])
+            self.tree.links.new(variable.outputs[var_name], texture.inputs["Object"])
+        self.assertFalse(texture.inputs["Variable"].is_linked)
+        self.assertFalse(texture.inputs["Object"].is_linked)
+        self.assertEqual(sum("link removed" in line for line in logs.output), 2)
+
+        # Matching types still link and the texture is written.
+        self.tree.links.new(grid.outputs["Object"], texture.inputs["Object"])
+        self.tree.links.new(variable.outputs[var_name], texture.inputs["Variable"])
+        self.assertEqual(texture.message, "")
+        self.assertIn(VARIABLE, obj.data.attributes)
+
     def test_resolution_change_rebakes_grid_and_texture(self):
         """Changing the step on the node rebakes the grid and the texture."""
         tree = self.tree
