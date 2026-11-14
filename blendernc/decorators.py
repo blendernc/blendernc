@@ -12,6 +12,7 @@ from .node_utils import (
     create_nodes,
     disconnect_links,
     locations,
+    node_updates_enabled,
 )
 from .panels_draw import draw_var_and_coords, show_section
 from .shader_utils import basic_shader_nodes, shader_locations
@@ -200,6 +201,8 @@ def is_single_input_linked(update_function):
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):
         """Sync the node's data item with its linked inputs, then run the update."""
+        if not node_updates_enabled():
+            return None
         _drop_mismatched_links(self)
         datastruct = self.BNC_datastructs[0]
         connected_inputs = _connected_inputs(self)

@@ -11,6 +11,7 @@ from .menus import (
     BlenderNCNodeSelection,
     add_custom_node_to_menu,
 )
+from .node_utils import enable_node_updates
 from .nodes import (
     DatacubeAnimateTexture,
     DatacubeCoords,
@@ -91,6 +92,7 @@ def register():
         type=BlenderNC_UI_Properties
     )
     bpy.types.NODE_MT_add.append(add_custom_node_to_menu)
+    enable_node_updates(True)
     return {"FINISHED"}
 
 
@@ -102,6 +104,9 @@ def unregister():
     set
         ``{"FINISHED"}`` once every class, handler and menu entry is removed.
     """
+    # Blender re-runs every node's update() while classes are unregistered;
+    # at quit time Python's thread pools are already gone, so skip the work.
+    enable_node_updates(False)
     logger.info("Un-registering handlers")
     handlers.frame_change_pre.remove(bNC_update_attributes)
     handlers.render_pre.remove(bNC_update_attributes)

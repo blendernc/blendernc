@@ -32,6 +32,24 @@ locations = [
 ]
 
 
+# Node updates do real work: dask computes, mesh writes, bakes. They are
+# switched off while the add-on unregisters, because Blender runs ``update``
+# on every node as the classes disappear, after Python has already shut down
+# its thread pools ("cannot schedule new futures after shutdown").
+_node_updates_enabled = True
+
+
+def enable_node_updates(enabled=True):
+    """Allow (default) or suspend the work done in node ``update`` methods."""
+    global _node_updates_enabled
+    _node_updates_enabled = enabled
+
+
+def node_updates_enabled():
+    """Return ``False`` while node updates are suspended."""
+    return _node_updates_enabled
+
+
 def get_all_nodes_by_idname(bl_idname):
     """Yield every node of a given type across all node groups.
 

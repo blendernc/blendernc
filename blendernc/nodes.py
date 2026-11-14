@@ -7,6 +7,7 @@ from .decorators import (
     initialize_BNC_datastructs,
     is_single_input_linked,
 )
+from .node_utils import node_updates_enabled
 from .properties import BNC_data
 from .utils import (
     SLICING_ANY_VARIABLE,
@@ -94,7 +95,7 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         failure is logged once rather than on every tree update.
         """
         datastruct = self.BNC_datastructs[0]
-        if not self.datacube_file:
+        if not self.datacube_file or not node_updates_enabled():
             return
         changed = self.datacube_file != datastruct.datafile
         evicted = datastruct.filename and get_dataset(datastruct) is None

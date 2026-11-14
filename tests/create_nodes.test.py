@@ -35,23 +35,23 @@ class test_add_and_remove_all_nodes(unittest.TestCase):
         material.use_nodes = True
         tree = material.node_tree
         mapping = {
-            "ShaderNodeAttribute": {"links": {"Fac": {"Low": "Value"}}},
-            "Low": {
+            "ShaderNodeAttribute": {"links": {"Factor": {"Map Range": "Value"}}},
+            "Map Range": {
                 "type": "ShaderNodeMapRange",
-                "links": {"Result": {"High": "Value"}},
+                "links": {"Result": {"Map Range.001": "Value"}},
             },
-            "High": {"type": "ShaderNodeMapRange"},
+            "Map Range.001": {"type": "ShaderNodeMapRange"},
         }
         for _ in range(2):  # a second pass must reuse, not duplicate
             created = create_nodes(tree, mapping)
             create_links(tree, created)
 
         ranges = [n for n in tree.nodes if n.bl_idname == "ShaderNodeMapRange"]
-        self.assertEqual(sorted(n.name for n in ranges), ["High", "Low"])
-        self.assertEqual(created["Low"]["node"].name, "Low")
-        self.assertTrue(created["High"]["node"].inputs["Value"].is_linked)
-        link = created["High"]["node"].inputs["Value"].links[0]
-        self.assertEqual(link.from_node.name, "Low")
+        self.assertEqual(sorted(n.name for n in ranges), ["Map Range", "Map Range.001"])
+        self.assertEqual(created["Map Range"]["node"].name, "Map Range")
+        self.assertTrue(created["Map Range.001"]["node"].inputs["Value"].is_linked)
+        link = created["Map Range.001"]["node"].inputs["Value"].links[0]
+        self.assertEqual(link.from_node.name, "Map Range")
         self.assertEqual(
             sum(n.bl_idname == "ShaderNodeAttribute" for n in tree.nodes), 1
         )
