@@ -51,8 +51,8 @@ def get_all_nodes_by_idname(bl_idname):
                 yield node
 
 
-def create_node(node_tree, node_type, location=(0, 0), return_if_exists=True):
-    """Create a node in a tree, or return an existing one of the same type.
+def create_node(node_tree, node_type, location=(0, 0), name=None):
+    """Create a node in a tree, or return the existing one it stands for.
 
     Parameters
     ----------
@@ -62,25 +62,27 @@ def create_node(node_tree, node_type, location=(0, 0), return_if_exists=True):
         Node type identifier (``bl_idname``).
     location : tuple of float, optional
         Position of the node in the editor, by default ``(0, 0)``.
-    return_if_exists : bool, optional
-        When ``True`` (default) and a node of this type already exists,
-        return it instead of creating another one.
+    name : str, optional
+        Name given to the node. With a name, the node called ``name`` is
+        reused when it has this type, which lets a tree hold several nodes
+        of one type. Without one, the first node of this type is reused and
+        it keeps Blender's default name.
 
     Returns
     -------
     bpy.types.Node
         The created or existing node, moved to ``location``.
     """
-    node_names = [node.name for node in node_tree.nodes if node.bl_idname == node_type]
-    if not node_names:
-        # Create new node if it doesn't exist.
-        node = node_tree.nodes.new(node_type)
-    elif return_if_exists:
-        # Return existing node if it already exists in the node tree
-        node = node_tree.nodes.get(node_names[0])
+    if name is None:
+        node = next((n for n in node_tree.nodes if n.bl_idname == node_type), None)
     else:
-        # Create new node
+        node = node_tree.nodes.get(name)
+        if node is not None and node.bl_idname != node_type:
+            node = None  # the name belongs to another kind of node
+    if node is None:
         node = node_tree.nodes.new(node_type)
+        if name is not None:
+            node.name = name
     node.location = location
     return node
 
@@ -134,9 +136,20 @@ def create_nodes(node_tree, nodes, locations=None):
         Tree in which to create the nodes. A geometry node tree also gets a
         group output node and ``Geometry`` interface sockets.
     nodes : dict
-        Mapping of node type identifier to a dict that may hold a ``"links"``
-        entry (see :func:`create_links`). Each entry is updated in place with
-        the created ``"node"``.
+        Mapping of identifier to a dict describing one node. The identifier
+        is the node type (``bl_idname``) unless the dict has a ``"type"``
+        entry; then the identifier is a free name and becomes the node's
+        name, so two entries may share a type::
+
+            {
+                "ShaderNodeAttribute": {"links": {"Fac": {"Low": "Value"}}},
+                "Low": {"type": "ShaderNodeMapRange", "links": {...}},
+                "High": {"type": "ShaderNodeMapRange"},
+            }
+
+        ``"links"`` is described in :func:`create_links` and refers to other
+        entries by their identifier. Each entry is updated in place with the
+        created ``"node"``.
     locations : list of tuple, optional
         One ``(x, y)`` position per node, in mapping order. By default the
         nodes are spread along a row.
@@ -153,8 +166,10 @@ def create_nodes(node_tree, nodes, locations=None):
     if locations is None:
         locations = _row_locations(len(nodes))
 
-    for node_type, location in zip(nodes, locations, strict=True):
-        nodes[node_type]["node"] = create_node(node_tree, node_type, location)
+    for (key, entry), location in zip(nodes.items(), locations, strict=True):
+        node_type = entry.get("type", key)
+        name = key if "type" in entry else None
+        entry["node"] = create_node(node_tree, node_type, location, name)
 
     return nodes
 
@@ -167,9 +182,10 @@ def create_links(node_tree, nodes):
     node_tree : bpy.types.NodeTree
         Tree holding the nodes.
     nodes : dict
-        Mapping of node type to a dict with a ``"node"`` reference and an
+        Mapping of identifier to a dict with a ``"node"`` reference and an
         optional ``"links"`` entry of the form
-        ``{output_socket_name: {target_node_type: input_socket_name}}``.
+        ``{output_socket_name: {target_identifier: input_socket_name}}``,
+        where identifiers are the keys of ``nodes`` (see :func:`create_nodes`).
     """
     for key, value in nodes.items():
         if "links" in value:

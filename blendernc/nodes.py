@@ -22,6 +22,7 @@ from .utils import (
     store_dataset,
     suggested_stride,
     texture_field,
+    write_field_range,
     write_point_attribute,
 )
 
@@ -449,7 +450,9 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
         if data is None:
             logger.warning(f"{self.name}: {self.message.replace(chr(10), ' ')}")
             return
-        write_point_attribute(obj.data, variable, field_to_point_values(data))
+        values = field_to_point_values(data)  # the one dask compute
+        write_field_range(obj.data, values)
+        write_point_attribute(obj.data, variable, values)
         self.written = variable
         logger.info(f"{self.name}: wrote {variable} onto {obj.name}")
 

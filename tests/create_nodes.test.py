@@ -4,7 +4,12 @@ import unittest
 import bpy
 import numpy as np
 
-from blendernc.node_utils import create_blenderncnodetree, create_node
+from blendernc.node_utils import (
+    create_blenderncnodetree,
+    create_links,
+    create_node,
+    create_nodes,
+)
 
 BlenderNCNode = np.unique(
     [
@@ -22,7 +27,35 @@ class test_add_and_remove_all_nodes(unittest.TestCase):
         """Every registered node type can be added to the ``BLENDERNC`` tree."""
         node_tree = create_blenderncnodetree("BLENDERNC")
         for node_id in BlenderNCNode:
-            create_node(node_tree, node_id, location=(0, 0), return_if_exists=True)
+            create_node(node_tree, node_id, location=(0, 0))
+
+    def test_two_nodes_of_one_type_from_mapping(self):
+        """Entries with an explicit type can share it; links use the keys."""
+        material = bpy.data.materials.new("bnc_two_ranges")
+        material.use_nodes = True
+        tree = material.node_tree
+        mapping = {
+            "ShaderNodeAttribute": {"links": {"Fac": {"Low": "Value"}}},
+            "Low": {
+                "type": "ShaderNodeMapRange",
+                "links": {"Result": {"High": "Value"}},
+            },
+            "High": {"type": "ShaderNodeMapRange"},
+        }
+        for _ in range(2):  # a second pass must reuse, not duplicate
+            created = create_nodes(tree, mapping)
+            create_links(tree, created)
+
+        ranges = [n for n in tree.nodes if n.bl_idname == "ShaderNodeMapRange"]
+        self.assertEqual(sorted(n.name for n in ranges), ["High", "Low"])
+        self.assertEqual(created["Low"]["node"].name, "Low")
+        self.assertTrue(created["High"]["node"].inputs["Value"].is_linked)
+        link = created["High"]["node"].inputs["Value"].links[0]
+        self.assertEqual(link.from_node.name, "Low")
+        self.assertEqual(
+            sum(n.bl_idname == "ShaderNodeAttribute" for n in tree.nodes), 1
+        )
+        bpy.data.materials.remove(material)
 
     def test_delete_all_nodes(self):
         """All nodes can be removed from the ``BLENDERNC`` tree."""

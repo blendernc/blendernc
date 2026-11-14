@@ -648,18 +648,22 @@ def build_indexers(dataset, data, slicing, var_name):
     }
 
 
-def get_data_from_datastruct(datastruct, var_name):
+def get_data_from_datastruct(datastruct, var_name, fill=True):
     """Return ``var_name`` from the cached dataset with its slicing applied.
 
     Records may name a dimension directly or a coordinate; a coordinate is
     resolved to the dimensions it spans, so a 2-D coordinate strides both.
     Selections on dimensions the array does not have are ignored, which is
     what lets wildcard records apply safely to coordinates.
+
+    With ``fill`` (the default) missing values become 0, which mesh
+    coordinates need; pass ``fill=False`` to keep NaN for statistics.
     """
     dataset = get_dataset(datastruct)
     data = dataset[var_name]
     indexers = build_indexers(dataset, data, datastruct.slicing, var_name)
-    return data.isel(indexers).fillna(0)
+    data = data.isel(indexers)
+    return data.fillna(0) if fill else data
 
 
 # --------------------------------------------------------------------------
@@ -1066,9 +1070,10 @@ def field_to_point_values(data):
     Returns
     -------
     numpy.ndarray
-        1-D array with one value per vertex.
+        1-D ``float32`` array with one value per vertex. Missing values stay
+        NaN; :func:`write_point_attribute` zeroes them when writing.
     """
-    return data.values.transpose(1, 0).flatten()
+    return np.ascontiguousarray(data.values.transpose(1, 0).ravel(), dtype=np.float32)
 
 
 def write_point_attribute(mesh, name, values):
@@ -1089,8 +1094,39 @@ def write_point_attribute(mesh, name, values):
         The attribute that was written.
     """
     attr = add_attribute(mesh, name, attr_type="FLOAT", domain="POINT")
-    attr.data.foreach_set("value", values)
+    # A contiguous float32 array matches the attribute storage, so
+    # ``foreach_set`` copies the buffer instead of converting item by item.
+    attr.data.foreach_set("value", np.nan_to_num(values, nan=0.0))
     return attr
+
+
+# Custom properties on the mesh that hold the range of the written field.
+RANGE_PROPERTIES = ("Min value", "Max value")
+
+
+def field_range(values):
+    """Return ``(min, max)`` of the finite values, or ``(0.0, 0.0)`` if none.
+
+    One pass over an array that is already in memory; sampling would be
+    slower to set up than the reduction itself.
+    """
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return 0.0, 0.0
+    return float(finite.min()), float(finite.max())
+
+
+def write_field_range(mesh, values):
+    """Store the range of ``values`` as custom properties of ``mesh``.
+
+    Shaders read ``mesh["Min value"]`` and ``mesh["Max value"]`` to map the
+    attribute onto a colour ramp.
+    """
+    for key, value in zip(RANGE_PROPERTIES, field_range(values)):
+        # Skip setting the property if it already exists.
+        if mesh.get(key) is not None:
+            continue
+        mesh[key] = value
 
 
 def delete_point_attribute(mesh, name):
@@ -1139,7 +1175,7 @@ def texture_field(datastruct, obj, variable):
     dataset = get_dataset(datastruct)
     if dataset is None or variable not in dataset:
         return None, f"{variable} is not in the datacube."
-    data = get_data_from_datastruct(datastruct, variable)
+    data = get_data_from_datastruct(datastruct, variable, fill=False)
     error = texture_field_error(data, obj.data)
     return (None, error) if error else (data, "")
 

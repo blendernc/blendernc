@@ -29,7 +29,12 @@ import xarray as xr
 
 from blendernc.handlers import bNC_update_attributes
 from blendernc.node_utils import create_blenderncnodetree
-from blendernc.utils import MAX_VERTEX_SAMPLES, get_dataset, get_surface_dims
+from blendernc.utils import (
+    MAX_VERTEX_SAMPLES,
+    RANGE_PROPERTIES,
+    get_dataset,
+    get_surface_dims,
+)
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
@@ -290,6 +295,32 @@ class TestSyntheticGrids(unittest.TestCase):
         np.testing.assert_allclose(
             np.sort(values), np.sort(dataset[var_name].values.ravel()), rtol=1e-6
         )
+        field = dataset[var_name].values
+        low, high = RANGE_PROPERTIES
+        self.assertAlmostEqual(obj.data[low], float(field.min()), places=6)
+        self.assertAlmostEqual(obj.data[high], float(field.max()), places=6)
+
+    def test_texture_range_ignores_nan(self):
+        """NaN samples are written as 0 but left out of the stored range."""
+        path = f"{self.tmpdir}/holes.nc"
+        rng = np.random.default_rng(3)
+        field = rng.uniform(5.0, 9.0, (NY, NX))
+        field[0, 0] = field[NY - 1, NX - 1] = np.nan
+        xr.Dataset(
+            {VARIABLE: (("Y", "X"), field)},
+            coords={"X": np.arange(float(NX)), "Y": np.arange(float(NY))},
+        ).to_netcdf(path)
+        self.files["holes"] = path
+        self.datasets["holes"] = xr.open_dataset(path)
+
+        obj, _, _ = self.build_pipeline("holes", texture=True)
+        self.assertEqual(self.texture_node.message, "")
+        values = point_attribute(obj, VARIABLE)
+        self.assertEqual(np.count_nonzero(values == 0.0), 2)
+        low, high = RANGE_PROPERTIES
+        self.assertAlmostEqual(obj.data[low], float(np.nanmin(field)), places=5)
+        self.assertAlmostEqual(obj.data[high], float(np.nanmax(field)), places=5)
+        self.assertGreaterEqual(obj.data[low], 5.0)
 
     def test_xy_texture_removed_when_variable_unlinked(self):
         """Unlinking the Variable input deletes the attribute it wrote."""

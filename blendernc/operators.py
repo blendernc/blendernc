@@ -1,7 +1,7 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from .decorators import check_if_node_tree_exists, is_linked
+from .decorators import check_if_node_tree_exists, create_Shader_nodes, is_linked
 from .messages import report_error, report_errors
 from .node_utils import create_links, create_nodes
 from .utils import (
@@ -189,7 +189,50 @@ class Import_OT_CreateGrid(bpy.types.Operator):
 class BlenderNCBakeFromAttribute(bpy.types.Operator):
     bl_idname = "blendernc.bake_from_attribute"
     bl_label = "Bake From Attribute"
+    bl_description = "Create texture from 2D variable of datacube"
 
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
+
+    @report_errors
+    @check_if_node_tree_exists
     def execute(self, context):
-        # Implement the baking logic here
+        """Bake a texture from a 2D variable of a datacube.
+
+        A Material is created and applied to the target object,
+        the 2-D variable are written to a float attribute.
+        This attribute is then used in the material to create a color.
+
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
+
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``
+        """
+
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        texture_node = node_tree.nodes.get("Datacube Texture")
+        obj = texture_node.inputs["Object"].default_value
+        var = texture_node.inputs["Variable"].default_value
+        if var in bpy.data.materials:
+            self.material = bpy.data.materials.get(var)
+        else:
+            self.material = bpy.data.materials.new(name=var)
+        obj.data.materials.append(self.material)
+        obj.active_material = self.material
+        create_Shader_nodes(self, context)
+        shader_node_tree = self.material.node_tree
+        attr_node = shader_node_tree.nodes.get("Attribute")
+        attr_node.attribute_name = var
+        attr_node = shader_node_tree.nodes.get("Attribute.001")
+        attr_node.attribute_type = "OBJECT"
+        attr_node.attribute_name = "Max value"
+        attr_node = shader_node_tree.nodes.get("Attribute.002")
+        attr_node.attribute_type = "OBJECT"
+        attr_node.attribute_name = "Min value"
+
         return {"FINISHED"}
