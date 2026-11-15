@@ -15,6 +15,7 @@ import unittest
 import bpy
 import numpy as np
 import xarray as xr
+from bpy_extras import anim_utils
 
 NX, NY = 12, 8
 VARIABLE = "noise"
@@ -100,6 +101,34 @@ class TestUIPanel(unittest.TestCase):
         self.assertEqual(texture.message, "")
         self.assertIn(VARIABLE, obj.data.attributes)
         self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
+    def test_7_keyframed_panel_step_rebakes(self):
+        """A keyframed panel step rebakes the grid and texture on frame change."""
+        scene = bpy.context.scene
+        self.props.variable = VARIABLE
+        scene.frame_set(1)
+        self.props.step = 1
+        try:
+            scene.keyframe_insert("BlenderNC_UI_Properties.step", frame=1)
+            anim = scene.animation_data
+            bag = anim_utils.action_get_channelbag_for_slot(
+                anim.action, anim.action_slot
+            )
+            # Insert on the F-curve: setting the value would rebake, and the
+            # rebake re-evaluates the existing key before keyframe_insert runs.
+            bag.fcurves.find("BlenderNC_UI_Properties.step").keyframe_points.insert(
+                10, 3
+            )
+            obj = bpy.data.objects["Grid"]
+            for frame, step in ((10, 3), (1, 1)):
+                scene.frame_set(frame)
+                expected = len(range(0, NX, step)) * len(range(0, NY, step))
+                self.assertEqual(self.node("Datacube Resolution").step, step)
+                self.assertEqual(len(obj.data.vertices), expected)
+                self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+        finally:
+            scene.animation_data_clear()
+            scene.frame_set(1)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestUIPanel)

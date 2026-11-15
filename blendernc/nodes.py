@@ -552,7 +552,6 @@ class DatacubeSubsample(bpy.types.Node, bNCNodeDefault):
                 self.datacube_coords,
                 slice(0, None, self.step),
             )
-
         self.refresh_downstream()
 
 

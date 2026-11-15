@@ -3,7 +3,7 @@ import logging
 import bpy
 
 from .decorators import flush_pending_unlinks
-from .handlers import bNC_update_attributes
+from .handlers import bNC_apply_animated_steps, bNC_update_attributes
 from .menus import (
     BlenderNCNodeAnimate,
     BlenderNCNodeGrid,
@@ -71,30 +71,34 @@ classes = [
 ]
 
 # Handler lists that run :func:`bNC_update_attributes`.
-HANDLER_LISTS = ("frame_change_pre", "render_pre")
+HANDLERS = (
+    ("frame_change_pre", bNC_update_attributes),
+    ("render_pre", bNC_update_attributes),
+    ("frame_change_post", bNC_apply_animated_steps),
+)
 
 
-def _is_frame_handler(func):
+def _same_handler(func, target):
     """Match by name and module, so a copy left by an add-on reload matches."""
     return (
-        getattr(func, "__name__", None) == bNC_update_attributes.__name__
-        and getattr(func, "__module__", None) == bNC_update_attributes.__module__
+        getattr(func, "__name__", None) == target.__name__
+        and getattr(func, "__module__", None) == target.__module__
     )
 
 
 def unregister_handlers():
-    """Remove every copy of the frame handler; absent handlers are ignored."""
-    for name in HANDLER_LISTS:
+    """Remove every copy of BlenderNC's handlers; absent ones are ignored."""
+    for name, target in HANDLERS:
         handler_list = getattr(bpy.app.handlers, name)
-        for func in [f for f in handler_list if _is_frame_handler(f)]:
+        for func in [f for f in handler_list if _same_handler(f, target)]:
             handler_list.remove(func)
 
 
 def register_handlers():
-    """Add the frame handler exactly once to each list."""
+    """Add each BlenderNC handler exactly once to its list."""
     unregister_handlers()
-    for name in HANDLER_LISTS:
-        getattr(bpy.app.handlers, name).append(bNC_update_attributes)
+    for name, target in HANDLERS:
+        getattr(bpy.app.handlers, name).append(target)
 
 
 logger = logging.getLogger(__name__)

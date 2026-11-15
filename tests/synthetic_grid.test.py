@@ -28,6 +28,7 @@ from types import SimpleNamespace
 import bpy
 import numpy as np
 import xarray as xr
+from bpy_extras import anim_utils
 
 from blendernc.blendernc import register_handlers
 from blendernc.decorators import flush_pending_unlinks
@@ -645,6 +646,30 @@ class TestSyntheticGrids(unittest.TestCase):
         self.assertEqual(len(obj.data.vertices), expected)
         self.assertEqual(texture.message, "")
         self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
+    def test_keyframed_node_step_rebakes(self):
+        """Keyframing the resolution node's step rebakes on frame change."""
+        obj, resolution, texture = self.build_resolution_texture_tree()
+        scene, tree = bpy.context.scene, self.tree
+        scene.frame_set(1)
+        try:
+            resolution.keyframe_insert("step", frame=1)
+            anim = tree.animation_data
+            bag = anim_utils.action_get_channelbag_for_slot(
+                anim.action, anim.action_slot
+            )
+            path = f'nodes["{resolution.name}"].step'
+            bag.fcurves.find(path).keyframe_points.insert(10, 2)
+            for frame, step in ((10, 2), (1, 1)):
+                scene.frame_set(frame)
+                expected = len(range(0, NX, step)) * len(range(0, NY, step))
+                self.assertEqual(resolution.step, step)
+                self.assertEqual(len(obj.data.vertices), expected)
+                self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+                self.assertEqual(texture.message, "")
+        finally:
+            tree.animation_data_clear()
+            scene.frame_set(1)
 
     def test_lock_range_setting(self):
         """Unlocked, the range follows the data; locked, it stays fixed."""
