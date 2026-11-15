@@ -27,6 +27,7 @@ from .utils import (
     store_dataset,
     suggested_stride,
     texture_field,
+    update_suggested_step,
     write_field_range,
     write_point_attribute,
 )
@@ -583,7 +584,7 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         name="Suggested Step",
         description="Use the suggested step based on the surface dimensions",
         default=True,
-        update=lambda self, context: self.update(),
+        update=update_suggested_step,
     )
 
     @initialize_BNC_datastructs

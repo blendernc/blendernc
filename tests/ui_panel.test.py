@@ -42,6 +42,12 @@ class TestUIPanel(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.tmpdir, ignore_errors=True)
 
+    def section_shown(self):
+        """True when the resolution/texture section is drawn in the panel."""
+        panel = bpy.types.BLENDERNC_UI_PT_3D_VIEW
+        names = [func.__name__ for func in panel._dyn_ui_initialize()]
+        return "draw_resolution_grid_and_texture" in names
+
     def node(self, label):
         node = self.tree.nodes.get(label)
         self.assertIsNotNone(node, f"{label} missing from the panel tree")
@@ -53,6 +59,16 @@ class TestUIPanel(unittest.TestCase):
         self.assertNotIn("Grid", bpy.data.objects)
         texture = self.node("Datacube Texture")
         self.assertFalse(texture.inputs["Object"].is_linked)
+        self.assertFalse(self.section_shown())
+
+    def test_1b_axes_after_variable_show_section_and_bake(self):
+        """Choosing the coordinates last also reveals the section and bakes."""
+        self.props.X = "X"
+        self.assertFalse(self.section_shown(), "one axis cannot form a grid")
+        self.props.Y = "Y"
+        self.assertTrue(self.section_shown())
+        self.assertEqual(len(bpy.data.objects["Grid"].data.vertices), NX * NY)
+        self.assertTrue(self.node("Datacube Texture").inputs["Variable"].is_linked)
 
     def test_2_variable_after_axes_bakes_and_links_texture(self):
         """With X and Y chosen the grid is baked and the texture written."""
@@ -76,6 +92,20 @@ class TestUIPanel(unittest.TestCase):
         self.assertFalse(texture.inputs["Object"].is_linked)
         self.assertFalse(texture.inputs["Variable"].is_linked)
         self.assertNotIn(VARIABLE, bpy.data.objects["Grid"].data.attributes)
+        self.assertFalse(self.section_shown())
+
+    def test_3b_unticking_suggestion_keeps_suggested_step(self):
+        """Switching the suggestion off copies its step to the panel."""
+        resolution = self.node("Datacube Resolution")
+        resolution.step = 7  # stale value the suggestion replaces
+        resolution.suggested_step = True
+        suggested = resolution.step
+        self.props.step = suggested + 5  # stale panel value
+        resolution.suggested_step = True
+        resolution.suggested_step = False
+        self.assertEqual(resolution.step, suggested)
+        self.assertEqual(self.props.step, suggested)
+        resolution.suggested_step = True  # later tests start from a suggestion
 
     def test_4_manual_step_rebakes_coarser_grid(self):
         """Typing a step turns suggestions off and strides both axes."""

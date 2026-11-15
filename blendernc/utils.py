@@ -557,20 +557,48 @@ def update_variable_UI(self, context):
     if var_node is None:
         return
     var_node.datacube_vars = self.variable
-    selected = var_node.datacube_vars  # the node may have rejected the value
-    show_section(draw_resolution_grid_and_texture, selected != NO_SELECTION)
+    sync_texture_section(self, node_tree)
 
+
+# A grid needs at least two axes (see get_2D_coords).
+MIN_GRID_AXES = 2
+
+
+def _texture_section_ready(UI_props, var_node):
+    """True when the panel has a variable and enough axes to bake a grid."""
+    axes = [getattr(UI_props, axis) for axis in ("X", "Y", "Z")]
+    selected_axes = [axis for axis in axes if axis and axis != NO_SELECTION]
+    return (
+        var_node.datacube_vars != NO_SELECTION  # the node may reject a value
+        and len(selected_axes) >= MIN_GRID_AXES
+    )
+
+
+def sync_texture_section(UI_props, node_tree):
+    """Show the resolution/texture section and wire the texture when ready.
+
+    The section, the grid bake and the texture links only make sense once
+    both a variable and the coordinates are chosen; otherwise the section is
+    hidden and the texture node is unlinked, so "Apply Material" cannot run
+    on a grid that does not exist. Called from both the variable and the
+    coordinate selectors, since either may be chosen last.
+    """
+    var_node = node_tree.nodes.get(UI_VARIABLE_NODE)
     grid_node = node_tree.nodes.get(UI_GRID_NODE)
     texture_node = node_tree.nodes.get(UI_TEXTURE_NODE)
+    if var_node is None:
+        return
+    ready = _texture_section_ready(UI_props, var_node)
+    show_section(draw_resolution_grid_and_texture, ready)
     if grid_node is None or texture_node is None:
         return
-    if selected == NO_SELECTION:
+    if not ready:
         delete_link(node_tree, var_node, texture_node, "Variable")
         delete_link(node_tree, grid_node, texture_node, "Object")
         return
     _bake_ui_grid(node_tree, grid_node)
     create_link(node_tree, grid_node, texture_node, "Object", "Object")
-    create_link(node_tree, var_node, texture_node, selected, "Variable")
+    create_link(node_tree, var_node, texture_node, var_node.datacube_vars, "Variable")
 
 
 def _bake_ui_grid(node_tree, grid_node):
@@ -607,6 +635,7 @@ def update_coords_links_UI(self, context):
             delete_link(node_tree, coord_node, grid_node, axis)
         else:
             create_link(node_tree, coord_node, grid_node, selected, axis)
+    sync_texture_section(self, node_tree)
 
 
 def update_step_UI(self, context):
@@ -620,8 +649,27 @@ def update_step_UI(self, context):
     step_node = node_tree.nodes.get(UI_STEP_NODE) if node_tree else None
     if step_node is None or step_node.step == self.step:
         return
-    step_node.suggested_step = False
+    # Step first: while the suggestion is on, writing it is a no-op, and
+    # switching the suggestion off then copies this value back to the panel.
     step_node.step = self.step
+    step_node.suggested_step = False
+
+
+def update_suggested_step(node, context):
+    """Callback for a resolution node's ``suggested_step`` toggle.
+
+    Turning the suggestion off keeps the suggested value: the panel's own
+    ``step`` is set to the node's current step, instead of showing its default
+    (2), which on a large dataset could ask for far more vertices than Blender
+    can handle. ``update_step_UI`` sees equal values and does nothing.
+    """
+    node.update()
+    in_panel_tree = node.id_data.name == UI_NODE_TREE and node.name == UI_STEP_NODE
+    if node.suggested_step or not in_panel_tree:
+        return
+    UI_props = bpy.context.scene.BlenderNC_UI_Properties
+    if UI_props.step != node.step:
+        UI_props.step = node.step
 
 
 # --------------------------------------------------------------------------
