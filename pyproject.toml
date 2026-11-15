@@ -1,6 +1,6 @@
 [project]
 name = "blendernc"
-version = "0.8.0"
+version = "0.7.0"
 description = "Extension to load and manipulate geocubes in blender"
 authors = [
     {name = "josuemtzmo",email = "josue.mtzmo@gmail.com"}
@@ -41,7 +41,8 @@ version_variable = [
 ]
 
 version_toml = [
-    "pyproject.toml:tool.poetry.version"
+    "pyproject.toml:project.version",
+    "blender_manifest.toml:version"
 ]
 
 version_pattern= [

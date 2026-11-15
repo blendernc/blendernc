@@ -1,0 +1,72 @@
+name: Build extension
+
+# Releases are created by semantic-release with GITHUB_TOKEN, which does not
+# trigger `release`/`push: tags` workflows, so chain on the release workflow.
+on:
+  workflow_run:
+    workflows: ["Semantic Release"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build (default: latest release)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BLENDER: "5.2.0"
+    steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          tag="${{ inputs.tag }}"
+          [ -z "$tag" ] && tag=$(gh release view -R "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Download wheels for every platform
+        run: |
+          rm -rf wheels && mkdir wheels
+          dl() { python -m pip download --only-binary=:all: --python-version 3.13 \
+                   --implementation cp -d wheels "$@"; }
+          dl -r requirements.txt --platform win_amd64
+          # Their markers are win32-only, so they are skipped when resolving on Linux.
+          dl tzdata colorama     --platform win_amd64
+          # ecmwflibs 0.7.0's arm64 wheel is tagged macOS 15, so this zip needs macOS >= 15.
+          dl -r requirements.txt --platform macosx_15_0_arm64
+          # pip does not fall back to older manylinux tags for an explicit
+          # --platform, and some wheels (cffi) only ship manylinux2014.
+          dl -r requirements.txt --platform manylinux_2_28_x86_64 \
+             --platform manylinux_2_17_x86_64 --platform manylinux2014_x86_64
+
+      - name: Write wheel list into the manifest
+        run: |
+          python -m pip install toml
+          python update_wheels.py
+
+      - name: Build per-platform zips with Blender
+        run: |
+          mkdir -p dist_ext  # Blender does not create the output dir
+          docker run --rm -w /blendernc \
+            --mount type=bind,source="$PWD",target=/blendernc \
+            ghcr.io/ranchcomputing/blender-cpu-image:$BLENDER \
+            /bin/sh -c "blender --command extension build --split-platforms --output-dir /blendernc/dist_ext"
+          ls -lh dist_ext
+
+      - name: Upload zips to the release
+        run: gh release upload "${{ steps.tag.outputs.tag }}" dist_ext/*.zip --clobber
