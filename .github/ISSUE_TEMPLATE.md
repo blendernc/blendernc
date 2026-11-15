@@ -17,7 +17,7 @@ Example:
 ```
 OS: macOS Big Sur (intel)
 Blender Version: 2.93
-BlenderNC Version: 0.9.0
+BlenderNC Version: 0.9.1
 etc.
 ```
 

@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.9.1 (2026-11-15)
+
+### Fix
+
+* Remove text from README.md ([`96196e3`](https://github.com/blendernc/blendernc/commit/96196e35c8f466b01fcf3fc91b4e958f7dee98b4))
+
 ## v0.9.0 (2026-11-15)
 
 ### Feature
