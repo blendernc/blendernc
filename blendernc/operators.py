@@ -1,390 +1,246 @@
-#!/usr/bin/env python3
-# Imports
-from os.path import abspath
-
 import bpy
+from bpy_extras.io_utils import ImportHelper
 
-from blendernc.core.update_ui import (
-    UpdateImage,
-    update_colormap_interface,
-    update_nodes,
+from .decorators import check_if_node_tree_exists, create_Shader_nodes, is_linked
+from .messages import report_error, report_errors
+from .node_utils import create_links, create_nodes
+from .utils import (
+    GRID_DIMS_PROPERTY,
+    add_attribute,
+    assign_modifier_to_object,
+    extract_dimensions_of_grid,
+    get_2D_coords,
+    get_datacube_path,
+    get_dataset,
+    get_grid_coords,
+    grid_dims,
+    grid_material,
+    look_up_object_and_mesh,
+    stack_2D_coords,
 )
-from blendernc.get_utils import (
-    get_blendernc_nodetrees,
-    get_default_material,
-    get_node,
-    get_translated_link,
-    get_translated_node,
-    get_var,
-)
-from blendernc.messages import (
-    PrintMessage,
-    active_selection_preference,
-    asign_material,
-    select_file,
-    unselected_object,
-)
-from blendernc.python_functions import BlenderncEngine, load_frame
-from blendernc.translations import translate
-
-bNCEngine = BlenderncEngine()
 
 
-class BlenderNC_OT_datacubeload(bpy.types.Operator):
-    """
-    BlenderNC_OT_datacubeload Load datacube files within Blender.
+class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
+    """Import a NetCDF/GRIB/Zarr dataset into BlenderNC."""
 
-    Parameters
-    ----------
-    bpy : bpy.types.Operator
-        Blender API bpy socket to generate a new Operator.
+    bl_idname = "blendernc.import_mfdataset"
 
-    Returns
-    -------
-    dict
-        {FINISHED} if operator exits successfully.
-    """
+    bl_label = "Load Datacube"
+    bl_description = "Import Datacube with xarray"
 
-    bl_idname = "blendernc.datacubeload"
-    bl_label = "Load datacube file"
-    bl_description = "Loads datacube file"
-    bl_options = {"REGISTER", "UNDO"}
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
 
-    file_path: bpy.props.StringProperty(
-        name="File path",
-        description="Path to the datacube file that will be loaded.",
-        subtype="FILE_PATH",
-        # default="",
+    filter_glob: bpy.props.StringProperty(
+        default="*.nc;*.grib;*.zarr",
+        options={"HIDDEN"},
     )
     """An instance of the original StringProperty."""
 
-    node_group: bpy.props.StringProperty(
-        name="node", description="Node calling operator"
+    directory: bpy.props.StringProperty(
+        subtype="DIR_PATH", options={"SKIP_SAVE", "HIDDEN"}
     )
-    """An instance of the original StringProperty."""
+    files: bpy.props.CollectionProperty(
+        type=bpy.types.OperatorFileListElement, options={"SKIP_SAVE", "HIDDEN"}
+    )
 
-    node: bpy.props.StringProperty(name="node", description="Node calling operator")
-    """An instance of the original StringProperty."""
-
+    @report_errors
+    @check_if_node_tree_exists
     def execute(self, context):
-        if not self.file_path:
-            PrintMessage(select_file, "Error", "ERROR")
-            return {"FINISHED"}
-        file_path = abspath(self.file_path)
+        """Store the chosen file path on the import node and load the dataset.
 
-        node = get_node(self.node_group, self.node)
+        Multiple selected files are collapsed into a single glob pattern.
+        Assigning the path to the node loads the dataset through the
+        property's update callback. When invoked from the 3D view, the path
+        is mirrored to the UI properties.
 
-        # TODO: Implement node with chunks if file is huge.
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
 
-        unique_identifier = node.blendernc_dataset_identifier
-        node.blendernc_dict[unique_identifier] = bNCEngine.check_files_datacube(
-            file_path
-        )
-        self.report({"INFO"}, "Lazy load of %s!" % file_path)
-        scn = context.scene
-        default_node_group_name = scn.default_nodegroup
-        # If quick import, define global variable.
-        if self.node_group == default_node_group_name:
-            var_names = get_var(node.blendernc_dict[unique_identifier]["Dataset"])
-            bpy.types.Scene.blendernc_datacube_vars = bpy.props.EnumProperty(
-                items=var_names, name="Select Variable", update=update_nodes
-            )
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report when the
+            files share no pattern or the dataset cannot be opened.
+        """
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        import_node = node_tree.nodes.get(self.node_name)
+
+        datacube_path = get_datacube_path(self.directory, self.files)
+        import_node.datacube_file = datacube_path
+        if get_dataset(import_node.BNC_datastructs[0]) is None:
+            return report_error(self, f"Could not open {datacube_path}.")
+
+        area = context.area
+        if not bpy.app.background and area is not None and area.type == "VIEW_3D":
+            context.scene.BlenderNC_UI_Properties.datacube_file = datacube_path
 
         return {"FINISHED"}
 
 
-class BlenderNC_OT_var(bpy.types.Operator):
-    bl_idname = "blendernc.var"
-    bl_label = "Load datacube vars"
-    bl_description = "Loads datacube vars"
-    bl_options = {"REGISTER", "UNDO"}
+class Import_OT_CreateGrid(bpy.types.Operator):
+    """Create mesh from datacube coordinates."""
 
-    file_path: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
+    bl_idname = "blendernc.create_grid_from_coords"
 
+    bl_label = "Create Grid"
+    bl_description = "Create mesh from datacube coordinates"
+
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
+
+    @report_errors
+    @is_linked
     def execute(self, context):
-        if not self.file_path:
-            PrintMessage(select_file, "Error", "ERROR")
-            return {"CANCELLED"}
+        """Bake a mesh grid from the coordinates linked to a grid node.
 
-        blendernc_nodes = get_blendernc_nodetrees()
-        scn = context.scene
-        default_node_group_name = scn.default_nodegroup
+        A Mesh Grid geometry node sized from the coordinate dimensions is applied
+        to the target object, the 2-D coordinate arrays are written to a
+        ``Coordinates`` vector attribute, and a second geometry node modifier
+        moves the vertices to those positions before removing the attribute.
+        Finally the grid node is updated so its ``Object`` output exists and
+        downstream texture nodes are rewritten for the new mesh.
 
-        if not blendernc_nodes:
-            bpy.data.node_groups.new(default_node_group_name, "BlenderNC")
-            bpy.data.node_groups[default_node_group_name].use_fake_user = True
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
 
-        node_group = bpy.data.node_groups.get(default_node_group_name)
-        if not node_group.nodes:
-            path = node_group.nodes.new("datacubePath")
-            path.location[0] = -300
-            datacube = node_group.nodes.new("datacubeNode")
-            datacube.location[0] = -130
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report if no input
+            is linked or the coordinates cannot form a grid.
+        """
+
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        grid_node = node_tree.nodes.get(self.node_name)
+
+        # Work out the vertex layout before touching Blender data, so a
+        # dataset that cannot form a grid is reported without side effects.
+        grid_coords = get_grid_coords(grid_node)
+        dims = grid_dims(grid_coords)
+        grid_coords = get_2D_coords(grid_coords)
+        vertices_x, vertices_y = extract_dimensions_of_grid(grid_coords)
+        flattened_coords = stack_2D_coords(grid_coords)
+
+        obj, mesh = look_up_object_and_mesh(grid_node.grid_obj_name)
+
+        modifier, grid_nodetree = assign_modifier_to_object(obj, obj.name)
+        nodes = {
+            "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
+        }
+        create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, nodes)
+        mesh_grid_node = nodes["GeometryNodeMeshGrid"]["node"]
+        mesh_grid_node.inputs["Vertices X"].default_value = vertices_x
+        mesh_grid_node.inputs["Vertices Y"].default_value = vertices_y
+        _apply_modifier(context, obj, modifier)
+
+        attr = add_attribute(
+            mesh, "Coordinates", attr_type="FLOAT_VECTOR", domain="POINT"
+        )
+        attr.data.foreach_set("vector", flattened_coords)
+
+        modifier, grid_nodetree = assign_modifier_to_object(obj, "apply_grid_coords")
+        nodes = {
+            "NodeGroupInput": {
+                "links": {"Geometry": {"GeometryNodeSetPosition": "Geometry"}}
+            },
+            "GeometryNodeInputNamedAttribute": {
+                "links": {"Attribute": {"GeometryNodeSetPosition": "Position"}}
+            },
+            "GeometryNodeSetPosition": {
+                "links": {"Geometry": {"GeometryNodeRemoveAttribute": "Geometry"}}
+            },
+            "GeometryNodeRemoveAttribute": {
+                "links": {"Geometry": {"GeometryNodeSetMaterial": "Geometry"}}
+            },
+            "GeometryNodeSetMaterial": {
+                "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
+            },
+        }
+        create_nodes(grid_nodetree, nodes)
+        create_links(grid_nodetree, nodes)
+        named_attribute = nodes["GeometryNodeInputNamedAttribute"]["node"]
+        named_attribute.data_type = "FLOAT_VECTOR"
+        named_attribute.inputs["Name"].default_value = "Coordinates"
+        remove_attribute = nodes["GeometryNodeRemoveAttribute"]["node"]
+        remove_attribute.inputs["Name"].default_value = "Coordinates"
+        set_material = nodes["GeometryNodeSetMaterial"]["node"]
+        set_material.inputs["Material"].default_value = grid_material(grid_node)
+        _apply_modifier(context, obj, modifier)
+
+        # Texture nodes read the dims to orient fields the same way.
+        if dims:
+            mesh[GRID_DIMS_PROPERTY] = ",".join(dims)
         else:
-            path = node_group.nodes.get("datacube Path")
-            datacube = node_group.nodes.get("datacube Input")
-        path.blendernc_file = self.file_path
-        # LINK nodes
-        if not node_group.links:
-            node_group.links.new(datacube.inputs[0], path.outputs[0])
+            mesh.pop(GRID_DIMS_PROPERTY, None)
 
-        datacube.update()
+        # Remember what was baked so the node can tell when it is stale, then
+        # let it expose the object and refresh the nodes reading from it.
+        grid_node.baked_object = obj.name
+        grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
+        grid_node.update()
+
         return {"FINISHED"}
 
 
-class BlenderNC_OT_compute_range(bpy.types.Operator):
-    bl_idname = "blendernc.compute_range"
-    bl_label = "Compute vmin & vmax"
-    bl_description = "Compute vmax and vmin of datacube selected variable"
-    bl_options = {"REGISTER", "UNDO"}
+def _apply_modifier(context, obj, modifier):
+    """Apply ``modifier`` on ``obj`` without changing the active object."""
+    with context.temp_override(object=obj, active_object=obj):
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-    node: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    node_group: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
 
+class BlenderNCBakeFromAttribute(bpy.types.Operator):
+    bl_idname = "blendernc.bake_from_attribute"
+    bl_label = "Bake From Attribute"
+    bl_description = "Create texture from 2D variable of datacube"
+
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
+
+    @report_errors
+    @check_if_node_tree_exists
     def execute(self, context):
-        node = bpy.data.node_groups.get(self.node_group).nodes.get(self.node)
-        unique_identifier = node.blendernc_dataset_identifier
-        # TODO: Fix bug when the node isn't connected.
-        dataset = node.blendernc_dict[unique_identifier]["Dataset"]
-        selected_variable = node.blendernc_dict[unique_identifier]["selected_var"][
-            "selected_var_name"
-        ]
+        """Bake a texture from a 2D variable of a datacube.
 
-        node.blendernc_dataset_min = (
-            (
-                dataset[selected_variable].min()
-                - abs(1e-5 * dataset[selected_variable].min())
-            )
-            .compute()
-            .values
-        )
-        node.blendernc_dataset_max = dataset[selected_variable].max().compute().values
-        return {"FINISHED"}
+        A Material is created and applied to the target object,
+        the 2-D variable are written to a float attribute.
+        This attribute is then used in the material to create a color.
 
+        Parameters
+        ----------
+        context : bpy.types.Context
+            Current Blender context.
 
-class BlenderNC_OT_preloader(bpy.types.Operator):
-    bl_idname = "blendernc.preloader"
-    bl_label = "Preload a range of variable steps into memory"
-    bl_description = "Preload a range of variable steps into memory"
-    bl_options = {"REGISTER", "UNDO"}
-    file_name: bpy.props.StringProperty(
-        name="File name",
-        description="Path to the datacube file that will be loaded.",
-        subtype="FILE_PATH",
-        # default="",
-    )
-    """An instance of the original StringProperty."""
-    var_name: bpy.props.StringProperty(
-        name="File name",
-        description="Path to the datacube file that will be loaded.",
-        subtype="FILE_PATH",
-        # default="",
-    )
-    """An instance of the original StringProperty."""
-    frame_start: bpy.props.IntProperty(
-        default=1,
-        name="Start",
-    )
-    """An instance of the original IntProperty."""
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``
+        """
 
-    frame_end: bpy.props.IntProperty(
-        default=250,
-        name="End",
-    )
-    """An instance of the original IntProperty."""
-
-    def execute(self, context):
-        if not self.file_name:
-            self.report({"INFO"}, "Select a file!")
-            return {"FINISHED"}
-        file_path = abspath(self.file_name)
-
-        scene = context.scene
-        scene.blendernc_dict
-
-        var_name = self.var_name
-        if not var_name:
-            self.report({"INFO"}, "Select a variable!")
-            return {"FINISHED"}
-
-        # For each frame check if the frame is already in memory
-        frame_start, frame_end = self.frame_start, self.frame_end
-        for frame in range(frame_start, frame_end):
-            print("Frame %i loaded!" % frame)
-            load_frame(context, file_path, var_name, frame)
-
-        self.report(
-            {"INFO"}, "Frames %i to %i have been loaded!" % (frame_start, frame_end)
-        )
-        return {"FINISHED"}
-
-
-class BlenderNC_OT_datacube2img(bpy.types.Operator):
-    bl_idname = "blendernc.datacube2img"
-    bl_label = "From datacube to image"
-    bl_description = "Updates an image with datacube data"
-    node: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    node_group: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    frame: bpy.props.IntProperty()
-    """An instance of the original IntProperty."""
-    flip: bpy.props.BoolProperty()
-    """An instance of the original BoolProperty."""
-    image: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-
-    def execute(self, context):
-        UpdateImage(context, self.node, self.node_group, self.frame, self.image)
-        return {"FINISHED"}
-
-
-class BlenderNC_OT_colorbar(bpy.types.Operator):
-    bl_idname = "blendernc.colorbar"
-    bl_label = "Create/Update colobar"
-    bl_description = "Create or updates colorbar"
-    node: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    node_group: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-    image: bpy.props.StringProperty()
-    """An instance of the original StringProperty."""
-
-    def execute(self, context):
-        if bpy.data.images[self.image].users >= 2:
-            update_colormap_interface(self.node, self.node_group)
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        texture_node = node_tree.nodes.get("Datacube Texture")
+        obj = texture_node.inputs["Object"].default_value
+        var = texture_node.inputs["Variable"].default_value
+        if var in bpy.data.materials:
+            self.material = bpy.data.materials.get(var)
         else:
-            PrintMessage(asign_material, "Error", "ERROR")
-        return {"FINISHED"}
-
-
-class BlenderNC_OT_apply_material(bpy.types.Operator):
-    bl_label = "Load datacube"
-    bl_idname = "blendernc.apply_material"
-    bl_description = "Apply texture to material for simple cases"
-    bl_context = "objectmode"
-    bl_options = {"REGISTER", "INTERNAL"}
-
-    def execute(self, context):
-        act_obj = (
-            context.active_object
-            if context.active_object.select_get() is True
-            else None
-        )
-        sel_obj = context.scene.blendernc_meshes
-        # Check if an object is selected or picked.
-        # TODO change to hasattr(context.scene, "my_prop")?
-        if not sel_obj and act_obj:
-            sel_obj = act_obj
-        elif sel_obj and not act_obj:
-            pass
-        elif sel_obj and act_obj:
-            if sel_obj.name != act_obj.name:
-                PrintMessage(active_selection_preference, "Warning", "INFO")
-                sel_obj = act_obj
-        else:
-            PrintMessage(unselected_object, "Error", "ERROR")
-            return {"FINISHED"}
-
-        blendernc_material = get_default_material()
-        self.create_materials(blendernc_material)
-
-        imagetex = get_translated_node(blendernc_material, "Image Texture")
-        cmap = get_translated_node(blendernc_material, "Colormap")
-        bump = get_translated_node(blendernc_material, "Bump")
-
-        P_BSDF = get_translated_node(blendernc_material, "Principled BSDF")
-
-        texcoord_link = self.get_projection(sel_obj.name, blendernc_material, imagetex)
-
-        blendernc_material.node_tree.links.new(
-            get_translated_link(imagetex.inputs, "Vector"), texcoord_link
-        )
-        blendernc_material.node_tree.links.new(
-            get_translated_link(cmap.inputs, "Fac"),
-            get_translated_link(imagetex.outputs, "Color"),
-        )
-        blendernc_material.node_tree.links.new(
-            get_translated_link(bump.inputs, "Height"),
-            get_translated_link(imagetex.outputs, "Color"),
-        )
-        blendernc_material.node_tree.links.new(
-            get_translated_link(P_BSDF.inputs, "Base Color"),
-            get_translated_link(cmap.outputs, "Color"),
-        )
-
-        blendernc_material.node_tree.links.new(
-            get_translated_link(P_BSDF.inputs, "Normal"),
-            get_translated_link(bump.outputs, "Normal"),
-        )
-
-        imagetex.image = bpy.data.images.get("BlenderNC_default")
-
-        self.apply_material(sel_obj)
+            self.material = bpy.data.materials.new(name=var)
+        obj.data.materials.append(self.material)
+        obj.active_material = self.material
+        create_Shader_nodes(self, context)
+        shader_node_tree = self.material.node_tree
+        attr_node = shader_node_tree.nodes.get("Attribute")
+        attr_node.attribute_name = var
+        attr_node = shader_node_tree.nodes.get("Attribute.001")
+        attr_node.attribute_type = "OBJECT"
+        attr_node.attribute_name = "Max value"
+        attr_node = shader_node_tree.nodes.get("Attribute.002")
+        attr_node.attribute_type = "OBJECT"
+        attr_node.attribute_name = "Min value"
 
         return {"FINISHED"}
-
-    @staticmethod
-    def create_materials(blendernc_material):
-        if len(blendernc_material.node_tree.nodes.keys()) == 2:
-            texcoord = blendernc_material.node_tree.nodes.new("ShaderNodeTexCoord")
-            texcoord.location = (-760, 250)
-            imagetex = blendernc_material.node_tree.nodes.new("ShaderNodeTexImage")
-            imagetex.location = (-580, 250)
-            imagetex.interpolation = "Smart"
-            cmap = blendernc_material.node_tree.nodes.new("cmapsNode")
-            cmap.location = (-290, 250)
-            bump = blendernc_material.node_tree.nodes.new("ShaderNodeBump")
-            bump.inputs[0].default_value = 0.3
-            bump.location = (-290, -50)
-
-    @staticmethod
-    def get_projection(name, blendernc_material, imagetex):
-        texcoord = blendernc_material.node_tree.nodes.get(
-            translate("Texture Coordinate")
-        )
-        if name == "Icosphere":
-            texcoord_link = texcoord.outputs.get(translate("Generated"))
-            imagetex.projection = "SPHERE"
-        else:
-            texcoord_link = texcoord.outputs.get(translate("UV"))
-            imagetex.projection = "FLAT"
-        return texcoord_link
-
-    @staticmethod
-    def apply_material(sel_obj):
-        if sel_obj.type == "MESH":
-            sel_obj.active_material = bpy.data.materials.get("BlenderNC_default")
-
-
-class ImportDatacubeCollection(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(
-        name="File Path",
-        description="Filepath used for importing the file",
-        maxlen=1024,
-        subtype="FILE_PATH",
-    )
-
-
-class WM_OT_close_blender_warning(bpy.types.Operator):
-    """Warn the user that Blender needs to close"""
-
-    bl_idname = "wm.close_blender_warning"
-    bl_label = "Blender Warning"
-
-    def execute(self, context):
-        # Perform the operation (in this case, close Blender)
-        self.report({"INFO"}, "Blender will need to close.")
-        bpy.ops.wm.quit_blender()  # This will close Blender
-        return {"FINISHED"}
-
-    def invoke(self, context, event):
-        # Open a dialog before performing the operation
-        return context.window_manager.invoke_props_dialog(self)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Blender will need to close. Do you want to proceed?")

@@ -1,126 +1,63 @@
-#!/usr/bin/env python3
-import warnings
+"""User-facing messages: one place that reports to Blender and logs.
 
-import bpy
+Operators can show text in the status bar through ``report``; nodes,
+property groups and plain helpers cannot, so for them the log file is the
+only channel. Everything that is meant for the user goes through
+:func:`report_error`, and operator ``execute`` methods are wrapped in
+:func:`report_errors` so that the ``ValueError``/``OSError`` raised by the
+helpers in :mod:`blendernc.utils` end as a report instead of a traceback.
 
+When an operator is called from Python with ``bpy.ops``, Blender re-raises
+an ``ERROR`` report as a ``RuntimeError`` carrying the same message.
+"""
 
-# TODO Replace all messages with print_message.
-# Possibly shift to class when blendernc is initiated. and move to logging.
-class PrintMessage(object):
-    def __init__(self, text, title, icon, edit_text=None):
-        if edit_text is None:
-            self.message = text()
-        else:
-            self.message = text(edit_text)
-        self.title = title
-        self.icon = icon
+import logging
+from functools import wraps
 
-        self.print_message()
-
-    def print_message(self):
-        if not bpy.app.background:
-            bpy.context.window_manager.popup_menu(
-                self.message_contructor, title=self.title, icon=self.icon
-            )
-        else:
-            message = "Running in background mode,\n {0}".format(self.message)
-            warnings.warn(message)
-
-    def message_contructor(self, wm_self, context):
-        wm_self.layout.label(text=self.message)
+logger = logging.getLogger(__name__)
 
 
-def asign_material():
-    text = "Assign material to object!"
-    return text
+def report_error(owner, message, level="ERROR"):
+    """Log ``message`` and show it to the user when ``owner`` can report.
+
+    Operators have ``report``; nodes and property groups do not, so for them
+    the log is the only channel.
+
+    Parameters
+    ----------
+    owner : object
+        Operator, node or property group the message originates from.
+    message : str
+        Text shown in the status bar and written to the log.
+    level : str, optional
+        ``"ERROR"`` (default) or ``"WARNING"``, used for both channels.
+
+    Returns
+    -------
+    set
+        ``{"CANCELLED"}``, so an operator can ``return report_error(...)``.
+    """
+    logger.log(logging.getLevelName(level), message)
+    if hasattr(owner, "report"):
+        owner.report({level}, message)
+    return {"CANCELLED"}
 
 
-def load_after_restart():
-    text = "This change will be loaded after restarting Blender or creating a new file."
-    return text
+def report_errors(execute):
+    """Turn a ``ValueError`` or ``OSError`` from an operator into a report.
 
+    The helpers in :mod:`blendernc.utils` raise these for user-facing
+    problems (unreadable file, filenames that share no pattern, coordinates
+    that cannot form a grid). At the operator boundary the exception becomes
+    a status-bar message, a log entry and ``{"CANCELLED"}``.
+    """
 
-def active_selection_preference():
-    text = "The active selection has preference over picked object. "
-    text += "Make sure you selected the right mesh to apply material."
-    return text
+    @wraps(execute)
+    def wrapper(self, context):
+        """Run ``execute`` and convert the known exceptions into a report."""
+        try:
+            return execute(self, context)
+        except (ValueError, OSError) as exc:
+            return report_error(self, str(exc))
 
-
-def huge_image():
-    text = "Image is larger than 4096x4096 pixels, reduce the resolution."
-    return text
-
-
-def drop_dim():
-    text = "4D field, drop a dimension or select a slice"
-    return text
-
-
-def unselected_object():
-    text = "Select an object to apply material."
-    return text
-
-
-def select_file():
-    text = "Select a file!"
-    return text
-
-
-def no_cached_image():
-    text = "Images haven't been cached."
-    return text
-
-
-def no_cached_nodes():
-    text = "NodeTree hasn't been cached."
-    return text
-
-
-def client_exists():
-    text = "Client exists; a new client will be created."
-    return text
-
-
-def same_min_max_value():
-    text = "Random sampling has been attempted 4 times. "
-    text += "Please increase the resolution "
-    text += "or define the max and min values of the dataset "
-    text += "by using a Range node."
-    return text
-
-
-def no_package(edit_text):
-    text = text = "{0} is not installed, thus the functionality is limited.".format(
-        edit_text
-    )
-    return text
-
-
-def required_package(edit_text):
-    text = text = "{0} is not installed, thus BlenderNC will not work.".format(
-        edit_text
-    )
-    return text
-
-
-def path_no_exist(edit_text):
-    text = text = "{0} doesn't exist, check the provided path.".format(edit_text)
-    return text
-
-
-def unselected_datacube():
-    text = "Select a variable from the datacube."
-    return text
-
-
-def unselected_variable():
-    text = "Reselect a variable from the datacube."
-    return text
-
-
-def unselected_dim(self, context):
-    self.layout.label(text="Select a dimension to drop.")
-
-
-def unselected_coord(self, context):
-    self.layout.label(text="Select a coordinate to drop.")
+    return wrapper

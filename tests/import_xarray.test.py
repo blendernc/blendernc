@@ -4,144 +4,83 @@ import unittest
 
 import bpy
 
-from blendernc.translations import translate
+from blendernc.node_utils import create_blenderncnodetree
+from blendernc.utils import store_dataset
 
 
-def capture_render_log(func):
-    def wrapper(*args, **kwargs):
-        logfile = "blender_render.log"
-        open(logfile, "a").close()
-        old = os.dup(1)
-        sys.stdout.flush()
-        os.close(1)
-        os.open(logfile, os.O_WRONLY)
-        func(*args, **kwargs)
-        os.close(1)
-        os.dup(old)
-
-    return wrapper
+def update_datacube_file(file):
+    """Set the datacube path on the scene UI properties, triggering a load."""
+    bpy.data.scenes["Scene"].BlenderNC_UI_Properties.datacube_file = file
 
 
-@capture_render_log
-def render_image(file, var):
-    node_groups = bpy.data.node_groups
-    node_groups_keys = node_groups.keys()
+class Test_import(unittest.TestCase):
+    """Loading datacubes through the 3D view panel property."""
 
-    for node_groups_name in node_groups_keys:
-        if "BlenderNC" in node_groups_name:
-            node_groups.remove(node_groups[node_groups_name])
-
-    bpy.data.node_groups.new("BlenderNC", "BlenderNC")
-
-    node_tree = bpy.data.node_groups["BlenderNC"]
-    node_tree.use_fake_user = True
-
-    # Create nodes
-    path = node_tree.nodes.new("datacubePath")
-    path.location = (-350, 0)
-    inp = node_tree.nodes.new("datacubeNode")
-    inp.location = (-125, 0)
-    res = node_tree.nodes.new("datacubeResolution")
-    res.location = (125, 0)
-    out = node_tree.nodes.new("datacubeOutput")
-    out.location = (350, 0)
-
-    # Select variable
-    path.blendernc_file = file
-    # Connect path node to datacube node
-    node_tree.links.new(inp.inputs[0], path.outputs[0])
-    # Select variable
-    inp.blendernc_datacube_vars = var
-    # Change resolution
-    res.blendernc_resolution = 100
-
-    # Connect links
-    node_tree.links.new(res.inputs[0], inp.outputs[0])
-    node_tree.links.new(out.inputs[0], res.outputs[0])
-
-    # Create new image
-    bpy.ops.image.new(
-        name="BlenderNC_default",
-        width=1024,
-        height=1024,
-        color=(0.0, 0.0, 0.0, 1.0),
-        alpha=True,
-        generated_type="BLANK",
-        float=True,
-    )
-
-    # Assign new image to node
-    out.image = bpy.data.images.get("BlenderNC_default")
-
-    # Delete cube
-    object_keys = bpy.data.objects.keys()
-
-    if translate("Cube") in object_keys:
-        bpy.data.objects[translate("Cube")].select_set(True)  # Blender 2.8x
-        bpy.ops.object.delete()
-
-    if translate("Plane") not in object_keys:
-        bpy.ops.mesh.primitive_plane_add()
-
-    plane = bpy.data.objects[translate("Plane")]
-    plane.select_set(True)
-
-    image_size_x = out.image.pixels.data.size[0]
-    image_size_y = out.image.pixels.data.size[1]
-
-    if image_size_x < image_size_x:
-        ratio = image_size_y / image_size_x
-    else:
-        ratio = image_size_x / image_size_y
-
-    plane.scale[0] = ratio
-
-    bpy.ops.blendernc.apply_material()
-
-    scene = bpy.context.scene
-    render = scene.render
-    directory = bpy.path.abspath("//")
-
-    format = file.split(".")[-1]
-    render.filepath = f"{directory}" + "{0}_image_{1}.png".format(var, format)
-    bpy.ops.render.render(write_still=True)
-
-    render.filepath = directory
-
-
-class Test_format_import(unittest.TestCase):
     def test_import_datacube(self):
-        file = os.path.abspath("./dataset/ssh_199*-01.nc")
-        var = "adt"
-        format = file.split(".")[-1]
-        render_image(file, var)
-        file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
-        self.assertTrue(file_exist)
+        """A single file path is stored and its dataset cached."""
+        file = os.path.abspath("./dataset/ssh_1995-01.nc")
+        update_datacube_file(file)
+        node_tree = bpy.data.node_groups.get("BLENDERNC")
+        node = node_tree.nodes.get("Datacube Import")
+        datastruct = node.BNC_datastructs[0]
+        datastruct_exists = datastruct.datafile == file
+        datastruct_dict_exists = datastruct.dict[datastruct.filename] is not None
+        self.assertTrue(datastruct_dict_exists)
+        self.assertTrue(datastruct_exists)
 
-    def test_import_zarr(self):
-        file = os.path.abspath("./dataset/ssh_1995-01.zarr")
-        var = "adt"
-        format = file.split(".")[-1]
-        render_image(file, var)
-        file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
-        self.assertTrue(file_exist)
-
-    def test_import_grib(self):
-        file = os.path.abspath("./dataset/ECMWF_data.grib")
-        var = "t2m"
-        format = file.split(".")[-1]
-        render_image(file, var)
-        file_exist = os.path.isfile("./{0}_image_{1}.png".format(var, format))
-        self.assertTrue(file_exist)
+    def test_import_mfdataset_pattern(self):
+        """A glob pattern is stored and opened as a multi-file dataset."""
+        file = os.path.abspath("./dataset/ssh_*.nc")
+        bpy.data.scenes["Scene"].BlenderNC_UI_Properties.datacube_file = file
+        node_tree = bpy.data.node_groups.get("BLENDERNC")
+        node = node_tree.nodes.get("Datacube Import")
+        datastruct = node.BNC_datastructs[0]
+        datastruct_exists = datastruct.datafile == file
+        datastruct_dict_exists = datastruct.dict[datastruct.filename] is not None
+        self.assertTrue(datastruct_dict_exists)
+        self.assertTrue(datastruct_exists)
 
     def test_file_missing(self):
+        """A missing file is logged, leaves no dataset and disconnects the tree."""
         file = os.path.abspath("./dataset/abc.nc")
-        var = ""
-        with self.assertRaises(TypeError):
-            render_image(file, var)
+
+        scratch = create_blenderncnodetree("BNC_SCRATCH")
+        node = scratch.nodes.new("BlenderNCNodeImport")
+        with self.assertLogs("blendernc.messages", level="ERROR"):
+            self.assertFalse(store_dataset(node.BNC_datastructs[0], file))
+        self.assertEqual(node.BNC_datastructs[0].filename, "")
+        bpy.data.node_groups.remove(scratch)
+
+        with self.assertLogs("blendernc.messages", level="WARNING"):
+            update_datacube_file(file)
+        import_node = bpy.data.node_groups["BLENDERNC"].nodes["Datacube Import"]
+        self.assertFalse(import_node.outputs[0].is_linked)
+
+    def test_operator_missing_file_reports_and_cancels(self):
+        """The import operator reports the problem and logs it.
+
+        In the UI the report lands in the status bar. When an operator is
+        called from Python, Blender re-raises an ``ERROR`` report as a
+        ``RuntimeError`` carrying the same message.
+        """
+        with self.assertLogs("blendernc", level="ERROR") as logs:
+            with self.assertRaisesRegex(RuntimeError, "Could not open .*abc.nc"):
+                bpy.ops.blendernc.import_mfdataset(
+                    node_name="Datacube Import",
+                    node_tree="BLENDERNC",
+                    directory=os.path.abspath("./dataset/"),
+                    files=({"name": "abc.nc"},),
+                )
+        self.assertTrue(any("Could not open" in line for line in logs.output))
+
+    def test_remove_all_nodes(self):
+        """Clean up by removing every node from the ``BLENDERNC`` tree."""
+        node_tree = bpy.data.node_groups.get("BLENDERNC")
+        for node in list(node_tree.nodes):
+            node_tree.nodes.remove(node)
 
 
-suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_format_import)
+suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_import)
 test = unittest.TextTestRunner().run(suite)
 
 ret = not test.wasSuccessful()

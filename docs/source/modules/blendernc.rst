@@ -17,27 +17,13 @@ Submodules
 .. toctree::
    :maxdepth: 2
 
-   blendernc.python_functions
-   blendernc.get_utils
+   blendernc.utils
    blendernc.blendernc
-   blendernc.decorators
    blendernc.handlers
-   blendernc.preferences
-   blendernc.image
    blendernc.messages
    blendernc.operators
    blendernc.panels
-   blendernc.UI_operators
    blendernc.sockets
-
-
-Core
-----
-
-.. toctree::
-   :maxdepth: 2
-
-   blendernc.core
 
 
 Nodes

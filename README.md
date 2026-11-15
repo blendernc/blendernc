@@ -1,9 +1,13 @@
 # BlenderNC
 
-![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Github CI](https://github.com/blendernc/blendernc/actions/workflows/test.yml/badge.svg) [![codecov](https://codecov.io/gh/blendernc/blendernc/branch/master/graph/badge.svg?token=NYJMMGIMPJ)](https://codecov.io/gh/blendernc/blendernc) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-2.83--2.93-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/blendernc/blendernc/master.svg)](https://results.pre-commit.ci/latest/github/blendernc/blendernc/master) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/relekang/python-semantic-release)
+![Read the Docs](https://img.shields.io/readthedocs/blendernc) ![Github CI](https://github.com/blendernc/blendernc/actions/workflows/test.yml/badge.svg) [![codecov](https://codecov.io/gh/blendernc/blendernc/branch/master/graph/badge.svg?token=NYJMMGIMPJ)](https://codecov.io/gh/blendernc/blendernc) [![Maintainability](https://api.codeclimate.com/v1/badges/bbd6f981e5f5a26c6a56/maintainability)](https://codeclimate.com/github/blendernc/blendernc/maintainability) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub](https://img.shields.io/github/license/blendernc/blendernc?color=lightblue) ![blender support](https://img.shields.io/badge/blender-5.2+-blueviolet) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/blendernc/blendernc?label=tag) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/blendernc/blendernc/master.svg)](https://results.pre-commit.ci/latest/github/blendernc/blendernc/master) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/relekang/python-semantic-release)
 
 
 <!--INFO-->
+> [!IMPORTANT]
+> - BlenderNC 0.8.0 breaks backwards compatibility, only Blender 5.2+ is supported.
+> - BlenderNC 0.7.0 works for versions lower to Blender 4.2.
+
 
 **BlenderNC** is an open source add-on and Python module to visualize **netCDF**, **grib**, and **zarr** datasets in [**Blender**](www.blender.org).
 

@@ -14,6 +14,8 @@ rules:
     - test
     - build
     - ci
+    - chore
+    - update
 help: |
   **Possible types**:
   `fix`:      A bug fix. Correlates with PATCH in SemVer
@@ -25,3 +27,5 @@ help: |
   `test`:     Adding missing or correcting existing tests
   `build`:    Changes that affect the build system or external dependencies
   `ci`:       Changes to our CI configuration files and scripts
+  `chore`:    Other changes that don't modify src or test files
+  `update`:   Updates the code base and breaks backward compatibility

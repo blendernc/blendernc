@@ -9,14 +9,16 @@ jobs:
   flake8_py3:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v1
-      - name: Checkout PyTorch
-        uses: actions/checkout@master
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        uses: py-actions/flake8@v1
+        uses: py-actions/flake8@v2
         with:
           ignore: "F722,F821,E203,W503,F405"
           exclude: "./blendernc/addon_updater*.py"

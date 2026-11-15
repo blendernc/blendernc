@@ -1,0 +1,12 @@
+schema_version = "0.8.0"
+id = "blendernc"
+version = "0.8.0"
+name = "BlenderNC"
+tagline = "This extension allows to import geocubes into blender"
+maintainer = "Josué Martínez Moreno"
+type = "add-on"
+website = "https://blendernc.readthedocs.io/"
+tags = [ "Animation", "Geometry Nodes", "Render",]
+blender_version_min = "4.2.0"
+license = [ "MIT License",]
+wheels = []
