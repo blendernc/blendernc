@@ -2,146 +2,197 @@
 Contribute
 ==========
 
-If you want to contribute to the development of BlenderNC, please submit a pull request to the `master branch or dev branch <https://github.com/josuemtzmo/blendernc/pulls>`_.
+Contributions are welcome: bug reports, ideas, documentation and code. To
+report a problem or suggest a feature, open an issue at
+`BlenderNC issues <https://github.com/blendernc/blendernc/issues>`_. To
+contribute code, open a pull request against the ``master`` branch of the
+`BlenderNC repository <https://github.com/blendernc/blendernc>`_.
 
-Development workflow
-####################
+Development setup
+#################
 
-The log file for BlenderNC is located at the user extension path, typically in the Blender configuration directory. You can access it programmatically using the :func:`blendernc.log_path` function. If you are using the suggested development workflow with Visual Studio Code, you need to import blendernc by doing
+The suggested setup uses Visual Studio Code, which can start Blender with
+your local copy of BlenderNC loaded as an extension.
+
+|vscode badge|
+
+.. |vscode badge| image:: https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc
+   :target: https://open.vscode.dev/blendernc/blendernc
+
+1. Install `Visual Studio Code <https://code.visualstudio.com/>`_ and its
+   `Blender Development` extension (``jacqueslucke.blender-development``).
+2. Fork the repository on GitHub, then clone it:
+
+   .. code-block:: bash
+
+       git clone https://github.com/<your-user>/blendernc.git
+       cd blendernc
+       git remote add upstream https://github.com/blendernc/blendernc.git
+
+3. Open the cloned folder in Visual Studio Code.
+4. Press ``Ctrl+Shift+P`` (``Cmd+Shift+P`` on macOS), run ``Blender: Start``
+   and choose your Blender 5.2 executable.
+
+Blender now runs with BlenderNC loaded from your clone. Run
+``Blender: Reload Addons`` after changing the code.
+
+Dependencies
+------------
+
+Blender installs the Python libraries BlenderNC needs from the wheels listed
+in ``blender_manifest.toml``. Dependencies are managed with
+`Poetry <https://python-poetry.org>`_ in ``pyproject.toml``. After changing
+them, update the wheels and the manifest from the repository root:
+
+.. code-block:: bash
+
+    poetry lock
+    python update_wheels.py
+
+Log file
+--------
+
+BlenderNC writes its messages to ``log.txt`` in the extension's user
+directory. :func:`blendernc.log_path` returns its location. When BlenderNC is
+loaded through Visual Studio Code, import it under the development name:
 
 .. code-block:: python
 
     import bl_ext.vscode_development.blendernc as blendernc
     print(blendernc.log_path())
 
+Code conventions
+################
 
-|vscode badge|
-
-.. |vscode badge| image:: https://open.vscode.dev/badges/open-in-vscode.svg
-   :target: https://open.vscode.dev/blendernc/blendernc
-
-
-- Download and install `Visual Studio Code <https://code.visualstudio.com/>`_.
-- Install Visual Studio Code Add-On ``jacqueslucke.blender-development`` by searching at the `Extensions in Marketplace`.
-- Set up your ``Blender`` executable by pressing ``ctrl+shift+P`` -> ``Blender Start`` -> ``Choose new blender executable``.
-- Clone BlenderNC source code (`BlenderNC repo <https://github.com/blendernc/blendernc>`_):
-
-    .. code-block:: bash
-
-        git clone https://github.com/blendernc/blendernc.git
-
-- Set up your remotes (i.e. ``origin`` and ``upstream``).
-- Initiate a new workspace in the cloned folder.
-- Voalà! Now you can develop, debug, and modify **BlenderNC**.
+- **Reporting errors.** Don't raise exceptions from operators, nodes or
+  property callbacks: the user never sees the traceback. Use
+  ``report_error`` or the ``report_errors`` decorator from
+  ``blendernc/messages.py``, which show the message in Blender, write it to
+  the log and return ``{"CANCELLED"}``. Helper functions may raise
+  ``ValueError``; the operator calling them turns it into a report.
+- **Small functions.** flake8 rejects functions with a complexity above 5.
+  Split long functions into small helpers.
+- **Docstrings.** Use the `numpydoc <https://numpydoc.readthedocs.io/>`_
+  style, so the API reference is generated from the code.
 
 Testing
 #######
 
-In order to merge into any branch of the **BlenderNC** repository, all test must pass. Locally testing **BlenderNC** is really simple, as it uses docker containers by `nytimes/rd-blender-docker <https://github.com/nytimes/rd-blender-docker>`_. Execute the following code from the cloned repository root directory:
+Tests live in ``tests/`` as ``*.test.py`` files. Each file runs inside
+Blender in background mode. A pull request is only merged when all tests
+pass.
+
+Run one test file
+-----------------
+
+From the ``tests/`` folder, with ``blender`` pointing to your Blender 5.2
+executable:
 
 .. code-block:: bash
 
-    docker pull nytimes/blender:latest
-    docker run -w /addon/blendernc -it --rm --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/sh -c
+    PYTHONPATH=/path/to/blendernc blender --addons blendernc -E CYCLES -b \
+        --python-use-system-env --python ui_panel.test.py
 
-If you want more control on each test, you can run an interactive docker container:
+Check the ``Ran N tests`` and ``OK`` / ``FAILED`` lines of the output.
+
+Run all tests
+-------------
+
+``tests/run_tests.py`` runs every ``*.test.py`` file and fails if any of
+them fails:
 
 .. code-block:: bash
-
-    docker pull nytimes/blender:latest
-    docker run -w /addon/blendernc --rm -it --mount type=bind,source="$(pwd)",target=/addon/blendernc -t nytimes/blender:latest /bin/bash
-
-and then run the following code in sections:
-
-.. code-block:: bash
-
-    #!/bin/sh
-
-    $BLENDERPY -m ensurepip --default-pip
-
-    $BLENDERPY -m pip install -r requirements.txt --progress-bar off
-
-    $BLENDERPY -m pip install coverage --progress-bar off
-
-    $BLENDERPY -m pip install -e . --progress-bar off
-
-    COVERAGE_PROCESS_START=${PWD}"/.coveragerc"
-    export COVERAGE_PROCESS_START=$COVERAGE_PROCESS_START
-    export PYTHONPATH=$PYTHONPATH:${PWD}
 
     cd tests
+    python run_tests.py /path/to/blender test
 
-    echo -e "import coverage \n\ncov=coverage.process_startup()\n"> sitecustomize.py
-    echo -e "print('Initiate coverage')" >> sitecustomize.py
-    echo -e "print(cov)" >> sitecustomize.py
+Run the tests like the CI
+-------------------------
 
-    export PYTHONPATH=$PYTHONPATH:${PWD}
+The CI runs the tests in the
+`ranchcomputing Blender CPU image <https://github.com/ranchcomputing/blender-cpu-image>`_
+with ``tests/build-test.sh``, which also measures coverage. To do the same,
+run this from the repository root:
 
-    $BLENDERPY run_tests.py
+.. code-block:: bash
 
-    coverage combine
-    coverage report
-    coverage xml
+    docker pull ghcr.io/ranchcomputing/blender-cpu-image:5.2.0
+    docker run -w /blendernc --rm \
+        --mount type=bind,source="$(pwd)",target=/blendernc \
+        -t ghcr.io/ranchcomputing/blender-cpu-image:5.2.0 \
+        /bin/sh -c "bash ./tests/build-test.sh"
+
+``tests/docker_test.sh`` wraps the same command.
 
 .. important::
-    Note the flag ``--mount type=bind,source="$(pwd)"`` when using the ``docker run`` command. The source path will be the current working directory. Make sure it corresponds to the root of the cloned repository (i.e. ``/parent/path/to/blendernc/blendernc``, where ``/parent/path/to/blendernc`` is the parent directory where ``github clone`` created the repository.
+    ``source="$(pwd)"`` mounts the current folder into the container. Run the
+    command from the root of the cloned repository, the folder that contains
+    ``pyproject.toml``.
 
-Linting
-#######
+Linting and commits
+###################
 
-BlenderNC is coded using the following linters for formatting conformance:
+`pre-commit <https://pre-commit.com/>`_ checks the code before each commit
+with:
 
-- `Black <https://github.com/psf/black>`_ ,
-- `Flake8 <https://flake8.pycqa.org/en/latest/>`_,
-- `Isort <https://isort.readthedocs.io/en/latest/>`_,
-- `commitlint <https://commitlint.js.org/#/>`_.
+- `Black <https://github.com/psf/black>`_ (formatting, 88 columns),
+- `isort <https://pycqa.github.io/isort/>`_ (import order, Black profile),
+- `Flake8 <https://flake8.pycqa.org/>`_ (style and complexity; ``tests/`` is
+  excluded),
+- `commitlint <https://commitlint.js.org/>`_ and
+  `Commitizen <https://commitizen-tools.github.io/commitizen/>`_ (commit
+  messages).
 
-
-These can be applied before committing code on the developer machine using `pre-commit <https://pre-commit.com/>`_. Follow these steps to set up your development environment.
+Install the hooks once:
 
 .. code-block:: bash
 
     pip install pre-commit
     pre-commit install
-
-Make sure to install `commitlint <https://commitlint.js.org/#/>`_ is installed by doing:
-
-.. code-block:: bash
-
-    npm install --save-dev @commitlint/{cli,config-conventional}
     pre-commit install --hook-type commit-msg
 
-
-otherwise, the ``pre-commit`` will fail with the following error:
-
-.. code-block:: bash
-
-    Error: Cannot find module "@commitlint/config-conventional" from "/blendernc"
-
-Before commiting or creating a PR, it is recommended to execute:
-
-.. code-block:: bash
-
-    pre-commit
-
-or
+To check every file before opening a pull request:
 
 .. code-block:: bash
 
     pre-commit run --all-files
 
-to skip skipping of files.
+Commit messages follow
+`Conventional Commits <https://www.conventionalcommits.org/>`_, for example
+``feat: add colormap node``, ``fix: keep material after rebake`` or
+``docs: simplify quickstart``. Releases are versioned from these prefixes, so
+use them consistently.
 
-.. important::
-    Commits and PR's pushed into branches ``master``, ``dev`` or ``distribution`` trigger `github actions <https://github.com/features/actions>`_ and perform necessary code-quality checks.
+Documentation
+#############
 
+The documentation is written in reStructuredText in ``docs/source`` and built
+with `Sphinx <https://www.sphinx-doc.org/>`_. To build it locally:
 
-Distribution
-############
+.. code-block:: bash
 
-Distribution of the BlenderNC is automatic updated through `github actions <https://github.com/features/actions>`_ when commits and PR's are pushed into the branches ``master``, ``dev`` or ``distribution``.
+    pip install -r docs/requirements.txt
+    cd docs
+    make html
 
-BlenderNC releases to PyPi are automated by using `poetry <https://python-poetry.org>`_, `semantic-release <https://semantic-release.gitbook.io/semantic-release/>`_, and `python-semantic-release <https://python-semantic-release.readthedocs.io/en/latest/>`_, through github actions that determine the next version number, generate the release notes and publishe the package to `PyPi <https://pypi.org/project/blendernc/>`_. For more information on the CI integration of semantic-release see `./github/workflows/release.yml <https://github.com/blendernc/blendernc/blob/distribution/.github/workflows/release.yml>`_
+Open ``docs/build/html/index.html`` to see the result.
 
-Aditionally, a compressed BlenderNC release is publised to `blendernc-zip-install <https://github.com/blendernc/blendernc-zip-install>`_
-when commits and PR's are pushed into the branches ``master``, ``dev`` or ``distribution``. This compressed release can be used to manually install BlenderNC in Blender. For more information on the CI integration of zip releases see `./github/workflows/ci.yml <https://github.com/blendernc/blendernc/blob/distribution/.github/workflows/ci.yml>`_
+Continuous integration
+######################
+
+GitHub Actions run these checks:
+
+- **Tests** run on every push and pull request, and coverage is uploaded to
+  Codecov.
+- **Black, Flake8 and commitlint** check pull requests and pushes.
+- **Zip release.** Pushes to ``master``, ``dev`` or ``distribution`` publish
+  a zip of the add-on to
+  `blendernc-zip-install <https://github.com/blendernc/blendernc-zip-install>`_,
+  which users can install in Blender (see
+  `ci.yml <https://github.com/blendernc/blendernc/blob/master/.github/workflows/ci.yml>`_).
+- **Release.** Pushes to ``master`` run
+  `python-semantic-release <https://python-semantic-release.readthedocs.io/>`_,
+  which picks the next version from the commit messages, writes the release
+  notes and publishes the package to `PyPI <https://pypi.org/project/blendernc/>`_
+  (see
+  `release.yml <https://github.com/blendernc/blendernc/blob/master/.github/workflows/release.yml>`_).

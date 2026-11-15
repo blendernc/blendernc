@@ -11,6 +11,7 @@ Quickstart Guide
         .green {color:green}
         .orange {color:orange}
         .teal {color:teal}
+        .blue {color:blue}
     </style>
 
 .. |xcircled| unicode:: U+24CD
@@ -28,119 +29,159 @@ Quickstart Guide
 .. role:: blue
 
 
-This guide will help you with the introductory steps to import datacubes and to visualize them. This is intended for first-time users of BlenderNC and visualization of 2D fields (e.g. bathymetry).
+This guide is for first-time users. It shows how to load a datacube and display
+a 2D field, using the GEBCO bathymetry as an example.
 
-Let's start by downloading the GEBCO bathymetry dataset. You can find it at `GEBCO official website <https://www.gebco.net/>`_ or download it directly by clicking `here <https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/sub_ice_topography_bathymetry/netcdf/GEBCO_2026_sub_ice.zip?download=1>`__ (it is approximately 7 Gb uncompressed)!
+1. Download the data
+====================
 
-Open Blender (>5.2) and in the 3D view pressing "n" to open the :red:`sidebar`. Switch to the :purple:`BlenderNC panel`.
+Download the GEBCO bathymetry from the `GEBCO website <https://www.gebco.net/>`_,
+or directly with `this link <https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/sub_ice_topography_bathymetry/netcdf/GEBCO_2026_sub_ice.zip?download=1>`__.
+Unzip it; the file is about 7 GB.
+
+2. Open the BlenderNC panel
+===========================
+
+Open Blender (5.2 or newer). In the 3D view, press ``N`` to open the
+:red:`sidebar`, then click the :purple:`BlenderNC panel`.
 
 .. image:: ../images/3D_view.png
   :width: 100%
   :alt: Blender 3D view
 
+3. Load the datacube
+====================
 
-Within the :purple:`BlenderNC panel` click on `Load datacube`, then select a
-datacube by clicking the :green:`folder icon`.
+In the :purple:`BlenderNC panel`, click ``Load datacube``, then click the
+:green:`folder icon`.
 
 .. image:: ../images/blendernc_panel_path.png
   :width: 100%
   :alt: BlenderNC search
 
-Navegate in the file browser to locate your downloaded GEBCO bathymetry dataset.
-:teal:`Select` the dataset and click in :teal:`Load Datacube`.
+In the file browser, find the GEBCO file, :teal:`select` it, and click
+:teal:`Load Datacube`.
 
 .. image:: ../images/blendernc_import.png
   :width: 100%
   :alt: BlenderNC search
 
-Select the coordinates to create the surface corresponding to the visualization you want to achieve. In this case, we want to visualize the topography, and thus we will select:
+4. Choose the coordinates
+=========================
 
-- X = lon,
-- Y = lat,
-- Z = |xcircled| (None).
+The coordinates set the shape of the surface. For a map of the topography,
+choose:
+
+- X = lon
+- Y = lat
+- Z = |xcircled| (none)
 
 .. image:: ../images/blendernc_select_coords.png
   :width: 100%
   :alt: BlenderNC select
 
-After selecting the coordinates, it should look like this:
+The panel should now look like this:
 
 .. image:: ../images/blendernc_selected_coords.png
   :width: 100%
   :alt: BlenderNC selected
 
-Now, let's select a variable to visualize. In this case, it will be `elevation`.
+5. Choose the variable
+======================
+
+Choose the variable to show: ``elevation``.
 
 .. image:: ../images/blendernc_select_variable.png
   :width: 100%
   :alt: BlenderNC select variable
 
-After clicking the variable, BlenderNC will create a `Grid` object using the coordinates you have selected. This object contains the variable you have chosen (as an attribute of the object), but it will not be visible until you apply the material.
+BlenderNC creates a ``Grid`` object from the coordinates and stores the
+variable on it. The grid stays invisible until you apply a material (step 6).
+
+.. note::
+  The resolution and material options only appear once both the variable and
+  at least two coordinates are chosen.
 
 .. important::
-  By default, the resolution of the grid is optimized for performance, meaning that grids with a dimension larger than 1000 will be downsampled to 1000.
-  In the case of the GEBCO bathymetry dataset, the downsampling to approximately 1000 points translates into sampling the dataset every 44 steps.
-  You can adjust this setting by unlocking the resolution limit by unchecking the `Suggested step`. However this may impact performance if the dataset is very large or even crash Blender.
+  To keep Blender responsive, BlenderNC suggests a step that reduces the
+  shorter side of the grid to about 1000 points. The same step is used for
+  both sides. For GEBCO, this means keeping one point every 44.
+
+  To pick your own step, untick ``Suggest step``. The step starts at the
+  suggested value, so you can lower it gradually. A small step on a large
+  dataset can make Blender very slow or crash it.
 
 .. image:: ../images/blendernc_selected_variable.png
   :width: 100%
   :alt: BlenderNC select variable
 
-Now that you have selected the variable, you can :orange:`Apply Material` to visualize it.
+6. Apply the material
+=====================
+
+Click :orange:`Apply Material`.
 
 .. image:: ../images/blendernc_apply_material.png
   :width: 100%
   :alt: BlenderNC apply material
 
-Although the material has been applied, the object will still not show it in the 3D view if the viewport shading is not set to display materials. To make it visible, switch the viewport shading to :blue:`Material Preview` or :blue:`Rendered`. This can be achieved by clicking choosing either option in the top right corner of the 3D view or pressing `z`, the shortcut key, to chose the shading mode.
+The material only shows when the viewport displays materials. Switch the
+viewport shading to :blue:`Material Preview` or :blue:`Rendered`, using the
+buttons in the top right corner of the 3D view or by pressing ``Z``.
 
 .. image:: ../images/blendernc_material_preview.png
   :width: 100%
   :alt: BlenderNC material preview
 
 .. note::
-  By default, ``Apply Material`` will create and assign a material to the Grid object using the selected variable. You can further customize this material in the Shader Editor if needed:
+  ``Apply Material`` creates a material for the selected variable and assigns
+  it to the Grid object. You can edit it in the Shader Editor:
 
   .. image:: ../images/blendernc_shader_editor.png
     :width: 100%
     :alt: BlenderNC Shader Editor
 
+7. Scale the grid
+=================
 
-
-BlenderNC does not automatically scales the grid to fit in the camera view, it preserves the coordinates. In other words, you may need to manually adjust the scale of the Grid object to make it fit in the camera view.
-
-To make the Grid object fit in the camera view, select the object, press the shortcut `S` to scale, and adjust it until it is properly framed in the viewport.
+BlenderNC keeps the original coordinates, so the grid can be much larger than
+the camera view. Select the Grid object, press ``S``, and move the mouse to
+scale it until it fits.
 
 .. image:: ../images/blendernc_scale.png
   :width: 100%
   :alt: BlenderNC object scaled
 
+8. Look at the nodes
+====================
 
-So far, you have learned how to select coordinates, choose a variable, apply the material, and adjust the scale of the Grid object to fit in the camera view. However, BlenderNC builds upon nodes, which are the foundation to creating, visualizing, and animating datacubes in Blender.
-In the next section (:ref:`in_depth_guide`), you will learn the backbone of BlenderNC, including how to manipulate nodes and create more advanced visualizations. To access the node editor that just created this simple visualization, you need to switch to the BlenderNC node editor on the top left corner of the workspace.
+Everything the panel did is stored as a node tree. Nodes are how BlenderNC
+creates, displays and animates datacubes, and the :ref:`in_depth_guide` covers
+them in detail.
+
+To see the node tree, switch the editor type to the BlenderNC node editor in
+the top left corner of the workspace.
 
 .. image:: ../images/blendernc_change_nodetree.png
   :width: 100%
   :alt: BlenderNC change nodetree
 
-The BlenderNC node editor is similar to the Geometry Node Editor in Blender, but it is specifically designed for visualizing and manipulating datacubes.
+The BlenderNC node editor works like the Geometry Nodes editor, but its nodes
+are made for datacubes.
 
 .. image:: ../images/blendernc_nodetree.png
   :width: 100%
   :alt: BlenderNC Nodetree
 
-
-Now that you are in the node editor, you can select the default node ``BlenderNC`` tree created for the Grid object.
-
+Select the ``BLENDERNC`` node tree, which the panel created for the Grid
+object.
 
 .. image:: ../images/blendernc_nodetree_selection.png
   :width: 100%
   :alt: BlenderNC Nodetree Selection
 
-
-Now that you have selected the BlenderNC node tree, you can see and start manipulating it to create more advanced visualizations of your datacube.
+You can now see the nodes behind this visualization and change them to build
+more advanced ones.
 
 .. image:: ../images/blendernc_nodetree_topo.png
   :width: 100%
   :alt: BlenderNC Nodetree for Gebco topography
-
