@@ -14,25 +14,6 @@ from .nodes import (
 )
 
 
-class BlenderNCNodeMenu(bpy.types.Menu):
-    """Top-level "BlenderNC" entry in the node editor "Add" menu."""
-
-    bl_idname = "NODE_MT_category_blendernc"
-    bl_label = "BlenderNC"
-
-    def draw(self, context):
-        """Draw the sub-menus and the debug node entry."""
-        self.layout.menu(BlenderNCNodeImport.bl_idname)
-        self.layout.separator()
-        self.layout.menu(BlenderNCNodeSelection.bl_idname)
-        self.layout.menu(BlenderNCNodeGrid.bl_idname)
-        self.layout.menu(BlenderNCNodeAnimate.bl_idname)
-        self.layout.separator()
-        self.layout.operator("node.add_node", text="Debug Node").type = (
-            DebugNode.bl_idname
-        )
-
-
 class BlenderNCNodeImport(bpy.types.Menu):
     """ "Import" sub-menu with the datacube import and variable nodes."""
 
@@ -119,6 +100,14 @@ def add_custom_node_to_menu(self, context):
         Current Blender context; the menu is only added in a node editor.
     """
     space = context.space_data
-    if space.type == "NODE_EDITOR":
+    if space.type == "NODE_EDITOR" and space.tree_type == "BlenderNCNodeTree":
         self.layout.separator()
-        self.layout.menu(BlenderNCNodeMenu.bl_idname)
+        self.layout.menu(BlenderNCNodeImport.bl_idname)
+        self.layout.separator()
+        self.layout.menu(BlenderNCNodeSelection.bl_idname)
+        self.layout.menu(BlenderNCNodeGrid.bl_idname)
+        self.layout.menu(BlenderNCNodeAnimate.bl_idname)
+        self.layout.separator()
+        self.layout.operator("node.add_node", text="Debug Node").type = (
+            DebugNode.bl_idname
+        )

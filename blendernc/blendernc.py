@@ -8,7 +8,6 @@ from .menus import (
     BlenderNCNodeAnimate,
     BlenderNCNodeGrid,
     BlenderNCNodeImport,
-    BlenderNCNodeMenu,
     BlenderNCNodeSelection,
     add_custom_node_to_menu,
 )
@@ -38,6 +37,13 @@ from .panels import (
     BlenderNC_UI_PT_3D_VIEW_PARENT,
 )
 from .properties import BlenderNC_Settings, BlenderNC_UI_Properties, BNC_data
+from .shader_nodes import (
+    BlenderNC_MT_avail_colormaps,
+    BlenderNC_MT_shader_nodes,
+    BlenderNC_NT_colormap,
+    BlenderNC_OT_select_colormap,
+    draw_shader_menu,
+)
 from .sockets import bNCdatacubeSocket
 
 classes = [
@@ -62,12 +68,15 @@ classes = [
     DatacubeTexture,
     DatacubeAnimateTexture,
     bNCdatacubeSocket,
-    BlenderNCNodeMenu,
     BlenderNCNodeImport,
     BlenderNCNodeSelection,
     BlenderNCNodeGrid,
     BlenderNCNodeAnimate,
     DebugNode,
+    BlenderNC_MT_avail_colormaps,
+    BlenderNC_OT_select_colormap,
+    BlenderNC_NT_colormap,
+    BlenderNC_MT_shader_nodes,
 ]
 
 # Handler lists that run :func:`bNC_update_attributes`.
@@ -129,7 +138,9 @@ def register():
     bpy.types.Scene.BlenderNC_Settings = bpy.props.PointerProperty(
         type=BlenderNC_Settings
     )
+
     bpy.types.NODE_MT_add.append(add_custom_node_to_menu)
+    bpy.types.NODE_MT_shader_node_add_all.append(draw_shader_menu)
     enable_node_updates(True)
     return {"FINISHED"}
 
@@ -156,5 +167,7 @@ def unregister():
 
     del bpy.types.Scene.BlenderNC_UI_Properties
     del bpy.types.Scene.BlenderNC_Settings
+
     bpy.types.NODE_MT_add.remove(add_custom_node_to_menu)
+    bpy.types.NODE_MT_shader_node_add_all.remove(draw_shader_menu)
     return {"FINISHED"}
