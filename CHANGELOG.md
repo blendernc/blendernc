@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.9.2 (2026-11-15)
+
+### Bug Fixes
+
+- Bump up and change semantic release
+  ([`5d9b511`](https://github.com/blendernc/blendernc/commit/5d9b511ceaaaf4834a7a646b8d595477f94358c2))
+
+
 ## v0.9.1 (2026-11-15)
 
 ### Fix
