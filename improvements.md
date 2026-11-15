@@ -8,9 +8,9 @@ Line numbers refer to the current tree.
 
 ## 1. Work in progress to finish
 
-- **"Apply Texture" does nothing.** `operators.BlenderNCBakeFromAttribute`
+- **"Apply Material" does nothing.** `operators.BlenderNCBakeFromAttribute`
   (`operators.py:175-181`) is a stub with no docstring, yet the panel shows
-  it as "Apply Texture" (`panels_draw.py:69`). Either wire it to the
+  it as "Apply Material" (`panels_draw.py:69`). Either wire it to the
   `Datacube Texture` node or hide the button until it works.
 - **The panel bakes on every variable change.** `utils.update_variable_UI`
   still rebakes the grid when a variable is picked, although the variable
@@ -24,7 +24,7 @@ Line numbers refer to the current tree.
   consistency once nothing else references it.
 - **Quickstart text is out of date.** `docs/source/quickstart_guide.rst:64`
   still tells users to click "Animate datacube"; the panel offers
-  "Steps for coords" and "Apply Texture" now.
+  "Steps for coords" and "Apply Material" now.
 
 ## 2. Robustness
 
@@ -145,7 +145,7 @@ Line numbers refer to the current tree.
   2-D coordinates, or has more than one import node.
 - The UI panel path is covered by `tests/ui_panel.test.py` for one 2-D
   dataset; it does not yet exercise a file change, Z linking or the
-  "Apply Texture" button.
+  "Apply Material" button.
 - `tests/build-test.sh` still runs a `test_nolib` pass that matches no
   files; drop it or add the tests it was meant to run.
 - Pure helpers could run under `pytest` without Blender once split out of

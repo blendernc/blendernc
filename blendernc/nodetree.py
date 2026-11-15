@@ -5,7 +5,7 @@ import bpy
 
 class BlenderNCNodeTree(bpy.types.NodeTree):
     # Description string
-    """A custom node tree type that will show up in the editor type list"""
+    """Visualize datacubes in Blender"""
     # Optional identifier string. If not explicitly defined,
     # the python class name is used.
     bl_idname = "BlenderNCNodeTree"

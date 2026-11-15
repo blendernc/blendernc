@@ -91,4 +91,4 @@ def draw_resolution_grid_and_texture(self, context):
             row.prop(UI_props, "step", text="Step")
     else:
         self.layout.prop(UI_props, "step", text="Steps for coords")
-    self.layout.operator("blendernc.bake_from_attribute", text="Apply Texture")
+    self.layout.operator("blendernc.bake_from_attribute", text="Apply Material")

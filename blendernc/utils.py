@@ -1440,7 +1440,7 @@ def grid_material(grid_node):
 
     Looks for a Datacube Texture node in the same tree whose ``Object`` input
     is linked from ``grid_node``, and returns the material named after that
-    node's variable, as created by "Apply Texture". ``None`` makes the Set
+    node's variable, as created by "Apply Material". ``None`` makes the Set
     Material node assign no material.
     """
     for link in grid_node.id_data.links:
