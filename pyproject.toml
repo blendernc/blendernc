@@ -35,25 +35,34 @@ dependencies = [
 "Changelog" = "https://github.com/blendernc/blendernc/blob/master/CHANGELOG.md"
 
 [tool.semantic_release]
-version_variable = [
+# bl_info["version"] in blendernc/__init__.py is a tuple, which semantic-release
+# cannot write; .github/workflows/release.yml updates it before the release.
+version_variables = [
     "blendernc/__init__.py:__version__",
-    "docs/source/conf.py:release"
+    "docs/source/conf.py:release",
+    ".github/ISSUE_TEMPLATE.md:BlenderNC Version",
 ]
-
 version_toml = [
     "pyproject.toml:project.version",
-    "blender_manifest.toml:version"
+    "blender_manifest.toml:version",
 ]
-
-version_pattern= [
-    '.github/ISSUE_TEMPLATE.md:BlenderNC Version: {version}',
-    # 'blendernc/__init__.py:    "version": (0\d+\,\d+\,\d+)'
-]
+tag_format = "v{version}"
+commit_message = "{version}"
+commit_author = "github-actions <action@github.com>"
+allow_zero_version = true
 major_on_zero = false
-branch = "master"
-upload_to_pypi = true
-upload_to_release = true
 build_command = "pip install poetry && poetry build"
+
+[tool.semantic_release.branches.master]
+match = "master"
+
+[tool.semantic_release.changelog]
+mode = "update"
+insertion_flag = "<!--next-version-placeholder-->"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
