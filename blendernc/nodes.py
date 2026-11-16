@@ -615,19 +615,48 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
         self.refresh_downstream()
 
 
+def _describe_value(socket):
+    """Return a short text for the value an output socket carries."""
+    if not hasattr(socket, "default_value"):
+        return "no value"
+    value = socket.default_value
+    if isinstance(value, bpy.types.ID):  # Object, Material, ...
+        return value.name
+    if hasattr(value, "__len__") and not isinstance(value, str):
+        return str(tuple(value))  # vectors and colours
+    return repr(value)
+
+
 class DebugNode(bpy.types.Node, bNCNodeDefault):
-    """Node that displays the fields of the connected data item."""
+    """Node that displays whatever is connected to it.
+
+    It takes a link from an output of any type (datacube, variable name,
+    object, ...), shows where the link comes from, the socket type and the
+    value, and the fields of the upstream node's data item. Nodes saved with
+    the older ``"xarray datacube"`` input accept any link as well.
+    """
 
     bl_idname = "BlenderNCNodeDebugNode"
     bl_label = "Debug Node"
 
+    # Read by decorators._accepts_link: links of any type are kept.
+    accepts_any_link = True
+
     @initialize_BNC_datastructs
     def init(self, context):
-        """Create the ``"xarray datacube"`` input socket."""
-        self.inputs.new("bNCdatacubeSocket", "xarray datacube")
+        """Create the input socket, which accepts any type."""
+        self.inputs.new("bNCAnySocket", "Input")
 
     def draw_buttons(self, context, layout):
-        """Draw every data item field and the cached dataset keys."""
+        """Draw the linked output, then every data item field."""
+        socket = self.inputs[0] if self.inputs else None
+        if socket is not None and socket.is_linked:
+            link = socket.links[0]
+            from_socket = link.from_socket
+            kind = from_socket.bl_label or from_socket.bl_idname
+            layout.label(text=f"From: {link.from_node.name} > {from_socket.name}")
+            layout.label(text=f"Type: {kind}")
+            layout.label(text=f"Value: {_describe_value(from_socket)}")
         datastruct = self.BNC_datastructs[0]
         layout.prop(datastruct, "filename")
         layout.prop(datastruct, "datafile")

@@ -30,8 +30,10 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     bl_label = "Load Datacube"
     bl_description = "Import Datacube with xarray"
 
-    node_name: bpy.props.StringProperty(default="")
-    node_tree: bpy.props.StringProperty(default="")
+    # Not remembered between calls: the 3D view panel passes neither, and
+    # must not inherit the tree last picked from a node editor button.
+    node_name: bpy.props.StringProperty(default="", options={"SKIP_SAVE"})
+    node_tree: bpy.props.StringProperty(default="", options={"SKIP_SAVE"})
 
     filter_glob: bpy.props.StringProperty(
         default="*.nc;*.grib;*.zarr",
@@ -65,10 +67,15 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
         -------
         set
             ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report when the
-            files share no pattern or the dataset cannot be opened.
+            node is missing, the files share no pattern or the dataset cannot
+            be opened.
         """
         node_tree = bpy.data.node_groups.get(self.node_tree)
-        import_node = node_tree.nodes.get(self.node_name)
+        import_node = node_tree.nodes.get(self.node_name) if node_tree else None
+        if import_node is None:
+            return report_error(
+                self, f"Node {self.node_name!r} not found in {self.node_tree!r}."
+            )
 
         datacube_path = get_datacube_path(self.directory, self.files)
         import_node.datacube_file = datacube_path
