@@ -15,10 +15,15 @@ Science visualization is a fundamental part of science communication and the exp
 
 <img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/videos/quick_load_gif.gif" width="70%" />
 
-- Nodes tree for more complex visualizations:
+- Nodes tree for more complex visualizations, for example:
 
-<img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/GEBCO_blendernc.png" width="70%" />
+  - the Earth's topograhy
 
+  <img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/images/GEBCO_blendernc.png" width="70%" />
+
+  - Or even a 4D visualization of an ocean eddy interacting with sea-ice:
+
+  <img src="https://raw.githubusercontent.com/blendernc/blendernc/master/docs/videos/eddy_50p_ice.gif" width="70%" />
 
 Installation
 ------------
