@@ -28,9 +28,11 @@ jobs:
           poetry config virtualenvs.create false
           poetry install
 
-      # semantic-release cannot write the bl_info["version"] tuple, so write it here.
-      # The file is one of its version_variables, so the edit goes into its release commit.
-      - name: Update bl_info version
+      # semantic-release cannot write the bl_info["version"] tuple nor the versioned
+      # zip names and download links in the install docs, so write them here. Both
+      # edits go into its release commit: __init__.py is one of its version_variables
+      # and install.rst is listed in its assets.
+      - name: Update bl_info version and install links
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -43,14 +45,24 @@ jobs:
           fi
           python - "$next" <<'EOF'
           import re, sys
-          major, minor, patch = sys.argv[1].split(".")[:3]
-          path = "blendernc/__init__.py"
-          src = open(path).read()
-          new, n = re.subn(r'("version": )\(\d+, \d+, \d+\)',
-                           rf"\g<1>({major}, {minor}, {patch})", src)
-          if n != 1:
-              sys.exit(f"Expected one bl_info version tuple in {path}, found {n}")
-          open(path, "w").write(new)
+
+          version = sys.argv[1]
+          major, minor, patch = version.split(".")[:3]
+
+          def substitute(path, pattern, repl, count=None):
+              """Rewrite pattern in path; fail if it no longer matches as expected."""
+              src = open(path).read()
+              new, n = re.subn(pattern, repl, src)
+              if n == 0 or (count is not None and n != count):
+                  sys.exit(f"{path}: expected {count or 'some'} {pattern!r}, found {n}")
+              open(path, "w").write(new)
+
+          substitute("blendernc/__init__.py", r'("version": )\(\d+, \d+, \d+\)',
+                     rf"\g<1>({major}, {minor}, {patch})", count=1)
+          # Zip names (link text, link targets and URLs) and the tag in the URLs.
+          install = "docs/source/install.rst"
+          substitute(install, r"blendernc-\d+\.\d+\.\d+-", f"blendernc-{version}-")
+          substitute(install, r"/download/v\d+\.\d+\.\d+/", f"/download/v{version}/")
           EOF
           git diff --stat
 
