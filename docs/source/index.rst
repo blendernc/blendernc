@@ -11,8 +11,7 @@ BlenderNC
 =========
 
 .. important::
-   - BlenderNC 0.8.0 breaks backwards compatibility, only Blender 5.2+ is supported.
-   - BlenderNC 0.7.0 works for versions lower to Blender 4.2.
+   - Only Blender 5.2+ is supported, version 0.8.0 broke backward compatibility with older Blender versions.
 
 **BlenderNC** is a Blender add-on that allows importing datacubes into
 Blender (i.e. netCDF, cfGrib, and zarr files). It allows 2D and 3D visualization and the generation of scientific data

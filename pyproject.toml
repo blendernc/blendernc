@@ -42,6 +42,9 @@ version_variables = [
     "docs/source/conf.py:release",
     ".github/ISSUE_TEMPLATE.md:BlenderNC Version",
 ]
+# Download links rewritten by .github/workflows/release.yml; listed here so the
+# edit is committed with the release.
+assets = ["docs/source/install.rst"]
 version_toml = [
     "pyproject.toml:project.version",
     "blender_manifest.toml:version",
