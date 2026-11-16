@@ -1240,7 +1240,10 @@ def find_coord_matches(length, dims):
 # mesh as a static texture, keyed by its number of dimensions. Anything
 # above four falls back to the four-dimensional hint.
 TEXTURE_DIM_HINTS = {
-    3: "Use a Datacube Animate Texture node to animate the extra dimension.",
+    3: (
+        "Use a Datacube Animate Texture node to animate the extra dimension,"
+        " or a Datacube Volume node."
+    ),
     4: "Use a Datacube Select node to pick a slice first.",
 }
 

@@ -3,7 +3,11 @@ import logging
 import bpy
 
 from .decorators import flush_pending_unlinks
-from .handlers import bNC_apply_animated_steps, bNC_update_attributes
+from .handlers import (
+    bNC_apply_animated_steps,
+    bNC_update_attributes,
+    bNC_update_volumes,
+)
 from .menus import (
     BlenderNCNodeAnimate,
     BlenderNCNodeGrid,
@@ -23,12 +27,14 @@ from .nodes import (
     DatacubeSubsample,
     DatacubeTexture,
     DatacubeVariable,
+    DatacubeVolume,
     DebugNode,
 )
 from .nodetree import BlenderNCNodeTree
 from .operators import (
     BlenderNCBakeFromAttribute,
     Import_OT_CreateGrid,
+    Import_OT_CreateVolume,
     Import_OT_mfdataset,
 )
 from .panels import (
@@ -51,6 +57,7 @@ classes = [
     BNC_data,
     Import_OT_mfdataset,
     Import_OT_CreateGrid,
+    Import_OT_CreateVolume,
     BlenderNCBakeFromAttribute,
     BlenderNC_UI_PT_3D_VIEW_PARENT,
     BlenderNC_UI_PT_3D_VIEW,
@@ -61,6 +68,7 @@ classes = [
     DatacubeVariable,
     DatacubeCoords,
     DatacubeGrid,
+    DatacubeVolume,
     DatacubeSlice,
     DatacubeSubsample,
     DatacubeResolution,
@@ -80,10 +88,12 @@ classes = [
     BlenderNC_MT_shader_nodes,
 ]
 
-# Handler lists that run :func:`bNC_update_attributes`.
+# Handler lists and the BlenderNC handlers they run.
 HANDLERS = (
     ("frame_change_pre", bNC_update_attributes),
     ("render_pre", bNC_update_attributes),
+    ("frame_change_pre", bNC_update_volumes),
+    ("render_pre", bNC_update_volumes),
     ("frame_change_post", bNC_apply_animated_steps),
 )
 

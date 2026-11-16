@@ -15,6 +15,7 @@ from .utils import (
     update_step_UI,
     write_point_attribute,
 )
+from .volume_utils import FRAMES_LIVE, write_live_frame
 
 
 @persistent
@@ -62,6 +63,24 @@ def bNC_update_attributes(scene):
         frame_data = data.isel({animate_coord: frame})
         values = field_to_point_values(frame_data, mesh_grid_dims(mesh))
         write_point_attribute(mesh, variable, values)
+
+
+@persistent
+def bNC_update_volumes(scene):
+    """Show the current frame on every volume baked in "Current frame" mode.
+
+    Registered as a ``frame_change_pre`` and ``render_pre`` handler. Volumes
+    baked with "Bake all frames" are VDB sequences that Blender plays on its
+    own, so only Datacube Volume nodes in ``LIVE`` mode are visited.
+
+    Parameters
+    ----------
+    scene : bpy.types.Scene
+        Scene whose ``frame_current`` selects the frame.
+    """
+    for node in get_all_nodes_by_idname("BlenderNCNodeVolume"):
+        if node.frame_mode == FRAMES_LIVE:
+            write_live_frame(node, scene.frame_current)
 
 
 # Path of the sidebar panel's step, relative to the scene.
