@@ -13,6 +13,7 @@ import xarray as xr
 from .decorators import check_if_node_tree_exists
 from .messages import report_error
 from .node_utils import (
+    UI_NODE_TREE,
     create_blenderncnodetree,
     create_link,
     delete_link,
@@ -25,8 +26,7 @@ logger = logging.getLogger(__name__)
 # Identifier of the enum entry that means "nothing selected".
 NO_SELECTION = "No var"
 
-# Node tree and node labels driven by the 3D view panel.
-UI_NODE_TREE = "BLENDERNC"
+# Node labels in the 3D view panel's tree (``UI_NODE_TREE``).
 UI_VARIABLE_NODE = "Datacube Variable"
 UI_COORDS_NODE = "Datacube Coords"
 UI_GRID_NODE = "Datacube Grid"

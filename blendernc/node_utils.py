@@ -1,5 +1,9 @@
 import bpy
 
+# Node tree built and driven by the 3D view panel. Trees the user creates in
+# the node editor can have any name.
+UI_NODE_TREE = "BLENDERNC"
+
 basic_nodes = {
     "BlenderNCNodeImport": {
         "links": {
