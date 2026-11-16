@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.10.0 (2026-11-16)
+
+### Documentation
+
+- Include 4D visualization in README.md
+  ([`5dff8cb`](https://github.com/blendernc/blendernc/commit/5dff8cbc34e4538e3177f2ec6b3468e659f7d81c))
+
+- Make reference only to blender 5.2+ and release updates the installation links
+  ([`e16325a`](https://github.com/blendernc/blendernc/commit/e16325a453c827c95b43b29b4ced593c62a048dd))
+
+
 ## v0.9.3 (2026-11-16)
 
 ### Bug Fixes
