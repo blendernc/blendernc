@@ -31,6 +31,12 @@ from .utils import (
     write_field_range,
     write_point_attribute,
 )
+from .volume_utils import (
+    DEFAULT_VDB_DIR,
+    FRAMES_LIVE,
+    FRAMES_SEQUENCE,
+    get_animate_dims,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -465,6 +471,148 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
         write_point_attribute(obj.data, variable, values)
         self.written = variable
         logger.info(f"{self.name}: wrote {variable} onto {obj.name}")
+
+
+def _apply_vertical_scale(node, context):
+    """Stretch the baked volume vertically; no files need rewriting."""
+    obj = bpy.data.objects.get(node.baked_object) if node.baked_object else None
+    if obj is not None and obj.type == "VOLUME":
+        obj.scale.z = node.vertical_scale
+
+
+class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
+    """Node that turns a 3-D or 4-D variable into a Volume object.
+
+    The variable is written to OpenVDB files read by a Blender Volume:
+    ``(x, y, z)`` gives a static volume, ``(x, y, time)`` a static
+    space-time cube with time running upwards, and ``(x, y, z, time)`` a
+    volume animated along time. "Animate along" overrides that choice.
+
+    In "Bake all frames" mode one file per frame is written and Blender
+    plays them as a volume sequence; in "Current frame" mode only the frame
+    shown is written, by :func:`blendernc.handlers.bNC_update_volumes`.
+    Voxels are placed on evenly spaced x/y coordinates, so the volume lines
+    up with a Datacube Grid baked from the same coordinates. Like the grid,
+    the volume is baked again when the slicing, variable, animated
+    dimension or frame mode changes.
+    """
+
+    bl_idname = "BlenderNCNodeVolume"
+    bl_label = "Datacube Volume"
+    bl_icon = "EXPERIMENTAL"
+
+    volume_obj_name: bpy.props.StringProperty(
+        name="Volume name",
+        description="Name of the Volume object to create or update",
+        default="Volume",
+    )
+    animate_dim: bpy.props.EnumProperty(
+        items=get_animate_dims,
+        name="Animate along",
+        description="Dimension spread over frames; the others form the volume",
+        update=lambda self, context: self.update(),
+    )
+    frame_mode: bpy.props.EnumProperty(
+        items=[
+            (
+                FRAMES_SEQUENCE,
+                "Bake all frames",
+                "Write one VDB file per frame; plays and renders without BlenderNC",
+            ),
+            (
+                FRAMES_LIVE,
+                "Current frame",
+                "Write only the frame shown; less disk, playback needs BlenderNC",
+            ),
+        ],
+        name="Frames",
+        default=FRAMES_SEQUENCE,
+        update=lambda self, context: self.update(),
+    )
+    vertical_scale: bpy.props.FloatProperty(
+        name="Vertical scale",
+        description="Height of one voxel along the vertical axis",
+        default=1.0,
+        min=1e-6,
+        soft_max=100.0,
+        update=_apply_vertical_scale,
+    )
+    vdb_dir: bpy.props.StringProperty(
+        name="VDB folder",
+        description="Folder for the VDB files ('//' is next to the .blend file)",
+        default=DEFAULT_VDB_DIR,
+        subtype="DIR_PATH",
+    )
+    message: bpy.props.StringProperty(
+        name="Message",
+        description="Why the volume could not be baked",
+        default="",
+    )
+    baked_object: bpy.props.StringProperty(
+        description="Object this node baked last; only that object is rebaked",
+    )
+    baked_signature: bpy.props.StringProperty(
+        description="Slicing, variable, animated dim and frame mode of the last bake",
+    )
+    bake_token: bpy.props.IntProperty(
+        description="Counter in the VDB file names; Blender caches grids by path",
+        default=0,
+    )
+
+    @initialize_BNC_datastructs
+    def init(self, context):
+        """Create the hidden-value ``"Variable"`` input."""
+        socket = self.inputs.new("NodeSocketString", "Variable")
+        socket.hide_value = True
+
+    def draw_buttons(self, context, layout):
+        """Draw the settings, the "Bake Volume" button and the last message."""
+        layout.prop(self, "volume_obj_name", text="")
+        layout.prop(self, "animate_dim")
+        layout.prop(self, "frame_mode", text="")
+        layout.prop(self, "vertical_scale")
+        layout.prop(self, "vdb_dir", text="")
+        op = layout.operator("blendernc.create_volume", text="Bake Volume")
+        op.node_name = self.name
+        op.node_tree = self.id_data.name
+        if self.message:
+            lines = self.message.split("\n")
+            layout.label(text=lines[0], icon="ERROR")
+            for line in lines[1:]:
+                layout.label(text=line)
+
+    def signature(self):
+        """Everything that decides which files a bake writes."""
+        variable = self.inputs["Variable"].default_value
+        slicing = self.BNC_datastructs[0].slicing
+        return f"{slicing}|{variable}|{self.animate_dim}|{self.frame_mode}"
+
+    def is_stale(self):
+        """True when the object this node baked no longer matches the tree."""
+        baked = bpy.data.objects.get(self.baked_object) if self.baked_object else None
+        return baked is not None and self.signature() != self.baked_signature
+
+    @is_single_input_linked
+    @has_datastructs
+    def update(self):
+        """Expose the baked volume, rebaking first when the tree changed."""
+        if self.is_stale():
+            # The operator records the new signature and calls update() again.
+            try:
+                bpy.ops.blendernc.create_volume(
+                    node_name=self.name, node_tree=self.id_data.name
+                )
+            except RuntimeError:
+                pass  # already reported, logged and shown on the node
+            return
+        obj = bpy.data.objects.get(self.volume_obj_name)
+        if obj is None or obj.type != "VOLUME":
+            return
+        socket = self.outputs.get("Object") or self.outputs.new(
+            "NodeSocketObject", "Object"
+        )
+        socket.default_value = obj
+        self.refresh_downstream()
 
 
 class DebugNode(bpy.types.Node, bNCNodeDefault):

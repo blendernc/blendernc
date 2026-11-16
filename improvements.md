@@ -25,6 +25,23 @@ Line numbers refer to the current tree.
 - **Quickstart text is out of date.** `docs/source/quickstart_guide.rst:64`
   still tells users to click "Animate datacube"; the panel offers
   "Steps for coords" and "Apply Material" now.
+- **Datacube Volume follow-ups** (added 2026-11-16 with the node).
+  - Curvilinear (2-D) and unevenly spaced coordinates fall back to index
+    space (`volume_utils.voxel_transform`). Resampling onto a regular grid,
+    or writing an affine/frustum VDB transform, would place them correctly.
+  - The vertical axis always counts voxels × `vertical_scale`. An evenly
+    spaced depth or pressure coordinate could set the spacing, as x/y do.
+  - Descending coordinates (latitude from 90 to -90) give a negative
+    object scale. Flipping the array instead would keep the scale positive.
+  - VDB files live on disk next to the .blend file; nothing packs them, and
+    nothing removes a node's folder when the node is deleted.
+  - The field range is computed over the whole variable at bake time, which
+    loads all of a large lazily read cube once, and it ignores the scene's
+    "Lock range" setting.
+  - `get_animate_dims` lists dims from the unsliced variable, so a dim
+    dropped by a Select node is still offered (and refused at bake).
+  - "Current frame" mode only follows `frame_change_pre`/`render_pre`;
+    render farms without BlenderNC need "Bake all frames".
 
 ## 2. Robustness
 
@@ -162,6 +179,9 @@ Line numbers refer to the current tree.
   `node_utils`, `menus`, `nodetree`, `properties` or `panels_draw`, so
   half of the numpydoc docstrings are not rendered.
 - Nothing documents the panel's step field and suggestion toggle.
+- The Datacube Volume section of `in_depth_guide.rst` has commented-out
+  image placeholders (marked TODO) waiting for UI screenshots.
+- `docs/source/modules/` has no page for the new `volume_utils` module.
 - Type hints are absent throughout; adding them to the pure helpers would
   let `autodoc_typehints = "description"` do useful work.
 

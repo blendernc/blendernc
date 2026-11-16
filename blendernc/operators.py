@@ -4,6 +4,7 @@ from bpy_extras.io_utils import ImportHelper
 from .decorators import check_if_node_tree_exists, create_Shader_nodes, is_linked
 from .messages import report_error, report_errors
 from .node_utils import create_links, create_nodes
+from .shader_utils import volume_material
 from .utils import (
     GRID_DIMS_PROPERTY,
     add_attribute,
@@ -18,6 +19,7 @@ from .utils import (
     look_up_object_and_mesh,
     stack_2D_coords,
 )
+from .volume_utils import bake_volume
 
 
 class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
@@ -185,6 +187,54 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
         grid_node.update()
 
+        return {"FINISHED"}
+
+
+class Import_OT_CreateVolume(bpy.types.Operator):
+    """Create a Volume object from a 3D or 4D variable."""
+
+    bl_idname = "blendernc.create_volume"
+
+    bl_label = "Create Volume"
+    bl_description = "Write the variable to OpenVDB files and load them as a volume"
+
+    node_name: bpy.props.StringProperty(default="")
+    node_tree: bpy.props.StringProperty(default="")
+
+    @report_errors
+    @is_linked
+    def execute(self, context):
+        """Bake the volume of a Datacube Volume node.
+
+        The VDB files are written by :func:`blendernc.volume_utils.bake_volume`
+        and a density-only material is assigned once. A problem is shown on
+        the node as well as reported, since the node can rebake itself when
+        the tree changes and nobody sees the status bar then.
+
+        Returns
+        -------
+        set
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report when the
+            variable cannot form a volume.
+        """
+        node_tree = bpy.data.node_groups.get(self.node_tree)
+        volume_node = node_tree.nodes.get(self.node_name)
+        try:
+            obj = bake_volume(volume_node, context.scene)
+        except (ValueError, OSError) as exc:
+            volume_node.message = str(exc)
+            raise
+        volume_node.message = ""
+
+        variable = volume_node.inputs["Variable"].default_value
+        if not obj.data.materials:
+            obj.data.materials.append(volume_material(variable))
+        else:
+            obj.data.materials[0] = volume_material(variable)
+
+        volume_node.baked_object = obj.name
+        volume_node.baked_signature = volume_node.signature()
+        volume_node.update()
         return {"FINISHED"}
 
 

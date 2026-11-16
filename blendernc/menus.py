@@ -10,6 +10,7 @@ from .nodes import (
     DatacubeSubsample,
     DatacubeTexture,
     DatacubeVariable,
+    DatacubeVolume,
     DebugNode,
 )
 
@@ -31,7 +32,7 @@ class BlenderNCNodeImport(bpy.types.Menu):
 
 
 class BlenderNCNodeGrid(bpy.types.Menu):
-    """ "Grid" sub-menu with the coordinate and grid nodes."""
+    """ "Grid" sub-menu with the coordinate, grid and volume nodes."""
 
     bl_idname = "NODE_MT_category_blendernc_grid"
     bl_label = "Grid"
@@ -44,6 +45,9 @@ class BlenderNCNodeGrid(bpy.types.Menu):
 
         self.layout.operator("node.add_node", text="Datacube Grid").type = (
             DatacubeGrid.bl_idname
+        )
+        self.layout.operator("node.add_node", text="Datacube Volume").type = (
+            DatacubeVolume.bl_idname
         )
 
 

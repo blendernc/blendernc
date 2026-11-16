@@ -290,6 +290,71 @@ def colorbar_material(name, colormap_node):
     return material
 
 
+# Density-only volume material: the grid named after the variable, mapped
+# from the object's "Min value"/"Max value" range onto 0-1 density.
+VOLUME_MATERIAL_NODES = {
+    "Attribute": {
+        "type": "ShaderNodeAttribute",
+        "links": {"Factor": {"ShaderNodeMapRange": "Value"}},
+    },
+    "Attribute.001": {
+        "type": "ShaderNodeAttribute",
+        "links": {"Factor": {"ShaderNodeMapRange": "From Max"}},
+    },
+    "Attribute.002": {
+        "type": "ShaderNodeAttribute",
+        "links": {"Factor": {"ShaderNodeMapRange": "From Min"}},
+    },
+    "ShaderNodeMapRange": {
+        "links": {"Result": {"ShaderNodeVolumePrincipled": "Density"}}
+    },
+    "ShaderNodeVolumePrincipled": {
+        "links": {"Volume": {"ShaderNodeOutputMaterial": "Volume"}}
+    },
+    "ShaderNodeOutputMaterial": {},
+}
+
+VOLUME_MATERIAL_LOCATIONS = [
+    (-500, 200),
+    (-500, -200),
+    (-500, 0),
+    (-250, 0),
+    (0, 0),
+    (300, 0),
+]
+
+
+def volume_material(grid_name):
+    """Return the density-only material for a volume grid, creating it once.
+
+    The material is called ``"<grid_name> volume"``. An Attribute node reads
+    the grid, a Map Range node maps it from the object's ``"Min value"`` to
+    ``"Max value"`` custom properties onto 0-1, and the result drives the
+    density of a Principled Volume. Colour is left to the user.
+
+    Parameters
+    ----------
+    grid_name : str
+        Name of the VDB grid, the variable name.
+    """
+    name = f"{grid_name} volume"
+    material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    material.use_nodes = True
+    tree = material.node_tree
+    for node in [n for n in tree.nodes if n.type == "BSDF_PRINCIPLED"]:
+        tree.nodes.remove(node)
+    nodes = {key: dict(value) for key, value in VOLUME_MATERIAL_NODES.items()}
+    create_nodes(tree, nodes, VOLUME_MATERIAL_LOCATIONS)
+    create_links(tree, nodes)
+
+    nodes["Attribute"]["node"].attribute_name = grid_name
+    for key, prop in (("Attribute.001", "Max value"), ("Attribute.002", "Min value")):
+        attribute = nodes[key]["node"]
+        attribute.attribute_type = "OBJECT"
+        attribute.attribute_name = prop
+    return material
+
+
 def _text_object(name, parent, size):
     """Create a centred text object parented to ``parent``, in its collection."""
     curve = bpy.data.curves.new(name, type="FONT")
