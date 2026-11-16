@@ -2,6 +2,19 @@
 
 <!--next-version-placeholder-->
 
+## v0.9.3 (2026-11-16)
+
+### Bug Fixes
+
+- Support nodetrees not named BLENDERNC and debug node accepting all links
+  ([`341a560`](https://github.com/blendernc/blendernc/commit/341a560ec9c37e3bb14f02d5f2946f063cc8e051))
+
+### Chores
+
+- Update README.md
+  ([`53ab8ca`](https://github.com/blendernc/blendernc/commit/53ab8cafe2449911b962fadc71dbd99edf06c13c))
+
+
 ## v0.9.2 (2026-11-15)
 
 ### Bug Fixes

@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "blendernc"
-version = "0.9.2"
+version = "0.9.3"
 name = "BlenderNC"
 tagline = "This extension allows to import geocubes into blender"
 maintainer = "Josué Martínez Moreno"
