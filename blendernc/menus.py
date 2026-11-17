@@ -7,6 +7,7 @@ from .nodes import (
     DatacubeImport,
     DatacubeResolution,
     DatacubeSelect,
+    DatacubeSlice,
     DatacubeSubsample,
     DatacubeTexture,
     DatacubeVariable,
@@ -52,11 +53,7 @@ class BlenderNCNodeGrid(bpy.types.Menu):
 
 
 class BlenderNCNodeSelection(bpy.types.Menu):
-    """ "Selection" sub-menu with the variable, select and resolution nodes.
-
-    ``DatacubeSlice`` stays registered but is not listed until it is
-    implemented.
-    """
+    """ "Selection" sub-menu with the variable, select, slice and resolution nodes."""
 
     bl_idname = "NODE_MT_category_blendernc_selection"
     bl_label = "Selection"
@@ -69,6 +66,9 @@ class BlenderNCNodeSelection(bpy.types.Menu):
         self.layout.operator("node.add_node", text="Select Index").type = (
             DatacubeSelect.bl_idname
         )
+        self.layout.operator("node.add_node", text="Slice Range").type = (
+            DatacubeSlice.bl_idname
+        )
         self.layout.operator("node.add_node", text="Subsample Coordinate").type = (
             DatacubeSubsample.bl_idname
         )
@@ -77,10 +77,10 @@ class BlenderNCNodeSelection(bpy.types.Menu):
         )
 
 
-class BlenderNCNodeAnimate(bpy.types.Menu):
+class BlenderNCNodeTexture(bpy.types.Menu):
     """ "Texture" sub-menu with the static and animated texture nodes."""
 
-    bl_idname = "NODE_MT_category_blendernc_animate"
+    bl_idname = "NODE_MT_category_blendernc_texture"
     bl_label = "Texture"
 
     def draw(self, context):
@@ -110,7 +110,7 @@ def add_custom_node_to_menu(self, context):
         self.layout.separator()
         self.layout.menu(BlenderNCNodeSelection.bl_idname)
         self.layout.menu(BlenderNCNodeGrid.bl_idname)
-        self.layout.menu(BlenderNCNodeAnimate.bl_idname)
+        self.layout.menu(BlenderNCNodeTexture.bl_idname)
         self.layout.separator()
         self.layout.operator("node.add_node", text="Debug Node").type = (
             DebugNode.bl_idname

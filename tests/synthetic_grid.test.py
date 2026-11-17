@@ -719,6 +719,53 @@ class TestSyntheticGrids(unittest.TestCase):
         finally:
             bpy.data.materials.remove(material)
 
+    def test_apply_material_from_texture_node(self):
+        """The node's Apply Material colours its object and reuses the slot."""
+        obj, _, var_name = self.build_pipeline("xy", texture=True)
+        apply = {"node_name": self.texture_node.name, "node_tree": self.tree.name}
+        material = None
+        try:
+            for _ in range(2):  # a second click must not add a slot
+                bpy.ops.blendernc.bake_from_attribute(**apply)
+                self.assertEqual(len(obj.data.materials), 1)
+            material = obj.data.materials[0]
+            self.assertEqual(material.name, var_name)
+            nodes = material.node_tree.nodes
+            self.assertEqual(nodes["Attribute"].attribute_name, var_name)
+            for key, prop in (
+                ("Attribute.001", "Max value"),
+                ("Attribute.002", "Min value"),
+            ):
+                self.assertEqual(nodes[key].attribute_type, "OBJECT")
+                self.assertEqual(nodes[key].attribute_name, prop)
+            base_color = nodes["Principled BSDF"].inputs["Base Color"]
+            self.assertEqual(
+                base_color.links[0].from_node.bl_idname, "ShaderNodeValToRGB"
+            )
+        finally:
+            if material is not None:
+                bpy.data.materials.remove(material)
+
+    def test_apply_material_without_object_is_reported(self):
+        """A texture node that never had a grid reports instead of raising."""
+        self.build_pipeline("xy", texture=True)
+        variable = self.texture_node.inputs["Variable"].links[0].from_socket
+        lonely = self.tree.nodes.new("BlenderNCNodeTexture")
+        self.tree.links.new(variable, lonely.inputs["Variable"])
+        with self.assertRaisesRegex(RuntimeError, "link a baked Datacube Grid"):
+            bpy.ops.blendernc.bake_from_attribute(
+                node_name=lonely.name, node_tree=self.tree.name
+            )
+        self.assertNotIn(VARIABLE, bpy.data.materials)
+
+    def test_apply_material_on_refused_texture_is_reported(self):
+        """Nothing was written onto the mesh, so the node's message is reported."""
+        self.build_refused_texture("xyt")
+        with self.assertRaisesRegex(RuntimeError, "Animate Texture"):
+            bpy.ops.blendernc.bake_from_attribute(
+                node_name=self.texture_node.name, node_tree=self.tree.name
+            )
+
     def test_resolution_suggested_step(self):
         """The node picks ceil(smallest surface size / budget) once, not twice."""
         ny, nx = MAX_VERTEX_SAMPLES + 1, 2 * MAX_VERTEX_SAMPLES

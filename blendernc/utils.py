@@ -579,9 +579,10 @@ def sync_texture_section(UI_props, node_tree):
 
     The section, the grid bake and the texture links only make sense once
     both a variable and the coordinates are chosen; otherwise the section is
-    hidden and the texture node is unlinked, so "Apply Material" cannot run
-    on a grid that does not exist. Called from both the variable and the
-    coordinate selectors, since either may be chosen last.
+    hidden and the texture node is unlinked. Called from both the variable
+    and the coordinate selectors, since either may be chosen last. The grid
+    is only baked when its coordinates or step changed: picking another
+    variable relinks the texture and swaps the material, the mesh stays.
     """
     var_node = node_tree.nodes.get(UI_VARIABLE_NODE)
     grid_node = node_tree.nodes.get(UI_GRID_NODE)
@@ -599,14 +600,38 @@ def sync_texture_section(UI_props, node_tree):
     _bake_ui_grid(node_tree, grid_node)
     create_link(node_tree, grid_node, texture_node, "Object", "Object")
     create_link(node_tree, var_node, texture_node, var_node.datacube_vars, "Variable")
+    _follow_variable_material(grid_node)
 
 
 def _bake_ui_grid(node_tree, grid_node):
-    """Bake the panel's grid when it has coordinates linked."""
-    if any(socket.is_linked for socket in grid_node.inputs):
+    """Bake the panel's grid when its coordinates or step changed.
+
+    A failed bake has already been reported and logged by the operator,
+    which ``bpy.ops`` turns into a ``RuntimeError``; it must not escape the
+    property callback that called this.
+    """
+    if not any(socket.is_linked for socket in grid_node.inputs):
+        return
+    if not grid_node.needs_bake():
+        return
+    try:
         bpy.ops.blendernc.create_grid_from_coords(
             node_name=grid_node.name, node_tree=node_tree.name
         )
+    except RuntimeError:
+        pass
+
+
+def _follow_variable_material(grid_node):
+    """Give the panel's grid the material of the variable now linked.
+
+    A bake does this through the Set Material node; without a bake the
+    first material slot is set here instead: the material named after the
+    texture's variable, as made by "Apply Material", or none.
+    """
+    obj = bpy.data.objects.get(grid_node.baked_object)
+    if obj is not None and obj.type == "MESH":
+        assign_material(obj.data, grid_material(grid_node))
 
 
 def update_coords_links_UI(self, context):
@@ -726,17 +751,118 @@ def encode_slicing_record(var_name, coord, selector):
     return SLICING_FIELD_SEP.join((var_name, coord, spec)) + SLICING_RECORD_SEP
 
 
-def _record_stride(datastruct, dims, step):
+def _record_stride(datastruct, dims, step, dataset=None):
     """Append one wildcard stride record per dimension to ``slicing``.
 
-    A step of 1 keeps every sample, so nothing is recorded.
+    A step of 1 keeps every sample, so nothing is recorded. With
+    ``dataset``, a range already recorded on a dimension is kept.
     """
     if step <= 1:
         return
     for dim in dims:
-        datastruct.slicing += encode_slicing_record(
-            SLICING_ANY_VARIABLE, dim, slice(0, None, step)
-        )
+        record_selector(datastruct, dataset, dim, slice(0, None, step))
+
+
+def _merge_selector(previous, selector):
+    """Combine ``selector`` with the one recorded before it on the same dims.
+
+    A range (``start:stop``) and a stride (``0::step``) are independent, so
+    a new range keeps an earlier stride and a new stride keeps an earlier
+    range. Anything else, an index in particular, replaces what was there.
+    """
+    if not (isinstance(previous, slice) and isinstance(selector, slice)):
+        return selector
+    if selector.step is None:  # a range
+        return slice(selector.start, selector.stop, previous.step)
+    if not selector.start and selector.stop is None:  # a stride
+        return slice(previous.start, previous.stop, selector.step)
+    return selector
+
+
+def recorded_selector(dataset, slicing, var_name, key):
+    """Return the selector ``slicing`` holds for the dimensions of ``key``.
+
+    Records may name the dimension or a coordinate on it, so they are
+    compared by the dimensions they resolve to. ``None`` when there is none.
+    """
+    dims = _dims_for_key(dataset, key) if dataset is not None else (key,)
+    if not dims:
+        return None
+    found = None
+    for other, selector in parse_slicing(slicing, var_name).items():
+        other_dims = _dims_for_key(dataset, other) if dataset is not None else (other,)
+        if other_dims == dims:
+            found = selector
+    return found
+
+
+def record_selector(datastruct, dataset, key, selector, var_name=SLICING_ANY_VARIABLE):
+    """Append a wildcard ``slicing`` record for ``key`` to a data item.
+
+    The selector is merged with the one already recorded on the same
+    dimensions (see :func:`_merge_selector`), so a Slice range and a
+    Subsample or Resolution stride combine whatever their order.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item whose ``slicing`` grows.
+    dataset : xarray.Dataset or None
+        Dataset resolving coordinate names to dimensions; without it only
+        records with the same name are merged.
+    key : str
+        Dimension or coordinate name.
+    selector : int or slice
+        Index, range or stride.
+    var_name : str, optional
+        Variable whose records are merged with, by default every variable.
+    """
+    previous = recorded_selector(dataset, datastruct.slicing, var_name, key)
+    datastruct.slicing += encode_slicing_record(
+        SLICING_ANY_VARIABLE, key, _merge_selector(previous, selector)
+    )
+
+
+def clamp_index_range(size, first, last):
+    """Return ``(first, last)`` clamped to ``0 .. size - 1`` and in order."""
+    first, last = sorted((min(first, size - 1), min(last, size - 1)))
+    return max(first, 0), max(last, 0)
+
+
+def value_index_range(values, low, high):
+    """First and last position of the ``values`` within ``[low, high]``.
+
+    Node properties hold single-precision floats, so the bounds are widened
+    by a relative tolerance that absorbs their rounding.
+
+    Parameters
+    ----------
+    values : numpy.ndarray
+        1-D numeric coordinate values, normally monotonic.
+    low, high : float
+        Bounds, in either order.
+
+    Returns
+    -------
+    tuple of int or None
+        ``(first, last)``, or ``None`` when no value is in range.
+    """
+    values = np.asarray(values, dtype=np.float64)
+    low, high = sorted((low, high))
+    tolerance = 1e-6 * max(abs(low), abs(high))
+    inside = np.flatnonzero((values >= low - tolerance) & (values <= high + tolerance))
+    if inside.size == 0:
+        return None
+    return int(inside[0]), int(inside[-1])
+
+
+def format_coord_value(value):
+    """Short text for one coordinate value: dates to the second, numbers to 6 digits."""
+    if np.issubdtype(np.asarray(value).dtype, np.datetime64):
+        return str(np.datetime64(value, "s"))
+    if np.issubdtype(np.asarray(value).dtype, np.number):
+        return f"{float(value):.6g}"
+    return str(value)
 
 
 def _decode_selector(spec):
@@ -1484,6 +1610,26 @@ def add_attribute(mesh, attr_name, attr_type="FLOAT", domain="POINT"):
         else:
             attr = mesh.attributes.get(attr_name)
     return attr
+
+
+def assign_material(data, material):
+    """Show ``material`` in the first slot of ``data``, adding the slot if needed.
+
+    Faces use slot 0 unless told otherwise, so replacing it, rather than
+    appending a slot on every call, changes what the object shows.
+
+    Parameters
+    ----------
+    data : bpy.types.Mesh or bpy.types.Volume
+        Object data receiving the material.
+    material : bpy.types.Material or None
+        ``None`` empties the first slot.
+    """
+    if not data.materials:
+        if material is not None:
+            data.materials.append(material)
+    elif data.materials[0] != material:
+        data.materials[0] = material
 
 
 def grid_material(grid_node):

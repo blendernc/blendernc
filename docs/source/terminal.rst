@@ -155,17 +155,31 @@ Each node in the editor is a Blender node type that you create with
      - ``datacube_coords`` picks the coordinate and ``index`` the position
        kept along it (clamped to the coordinate size). In and out
        ``Variable``.
+   * - Datacube Slice
+     - ``BlenderNCNodeSlice``
+     - ``datacube_coords`` picks a 1-D coordinate, which resets the bounds
+       to its extent, so set them afterwards. ``slice_by = "INDEX"`` keeps
+       positions ``first`` to ``last``; ``"VALUE"`` keeps the values from
+       ``minimum`` to ``maximum``. In and out ``Variable``.
    * - Datacube Grid
      - ``BlenderNCNodeGrid``
      - Inputs ``X``, ``Y``, ``Z`` take coordinate outputs; ``grid_obj_name``
        names the mesh. Baked with
        ``bpy.ops.blendernc.create_grid_from_coords``. Output ``Object``.
+   * - Datacube Volume
+     - ``BlenderNCNodeVolume``
+     - Input ``Variable`` takes a 3-D or 4-D variable; ``volume_obj_name``,
+       ``animate_dim``, ``frame_mode``, ``vertical_scale`` and ``vdb_dir``
+       are described in the :ref:`in_depth_guide`. Baked with
+       ``bpy.ops.blendernc.create_volume``. Output ``Object``.
    * - Datacube Texture
      - ``BlenderNCNodeTexture``
      - Inputs ``Object`` and ``Variable``. A 2-D variable is written once to
        a point attribute of the mesh named after it, and removed again when
        ``Variable`` is unlinked. A 3-D or 4-D variable is refused and
        ``message`` says which node to use instead.
+       ``bpy.ops.blendernc.bake_from_attribute(node_name=..., node_tree=...)``
+       gives the object a material showing the variable.
    * - Datacube Animate Texture
      - ``BlenderNCNodeAnimateTexture``
      - Inputs ``Object`` and ``Variable``. On every frame change the

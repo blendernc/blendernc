@@ -9,10 +9,10 @@ from .handlers import (
     bNC_update_volumes,
 )
 from .menus import (
-    BlenderNCNodeAnimate,
     BlenderNCNodeGrid,
     BlenderNCNodeImport,
     BlenderNCNodeSelection,
+    BlenderNCNodeTexture,
     add_custom_node_to_menu,
 )
 from .node_utils import enable_node_updates
@@ -80,7 +80,7 @@ classes = [
     BlenderNCNodeImport,
     BlenderNCNodeSelection,
     BlenderNCNodeGrid,
-    BlenderNCNodeAnimate,
+    BlenderNCNodeTexture,
     DebugNode,
     BlenderNC_MT_avail_colormaps,
     BlenderNC_OT_select_colormap,

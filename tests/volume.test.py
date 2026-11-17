@@ -9,6 +9,10 @@ Four datasets are generated on the fly with a random-noise variable:
 * ``(X, Y, Z, time)``: a volume animated along time, either as a VDB
   sequence ("Bake all frames") or one file per shown frame ("Current frame").
 
+Variants of ``(X, Y, Z)`` check the placement: a descending, an unevenly
+spaced and a curvilinear horizontal axis, 2-D coordinates that are in fact
+rectilinear, a depth axis marked ``positive = "down"`` and uneven levels.
+
 The VDB files are read back with the ``openvdb`` module that ships with
 Blender and compared to the variable.
 """
@@ -28,11 +32,20 @@ import xarray as xr
 from blendernc.handlers import bNC_update_volumes
 from blendernc.node_utils import create_blenderncnodetree
 from blendernc.utils import RANGE_PROPERTIES, get_dataset
+from blendernc.volume_utils import (
+    UNSAVED_WARNING,
+    get_animate_dims,
+    nearest_positions,
+    vdb_directory,
+)
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
 X_VALUES = np.linspace(0.0, 360.0, NX, endpoint=False)
 Y_VALUES = np.linspace(-80.0, 80.0, NY)
+Z_VALUES = np.linspace(0.0, 300.0, NZ)
+# Rotated grid: longitude and latitude both change along both dimensions.
+ANGLE = np.radians(30.0)
 
 
 def make_dataset(path, with_level=False, with_time=False, seed=0):
@@ -53,6 +66,32 @@ def make_dataset(path, with_level=False, with_time=False, seed=0):
     dataset = xr.Dataset({VARIABLE: (dims, values)}, coords=coords)
     dataset.to_netcdf(path)
     return dataset
+
+
+def make_xyz_variant(
+    path, x=X_VALUES, y=Y_VALUES, z=Z_VALUES, z_attrs=None, coords_2d=None
+):
+    """Write an ``(X, Y, Z)`` noise dataset with the given axes; return it.
+
+    ``coords_2d`` maps extra coordinate names to ``(Y, X)`` arrays, such as
+    a curvilinear longitude and latitude.
+    """
+    rng = np.random.default_rng(3)
+    coords = {"X": ("X", x), "Y": ("Y", y), "Z": ("Z", z, z_attrs or {})}
+    for name, values in (coords_2d or {}).items():
+        coords[name] = (("Y", "X"), values)
+    values = rng.standard_normal((len(z), len(y), len(x)))
+    dataset = xr.Dataset({VARIABLE: (("Z", "Y", "X"), values)}, coords=coords)
+    dataset.to_netcdf(path)
+    return dataset
+
+
+def rotated_grid():
+    """Longitude and latitude of a grid rotated by ``ANGLE``, unit spacing."""
+    j, i = np.meshgrid(np.arange(NY), np.arange(NX), indexing="ij")
+    lon = 10.0 + i * np.cos(ANGLE) - j * np.sin(ANGLE)
+    lat = 20.0 + i * np.sin(ANGLE) + j * np.cos(ANGLE)
+    return lon, lat
 
 
 def read_grid(path, shape):
@@ -79,6 +118,20 @@ class TestDatacubeVolume(unittest.TestCase):
         ):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_dataset(path, with_level, with_time)
+            cls.files[key] = path
+        lon, lat = rotated_grid()
+        rect_lon, rect_lat = np.meshgrid(X_VALUES, Y_VALUES)
+        uneven = np.cumsum(np.arange(1.0, NX + 1.0)) - 1.0  # steps 2, 3, 4, ...
+        for key, kwargs in (
+            ("desc_y", {"y": Y_VALUES[::-1].copy()}),
+            ("uneven_x", {"x": uneven}),
+            ("curvilinear", {"coords_2d": {"lon": lon, "lat": lat}}),
+            ("rect_2d", {"coords_2d": {"lon": rect_lon, "lat": rect_lat}}),
+            ("depth", {"z_attrs": {"positive": "down", "units": "m"}}),
+            ("uneven_z", {"z": np.array([0.0, 10.0, 50.0, 300.0])}),
+        ):
+            path = os.path.join(cls.tmpdir, f"{key}.nc")
+            cls.datasets[key] = make_xyz_variant(path, **kwargs)
             cls.files[key] = path
 
     @classmethod
@@ -163,11 +216,13 @@ class TestDatacubeVolume(unittest.TestCase):
             read_grid(files[0], (NX, NY, NZ)), self.expected("xyz", "Z"), rtol=1e-6
         )
         np.testing.assert_allclose(obj.location, (0.0, -80.0, 0.0), atol=1e-5)
-        np.testing.assert_allclose(obj.scale, (30.0, 160.0 / 7, 1.0), rtol=1e-5)
+        # Z is evenly spaced, so it sets the voxel height as X and Y do.
+        np.testing.assert_allclose(obj.scale, (30.0, 160.0 / 7, 100.0), rtol=1e-5)
         data = self.datasets["xyz"][VARIABLE]
         self.assertAlmostEqual(obj[RANGE_PROPERTIES[0]], float(data.min()), places=5)
         self.assertAlmostEqual(obj[RANGE_PROPERTIES[1]], float(data.max()), places=5)
         self.assertEqual(self.node.message, "")
+        self.assertEqual(self.node.note, "")
         self.assertEqual(self.node.outputs["Object"].default_value, obj)
 
     def test_xyt_space_time_cube(self):
@@ -182,12 +237,13 @@ class TestDatacubeVolume(unittest.TestCase):
         )
 
     def test_vertical_scale_stretches_object(self):
-        """Changing the vertical scale only changes the object's z scale."""
+        """The vertical scale multiplies the Z spacing, without a rebake."""
         self.build("xyz")
         obj = self.bake()
         token = self.node.bake_token
-        self.node.vertical_scale = 25.0
-        self.assertAlmostEqual(obj.scale.z, 25.0)
+        self.node.vertical_scale = 0.25
+        self.assertAlmostEqual(obj.scale.z, 100.0 * 0.25, places=4)
+        self.assertAlmostEqual(obj.location.z, 0.0)
         self.assertEqual(self.node.bake_token, token)
 
     def test_density_material(self):
@@ -277,6 +333,170 @@ class TestDatacubeVolume(unittest.TestCase):
             self.expected("xyzt", "time", Z=2),
             rtol=1e-6,
         )
+
+    # -- placement ------------------------------------------------------------
+
+    def read_single(self, key):
+        """Bake dataset ``key`` and read its only VDB file back."""
+        self.build(key)
+        obj = self.bake()
+        files = self.vdb_files()
+        self.assertEqual(len(files), 1)
+        return obj, read_grid(files[0], (NX, NY, NZ))
+
+    def test_descending_y_is_flipped(self):
+        """A descending Y keeps a positive scale: the voxels are reversed."""
+        obj, grid = self.read_single("desc_y")
+        expected = self.expected("desc_y", "Z")[:, ::-1, :]
+        np.testing.assert_allclose(grid, expected, rtol=1e-6)
+        np.testing.assert_allclose(obj.location[:2], (0.0, -80.0), atol=1e-5)
+        np.testing.assert_allclose(obj.scale[:2], (30.0, 160.0 / 7), rtol=1e-5)
+        self.assertEqual(self.node.note, "")
+
+    def test_uneven_x_is_resampled(self):
+        """Uneven X is resampled by nearest neighbour and the node says so."""
+        obj, grid = self.read_single("uneven_x")
+        x = self.datasets["uneven_x"]["X"].values
+        targets = np.linspace(x.min(), x.max(), NX)
+        nearest = [int(np.argmin(np.abs(x - t))) for t in targets]  # brute force
+        expected = self.expected("uneven_x", "Z")[nearest]
+        np.testing.assert_allclose(grid, expected, rtol=1e-6)
+        self.assertAlmostEqual(obj.scale.x, (x.max() - x.min()) / (NX - 1), places=4)
+        self.assertIn("X is unevenly spaced", self.node.note)
+
+    def test_nearest_positions_in_any_order(self):
+        """The nearest value wins whatever the order of the values."""
+        values = np.array([5.0, 0.0, 9.0, 2.0])
+        targets = np.array([-1.0, 1.0, 1.1, 4.0, 8.0, 20.0])
+        np.testing.assert_array_equal(
+            nearest_positions(values, targets), [1, 1, 3, 0, 2, 2]
+        )
+
+    def test_curvilinear_is_resampled(self):
+        """A rotated grid is resampled onto a regular one covering it."""
+        obj, grid = self.read_single("curvilinear")
+        dataset = self.datasets["curvilinear"]
+        lon, lat = dataset["lon"].values, dataset["lat"].values
+        self.assertIn("lon/lat are curvilinear", self.node.note)
+        np.testing.assert_allclose(obj.location[:2], (lon.min(), lat.min()), atol=1e-4)
+        step_x = (lon.max() - lon.min()) / (NX - 1)
+        self.assertAlmostEqual(obj.scale.x, step_x, places=4)
+
+        background = float(dataset[VARIABLE].min())
+        # The bounding box corner at (min lon, min lat) lies outside the data.
+        np.testing.assert_allclose(grid[0, 0], background, rtol=1e-6)
+        # Inside, each voxel column is the nearest source column.
+        values = dataset[VARIABLE].transpose("X", "Y", "Z").values
+        tx = np.linspace(lon.min(), lon.max(), NX)
+        ty = np.linspace(lat.min(), lat.max(), NY)
+        src = np.column_stack([lon.T.ravel(), lat.T.ravel()])  # (X, Y) order
+        ix, iy = NX // 2, NY // 2
+        nearest = np.argmin(np.hypot(*(src - (tx[ix], ty[iy])).T))
+        np.testing.assert_allclose(
+            grid[ix, iy], values.reshape(NX * NY, NZ)[nearest], rtol=1e-6
+        )
+
+    def test_rectilinear_2d_coords_are_not_resampled(self):
+        """2-D lon/lat that only vary along their own axis place voxels directly."""
+        obj, grid = self.read_single("rect_2d")
+        np.testing.assert_allclose(grid, self.expected("rect_2d", "Z"), rtol=1e-6)
+        np.testing.assert_allclose(obj.scale[:2], (30.0, 160.0 / 7), rtol=1e-5)
+        self.assertEqual(self.node.note, "")
+
+    def test_depth_positive_down_goes_below_zero(self):
+        """``positive = "down"`` puts the deepest level lowest, below zero."""
+        obj, grid = self.read_single("depth")
+        expected = self.expected("depth", "Z")[:, :, ::-1]
+        np.testing.assert_allclose(grid, expected, rtol=1e-6)
+        self.assertAlmostEqual(obj.location.z, -300.0, places=4)
+        self.assertAlmostEqual(obj.scale.z, 100.0, places=4)
+
+    def test_uneven_levels_keep_one_voxel_per_level(self):
+        """Uneven Z levels stay one voxel each, with a note on the node."""
+        obj, grid = self.read_single("uneven_z")
+        np.testing.assert_allclose(grid, self.expected("uneven_z", "Z"), rtol=1e-6)
+        self.assertAlmostEqual(obj.scale.z, 1.0)
+        self.assertIn("Z is unevenly spaced", self.node.note)
+
+    def test_live_frames_reuse_the_curvilinear_resampling(self):
+        """Current-frame files match the frames of a full sequence bake."""
+        from blendernc import volume_utils
+
+        self.build("curvilinear", animate_dim="Z")
+        self.bake()
+        reference = [read_grid(path, (NX, NY, 1)) for path in self.vdb_files()]
+        self.assertEqual(len(reference), NZ)
+
+        self.node.frame_mode = "LIVE"  # rebakes the frame shown, frame 0
+        scene = bpy.context.scene
+        for frame, forget in ((2, False), (3, True)):
+            if forget:  # as after reopening the file
+                volume_utils._PLACEMENTS.clear()
+            scene.frame_current = frame
+            bNC_update_volumes(scene)
+            (path,) = self.vdb_files()
+            np.testing.assert_allclose(
+                read_grid(path, (NX, NY, 1)), reference[frame], rtol=1e-6
+            )
+
+    # -- range, dims and files ------------------------------------------------
+
+    def test_lock_range_keeps_stored_range(self):
+        """Under "Lock range" a rebake keeps the range stored on the object."""
+        settings = bpy.context.scene.BlenderNC_Settings
+        low, high = RANGE_PROPERTIES
+        self.build("xyz")
+        obj = self.bake()
+        obj[low], obj[high] = -10.0, 10.0
+        try:
+            settings.lock_range = True
+            self.bake()
+            self.assertEqual((obj[low], obj[high]), (-10.0, 10.0))
+            settings.lock_range = False
+            self.bake()
+            data = self.datasets["xyz"][VARIABLE]
+            self.assertAlmostEqual(obj[low], float(data.min()), places=5)
+        finally:
+            settings.lock_range = True
+
+    def test_animate_dims_follow_slicing(self):
+        """A dimension dropped by a Select node is not offered for animation."""
+        self.build("xyzt", select_z=1)
+        names = [item[0] for item in get_animate_dims(self.node, bpy.context)]
+        self.assertNotIn("Z", names)
+        self.assertIn("time", names)
+
+    def test_deleting_node_keeps_files_a_volume_reads(self):
+        """The baked Volume still reads the files, so they stay."""
+        self.build("xyz")
+        self.bake()
+        directory = vdb_directory(self.node, create=False)
+        self.tree.nodes.remove(self.node)
+        self.assertTrue(os.path.isdir(directory))
+
+    def test_deleting_node_removes_unused_files(self):
+        """Once no Volume reads the folder, deleting the node removes it."""
+        self.build("xyz")
+        obj = self.bake()
+        directory = vdb_directory(self.node, create=False)
+        volume = obj.data
+        bpy.data.objects.remove(obj)
+        bpy.data.volumes.remove(volume)
+        self.tree.nodes.remove(self.node)
+        self.assertFalse(os.path.exists(directory))
+
+    def test_unsaved_file_warns(self):
+        """With a '//' folder in an unsaved file the node warns about it."""
+        self.assertEqual(bpy.data.filepath, "", "tests run without a .blend file")
+        self.build("xyz")
+        self.node.vdb_dir = "//blendernc_vdb/"
+        self.bake()
+        directory = vdb_directory(self.node, create=False)
+        try:
+            self.assertEqual(self.node.warning, UNSAVED_WARNING)
+            self.assertTrue(directory.startswith(bpy.app.tempdir))
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
 
     # -- refused fields -----------------------------------------------------
 
