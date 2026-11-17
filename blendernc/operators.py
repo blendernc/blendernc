@@ -1,13 +1,16 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from .decorators import check_if_node_tree_exists, create_Shader_nodes, is_linked
+from .decorators import check_if_node_tree_exists, is_linked
 from .messages import report_error, report_errors
-from .node_utils import create_links, create_nodes
-from .shader_utils import volume_material
+from .node_utils import UI_NODE_TREE, create_links, create_nodes
+from .shader_utils import texture_material, volume_material
 from .utils import (
     GRID_DIMS_PROPERTY,
+    TEXTURE_NODE_IDNAMES,
+    UI_TEXTURE_NODE,
     add_attribute,
+    assign_material,
     assign_modifier_to_object,
     extract_dimensions_of_grid,
     get_2D_coords,
@@ -192,6 +195,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         # let it expose the object and refresh the nodes reading from it.
         grid_node.baked_object = obj.name
         grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
+        grid_node.baked_coords = grid_node.coords_signature()
         grid_node.update()
 
         return {"FINISHED"}
@@ -207,6 +211,12 @@ class Import_OT_CreateVolume(bpy.types.Operator):
 
     node_name: bpy.props.StringProperty(default="")
     node_tree: bpy.props.StringProperty(default="")
+    # Set by the node when the tree changes; the button always bakes fully.
+    keep_placement: bpy.props.BoolProperty(
+        default=False,
+        options={"SKIP_SAVE"},
+        description="Only refresh the values when the coordinates are unchanged",
+    )
 
     @report_errors
     @is_linked
@@ -214,9 +224,11 @@ class Import_OT_CreateVolume(bpy.types.Operator):
         """Bake the volume of a Datacube Volume node.
 
         The VDB files are written by :func:`blendernc.volume_utils.bake_volume`
-        and a density-only material is assigned once. A problem is shown on
-        the node as well as reported, since the node can rebake itself when
-        the tree changes and nobody sees the status bar then.
+        and the variable's density-only material is assigned. A problem is
+        shown on the node as well as reported, since the node can rebake
+        itself when the tree changes and nobody sees the status bar then; so
+        are the notes about resampling and the warning about an unsaved
+        file. A refresh of the values changes neither, so reports nothing.
 
         Returns
         -------
@@ -226,23 +238,33 @@ class Import_OT_CreateVolume(bpy.types.Operator):
         """
         node_tree = bpy.data.node_groups.get(self.node_tree)
         volume_node = node_tree.nodes.get(self.node_name)
+        volume_node.warning = volume_node.note = ""
         try:
-            obj = bake_volume(volume_node, context.scene)
+            obj, notes, refreshed = bake_volume(
+                volume_node, context.scene, self.keep_placement
+            )
         except (ValueError, OSError) as exc:
             volume_node.message = str(exc)
             raise
         volume_node.message = ""
+        volume_node.warning = "\n".join(notes["WARNING"])
+        volume_node.note = "\n".join(notes["INFO"])
+        if not refreshed:
+            self._report_notes(notes)
 
         variable = volume_node.inputs["Variable"].default_value
-        if not obj.data.materials:
-            obj.data.materials.append(volume_material(variable))
-        else:
-            obj.data.materials[0] = volume_material(variable)
+        assign_material(obj.data, volume_material(variable))
 
         volume_node.baked_object = obj.name
         volume_node.baked_signature = volume_node.signature()
         volume_node.update()
         return {"FINISHED"}
+
+    def _report_notes(self, notes):
+        """Report each note of a bake on one line, at its level."""
+        for level, lines in notes.items():
+            for line in lines:
+                report_error(self, line.replace("\n", " "), level)
 
 
 def _apply_modifier(context, obj, modifier):
@@ -252,21 +274,31 @@ def _apply_modifier(context, obj, modifier):
 
 
 class BlenderNCBakeFromAttribute(bpy.types.Operator):
-    bl_idname = "blendernc.bake_from_attribute"
-    bl_label = "Bake From Attribute"
-    bl_description = "Create texture from 2D variable of datacube"
+    """Colour the object of a Datacube Texture or Animate Texture node.
 
-    node_name: bpy.props.StringProperty(default="")
-    node_tree: bpy.props.StringProperty(default="")
+    The material (see :func:`blendernc.shader_utils.texture_material`) is
+    named after the variable and goes into the object's first material slot,
+    so running the operator again reuses both. It maps the attribute through
+    the range the node stored on the mesh; for an animation, that of the
+    first frame it loaded.
+
+    Called with no properties, from the 3D view panel, it acts on the
+    "Datacube Texture" node of the panel's tree. The button on either node
+    passes that node and its tree.
+    """
+
+    bl_idname = "blendernc.bake_from_attribute"
+    bl_label = "Apply Material"
+    bl_description = "Colour the object from the variable written by the texture node"
+
+    # Not remembered between calls: the panel passes neither, and must not
+    # inherit the node last picked in a node editor.
+    node_name: bpy.props.StringProperty(default="", options={"SKIP_SAVE"})
+    node_tree: bpy.props.StringProperty(default="", options={"SKIP_SAVE"})
 
     @report_errors
-    @check_if_node_tree_exists
     def execute(self, context):
-        """Bake a texture from a 2D variable of a datacube.
-
-        A Material is created and applied to the target object,
-        the 2-D variable are written to a float attribute.
-        This attribute is then used in the material to create a color.
+        """Create or reuse the variable's material and assign it.
 
         Parameters
         ----------
@@ -276,28 +308,27 @@ class BlenderNCBakeFromAttribute(bpy.types.Operator):
         Returns
         -------
         set
-            ``{"FINISHED"}``
+            ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report when the
+            node is missing or has no texture written onto a mesh.
         """
+        tree_name = self.node_tree or UI_NODE_TREE
+        node_name = self.node_name or UI_TEXTURE_NODE
+        node_tree = bpy.data.node_groups.get(tree_name)
+        texture_node = node_tree.nodes.get(node_name) if node_tree else None
+        if texture_node is None or texture_node.bl_idname not in TEXTURE_NODE_IDNAMES:
+            return report_error(
+                self, f"Texture node {node_name!r} not found in {tree_name!r}."
+            )
 
-        node_tree = bpy.data.node_groups.get(self.node_tree)
-        texture_node = node_tree.nodes.get("Datacube Texture")
         obj = texture_node.inputs["Object"].default_value
-        var = texture_node.inputs["Variable"].default_value
-        if var in bpy.data.materials:
-            self.material = bpy.data.materials.get(var)
-        else:
-            self.material = bpy.data.materials.new(name=var)
-        obj.data.materials.append(self.material)
-        obj.active_material = self.material
-        create_Shader_nodes(self, context)
-        shader_node_tree = self.material.node_tree
-        attr_node = shader_node_tree.nodes.get("Attribute")
-        attr_node.attribute_name = var
-        attr_node = shader_node_tree.nodes.get("Attribute.001")
-        attr_node.attribute_type = "OBJECT"
-        attr_node.attribute_name = "Max value"
-        attr_node = shader_node_tree.nodes.get("Attribute.002")
-        attr_node.attribute_type = "OBJECT"
-        attr_node.attribute_name = "Min value"
+        variable = texture_node.inputs["Variable"].default_value
+        if obj is None or obj.type != "MESH":
+            return report_error(
+                self, f"{texture_node.name}: link a baked Datacube Grid to Object."
+            )
+        if not variable or texture_node.written != variable:
+            reason = texture_node.message.replace("\n", " ") or "link a variable."
+            return report_error(self, f"{texture_node.name}: {reason}")
 
+        assign_material(obj.data, texture_material(variable))
         return {"FINISHED"}

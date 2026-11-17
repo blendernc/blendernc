@@ -4,7 +4,8 @@ The panel builds the ``BLENDERNC`` node tree from scene properties. These
 tests set those properties directly: choosing a variable before any axis
 must not raise, choosing it after X and Y bakes the grid and links the
 texture node, deselecting unlinks it again, and typing a step switches the
-resolution node to manual and rebakes a coarser grid.
+resolution node to manual and rebakes a coarser grid. Picking another
+variable keeps the mesh and only swaps the texture and the material.
 """
 
 import shutil
@@ -19,6 +20,7 @@ from bpy_extras import anim_utils
 
 NX, NY = 12, 8
 VARIABLE = "noise"
+OTHER = "other"
 NO_SELECTION = "No var"
 
 
@@ -31,7 +33,10 @@ class TestUIPanel(unittest.TestCase):
         cls.path = f"{cls.tmpdir}/xy.nc"
         rng = np.random.default_rng(1)
         xr.Dataset(
-            {VARIABLE: (("Y", "X"), rng.standard_normal((NY, NX)))},
+            {
+                VARIABLE: (("Y", "X"), rng.standard_normal((NY, NX))),
+                OTHER: (("Y", "X"), rng.standard_normal((NY, NX)) + 10.0),
+            },
             coords={"X": np.arange(float(NX)), "Y": np.arange(float(NY))},
         ).to_netcdf(cls.path)
         cls.props = bpy.context.scene.BlenderNC_UI_Properties
@@ -131,6 +136,58 @@ class TestUIPanel(unittest.TestCase):
         self.assertEqual(texture.message, "")
         self.assertIn(VARIABLE, obj.data.attributes)
         self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
+
+    def test_6a_apply_material_reuses_first_slot(self):
+        """The panel's Apply Material fills the first slot, however often."""
+        self.props.variable = VARIABLE
+        obj = bpy.data.objects["Grid"]
+        for _ in range(2):
+            bpy.ops.blendernc.bake_from_attribute()
+            self.assertEqual(len(obj.data.materials), 1)
+        self.assertEqual(obj.data.materials[0].name, VARIABLE)
+
+    def test_6b_variable_change_keeps_mesh_and_swaps_material(self):
+        """Only the coordinates and step shape the mesh; a variable does not."""
+        obj = bpy.data.objects["Grid"]
+        mesh = obj.data
+        mesh.attributes.new("probe", "FLOAT", "POINT")  # a rebake drops it
+        texture = self.node("Datacube Texture")
+
+        self.props.variable = OTHER
+        self.assertIn("probe", mesh.attributes, "the grid was rebaked")
+        self.assertEqual(texture.written, OTHER)
+        self.assertIn(OTHER, mesh.attributes)
+        self.assertNotIn(VARIABLE, mesh.attributes)
+        self.assertIsNone(mesh.materials[0], "no material is named after other")
+
+        bpy.ops.blendernc.bake_from_attribute()
+        self.assertEqual(mesh.materials[0].name, OTHER)
+        self.props.variable = VARIABLE
+        self.assertEqual(mesh.materials[0].name, VARIABLE)
+        self.assertIn("probe", mesh.attributes)
+
+    def test_6c_coordinate_change_rebakes(self):
+        """Swapping the axes changes the coordinates, so the grid is rebaked."""
+        mesh = bpy.data.objects["Grid"].data
+        self.assertIn("probe", mesh.attributes)
+        try:
+            self.props.X = "Y"
+            self.props.Y = "X"
+            self.assertNotIn("probe", mesh.attributes)
+        finally:
+            self.props.X = "X"
+            self.props.Y = "Y"
+        self.assertEqual(self.node("Datacube Texture").message, "")
+
+    def test_6d_failed_bake_does_not_raise(self):
+        """Three 1-D axes cannot form a grid: reported, nothing escapes."""
+        grid = bpy.data.objects["Grid"]
+        vertices = len(grid.data.vertices)
+        try:
+            self.props.Z = "X"  # the operator reports; bpy.ops raises inside
+            self.assertEqual(len(grid.data.vertices), vertices)
+        finally:
+            self.props.Z = NO_SELECTION
 
     def test_7_keyframed_panel_step_rebakes(self):
         """A keyframed panel step rebakes the grid and texture on frame change."""

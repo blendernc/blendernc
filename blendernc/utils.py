@@ -26,12 +26,20 @@ logger = logging.getLogger(__name__)
 # Identifier of the enum entry that means "nothing selected".
 NO_SELECTION = "No var"
 
+# Up to this many variables, a Datacube Variable node has one output per
+# variable; with more, a drop-down and a single output.
+MAX_VARIABLE_OUTPUTS = 10
+
 # Node labels in the 3D view panel's tree (``UI_NODE_TREE``).
 UI_VARIABLE_NODE = "Datacube Variable"
 UI_COORDS_NODE = "Datacube Coords"
 UI_GRID_NODE = "Datacube Grid"
 UI_TEXTURE_NODE = "Datacube Texture"
 UI_STEP_NODE = "Datacube Resolution"
+
+# Nodes that write a variable onto a mesh as a point attribute; both offer
+# "Apply Material" and store the field range on the mesh.
+TEXTURE_NODE_IDNAMES = ("BlenderNCNodeTexture", "BlenderNCNodeAnimateTexture")
 
 # Encoding of the ``BNC_data.slicing`` string: ``"<var>|<coord>|<spec>,"``.
 SLICING_RECORD_SEP = ","
@@ -227,7 +235,9 @@ def create_datastruct(self, context):
     Used as the ``update`` callback of the datacube path properties. The node
     tree and node are resolved by the decorator. A path that cannot be
     opened is logged by :func:`store_dataset`; an update callback has no
-    way to report to the user.
+    way to report to the user. Once another dataset is loaded, the nodes
+    after this one are updated, so their outputs show the new dataset; a
+    path that failed leaves them, and their links, as they were.
 
     Parameters
     ----------
@@ -238,7 +248,11 @@ def create_datastruct(self, context):
     """
     node_tree = bpy.data.node_groups.get(self.node_tree)
     node = node_tree.nodes.get(self.node_name)
-    store_dataset(node.BNC_datastructs[0], node.datacube_file)
+    datastruct = node.BNC_datastructs[0]
+    previous = datastruct.filename
+    store_dataset(datastruct, node.datacube_file)
+    if datastruct.filename and datastruct.filename != previous:
+        node.refresh_downstream()
 
 
 def name_match(block, cfname, filename):
@@ -387,6 +401,11 @@ def get_dims(datacubedata):
     return _with_header(build_enum_prop_list(names, "DISK_DRIVE"), "Select coordinate")
 
 
+def variable_names(dataset):
+    """Sorted names of the data variables of a dataset, coordinates excluded."""
+    return sorted(str(name) for name in dataset.data_vars)
+
+
 def get_var(datacubedata):
     """Build enum items for the data variables of a dataset.
 
@@ -403,8 +422,7 @@ def get_var(datacubedata):
     list of tuple
         A header item, a separator (``None``) and one item per variable.
     """
-    coordinates = _coordinate_names(datacubedata)
-    variables = sorted(datacubedata.variables.keys() - coordinates)
+    variables = variable_names(datacubedata)
     descriptions = [datacubedata[var].attrs.get("long_name", var) for var in variables]
     items = build_enum_prop_list(variables, "DISK_DRIVE", descriptions)
     return _with_header(items, "Select variable")
@@ -543,7 +561,7 @@ def get_possible_coordinates_UI(self, context):
 
 
 def update_variable_UI(self, context):
-    """Push the variable chosen in the 3D view panel to the variable node.
+    """Link the variable chosen in the 3D view panel to the texture node.
 
     Parameters
     ----------
@@ -553,10 +571,8 @@ def update_variable_UI(self, context):
         Current Blender context.
     """
     node_tree = bpy.data.node_groups.get(UI_NODE_TREE)
-    var_node = node_tree.nodes.get(UI_VARIABLE_NODE) if node_tree else None
-    if var_node is None:
+    if node_tree is None or node_tree.nodes.get(UI_VARIABLE_NODE) is None:
         return
-    var_node.datacube_vars = self.variable
     sync_texture_section(self, node_tree)
 
 
@@ -564,14 +580,11 @@ def update_variable_UI(self, context):
 MIN_GRID_AXES = 2
 
 
-def _texture_section_ready(UI_props, var_node):
-    """True when the panel has a variable and enough axes to bake a grid."""
+def _enough_axes(UI_props):
+    """True when the panel has enough axes selected to bake a grid."""
     axes = [getattr(UI_props, axis) for axis in ("X", "Y", "Z")]
     selected_axes = [axis for axis in axes if axis and axis != NO_SELECTION]
-    return (
-        var_node.datacube_vars != NO_SELECTION  # the node may reject a value
-        and len(selected_axes) >= MIN_GRID_AXES
-    )
+    return len(selected_axes) >= MIN_GRID_AXES
 
 
 def sync_texture_section(UI_props, node_tree):
@@ -579,16 +592,20 @@ def sync_texture_section(UI_props, node_tree):
 
     The section, the grid bake and the texture links only make sense once
     both a variable and the coordinates are chosen; otherwise the section is
-    hidden and the texture node is unlinked, so "Apply Material" cannot run
-    on a grid that does not exist. Called from both the variable and the
-    coordinate selectors, since either may be chosen last.
+    hidden and the texture node is unlinked. Called from both the variable
+    and the coordinate selectors, since either may be chosen last. The grid
+    is only baked when its coordinates or step changed: picking another
+    variable relinks the texture and swaps the material, the mesh stays.
+    The texture is linked to the variable node's output carrying the chosen
+    variable (see :meth:`blendernc.nodes.DatacubeVariable.pick`).
     """
     var_node = node_tree.nodes.get(UI_VARIABLE_NODE)
     grid_node = node_tree.nodes.get(UI_GRID_NODE)
     texture_node = node_tree.nodes.get(UI_TEXTURE_NODE)
     if var_node is None:
         return
-    ready = _texture_section_ready(UI_props, var_node)
+    variable_output = var_node.pick(UI_props.variable)
+    ready = variable_output is not None and _enough_axes(UI_props)
     show_section(draw_resolution_grid_and_texture, ready)
     if grid_node is None or texture_node is None:
         return
@@ -598,15 +615,39 @@ def sync_texture_section(UI_props, node_tree):
         return
     _bake_ui_grid(node_tree, grid_node)
     create_link(node_tree, grid_node, texture_node, "Object", "Object")
-    create_link(node_tree, var_node, texture_node, var_node.datacube_vars, "Variable")
+    create_link(node_tree, var_node, texture_node, variable_output.name, "Variable")
+    _follow_variable_material(grid_node)
 
 
 def _bake_ui_grid(node_tree, grid_node):
-    """Bake the panel's grid when it has coordinates linked."""
-    if any(socket.is_linked for socket in grid_node.inputs):
+    """Bake the panel's grid when its coordinates or step changed.
+
+    A failed bake has already been reported and logged by the operator,
+    which ``bpy.ops`` turns into a ``RuntimeError``; it must not escape the
+    property callback that called this.
+    """
+    if not any(socket.is_linked for socket in grid_node.inputs):
+        return
+    if not grid_node.needs_bake():
+        return
+    try:
         bpy.ops.blendernc.create_grid_from_coords(
             node_name=grid_node.name, node_tree=node_tree.name
         )
+    except RuntimeError:
+        pass
+
+
+def _follow_variable_material(grid_node):
+    """Give the panel's grid the material of the variable now linked.
+
+    A bake does this through the Set Material node; without a bake the
+    first material slot is set here instead: the material named after the
+    texture's variable, as made by "Apply Material", or none.
+    """
+    obj = bpy.data.objects.get(grid_node.baked_object)
+    if obj is not None and obj.type == "MESH":
+        assign_material(obj.data, grid_material(grid_node))
 
 
 def update_coords_links_UI(self, context):
@@ -726,17 +767,118 @@ def encode_slicing_record(var_name, coord, selector):
     return SLICING_FIELD_SEP.join((var_name, coord, spec)) + SLICING_RECORD_SEP
 
 
-def _record_stride(datastruct, dims, step):
+def _record_stride(datastruct, dims, step, dataset=None):
     """Append one wildcard stride record per dimension to ``slicing``.
 
-    A step of 1 keeps every sample, so nothing is recorded.
+    A step of 1 keeps every sample, so nothing is recorded. With
+    ``dataset``, a range already recorded on a dimension is kept.
     """
     if step <= 1:
         return
     for dim in dims:
-        datastruct.slicing += encode_slicing_record(
-            SLICING_ANY_VARIABLE, dim, slice(0, None, step)
-        )
+        record_selector(datastruct, dataset, dim, slice(0, None, step))
+
+
+def _merge_selector(previous, selector):
+    """Combine ``selector`` with the one recorded before it on the same dims.
+
+    A range (``start:stop``) and a stride (``0::step``) are independent, so
+    a new range keeps an earlier stride and a new stride keeps an earlier
+    range. Anything else, an index in particular, replaces what was there.
+    """
+    if not (isinstance(previous, slice) and isinstance(selector, slice)):
+        return selector
+    if selector.step is None:  # a range
+        return slice(selector.start, selector.stop, previous.step)
+    if not selector.start and selector.stop is None:  # a stride
+        return slice(previous.start, previous.stop, selector.step)
+    return selector
+
+
+def recorded_selector(dataset, slicing, var_name, key):
+    """Return the selector ``slicing`` holds for the dimensions of ``key``.
+
+    Records may name the dimension or a coordinate on it, so they are
+    compared by the dimensions they resolve to. ``None`` when there is none.
+    """
+    dims = _dims_for_key(dataset, key) if dataset is not None else (key,)
+    if not dims:
+        return None
+    found = None
+    for other, selector in parse_slicing(slicing, var_name).items():
+        other_dims = _dims_for_key(dataset, other) if dataset is not None else (other,)
+        if other_dims == dims:
+            found = selector
+    return found
+
+
+def record_selector(datastruct, dataset, key, selector, var_name=SLICING_ANY_VARIABLE):
+    """Append a wildcard ``slicing`` record for ``key`` to a data item.
+
+    The selector is merged with the one already recorded on the same
+    dimensions (see :func:`_merge_selector`), so a Slice range and a
+    Subsample or Resolution stride combine whatever their order.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item whose ``slicing`` grows.
+    dataset : xarray.Dataset or None
+        Dataset resolving coordinate names to dimensions; without it only
+        records with the same name are merged.
+    key : str
+        Dimension or coordinate name.
+    selector : int or slice
+        Index, range or stride.
+    var_name : str, optional
+        Variable whose records are merged with, by default every variable.
+    """
+    previous = recorded_selector(dataset, datastruct.slicing, var_name, key)
+    datastruct.slicing += encode_slicing_record(
+        SLICING_ANY_VARIABLE, key, _merge_selector(previous, selector)
+    )
+
+
+def clamp_index_range(size, first, last):
+    """Return ``(first, last)`` clamped to ``0 .. size - 1`` and in order."""
+    first, last = sorted((min(first, size - 1), min(last, size - 1)))
+    return max(first, 0), max(last, 0)
+
+
+def value_index_range(values, low, high):
+    """First and last position of the ``values`` within ``[low, high]``.
+
+    Node properties hold single-precision floats, so the bounds are widened
+    by a relative tolerance that absorbs their rounding.
+
+    Parameters
+    ----------
+    values : numpy.ndarray
+        1-D numeric coordinate values, normally monotonic.
+    low, high : float
+        Bounds, in either order.
+
+    Returns
+    -------
+    tuple of int or None
+        ``(first, last)``, or ``None`` when no value is in range.
+    """
+    values = np.asarray(values, dtype=np.float64)
+    low, high = sorted((low, high))
+    tolerance = 1e-6 * max(abs(low), abs(high))
+    inside = np.flatnonzero((values >= low - tolerance) & (values <= high + tolerance))
+    if inside.size == 0:
+        return None
+    return int(inside[0]), int(inside[-1])
+
+
+def format_coord_value(value):
+    """Short text for one coordinate value: dates to the second, numbers to 6 digits."""
+    if np.issubdtype(np.asarray(value).dtype, np.datetime64):
+        return str(np.datetime64(value, "s"))
+    if np.issubdtype(np.asarray(value).dtype, np.number):
+        return f"{float(value):.6g}"
+    return str(value)
 
 
 def _decode_selector(spec):
@@ -1355,8 +1497,9 @@ def update_lock_range(self, context):
     """Recompute the stored ranges as soon as the lock is released."""
     if self.lock_range:
         return
-    for node in list(get_all_nodes_by_idname("BlenderNCNodeTexture")):
-        node.update()
+    for idname in TEXTURE_NODE_IDNAMES:
+        for node in list(get_all_nodes_by_idname(idname)):
+            node.update()
 
 
 def delete_point_attribute(mesh, name):
@@ -1408,6 +1551,95 @@ def texture_field(datastruct, obj, variable):
     data = get_data_from_datastruct(datastruct, variable, fill=False)
     error = texture_field_error(data, obj.data)
     return (None, error) if error else (data, "")
+
+
+def animated_field(datastruct, obj, variable):
+    """Return the 3-D field to animate over ``obj``, or why there is none.
+
+    Parameters
+    ----------
+    datastruct : BNC_data
+        Data item of the animate texture node.
+    obj : bpy.types.Object
+        Object linked to the node.
+    variable : str
+        Variable linked to the node.
+
+    Returns
+    -------
+    tuple
+        ``(data, dim, "")`` when ``variable`` is a 3-D field whose other two
+        dimensions span the vertices of ``obj``, ``dim`` being the dimension
+        spread over frames; otherwise ``(None, None, message)``.
+    """
+    if obj.type != "MESH":
+        return None, None, f"{obj.name} is not a mesh.\nLink a baked Datacube Grid."
+    dataset = get_dataset(datastruct)
+    if dataset is None or variable not in dataset:
+        return None, None, f"{variable} is not in the datacube."
+    data = get_data_from_datastruct(datastruct, variable, fill=False)
+    dim, error = animated_field_error(data, obj.data)
+    return (None, None, error) if error else (data, dim, "")
+
+
+# Advice for a variable an animate texture node cannot animate, keyed by its
+# number of dimensions, four and more sharing one entry.
+ANIMATED_DIM_HINTS = {
+    2: "Use a Datacube Texture node for a 2D field.",
+    4: "Use a Datacube Select node to pick a slice first.",
+}
+
+
+def animated_field_error(data, mesh):
+    """Find the dimension of ``data`` to animate over ``mesh``, or say why not.
+
+    Returns
+    -------
+    tuple
+        ``(dim, "")``, or ``(None, message)`` with two lines: what is wrong,
+        then what to do about it.
+    """
+    ndim = len(data.dims)
+    dims = ", ".join(str(dim) for dim in data.dims)
+    if ndim != 3:
+        hint = ANIMATED_DIM_HINTS.get(min(ndim, 4), "An animation needs a 3D field.")
+        return None, f"{data.name} is {ndim}D ({dims}).\n{hint}"
+    dim = animation_dim(data, mesh)
+    if dim is None:
+        return None, (
+            f"No two dimensions of {data.name} ({dims}) match the mesh's "
+            f"{len(mesh.vertices)} vertices.\n"
+            "Bake the grid from the coordinates of this variable."
+        )
+    return dim, ""
+
+
+def animation_dim(data, mesh):
+    """The dimension of a 3-D ``data`` to spread over frames on ``mesh``.
+
+    The other two must span the mesh: the dimensions the grid was baked on
+    when it recorded them, otherwise the first pair whose sizes multiply to
+    the vertex count. ``None`` when no pair does.
+    """
+    pairs = [
+        set(pair)
+        for pair in combinations(data.dims, 2)
+        if prod(data.sizes[dim] for dim in pair) == len(mesh.vertices)
+    ]
+    baked = set(mesh_grid_dims(mesh) or ())
+    grid = baked if baked in pairs else next(iter(pairs), None)
+    if grid is None:
+        return None
+    return next(dim for dim in data.dims if dim not in grid)
+
+
+def animation_frame(data, dim, frame):
+    """The 2-D field of ``data`` shown at scene frame ``frame``.
+
+    Frame 0 shows the first step along ``dim``; frames past the last step
+    hold it, and negative frames hold the first.
+    """
+    return data.isel({dim: min(max(frame, 0), data.sizes[dim] - 1)})
 
 
 def texture_field_error(data, mesh):
@@ -1486,19 +1718,39 @@ def add_attribute(mesh, attr_name, attr_type="FLOAT", domain="POINT"):
     return attr
 
 
+def assign_material(data, material):
+    """Show ``material`` in the first slot of ``data``, adding the slot if needed.
+
+    Faces use slot 0 unless told otherwise, so replacing it, rather than
+    appending a slot on every call, changes what the object shows.
+
+    Parameters
+    ----------
+    data : bpy.types.Mesh or bpy.types.Volume
+        Object data receiving the material.
+    material : bpy.types.Material or None
+        ``None`` empties the first slot.
+    """
+    if not data.materials:
+        if material is not None:
+            data.materials.append(material)
+    elif data.materials[0] != material:
+        data.materials[0] = material
+
+
 def grid_material(grid_node):
     """Material the grid baked by ``grid_node`` should carry, or ``None``.
 
-    Looks for a Datacube Texture node in the same tree whose ``Object`` input
-    is linked from ``grid_node``, and returns the material named after that
-    node's variable, as created by "Apply Material". ``None`` makes the Set
-    Material node assign no material.
+    Looks for a Datacube Texture or Animate Texture node in the same tree
+    whose ``Object`` input is linked from ``grid_node``, and returns the
+    material named after that node's variable, as created by "Apply
+    Material". ``None`` makes the Set Material node assign no material.
     """
     for link in grid_node.id_data.links:
         texture = link.to_node
         if link.from_node != grid_node or link.to_socket.name != "Object":
             continue
-        if texture.bl_idname != "BlenderNCNodeTexture":
+        if texture.bl_idname not in TEXTURE_NODE_IDNAMES:
             continue
         material = bpy.data.materials.get(texture.inputs["Variable"].default_value)
         if material is not None:

@@ -1,4 +1,4 @@
-"""Shader helpers: the default texture material and colormap utilities.
+"""Shader helpers: the texture and volume materials and colormap utilities.
 
 Merges the colormap utilities that lived in ``utils_colorramp.py`` on the
 ``master`` branch. Colormaps are identified by a ``"name:library"`` string,
@@ -14,59 +14,80 @@ import bpy
 import numpy as np
 
 from .node_utils import create_links, create_nodes
+from .utils import RANGE_PROPERTIES
 
-basic_shader_nodes = {
-    "Attribute": {
-        "type": "ShaderNodeAttribute",
-        "links": {
-            "Color": {
-                "ShaderNodeMapRange": "Value",
-            }
-        },
-    },
-    "Attribute.001": {
-        "type": "ShaderNodeAttribute",
-        "links": {
-            "Color": {
-                "ShaderNodeMapRange": "From Max",
-            }
-        },
-    },
-    "Attribute.002": {
-        "type": "ShaderNodeAttribute",
-        "links": {
-            "Color": {
-                "ShaderNodeMapRange": "From Min",
-            }
-        },
-    },
-    "ShaderNodeMapRange": {
-        "links": {
-            "Result": {
-                "ShaderNodeValToRGB": "Factor",
-            }
-        }
-    },
-    "ShaderNodeValToRGB": {
-        "links": {
-            "Color": {
-                "ShaderNodeBsdfPrincipled": "Base Color",
-            }
-        }
-    },
-    "ShaderNodeBsdfPrincipled": {},
-    "ShaderNodeOutputMaterial": {},
-}
+# --------------------------------------------------------------------------
+# Materials reading a BlenderNC attribute
+# --------------------------------------------------------------------------
 
-shader_locations = [
-    (-500, 200),
-    (-500, -200),
-    (-500, 0),
-    (-300, 0),
-    (-100, 0),
-    (200, 0),
-    (500, 0),
-]
+# Positions of the attribute and Map Range nodes shared by both materials.
+RANGE_NODE_LOCATIONS = [(-500, 200), (-500, -200), (-500, 0), (-250, 0)]
+
+
+def _range_nodes(target, target_socket):
+    """Node mapping that reads an attribute and maps it onto 0 to 1.
+
+    ``"Attribute"`` reads the attribute named after the variable;
+    ``"Attribute.001"`` and ``"Attribute.002"`` read the object's
+    ``"Max value"`` and ``"Min value"`` custom properties, which bound the
+    Map Range node. Its result feeds ``target_socket`` of the ``target``
+    entry, which the caller adds to the mapping.
+    """
+    attributes = (("Attribute", "Value"), ("Attribute.001", "From Max"))
+    attributes += (("Attribute.002", "From Min"),)
+    nodes = {
+        key: {
+            "type": "ShaderNodeAttribute",
+            "links": {"Factor": {"ShaderNodeMapRange": socket}},
+        }
+        for key, socket in attributes
+    }
+    nodes["ShaderNodeMapRange"] = {"links": {"Result": {target: target_socket}}}
+    return nodes
+
+
+def _attribute_material(name, nodes, locations, attribute_name):
+    """Create or reuse material ``name``, add ``nodes`` and set the attributes.
+
+    The ``nodes`` mapping must start with :func:`_range_nodes`. Returns the
+    material; ``nodes`` is filled with the node of every entry.
+    """
+    material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    tree = material.node_tree
+    create_nodes(tree, nodes, locations)
+    create_links(tree, nodes)
+    nodes["Attribute"]["node"].attribute_name = attribute_name
+    low, high = RANGE_PROPERTIES
+    for key, prop in (("Attribute.001", high), ("Attribute.002", low)):
+        attribute = nodes[key]["node"]
+        attribute.attribute_type = "OBJECT"  # the object, then its data
+        attribute.attribute_name = prop
+    return material
+
+
+def texture_material(variable):
+    """Return the material showing a texture attribute, creating it once.
+
+    The material is named after the variable, which is how a rebaked grid
+    finds it again (:func:`blendernc.utils.grid_material`). The attribute
+    is mapped from the mesh's ``"Min value"``/``"Max value"`` range onto a
+    Color Ramp that drives the Base Color of a Principled BSDF.
+
+    Parameters
+    ----------
+    variable : str
+        Name of the point attribute, the variable name.
+    """
+    nodes = _range_nodes("ShaderNodeValToCMAP", "Factor")
+    nodes["ShaderNodeValToCMAP"] = {
+        "links": {"Color": {"ShaderNodeBsdfPrincipled": "Base Color"}}
+    }
+    nodes["ShaderNodeBsdfPrincipled"] = {
+        "links": {"BSDF": {"ShaderNodeOutputMaterial": "Surface"}}
+    }
+    nodes["ShaderNodeOutputMaterial"] = {}
+    locations = RANGE_NODE_LOCATIONS + [(-50, 0), (250, 0), (550, 0)]
+    return _attribute_material(variable, nodes, locations, variable)
 
 
 # --------------------------------------------------------------------------
@@ -226,8 +247,8 @@ UI_MATERIAL = "BlenderNC_info"
 
 COLORBAR_MATERIAL_NODES = {
     "ShaderNodeTexCoord": {"links": {"Generated": {"ShaderNodeMapping": "Vector"}}},
-    "ShaderNodeMapping": {"links": {"Vector": {"cmapsNode": "Factor"}}},
-    "cmapsNode": {"links": {"Color": {"ShaderNodeEmission": "Color"}}},
+    "ShaderNodeMapping": {"links": {"Vector": {"ShaderNodeValToCMAP": "Factor"}}},
+    "ShaderNodeValToCMAP": {"links": {"Color": {"ShaderNodeEmission": "Color"}}},
     "ShaderNodeEmission": {
         "links": {"Emission": {"ShaderNodeOutputMaterial": "Surface"}}
     },
@@ -248,7 +269,6 @@ def ui_material():
     material = bpy.data.materials.get(UI_MATERIAL)
     if material is None:
         material = bpy.data.materials.new(UI_MATERIAL)
-        material.use_nodes = True
         bsdf = next(n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
         bsdf.inputs["Emission Color"].default_value = (1.0, 1.0, 1.0, 1.0)
         bsdf.inputs["Emission Strength"].default_value = 1.0
@@ -271,7 +291,6 @@ def colorbar_material(name, colormap_node):
         Colormap node whose settings are copied.
     """
     material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    material.use_nodes = True
     tree = material.node_tree
     for node in [n for n in tree.nodes if n.type == "BSDF_PRINCIPLED"]:
         tree.nodes.remove(node)
@@ -284,44 +303,10 @@ def colorbar_material(name, colormap_node):
     mapping.inputs["Rotation"].default_value = (0.0, np.pi / 4, 0.0)
     mapping.inputs["Scale"].default_value = (1.0, 2.8, 1.0)
 
-    colormap = nodes["cmapsNode"]["node"]
+    colormap = nodes["ShaderNodeValToCMAP"]["node"]
     for setting in ("n_stops", "fcmap", "fv_color", "colormaps"):
         setattr(colormap, setting, getattr(colormap_node, setting))
     return material
-
-
-# Density-only volume material: the grid named after the variable, mapped
-# from the object's "Min value"/"Max value" range onto 0-1 density.
-VOLUME_MATERIAL_NODES = {
-    "Attribute": {
-        "type": "ShaderNodeAttribute",
-        "links": {"Factor": {"ShaderNodeMapRange": "Value"}},
-    },
-    "Attribute.001": {
-        "type": "ShaderNodeAttribute",
-        "links": {"Factor": {"ShaderNodeMapRange": "From Max"}},
-    },
-    "Attribute.002": {
-        "type": "ShaderNodeAttribute",
-        "links": {"Factor": {"ShaderNodeMapRange": "From Min"}},
-    },
-    "ShaderNodeMapRange": {
-        "links": {"Result": {"ShaderNodeVolumePrincipled": "Density"}}
-    },
-    "ShaderNodeVolumePrincipled": {
-        "links": {"Volume": {"ShaderNodeOutputMaterial": "Volume"}}
-    },
-    "ShaderNodeOutputMaterial": {},
-}
-
-VOLUME_MATERIAL_LOCATIONS = [
-    (-500, 200),
-    (-500, -200),
-    (-500, 0),
-    (-250, 0),
-    (0, 0),
-    (300, 0),
-]
 
 
 def volume_material(grid_name):
@@ -338,21 +323,19 @@ def volume_material(grid_name):
         Name of the VDB grid, the variable name.
     """
     name = f"{grid_name} volume"
-    material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    material.use_nodes = True
-    tree = material.node_tree
-    for node in [n for n in tree.nodes if n.type == "BSDF_PRINCIPLED"]:
-        tree.nodes.remove(node)
-    nodes = {key: dict(value) for key, value in VOLUME_MATERIAL_NODES.items()}
-    create_nodes(tree, nodes, VOLUME_MATERIAL_LOCATIONS)
-    create_links(tree, nodes)
-
-    nodes["Attribute"]["node"].attribute_name = grid_name
-    for key, prop in (("Attribute.001", "Max value"), ("Attribute.002", "Min value")):
-        attribute = nodes[key]["node"]
-        attribute.attribute_type = "OBJECT"
-        attribute.attribute_name = prop
-    return material
+    existing = bpy.data.materials.get(name)
+    if existing is None:  # a new material starts with a surface shader
+        existing = bpy.data.materials.new(name)
+        tree = existing.node_tree
+        for node in [n for n in tree.nodes if n.type == "BSDF_PRINCIPLED"]:
+            tree.nodes.remove(node)
+    nodes = _range_nodes("ShaderNodeVolumePrincipled", "Density")
+    nodes["ShaderNodeVolumePrincipled"] = {
+        "links": {"Volume": {"ShaderNodeOutputMaterial": "Volume"}}
+    }
+    nodes["ShaderNodeOutputMaterial"] = {}
+    locations = RANGE_NODE_LOCATIONS + [(0, 0), (300, 0)]
+    return _attribute_material(name, nodes, locations, grid_name)
 
 
 def _text_object(name, parent, size):

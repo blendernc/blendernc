@@ -16,7 +16,6 @@ from .node_utils import (
     node_updates_enabled,
 )
 from .panels_draw import draw_var_and_coords, show_section
-from .shader_utils import basic_shader_nodes, shader_locations
 
 
 def is_linked(update_function):
@@ -294,27 +293,6 @@ def initialize_BNC_datastructs(update_function):
     return wrapper
 
 
-def create_Shader_nodes(self, context):
-    """Create the default shader nodes for the material.
-
-    Parameters
-        ----------
-        self : bpy.types.PropertyGroup or bpy.types.Operator
-            Caller holding a ``node_tree`` name attribute.
-        context : bpy.types.Context
-            Current Blender context.
-
-        Returns
-        -------
-        None
-    """
-    if not self.material.use_nodes:
-        self.material.use_nodes = True
-    node_tree = self.material.node_tree
-    create_nodes(node_tree, basic_shader_nodes, shader_locations)
-    create_links(node_tree, basic_shader_nodes)
-
-
 def _create_UI_nodes(self, context):
     """Build the default ``UI_NODE_TREE`` node tree driven by the 3D view panel.
 
@@ -387,8 +365,6 @@ def check_if_node_tree_exists(update_function):
             return None
         elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
             _use_import_node(self, context)
-        elif self.bl_idname == "BLENDERNC_OT_bake_from_attribute":
-            self.node_tree = UI_NODE_TREE
         else:
             self.node_tree = self.id_data.name
             self.node_name = self.name

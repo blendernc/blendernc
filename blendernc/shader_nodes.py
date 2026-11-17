@@ -1,6 +1,6 @@
 """Colormap shader node and its menus, for materials built by BlenderNC.
 
-Port of ``nodes/cmaps/cmapsnode.py`` from the ``master`` branch, updated for
+Port of ``nodes/cmaps/ShaderNodeValToCMAP.py`` from the ``master`` branch, updated for
 Blender 5.2: each Colormap node owns its node group (Group Input, Color Ramp,
 Group Output) instead of sharing one group with suffixed node names.
 """
@@ -57,7 +57,7 @@ def _group_used_by_other_node(group, node):
     """
     pointer = node.as_pointer()
     return any(
-        other.bl_idname == "cmapsNode"
+        other.bl_idname == "ShaderNodeValToCMAP"
         and other.node_tree == group
         and other.as_pointer() != pointer
         for tree in _shader_trees()
@@ -143,7 +143,7 @@ class BlenderNC_NT_colormap(bpy.types.ShaderNodeCustomGroup):
     shows where values are missing.
     """
 
-    bl_idname = "cmapsNode"  # kept from master so saved files still load
+    bl_idname = "ShaderNodeValToCMAP"  # kept from master so saved files still load
     bl_label = "Colormap"
 
     colormaps: bpy.props.StringProperty(

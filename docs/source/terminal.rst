@@ -145,31 +145,55 @@ Each node in the editor is a Blender node type that you create with
        ``Variable``.
    * - Datacube Coords
      - ``BlenderNCNodeCoords``
-     - One string output per coordinate of the dataset.
+     - One string output per coordinate of the dataset, replaced when
+       another dataset is linked.
    * - Datacube Variable
      - ``BlenderNCNodeVariable``
-     - ``datacube_vars`` selects a variable; an output socket with that name
-       appears.
+     - One string output per data variable, named after it, up to
+       ``blendernc.utils.MAX_VARIABLE_OUTPUTS`` (10). With more,
+       ``drop_down`` is ``True``, ``datacube_vars`` selects the variable
+       and a single ``Variable`` output carries it. ``pick(name)`` returns
+       the output carrying a variable in either case.
    * - Datacube Select
      - ``BlenderNCNodeSelect``
      - ``datacube_coords`` picks the coordinate and ``index`` the position
        kept along it (clamped to the coordinate size). In and out
        ``Variable``.
+   * - Datacube Slice
+     - ``BlenderNCNodeSlice``
+     - ``datacube_coords`` picks a 1-D coordinate, which resets the bounds
+       to its extent, so set them afterwards. ``slice_by = "INDEX"`` keeps
+       positions ``first`` to ``last``; ``"VALUE"`` keeps the values from
+       ``minimum`` to ``maximum``. In and out ``Variable``.
    * - Datacube Grid
      - ``BlenderNCNodeGrid``
      - Inputs ``X``, ``Y``, ``Z`` take coordinate outputs; ``grid_obj_name``
        names the mesh. Baked with
        ``bpy.ops.blendernc.create_grid_from_coords``. Output ``Object``.
+   * - Datacube Volume
+     - ``BlenderNCNodeVolume``
+     - Input ``Variable`` takes a 3-D or 4-D variable; ``volume_obj_name``,
+       ``animate_dim``, ``frame_mode``, ``vertical_scale`` and ``vdb_dir``
+       are described in the :ref:`in_depth_guide`. Baked with
+       ``bpy.ops.blendernc.create_volume``; ``keep_placement=True`` only
+       refreshes the values when the coordinates are those of the last
+       bake. Output ``Object``.
    * - Datacube Texture
      - ``BlenderNCNodeTexture``
      - Inputs ``Object`` and ``Variable``. A 2-D variable is written once to
        a point attribute of the mesh named after it, and removed again when
        ``Variable`` is unlinked. A 3-D or 4-D variable is refused and
        ``message`` says which node to use instead.
+       ``bpy.ops.blendernc.bake_from_attribute(node_name=..., node_tree=...)``
+       gives the object a material showing the variable.
    * - Datacube Animate Texture
      - ``BlenderNCNodeAnimateTexture``
-     - Inputs ``Object`` and ``Variable``. On every frame change the
-       variable is written to a point attribute of the mesh named after it.
+     - Inputs ``Object`` and ``Variable``. A 3-D variable is written to a
+       point attribute of the mesh named after it as soon as it is linked,
+       the frame shown first, then on every frame change; its ``Min value``
+       and ``Max value`` come from that first frame and stay during
+       playback. ``written``, ``message`` and ``bake_from_attribute`` work as
+       on the Datacube Texture node; a 2-D or 4-D variable is refused.
 
 Three details matter when scripting:
 
