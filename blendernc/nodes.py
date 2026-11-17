@@ -1124,8 +1124,7 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         if not self.inputs.get("xarray datacube"):
             return
         layout.prop(self, "step")
-        datastruct = self.BNC_datastructs[0]
-        dataset = datastruct.dict.get(datastruct.filename)
+        dataset = get_dataset(self.BNC_datastructs[0])
         if dataset is not None:
             layout.prop(self, "suggested_step")
             dims = get_surface_dims(dataset)

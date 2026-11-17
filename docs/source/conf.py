@@ -67,7 +67,6 @@ autodoc_mock_imports = [
     "nodeitems_builtins",
     "addon_utils",
     "bpy_extras",
-    "addon_updater_ops",
 ]
 
 autosummary_generate = True
