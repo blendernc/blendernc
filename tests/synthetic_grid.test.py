@@ -740,7 +740,7 @@ class TestSyntheticGrids(unittest.TestCase):
                 self.assertEqual(nodes[key].attribute_name, prop)
             base_color = nodes["Principled BSDF"].inputs["Base Color"]
             self.assertEqual(
-                base_color.links[0].from_node.bl_idname, "ShaderNodeValToRGB"
+                base_color.links[0].from_node.bl_idname, "ShaderNodeValToCMAP"
             )
         finally:
             if material is not None:

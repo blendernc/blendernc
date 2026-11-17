@@ -82,7 +82,7 @@ class TestColormapNode(unittest.TestCase):
         self.material = bpy.data.materials.new(f"bnc_{self._testMethodName}")
         self.material.use_nodes = True
         self.tree = self.material.node_tree
-        self.node = self.tree.nodes.new("cmapsNode")
+        self.node = self.tree.nodes.new("ShaderNodeValToCMAP")
 
     def tearDown(self):
         bpy.data.materials.remove(self.material)
@@ -99,7 +99,7 @@ class TestColormapNode(unittest.TestCase):
         self.assertTrue(ramp.inputs["Factor"].is_linked)
         self.assertTrue(ramp.outputs["Color"].is_linked)
 
-        other = self.tree.nodes.new("cmapsNode")
+        other = self.tree.nodes.new("ShaderNodeValToCMAP")
         self.assertIsNot(other.node_tree, group)
 
     def test_settings_rebuild_the_ramp(self):
@@ -144,13 +144,13 @@ class TestColorbar(unittest.TestCase):
         """The colorbar material runs coordinates through a matching Colormap."""
         source_material = bpy.data.materials.new("bnc_cbar_source")
         source_material.use_nodes = True
-        source = source_material.node_tree.nodes.new("cmapsNode")
+        source = source_material.node_tree.nodes.new("ShaderNodeValToCMAP")
         source.colormaps = "thermal:cmocean"
         source.n_stops = 8
 
         material = colorbar_material("bnc_cbar", source)
         nodes = material.node_tree.nodes
-        colormap = next(n for n in nodes if n.bl_idname == "cmapsNode")
+        colormap = next(n for n in nodes if n.bl_idname == "ShaderNodeValToCMAP")
         self.assertEqual(colormap.colormaps, "thermal:cmocean")
         self.assertEqual(colormap.n_stops, 8)
         self.assertFalse([n for n in nodes if n.type == "BSDF_PRINCIPLED"])

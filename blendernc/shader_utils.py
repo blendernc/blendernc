@@ -78,8 +78,8 @@ def texture_material(variable):
     variable : str
         Name of the point attribute, the variable name.
     """
-    nodes = _range_nodes("cmapsNode", "Factor")
-    nodes["cmapsNode"] = {
+    nodes = _range_nodes("ShaderNodeValToCMAP", "Factor")
+    nodes["ShaderNodeValToCMAP"] = {
         "links": {"Color": {"ShaderNodeBsdfPrincipled": "Base Color"}}
     }
     nodes["ShaderNodeBsdfPrincipled"] = {
@@ -247,8 +247,8 @@ UI_MATERIAL = "BlenderNC_info"
 
 COLORBAR_MATERIAL_NODES = {
     "ShaderNodeTexCoord": {"links": {"Generated": {"ShaderNodeMapping": "Vector"}}},
-    "ShaderNodeMapping": {"links": {"Vector": {"cmapsNode": "Factor"}}},
-    "cmapsNode": {"links": {"Color": {"ShaderNodeEmission": "Color"}}},
+    "ShaderNodeMapping": {"links": {"Vector": {"ShaderNodeValToCMAP": "Factor"}}},
+    "ShaderNodeValToCMAP": {"links": {"Color": {"ShaderNodeEmission": "Color"}}},
     "ShaderNodeEmission": {
         "links": {"Emission": {"ShaderNodeOutputMaterial": "Surface"}}
     },
@@ -303,7 +303,7 @@ def colorbar_material(name, colormap_node):
     mapping.inputs["Rotation"].default_value = (0.0, np.pi / 4, 0.0)
     mapping.inputs["Scale"].default_value = (1.0, 2.8, 1.0)
 
-    colormap = nodes["cmapsNode"]["node"]
+    colormap = nodes["ShaderNodeValToCMAP"]["node"]
     for setting in ("n_stops", "fcmap", "fv_color", "colormaps"):
         setattr(colormap, setting, getattr(colormap_node, setting))
     return material
