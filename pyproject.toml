@@ -31,6 +31,15 @@ dependencies = [
     "toml (>=0.10.2,<0.11.0)"
 ]
 
+[tool.pytest.ini_options]
+# Unit tests of blendernc.core, which runs without Blender; the Blender
+# tests are the tests/*.test.py scripts (see tests/run_tests.py). The root
+# and tests/ folders hold __init__.py files, so test files are imported by
+# path rather than as a package.
+testpaths = ["tests/unit"]
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
+
 [tool.poetry.urls]
 "Changelog" = "https://github.com/blendernc/blendernc/blob/master/CHANGELOG.md"
 

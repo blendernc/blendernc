@@ -1,21 +1,10 @@
-import glob
 from collections import defaultdict
 from functools import wraps
 
 import bpy
 
 from .messages import report_error
-from .node_utils import (
-    UI_NODE_TREE,
-    basic_nodes,
-    create_blenderncnodetree,
-    create_links,
-    create_nodes,
-    disconnect_links,
-    locations,
-    node_updates_enabled,
-)
-from .panels_draw import draw_var_and_coords, show_section
+from .node_utils import node_updates_enabled
 
 
 def is_linked(update_function):
@@ -294,87 +283,6 @@ def initialize_BNC_datastructs(update_function):
             # This is a global dictionary that will store the datasets for all
             # the nodes and node_trees. It can be used to access the datasets
             # from any node or node_tree in the BlenderNC workflow.
-        return update_function(self, context)
-
-    return wrapper
-
-
-def _create_UI_nodes(self, context):
-    """Build the default ``UI_NODE_TREE`` node tree driven by the 3D view panel.
-
-    Creates the import, coordinate, variable and grid nodes. When the path in
-    the UI properties is empty or matches no file, the import node is
-    disconnected and the variable/coordinate panel section is removed. When
-    the path is valid, the nodes are linked and the section is drawn.
-
-    Parameters
-    ----------
-    self : bpy.types.PropertyGroup or bpy.types.Operator
-        Caller holding a ``node_tree`` name attribute.
-    context : bpy.types.Context
-        Current Blender context.
-
-    Returns
-    -------
-    bpy.types.Node
-        The "Datacube Import" node of the tree.
-    """
-    UI_props = context.scene.BlenderNC_UI_Properties
-    node_tree = create_blenderncnodetree(self.node_tree)
-    datacube_file = UI_props.datacube_file
-    create_nodes(node_tree, basic_nodes, locations)
-    import_node = node_tree.nodes.get("Datacube Import")
-    if not datacube_file or not glob.glob(datacube_file):
-        if datacube_file:
-            report_error(self, f"No file matches {datacube_file!r}.", "WARNING")
-        disconnect_links(node_tree, import_node)
-        show_section(draw_var_and_coords, False)
-        return import_node
-    import_node.datacube_file = datacube_file
-    create_links(node_tree, basic_nodes)
-    show_section(draw_var_and_coords, True)
-    return import_node
-
-
-def _use_import_node(operator, context):
-    """Point the import operator at the node it should load into.
-
-    The file browser on a Datacube Import node passes that node and its tree,
-    whatever the tree is called, and both are kept. The 3D view panel passes
-    neither, so the panel's tree is built and its import node is used. A
-    script that names the panel's tree before it exists gets the same.
-
-    Parameters
-    ----------
-    operator : bpy.types.Operator
-        The import operator, with ``node_tree`` and ``node_name`` attributes.
-    context : bpy.types.Context
-        Current Blender context.
-    """
-    node_tree = bpy.data.node_groups.get(operator.node_tree)
-    if node_tree is not None and operator.node_name in node_tree.nodes:
-        return
-    if operator.node_tree in ("", UI_NODE_TREE):
-        operator.node_tree = UI_NODE_TREE
-        operator.node_name = _create_UI_nodes(operator, context).name
-
-
-def check_if_node_tree_exists(update_function):
-    """Check if the node tree exists before running the update function."""
-
-    @wraps(update_function)
-    def wrapper(self, context):
-        """Resolve ``node_tree`` and ``node_name`` on ``self``, then run the update."""
-        if self.bl_idname == "BlenderNC_UI_Properties":
-            self.node_tree = UI_NODE_TREE
-            _create_UI_nodes(self, context)
-            return None
-        elif self.bl_idname == "BLENDERNC_OT_import_mfdataset":
-            _use_import_node(self, context)
-        else:
-            self.node_tree = self.id_data.name
-            self.node_name = self.name
-
         return update_function(self, context)
 
     return wrapper

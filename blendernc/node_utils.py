@@ -4,6 +4,15 @@ import bpy
 # the node editor can have any name.
 UI_NODE_TREE = "BLENDERNC"
 
+# Names of the nodes in the panel's tree; Blender names a new node after its
+# ``bl_label``, so these are the labels of the nodes ``basic_nodes`` creates.
+UI_IMPORT_NODE = "Datacube Import"
+UI_VARIABLE_NODE = "Datacube Variable"
+UI_COORDS_NODE = "Datacube Coords"
+UI_GRID_NODE = "Datacube Grid"
+UI_TEXTURE_NODE = "Datacube Texture"
+UI_STEP_NODE = "Datacube Resolution"
+
 basic_nodes = {
     "BlenderNCNodeImport": {
         "links": {
@@ -170,8 +179,7 @@ def create_nodes(node_tree, nodes, locations=None):
             }
 
         ``"links"`` is described in :func:`create_links` and refers to other
-        entries by their identifier. Each entry is updated in place with the
-        created ``"node"``.
+        entries by their identifier. The mapping is left as it is.
     locations : list of tuple, optional
         One ``(x, y)`` position per node, in mapping order. By default the
         nodes are spread along a row.
@@ -179,21 +187,24 @@ def create_nodes(node_tree, nodes, locations=None):
     Returns
     -------
     dict
-        The same ``nodes`` mapping, populated with node references.
+        A new mapping with the same entries, each a copy holding the created
+        ``"node"`` as well; pass it to :func:`create_links`. A geometry node
+        tree gets an extra ``"NodeGroupOutput"`` entry.
     """
+    created = {key: dict(entry) for key, entry in nodes.items()}
     if node_tree.bl_idname == "GeometryNodeTree":
-        nodes.setdefault("NodeGroupOutput", {"links": {}})
+        created.setdefault("NodeGroupOutput", {"links": {}})
         _ensure_geometry_interface(node_tree)
 
     if locations is None:
-        locations = _row_locations(len(nodes))
+        locations = _row_locations(len(created))
 
-    for (key, entry), location in zip(nodes.items(), locations, strict=True):
+    for (key, entry), location in zip(created.items(), locations, strict=True):
         node_type = entry.get("type", key)
         name = key if "type" in entry else None
         entry["node"] = create_node(node_tree, node_type, location, name)
 
-    return nodes
+    return created
 
 
 def create_links(node_tree, nodes):

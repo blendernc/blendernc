@@ -2,15 +2,14 @@ from collections import defaultdict
 
 import bpy
 
-from .utils import (
-    create_datastruct,
+from .ui import (
     get_possible_coordinates_UI,
     get_possible_variables_UI,
     update_coords_links_UI,
-    update_lock_range,
-    update_step_UI,
+    update_datacube_file_UI,
     update_variable_UI,
 )
+from .utils import update_lock_range
 
 
 class BNC_data(bpy.types.PropertyGroup):
@@ -36,7 +35,7 @@ class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
         description="Datacube file to import, or a glob pattern matching several",
         default="",
         maxlen=1024,
-        update=create_datastruct,
+        update=update_datacube_file_UI,
     )
     X: bpy.props.EnumProperty(
         items=get_possible_coordinates_UI, name="X:", update=update_coords_links_UI
@@ -52,15 +51,6 @@ class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
         items=get_possible_variables_UI,
         name="Select Variable",
         update=update_variable_UI,
-    )
-
-    step: bpy.props.IntProperty(
-        name="Step",
-        description="Keep one sample every N indices (1 = full resolution)",
-        default=2,
-        min=1,
-        soft_max=20,
-        update=update_step_UI,
     )
 
 

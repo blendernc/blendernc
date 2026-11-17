@@ -4,7 +4,6 @@ from bpy.app.handlers import persistent
 from bpy_extras import anim_utils
 
 from .node_utils import get_all_nodes_by_idname
-from .utils import UI_NODE_TREE, UI_STEP_NODE, update_step_UI
 from .volume_utils import FRAMES_LIVE, write_live_frame
 
 
@@ -45,10 +44,6 @@ def bNC_update_volumes(scene):
             write_live_frame(node, scene.frame_current)
 
 
-# Path of the sidebar panel's step, relative to the scene.
-PANEL_STEP_PATH = "BlenderNC_UI_Properties.step"
-
-
 def _fcurves(id_data):
     """F-curves of the action assigned to ``id_data``, or an empty list."""
     anim = id_data.animation_data
@@ -56,30 +51,6 @@ def _fcurves(id_data):
         return []
     bag = anim_utils.action_get_channelbag_for_slot(anim.action, anim.action_slot)
     return list(bag.fcurves) if bag else []
-
-
-def is_animated(id_data, data_path):
-    """True when ``data_path`` on ``id_data`` has an F-curve or a driver."""
-    anim = id_data.animation_data
-    if anim is not None and anim.drivers.find(data_path) is not None:
-        return True
-    return any(fcurve.data_path == data_path for fcurve in _fcurves(id_data))
-
-
-def _apply_panel_step(scene):
-    """Push an animated panel step to the resolution node; True if it changed.
-
-    The scene is evaluated by Blender, so the panel value is already the
-    animated one; only its update callback was skipped.
-    """
-    props = getattr(scene, "BlenderNC_UI_Properties", None)
-    tree = bpy.data.node_groups.get(UI_NODE_TREE)
-    node = tree.nodes.get(UI_STEP_NODE) if tree else None
-    if props is None or node is None or not is_animated(scene, PANEL_STEP_PATH):
-        return False
-    changed = node.step != props.step
-    update_step_UI(props, bpy.context)
-    return changed
 
 
 def _write_animated_value(tree, fcurve, frame):
@@ -123,11 +94,11 @@ def _apply_node_tree_animation(scene):
 def bNC_apply_animated_steps(scene, depsgraph=None):
     """Apply keyframed values as if the user had typed them.
 
-    Registered as a ``frame_change_post`` handler. A keyframed panel step is
-    written by Blender without running its update callback, and keyframes on
-    BlenderNC node trees are not evaluated at all; both are applied here, so
-    the resolution node updates, the grid rebakes itself and animated
-    textures are rewritten for the new mesh.
+    Registered as a ``frame_change_post`` handler. Keyframes on BlenderNC
+    node trees, such as a Resolution step keyed from the 3D view panel, are
+    not evaluated by Blender; they are applied here, so the resolution node
+    updates, the grid rebakes itself and animated textures are rewritten for
+    the new mesh.
 
     Parameters
     ----------
@@ -136,6 +107,5 @@ def bNC_apply_animated_steps(scene, depsgraph=None):
     depsgraph : bpy.types.Depsgraph, optional
         Passed by Blender; unused.
     """
-    panel_changed = _apply_panel_step(scene)
-    if _apply_node_tree_animation(scene) or panel_changed:
+    if _apply_node_tree_animation(scene):
         bNC_update_attributes(scene)

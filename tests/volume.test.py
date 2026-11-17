@@ -33,16 +33,12 @@ import openvdb
 import xarray as xr
 from mathutils import Vector
 
+from blendernc.core.fields import RANGE_PROPERTIES
+from blendernc.core.volume import nearest_positions, placement_key
 from blendernc.handlers import bNC_update_volumes
 from blendernc.node_utils import create_blenderncnodetree
-from blendernc.utils import RANGE_PROPERTIES, get_dataset
-from blendernc.volume_utils import (
-    UNSAVED_WARNING,
-    get_animate_dims,
-    nearest_positions,
-    placement_key,
-    vdb_directory,
-)
+from blendernc.utils import get_dataset
+from blendernc.volume_utils import UNSAVED_WARNING, get_animate_dims, vdb_directory
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"

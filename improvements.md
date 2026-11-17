@@ -40,40 +40,40 @@ after that work.
 
 - **Shared mutable cache on a class attribute.** `BNC_data.dict`
   (`properties.py:26`) is one `defaultdict` for every node in every file;
-  `initialize_BNC_datastructs` (`decorators.py:293`) assigns `item.dict`
+  `initialize_BNC_datastructs` (`decorators.py:282`) assigns `item.dict`
   on a transient `PropertyGroup` wrapper, so the per-item assignment has no
   lasting effect. A small cache module (`get`, `put`, `drop`, keyed by the
   full path, with reference counts) would make the lifetime explicit.
-- **Read paths create data.** `_get_ui_node` (`utils.py:506-509`) and both
-  panel draw functions (`panels_draw.py:37, 79`) call
+- **Read paths create data.** `_get_ui_node` (`ui.py:128-131`) and both
+  panel draw functions (`panels_draw.py:42, 80`) call
   `create_blenderncnodetree`, so drawing a drop-down or the panel can
   create a node group. Look the tree up with `bpy.data.node_groups.get` in
   read paths.
 - **`create_blenderncnodetree` ignores the tree type.** It returns any
-  group with the requested name (`node_utils.py:127-128`).
-  `assign_modifier_to_object` (`utils.py:1818`) asks for a geometry tree
+  group with the requested name (`node_utils.py:136-137`).
+  `assign_modifier_to_object` (`utils.py:681`) asks for a geometry tree
   named after the grid object, so a grid object called "BLENDERNC" (or
   after any other node group) gets the wrong kind of tree for its
   modifier, and the bake fails. Check `bl_idname`, and pick a new name
   when the existing group has another type.
-- **`get_grid_coords` has no missing-key handling.** `utils.py:1038`
+- **`get_grid_coords` has no missing-key handling.** `utils.py:398`
   passes the socket value to `get_data_from_datastruct`, which indexes
-  `dataset[var_name]` (`utils.py:968`). A renamed coordinate raises
+  `dataset[var_name]` (`utils.py:358`). A renamed coordinate raises
   `KeyError`, and an unloaded dataset raises `TypeError`.
-- **`_clear_default_values` matches on `bl_label`.** `decorators.py:74`
+- **`_clear_default_values` matches on `bl_label`.** `decorators.py:63`
   compares `input_socket.bl_label != "Object"`; `isinstance(socket,
   bpy.types.NodeSocketObject)` is the stable test.
 - **Node mappings and their locations must stay in step.** `basic_nodes`
-  and `locations` (`node_utils.py:7-36`) are parallel module constants, as
+  and `locations` (`node_utils.py:16-45`) are parallel module constants, as
   are `COLORBAR_MATERIAL_NODES` and `COLORBAR_MATERIAL_LOCATIONS`
   (`shader_utils.py:248-264`); `texture_material` and `volume_material`
-  extend `RANGE_NODE_LOCATIONS` by hand (`shader_utils.py:89, 337`).
+  extend `RANGE_NODE_LOCATIONS` by hand (`shader_utils.py:89, 336`).
   `create_nodes` uses `zip(strict=True)`, so a node added to one list but
   not the other raises. Put the location inside each entry.
 - **Grid and Volume nodes run operators from `update`.**
   `DatacubeGrid.update` and `DatacubeVolume.update` call `bpy.ops` to
-  rebake (`nodes.py:353, 950`); the operator creates objects, applies
-  modifiers and calls `update()` again. `decorators.py:171-174` notes that
+  rebake (`nodes.py:366, 963`); the operator creates objects, applies
+  modifiers and calls `update()` again. `decorators.py:160-163` notes that
   Blender is still walking the tree during `update` and moves link edits
   to a timer for that reason. Rebakes could be deferred the same way.
 
@@ -86,58 +86,9 @@ after that work.
   (the Texture node says to bake the grid from the variable's
   coordinates). Volumes are unaffected: they read their coordinates from
   the sliced variable.
-- **`decorators.py` contains UI logic.** `_create_UI_nodes`
-  (`decorators.py:302-336`) builds the node tree, toggles panel draw
-  functions and reads scene properties; it belongs with the operators or
-  in a `ui.py` module.
-- **`check_if_node_tree_exists` does three unrelated things**
-  (`decorators.py:362-380`), depending on `bl_idname`. For the UI property
-  group it builds nodes and never calls the wrapped function. For the
-  import operator it resolves the node through `_use_import_node`. For
-  nodes it only resolves names. `_use_import_node` and the Apply Material
-  operator, which now resolves its own defaults, show the explicit style
-  the remaining branches could follow.
-- **`create_nodes` mutates its input.** It writes `"node"` into each
-  entry and may add a `"NodeGroupOutput"` entry (`node_utils.py:185,
-  194`). `_create_UI_nodes` passes the module constant `basic_nodes`
-  (`decorators.py:325`), so stale node references survive across trees
-  and reloads. The material helpers build a fresh mapping on each call,
-  and `colorbar_material` and `_new_colormap_group` copy theirs first
-  (`shader_utils.py:297`, `shader_nodes.py:39`). Returning a new mapping
-  would make those copies unnecessary.
-- **`utils.py` mixes pure helpers with `bpy` code.** `name_match`,
-  `find_common_name`, `dataset_engine`, the slicing codec and
-  `_merge_selector`, `clamp_index_range`, `value_index_range`,
-  `format_coord_value`, `get_surface_dims`, `get_2D_coords` and its
-  handlers, `grid_dims`, `stack_2D_coords`, `extract_dimensions_of_grid`,
-  `find_coord_matches`, `suggested_stride`, `field_to_point_values`,
-  `field_range` and `texture_field_error` need no Blender, nor do
-  `axis_spacing`, `nearest_positions`, `axis_placement`,
-  `curvilinear_placement`, `volume_layout` and `frame_array` in
-  `volume_utils.py`. A `bpy`-free module would allow fast `pytest` unit
-  tests and shrink `utils.py`, which has grown to 1822 lines.
-- **`utils.py` imports `panels_draw`** (`utils.py:22`), while
-  `properties.py` imports `utils` and `decorators.py` imports
-  `panels_draw` and `node_utils`. The UI callbacks (`update_*_UI`,
-  `_get_ui_node`, `sync_texture_section`) would sit better in a `ui.py`
-  next to `panels_draw.py`. That module, or `node_utils.py` next to
-  `UI_NODE_TREE`, could also own the `UI_*_NODE` labels; they live in
-  `utils.py` now, so `panels_draw.py` repeats the literals "BLENDERNC",
-  "Datacube Coords" and "Datacube Resolution" (`panels_draw.py:37, 41,
-  83-84`).
-- **`get_possible_coordinates_UI` depends on the layout of `get_dims`.**
-  `utils.py:561-563` drops the separator and overwrites the header; a
-  parameter on `get_dims` would remove the coupling.
-- **The datacube path lives in three places** (`datacube_file` on the
-  node, `datacube_file` on the scene properties, `datafile` on the data
-  item) and is synced by hand in `Import_OT_mfdataset.execute`
-  (`operators.py:83-89`), `_create_UI_nodes` (`decorators.py:333`) and
-  `DatacubeImport.update` (`nodes.py:124-136`).
-- **Two step properties.** `BlenderNC_UI_Properties.step`
-  (`properties.py:57`) mirrors `DatacubeResolution.step` through
-  `update_step_UI` (`utils.py:686-700`). The panel already draws the
-  node's `suggested_step` directly (`panels_draw.py:83`); drawing its
-  `step` the same way would remove the mirror.
+  Deferred on 2026-11-17: it may already work when the selection is
+  applied after the Datacube Coords node; check that before changing
+  anything.
 
 ## 4. Dead code and cleanup
 
@@ -167,16 +118,17 @@ after that work.
   file, and links Z only in the failing-bake case.
 - `tests/build-test.sh:24-27, 59` still runs a `test_nolib` pass that
   matches no files; drop it or add the tests it was meant to run.
-- Pure helpers could run under `pytest` without Blender once split out of
-  `utils.py` (section 3). The slicing codec, `find_common_name` and
-  `extract_dimensions_of_grid` have no direct tests; the volume and slice
-  helpers are tested through the nodes, and only `nearest_positions` on
-  its own.
+- `tests/unit/test_core.py` runs `blendernc.core` under `pytest`
+  without Blender (35 tests). `get_2D_coords`, `stack_2D_coords`,
+  `extract_dimensions_of_grid`, `vertical_placement`,
+  `curvilinear_placement` and `frame_array` still have no direct unit
+  tests; the Blender tests cover them through the nodes.
 
 ## 7. Documentation
 
-- `docs/source/modules/` has pages for `utils`, `blendernc`, `handlers`,
-  `messages`, `operators`, `panels`, `sockets` and `nodes`, but none for
+- `docs/source/modules/` has pages for `core`, `utils`, `ui`,
+  `blendernc`, `handlers`, `messages`, `operators`, `panels`, `sockets`
+  and `nodes`, but none for
   `decorators`, `node_utils`, `menus`, `nodetree`, `properties`,
   `panels_draw`, `volume_utils`, `shader_utils` or `shader_nodes`, so
   about half of the numpydoc docstrings are not rendered.
@@ -192,6 +144,9 @@ after that work.
 
 ## 8. CI
 
+- The unit tests of `blendernc.core` (`python -m pytest`, configured in
+  `pyproject.toml`; needs numpy, xarray, scipy and pytest) do not run in
+  CI yet; `.github/workflows/test.yml` only runs the Blender tests.
 - ci(pre-commit.ci) always fails the Lint Commit. Brainstorm a way to fix it,
   either ignore it in the commitlint test, or change simplify the message of
   pre-commit.ci.
@@ -308,6 +263,27 @@ Resolved on 2026-11-17 (section 1, and what it touched):
   dimension is found by `utils.animation_dim`, preferring the dims the grid
   was baked on. "Lock range", `grid_material` and the operator accept both
   node types (`TEXTURE_NODE_IDNAMES`).
+- **Section 3 design work.** The panel's callbacks, the tree it builds
+  (`build_ui_tree`, was `decorators._create_UI_nodes`) and
+  `use_import_node` live in `ui.py`; `utils.py` no longer imports
+  `panels_draw`, and the `UI_*_NODE` labels sit in `node_utils.py` next to
+  `UI_NODE_TREE`, used by `panels_draw.py` too.
+  `check_if_node_tree_exists` is gone: the panel path calls
+  `update_datacube_file_UI`, the Import node loads its own path
+  (`DatacubeImport.load`), and the import operator resolves its node
+  explicitly. The panel's import node is only ever given the panel's path,
+  so the operator sets that path for it instead of writing both.
+  `create_nodes` returns a new mapping and leaves its input alone. The
+  panel's axis items come from `coordinate_items`, not from editing
+  `get_dims` output. The panel draws the Resolution node's step, and the
+  scene's `step` mirror, `update_step_UI` and the panel-step handler are
+  gone (keyframes on the old panel step are dropped; keys on the node's
+  step are applied by `bNC_apply_animated_steps`). The helpers that need
+  no Blender moved to `blendernc.core` (`dataset`, `slicing`, `grid`,
+  `fields`, `volume`); `utils.py` went from 1822 to about 680 lines and
+  `volume_utils.py` from about 1080 to about 500. `blendernc/__init__.py`
+  imports the add-on only when registering, so `blendernc.core` imports
+  without Blender, and `tests/unit/test_core.py` tests it under `pytest`.
 - **Section 4 cleanup.** The no-op `preferences.addons.get(...)` in
   `blendernc/__init__.py` and the root `__main__` block (which registered
   and unregistered at once) are gone. The panel path describes a datacube

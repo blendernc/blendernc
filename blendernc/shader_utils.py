@@ -13,8 +13,8 @@ import importlib.util
 import bpy
 import numpy as np
 
+from .core.fields import RANGE_PROPERTIES
 from .node_utils import create_links, create_nodes
-from .utils import RANGE_PROPERTIES
 
 # --------------------------------------------------------------------------
 # Materials reading a BlenderNC attribute
@@ -50,11 +50,11 @@ def _attribute_material(name, nodes, locations, attribute_name):
     """Create or reuse material ``name``, add ``nodes`` and set the attributes.
 
     The ``nodes`` mapping must start with :func:`_range_nodes`. Returns the
-    material; ``nodes`` is filled with the node of every entry.
+    material.
     """
     material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     tree = material.node_tree
-    create_nodes(tree, nodes, locations)
+    nodes = create_nodes(tree, nodes, locations)
     create_links(tree, nodes)
     nodes["Attribute"]["node"].attribute_name = attribute_name
     low, high = RANGE_PROPERTIES
@@ -294,8 +294,7 @@ def colorbar_material(name, colormap_node):
     tree = material.node_tree
     for node in [n for n in tree.nodes if n.type == "BSDF_PRINCIPLED"]:
         tree.nodes.remove(node)
-    nodes = {key: dict(value) for key, value in COLORBAR_MATERIAL_NODES.items()}
-    create_nodes(tree, nodes, COLORBAR_MATERIAL_LOCATIONS)
+    nodes = create_nodes(tree, COLORBAR_MATERIAL_NODES, COLORBAR_MATERIAL_LOCATIONS)
     create_links(tree, nodes)
 
     mapping = nodes["ShaderNodeMapping"]["node"]

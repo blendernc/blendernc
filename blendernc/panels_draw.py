@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 import bpy
 
-from .node_utils import create_blenderncnodetree
+from .node_utils import (
+    UI_COORDS_NODE,
+    UI_NODE_TREE,
+    UI_STEP_NODE,
+    create_blenderncnodetree,
+)
 
 
 def show_section(draw_func, show):
@@ -34,11 +39,10 @@ def draw_var_and_coords(self, context):
     """
     scene = context.scene
     UI_props = scene.BlenderNC_UI_Properties
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    # Select variables menu
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
 
     self.layout.label(text="Select coords:", icon="WORLD_DATA")
-    coord_node = node_tree.nodes.get("Datacube Coords")
+    coord_node = node_tree.nodes.get(UI_COORDS_NODE)
     expand = coord_node is not None and len(coord_node.outputs) <= 3
     split = self.layout.split(factor=0.05)
     row = split.row()
@@ -72,19 +76,14 @@ def draw_resolution_grid_and_texture(self, context):
     context : bpy.types.Context
         Current Blender context.
     """
-    scene = context.scene
-    UI_props = scene.BlenderNC_UI_Properties
-
     self.layout.label(text="Resolution and Grid:", icon="MOD_SUBSURF")
-    node_tree = create_blenderncnodetree("BLENDERNC")
-    step_node = node_tree.nodes.get("Datacube Resolution")
+    node_tree = create_blenderncnodetree(UI_NODE_TREE)
+    step_node = node_tree.nodes.get(UI_STEP_NODE)
     if step_node is not None:
         row = self.layout.row(align=True)
         row.prop(step_node, "suggested_step", text="Suggest step")
         if step_node.suggested_step:
             row.label(text=f"Step {step_node.step}")
         else:
-            row.prop(UI_props, "step", text="Step")
-    else:
-        self.layout.prop(UI_props, "step", text="Steps for coords")
+            row.prop(step_node, "step", text="Step")
     self.layout.operator("blendernc.bake_from_attribute", text="Apply Material")
