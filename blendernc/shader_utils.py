@@ -78,8 +78,8 @@ def texture_material(variable):
     variable : str
         Name of the point attribute, the variable name.
     """
-    nodes = _range_nodes("ShaderNodeValToRGB", "Factor")
-    nodes["ShaderNodeValToRGB"] = {
+    nodes = _range_nodes("cmapsNode", "Factor")
+    nodes["cmapsNode"] = {
         "links": {"Color": {"ShaderNodeBsdfPrincipled": "Base Color"}}
     }
     nodes["ShaderNodeBsdfPrincipled"] = {

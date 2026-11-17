@@ -10,22 +10,6 @@ after that work.
 
 ## 1. Work in progress to finish
 
-- **Datacube Variable**
-  - BlenderNCNodeVariable should create all the outputs of the variables
-    (similar to datacube coords) rather
-    than having a list from which the user selects individually variables. This
-    requires the Panel to link the output node of the selected variable in the
-    panel with the Datacube Texture variable input. If the list of variables
-    is larger than 10, use the enumeration property and only have a single output
-    that corresponds to the variable selected.
-- **Datacube coords**
-  - When a new input dataset is connected the coordinates are appended, the
-    exppected interaction would be for all the coordinates to be replaced.
-- **Datacube Animation**
-  - Add Apply Material button to make it easier to visualize the selected
-    variable.
-  - Add also the custom properties of max and min for the first loaded frame.
-  - Use similar assignment of texture as the texture node.
 - **Datacube Volume follow-ups** (left after the 2026-11-17 work).
   - Nothing packs the VDB files into the .blend file. In an unsaved file
     they go to Blender's temporary folder, and the node only warns (the
@@ -43,7 +27,7 @@ after that work.
     coloured with the old one's range. The lock could store which
     variable the range belongs to and only hold it for that variable.
   - Releasing "Lock range" recomputes the texture ranges
-    (`utils.update_lock_range`, `utils.py:1480`) but not the volume
+    (`utils.update_lock_range`, `utils.py:1496`) but not the volume
     ranges, which wait for the next bake.
   - A node's VDB sub-folder is named after its tree and itself
     (`vdb_directory`, `volume_utils.py:744`); renaming either leaves the
@@ -60,29 +44,25 @@ after that work.
   on a transient `PropertyGroup` wrapper, so the per-item assignment has no
   lasting effect. A small cache module (`get`, `put`, `drop`, keyed by the
   full path, with reference counts) would make the lifetime explicit.
-- **Read paths create data.** `_get_ui_node` (`utils.py:484-487`) and both
+- **Read paths create data.** `_get_ui_node` (`utils.py:502-505`) and both
   panel draw functions (`panels_draw.py:37, 83`) call
   `create_blenderncnodetree`, so drawing a drop-down or the panel can
   create a node group. Look the tree up with `bpy.data.node_groups.get` in
   read paths.
 - **`create_blenderncnodetree` ignores the tree type.** It returns any
   group with the requested name (`node_utils.py:127-128`).
-  `assign_modifier_to_object` (`utils.py:1708`) asks for a geometry tree
+  `assign_modifier_to_object` (`utils.py:1814`) asks for a geometry tree
   named after the grid object, so a grid object called "BLENDERNC" (or
   after any other node group) gets the wrong kind of tree for its
   modifier, and the bake fails. Check `bl_idname`, and pick a new name
   when the existing group has another type.
-- **Output sockets accumulate.** `DatacubeCoords.update`
-  (`nodes.py:160-170`) and `DatacubeVariable.update` (`nodes.py:209-216`)
-  add sockets and never remove ones that no longer exist in the dataset,
-  so switching files leaves dead outputs and links.
 - **`panels_draw.draw_var_and_coords` assumes nodes exist.**
   `panels_draw.py:41-45` dereferences the "Datacube Coords" node without
   a `None` check, so deleting it raises on every redraw while the section
   is appended.
-- **`get_grid_coords` has no missing-key handling.** `utils.py:1018`
+- **`get_grid_coords` has no missing-key handling.** `utils.py:1034`
   passes the socket value to `get_data_from_datastruct`, which indexes
-  `dataset[var_name]` (`utils.py:948`). A renamed coordinate raises
+  `dataset[var_name]` (`utils.py:964`). A renamed coordinate raises
   `KeyError`, and an unloaded dataset raises `TypeError`.
 - **`_clear_default_values` matches on `bl_label`.** `decorators.py:74`
   compares `input_socket.bl_label != "Object"`; `isinstance(socket,
@@ -96,7 +76,7 @@ after that work.
   not the other raises. Put the location inside each entry.
 - **Grid and Volume nodes run operators from `update`.**
   `DatacubeGrid.update` and `DatacubeVolume.update` call `bpy.ops` to
-  rebake (`nodes.py:294, 845`); the operator creates objects, applies
+  rebake (`nodes.py:353, 950`); the operator creates objects, applies
   modifiers and calls `update()` again. `decorators.py:171-174` notes that
   Blender is still walking the tree during `update` and moves link edits
   to a timer for that reason. Rebakes could be deferred the same way.
@@ -139,7 +119,7 @@ after that work.
   `axis_spacing`, `nearest_positions`, `axis_placement`,
   `curvilinear_placement`, `volume_layout` and `frame_array` in
   `volume_utils.py`. A `bpy`-free module would allow fast `pytest` unit
-  tests and shrink `utils.py`, which has grown to 1712 lines.
+  tests and shrink `utils.py`, which has grown to 1818 lines.
 - **`utils.py` imports `panels_draw`** (`utils.py:22`), while
   `properties.py` imports `utils` and `decorators.py` imports
   `panels_draw` and `node_utils`. The UI callbacks (`update_*_UI`,
@@ -150,16 +130,16 @@ after that work.
   "Datacube Coords" and "Datacube Resolution" (`panels_draw.py:37, 41,
   83-84`).
 - **`get_possible_coordinates_UI` depends on the layout of `get_dims`.**
-  `utils.py:539-541` drops the separator and overwrites the header; a
+  `utils.py:557-559` drops the separator and overwrites the header; a
   parameter on `get_dims` would remove the coupling.
 - **The datacube path lives in three places** (`datacube_file` on the
   node, `datacube_file` on the scene properties, `datafile` on the data
   item) and is synced by hand in `Import_OT_mfdataset.execute`
   (`operators.py:83-89`), `_create_UI_nodes` (`decorators.py:327`) and
-  `DatacubeImport.update` (`nodes.py:119-131`).
+  `DatacubeImport.update` (`nodes.py:124-136`).
 - **Two step properties.** `BlenderNC_UI_Properties.step`
   (`properties.py:57`) mirrors `DatacubeResolution.step` through
-  `update_step_UI` (`utils.py:666-680`). The panel already draws the
+  `update_step_UI` (`utils.py:682-696`). The panel already draws the
   node's `suggested_step` directly (`panels_draw.py:87`); drawing its
   `step` the same way would remove the mirror.
 
@@ -173,11 +153,11 @@ after that work.
 - `register`/`unregister` return `{"FINISHED"}` (`blendernc.py:156,
   184`), which Blender ignores for registration functions.
 - `DatacubeResolution.draw_buttons` reads `datastruct.dict` directly
-  instead of calling `get_dataset` (`nodes.py:1023`).
+  instead of calling `get_dataset` (`nodes.py:1128`).
 - `find_common_name` keeps the camelCase `commonName` and `S`
-  (`utils.py:303-314`). `name_match` ends with a branch that only
-  `pass`es (`utils.py:273-274`). `get_datacube_path` has a Google-style
-  docstring among numpydoc ones (`utils.py:58-64`).
+  (`utils.py:317-328`). `name_match` ends with a branch that only
+  `pass`es (`utils.py:287-288`). `get_datacube_path` has a Google-style
+  docstring among numpydoc ones (`utils.py:66-72`).
 - `is_single_input_linked`'s docstring says the update runs only when an
   input is linked, but it always runs it (`decorators.py:254-255`).
 - `draw_var_and_coords` builds a `coords` list only to count it
@@ -334,6 +314,28 @@ Resolved on 2026-11-17 (section 1, and what it touched):
   on top of the new one, for every bake, the "Bake Volume" button and
   Vertical scale included. Volumes baked before have no recorded placement
   and are placed afresh once.
+- **Coords and Variable outputs follow the dataset.**
+  `node_utils.sync_string_outputs` makes a node's outputs one string socket
+  per name: outputs still listed keep their links, the others are removed
+  (was: appended forever, the "Output sockets accumulate" item). Datacube
+  Coords and Datacube Variable use it, and `create_datastruct` refreshes
+  the nodes after an Import node whose file changed (they kept reading the
+  released dataset). The Variable node has one output per variable up to
+  `MAX_VARIABLE_OUTPUTS` (10); with more, a drop-down and a single
+  `"Variable"` output, kept when another variable is picked.
+  `DatacubeVariable.pick` returns the output carrying a variable, which the
+  panel links to the Datacube Texture node in either mode.
+- **Datacube Animate Texture works like Datacube Texture.** Both derive from
+  `nodes.PointTextureNode`: the attribute is written as soon as the node
+  updates (for the animation, the frame shown), `written` and `message`
+  are kept, a new or unlinked variable removes the old attribute, a refused
+  variable is reported on the node and logged, and the node has the "Apply
+  Material" button. The animation stores the range of the first frame it
+  loads (honouring "Lock range"); `write_frame`, called by
+  `bNC_update_attributes` on every frame, leaves it alone. The animated
+  dimension is found by `utils.animation_dim`, preferring the dims the grid
+  was baked on. "Lock range", `grid_material` and the operator accept both
+  node types (`TEXTURE_NODE_IDNAMES`).
 - **Dropped:** playing "Current frame" volumes without BlenderNC
   installed is not a supported setup.
 - `Material.use_nodes`, deprecated in Blender 5.2, is no longer set.

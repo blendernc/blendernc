@@ -240,7 +240,7 @@ class TestSyntheticGrids(unittest.TestCase):
         obj = bpy.data.objects[self.grid_name]
 
         if animate:
-            node = tree.nodes.new("BlenderNCNodeAnimateTexture")
+            node = self.animate_node = tree.nodes.new("BlenderNCNodeAnimateTexture")
             tree.links.new(grid.outputs["Object"], node.inputs["Object"])
             tree.links.new(z_source, node.inputs["Variable"])
         if texture:
@@ -764,6 +764,72 @@ class TestSyntheticGrids(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Animate Texture"):
             bpy.ops.blendernc.bake_from_attribute(
                 node_name=self.texture_node.name, node_tree=self.tree.name
+            )
+
+    # -- animate texture node -------------------------------------------------
+
+    def test_animate_texture_writes_frame_shown_and_its_range(self):
+        """Linking writes the frame shown; its range holds during playback."""
+        bpy.context.scene.frame_set(2)
+        obj, dataset, var_name = self.build_pipeline("xyt", animate=True)
+        node = self.animate_node
+        self.assertEqual(node.message, "")
+        self.assertEqual(node.written, var_name)
+        t_name = time_axis(dataset)
+        first = dataset[var_name].isel({t_name: 2}).values
+        np.testing.assert_allclose(
+            np.sort(point_attribute(obj, var_name)), np.sort(first.ravel()), rtol=1e-6
+        )
+        low, high = RANGE_PROPERTIES
+        for frame in (0, NT - 1):
+            expected = dataset[var_name].isel({t_name: frame}).values
+            self.assert_frame_attribute(obj, expected, frame)
+            self.assertAlmostEqual(obj.data[low], float(first.min()), places=5)
+            self.assertAlmostEqual(obj.data[high], float(first.max()), places=5)
+
+    def test_animate_texture_unlinked_variable_removes_attribute(self):
+        """Unlinking the variable removes the animated attribute."""
+        obj, _, var_name = self.build_pipeline("xyt", animate=True)
+        self.assertIn(var_name, obj.data.attributes)
+        socket = self.animate_node.inputs["Variable"]
+        self.tree.links.remove(socket.links[0])
+        self.assertNotIn(var_name, obj.data.attributes)
+        self.assertEqual(self.animate_node.written, "")
+        bNC_update_attributes(bpy.context.scene)  # nothing to write any more
+        self.assertNotIn(var_name, obj.data.attributes)
+
+    def test_apply_material_from_animate_texture_node(self):
+        """Apply Material on the animate node colours its mesh."""
+        obj, _, var_name = self.build_pipeline("xyt", animate=True)
+        material = None
+        try:
+            bpy.ops.blendernc.bake_from_attribute(
+                node_name=self.animate_node.name, node_tree=self.tree.name
+            )
+            material = obj.data.materials[0]
+            self.assertEqual(material.name, var_name)
+            attribute = material.node_tree.nodes["Attribute"]
+            self.assertEqual(attribute.attribute_name, var_name)
+            for prop in RANGE_PROPERTIES:
+                self.assertIn(prop, obj.data)
+        finally:
+            if material is not None:
+                bpy.data.materials.remove(material)
+
+    def test_animate_texture_refuses_2d_field(self):
+        """(X, Y): nothing to animate, so the Texture node is suggested."""
+        logger_name = bpy.types.Node.bl_rna_get_subclass_py(
+            "BlenderNCNodeAnimateTexture"
+        ).__module__
+        with self.assertLogs(logger_name, level="WARNING") as logs:
+            obj, _, var_name = self.build_pipeline("xy", animate=True)
+        message = self.animate_node.message
+        self.assertIn("Datacube Texture node", message)
+        self.assertNotIn(var_name, obj.data.attributes)
+        self.assertTrue(any(message.replace("\n", " ") in line for line in logs.output))
+        with self.assertRaisesRegex(RuntimeError, "Datacube Texture node"):
+            bpy.ops.blendernc.bake_from_attribute(
+                node_name=self.animate_node.name, node_tree=self.tree.name
             )
 
     def test_resolution_suggested_step(self):

@@ -137,7 +137,9 @@ buttons in the top right corner of the 3D view or by pressing ``Z``.
   it to the Grid object; clicking it again reuses both. When you pick another
   variable, the grid keeps its shape and takes that variable's material, if
   you applied one before. The same button sits on the **Datacube Texture**
-  node in the node editor. You can edit the material in the Shader Editor:
+  and **Datacube Animate Texture** nodes in the node editor. An animated
+  texture keeps the colour range of the first frame it showed during
+  playback. You can edit the material in the Shader Editor:
 
   .. image:: ../images/blendernc_shader_editor.png
     :width: 100%

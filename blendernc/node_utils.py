@@ -301,6 +301,38 @@ def delete_link(node_tree, node_out, node_in, input_name):
             node_tree.links.remove(link)
 
 
+def sync_string_outputs(node, names):
+    """Make ``node``'s outputs one string socket per name, in that order.
+
+    Sockets whose name is still listed keep their links and value; the others
+    are removed with their links, and missing ones are added with the name as
+    their value. A node fed a new dataset thus shows that dataset's names
+    only, instead of appending them to the previous ones.
+
+    Parameters
+    ----------
+    node : bpy.types.Node
+        Node whose outputs are synced.
+    names : list of str
+        Output names, in the order they should appear.
+    """
+    for socket in [socket for socket in node.outputs if socket.name not in names]:
+        node.outputs.remove(socket)
+    present = {socket.name for socket in node.outputs}
+    for name in names:
+        if name not in present:
+            node.outputs.new("NodeSocketString", name).default_value = name
+    _order_outputs(node, names)
+
+
+def _order_outputs(node, names):
+    """Move ``node``'s outputs, all named in ``names``, into that order."""
+    for position, name in enumerate(names):
+        current = [socket.name for socket in node.outputs].index(name)
+        if current != position:
+            node.outputs.move(current, position)
+
+
 def disconnect_links(node_tree, node):
     """Remove every link attached to a node.
 

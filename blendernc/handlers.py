@@ -4,17 +4,7 @@ from bpy.app.handlers import persistent
 from bpy_extras import anim_utils
 
 from .node_utils import get_all_nodes_by_idname
-from .utils import (
-    UI_NODE_TREE,
-    UI_STEP_NODE,
-    field_to_point_values,
-    find_coord_matches,
-    get_data_from_datastruct,
-    get_dataset,
-    mesh_grid_dims,
-    update_step_UI,
-    write_point_attribute,
-)
+from .utils import UI_NODE_TREE, UI_STEP_NODE, update_step_UI
 from .volume_utils import FRAMES_LIVE, write_live_frame
 
 
@@ -22,10 +12,11 @@ from .volume_utils import FRAMES_LIVE, write_live_frame
 def bNC_update_attributes(scene):
     """Write the current frame of each animated variable onto its mesh.
 
-    Registered as a ``frame_change_pre`` and ``render_pre`` handler. For every
-    "Datacube Animate Texture" node, the variable is sliced along the
-    coordinate that does not match the mesh vertex count and the result is
-    stored in a per-point float attribute named after the variable.
+    Registered as a ``frame_change_pre`` and ``render_pre`` handler. Every
+    "Datacube Animate Texture" node writes the step of its variable shown at
+    ``scene.frame_current`` into the point attribute named after the
+    variable (see :meth:`blendernc.nodes.DatacubeAnimateTexture.write_frame`).
+    Half-connected or refused nodes are skipped, so playback never breaks.
 
     Parameters
     ----------
@@ -33,36 +24,7 @@ def bNC_update_attributes(scene):
         Scene whose ``frame_current`` selects the slice.
     """
     for node in get_all_nodes_by_idname("BlenderNCNodeAnimateTexture"):
-        variable = node.inputs["Variable"].default_value
-        obj = node.inputs["Object"].default_value
-        datastruct = node.BNC_datastructs[0]
-        dataset = get_dataset(datastruct)
-
-        # A half-connected node must not break playback for the whole scene.
-        if obj is None or obj.type != "MESH" or dataset is None:
-            continue
-        if not variable or variable not in dataset:
-            continue
-        mesh = obj.data
-
-        data = get_data_from_datastruct(datastruct, variable)
-        # Only dimensions count: selected levels survive as scalar coordinates
-        # and 2-D coordinates span the grid on their own, so neither may be
-        # mistaken for an axis of the mesh.
-        sizes = {dim: data.sizes[dim] for dim in data.dims}
-        matches = find_coord_matches(len(mesh.vertices), sizes)
-        grid_dims = set(matches[0]) if matches else set()
-        animate_dims = [dim for dim in data.dims if dim not in grid_dims]
-        if not animate_dims:
-            continue
-
-        animate_coord = animate_dims[0]
-        last = data.sizes[animate_coord] - 1
-        frame = min(max(scene.frame_current, 0), last)
-
-        frame_data = data.isel({animate_coord: frame})
-        values = field_to_point_values(frame_data, mesh_grid_dims(mesh))
-        write_point_attribute(mesh, variable, values)
+        node.write_frame(scene.frame_current)
 
 
 @persistent

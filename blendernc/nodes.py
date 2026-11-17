@@ -9,12 +9,15 @@ from .decorators import (
     initialize_BNC_datastructs,
     is_single_input_linked,
 )
-from .node_utils import node_updates_enabled
+from .node_utils import node_updates_enabled, sync_string_outputs
 from .properties import BNC_data
 from .utils import (
+    MAX_VARIABLE_OUTPUTS,
     NO_SELECTION,
     SLICING_ANY_VARIABLE,
     _record_stride,
+    animated_field,
+    animation_frame,
     clamp_index_range,
     create_datastruct,
     delete_point_attribute,
@@ -34,6 +37,7 @@ from .utils import (
     texture_field,
     update_suggested_step,
     value_index_range,
+    variable_names,
     write_field_range,
     write_point_attribute,
 )
@@ -140,7 +144,11 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
 
 
 class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
-    """Node that exposes every coordinate of the dataset as a string output."""
+    """Node that exposes every coordinate of the dataset as a string output.
+
+    The outputs follow the linked dataset: linking another one replaces them,
+    keeping the links of coordinates both datasets share.
+    """
 
     bl_idname = "BlenderNCNodeCoords"  # Unique identifier for the node
     bl_label = "Datacube Coords"  # Name that will appear on the node in the editor
@@ -159,22 +167,27 @@ class DatacubeCoords(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def update(self):
-        """Add one string output socket per dataset coordinate."""
+        """Make the outputs one string socket per dataset coordinate."""
         datastruct = self.BNC_datastructs[0]
         dataset = get_dataset(datastruct)
         if dataset is None:
             return
-        for coords in dataset.coords:
-            if coords not in [socket.name for socket in self.outputs]:
-                socket = self.outputs.new("NodeSocketString", coords)
-                socket.default_value = coords
+        sync_string_outputs(self, [str(name) for name in dataset.coords])
         self.refresh_downstream()
 
 
-class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
-    """Node that selects one variable of the dataset.
+# Output of a Datacube Variable node with more variables than outputs.
+VARIABLE_OUTPUT = "Variable"
 
-    The chosen variable name becomes a string output socket.
+
+class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
+    """Node that exposes the variables of the dataset as string outputs.
+
+    Up to :data:`blendernc.utils.MAX_VARIABLE_OUTPUTS` variables, each one
+    gets its own output named after it, like the coordinates of a Datacube
+    Coords node. With more, the node shows a drop-down and a single
+    ``"Variable"`` output carrying the variable picked; picking another keeps
+    that output and its links. Linking another dataset replaces the outputs.
     """
 
     bl_idname = "BlenderNCNodeVariable"  # Unique identifier for the node
@@ -184,7 +197,13 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     datacube_vars: bpy.props.EnumProperty(
         items=get_possible_variables,
         name="Select Variable",
+        description="Variable carried by the output, when there are too many "
+        "variables for one output each",
         update=lambda self, context: self.update(),
+    )
+    drop_down: bpy.props.BoolProperty(
+        description="The dataset has too many variables for one output each",
+        default=False,
     )
 
     @initialize_BNC_datastructs
@@ -194,9 +213,37 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
         socket.display_shape = "SQUARE"
 
     def draw_buttons(self, context, layout):
-        """Draw the variable drop-down."""
-        layout.label(text="Select Variable:")
-        layout.prop(self, "datacube_vars", text="")
+        """Draw the variable drop-down, when there are too many variables."""
+        if self.drop_down:
+            layout.label(text="Select Variable:")
+            layout.prop(self, "datacube_vars", text="")
+
+    def variable_output(self, variable):
+        """The output carrying ``variable``, or ``None``."""
+        if not variable or variable == NO_SELECTION:
+            return None
+        for socket in self.outputs:
+            if socket.default_value == variable:
+                return socket
+        return None
+
+    def pick(self, variable):
+        """Return the output carrying ``variable``, selecting it if needed.
+
+        With one output per variable this only looks the output up; with the
+        drop-down, ``variable`` is selected first. ``None`` when ``variable``
+        is not one of the dataset's.
+        """
+        output = self.variable_output(variable)
+        if output is None and self.drop_down and variable in self._variable_names():
+            self.datacube_vars = variable
+            output = self.variable_output(variable)
+        return output
+
+    def _variable_names(self):
+        """Variables of the dataset this node reads; empty without one."""
+        dataset = get_dataset(self.BNC_datastructs[0])
+        return [] if dataset is None else variable_names(dataset)
 
     def draw_label(self):
         """Show the loaded filename as the node label, or a placeholder."""
@@ -208,13 +255,24 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def update(self):
-        """Create an output socket named after the selected variable."""
-        if self.datacube_vars != NO_SELECTION and self.datacube_vars not in [
-            socket.name for socket in self.outputs
-        ]:
-            socket = self.outputs.new("NodeSocketString", self.datacube_vars)
-            socket.default_value = self.datacube_vars
+        """Make the outputs match the dataset's variables (see the class)."""
+        if get_dataset(self.BNC_datastructs[0]) is None:
+            return
+        names = self._variable_names()
+        self.drop_down = len(names) > MAX_VARIABLE_OUTPUTS
+        if self.drop_down:
+            self._sync_selected_output(names)
+        else:
+            sync_string_outputs(self, names)
         self.refresh_downstream()
+
+    def _sync_selected_output(self, names):
+        """One ``"Variable"`` output carrying the selected variable, if any."""
+        selected = self.datacube_vars
+        sync_string_outputs(self, [VARIABLE_OUTPUT] if selected in names else [])
+        output = self.outputs.get(VARIABLE_OUTPUT)
+        if output is not None and output.default_value != selected:
+            output.default_value = selected
 
 
 class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
@@ -560,51 +618,17 @@ class DatacubeSelect(bpy.types.Node, bNCNodeDefault):
         self.refresh_downstream()
 
 
-class DatacubeAnimateTexture(bpy.types.Node, bNCNodeDefault):
-    """Node that animates a variable as a point attribute on an object.
+class PointTextureNode(bNCNodeDefault):
+    """Shared behaviour of the nodes writing a variable onto a mesh.
 
-    The actual work is done per frame by
-    :func:`blendernc.handlers.bNC_update_attributes`.
+    The variable is written as a point attribute named after it, with the
+    field range in the mesh's ``Min value`` and ``Max value`` custom
+    properties, as soon as the node updates. A variable the node cannot
+    write is refused, and the reason is shown on the node and written to the
+    log. Linking another variable, or unlinking it, removes the attribute
+    written before. "Apply Material" colours the object from the attribute.
+    Subclasses say which values to write in :meth:`_point_values`.
     """
-
-    bl_idname = "BlenderNCNodeAnimateTexture"  # Unique identifier for the node
-    bl_label = (
-        "Datacube Animate Texture"  # Name that will appear on the node in the editor
-    )
-    bl_icon = "EXPERIMENTAL"
-
-    @initialize_BNC_datastructs
-    def init(self, context):
-        """Create the ``"Object"`` and ``"Variable"`` input sockets."""
-        self.inputs.new("NodeSocketObject", "Object")
-        self.inputs.new("NodeSocketString", "Variable")
-
-    def draw_buttons(self, context, layout):
-        """Nothing to draw; the node only has sockets."""
-        pass
-
-    @is_single_input_linked
-    @has_datastructs
-    def update(self):
-        """Nothing to update; the frame handler reads the inputs directly."""
-        pass
-
-
-class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
-    """Node that writes a 2-D variable onto an object as a point attribute.
-
-    The counterpart of :class:`DatacubeAnimateTexture` for fields without an
-    extra dimension: the attribute is written once, whenever the node
-    updates, and does not depend on the frame. A variable with the wrong
-    number of dimensions is refused and the reason is shown on the node and
-    written to the log. A 3-D field is pointed to the Datacube Animate
-    Texture node and a 4-D field to the Datacube Select node. Unlinking the
-    ``Variable`` input removes the attribute from the object again.
-    """
-
-    bl_idname = "BlenderNCNodeTexture"  # Unique identifier for the node
-    bl_label = "Datacube Texture"  # Name that will appear on the node in the editor
-    bl_icon = "EXPERIMENTAL"
 
     message: bpy.props.StringProperty(
         name="Message",
@@ -652,7 +676,7 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def _write_texture(self):
-        """Write the variable onto the object, or show why it cannot be."""
+        """Write the variable and its range onto the object, or say why not."""
         obj = self.inputs["Object"].default_value
         variable = self.inputs["Variable"].default_value
         if obj is None or not variable:
@@ -661,15 +685,96 @@ class DatacubeTexture(bpy.types.Node, bNCNodeDefault):
         if self.written != variable:
             self._delete_written()  # a new variable replaces the old attribute
 
-        data, self.message = texture_field(self.BNC_datastructs[0], obj, variable)
-        if data is None:
+        values, self.message = self._point_values(obj, variable)
+        if values is None:
             logger.warning(f"{self.name}: {self.message.replace(chr(10), ' ')}")
             return
-        values = field_to_point_values(data, mesh_grid_dims(obj.data))
         write_field_range(obj.data, values, locked=range_locked())
         write_point_attribute(obj.data, variable, values)
         self.written = variable
         logger.info(f"{self.name}: wrote {variable} onto {obj.name}")
+
+    def _point_values(self, obj, variable):
+        """``(values, "")`` with one value per vertex, or ``(None, message)``."""
+        raise NotImplementedError
+
+
+class DatacubeAnimateTexture(bpy.types.Node, PointTextureNode):
+    """Node that animates a 3-D variable as a point attribute on a mesh.
+
+    The dimension that does not span the mesh is spread over frames, one
+    step per frame. Like :class:`DatacubeTexture`, the node writes the
+    attribute as soon as it updates: the frame shown, whose range is stored
+    on the mesh, so "Apply Material" can colour it and the colour scale
+    stays put during playback. :func:`blendernc.handlers.bNC_update_attributes`
+    then writes the other frames through :meth:`write_frame`. A 2-D field is
+    pointed to the Datacube Texture node and a 4-D one to Datacube Select.
+    """
+
+    bl_idname = "BlenderNCNodeAnimateTexture"  # Unique identifier for the node
+    bl_label = (
+        "Datacube Animate Texture"  # Name that will appear on the node in the editor
+    )
+    bl_icon = "EXPERIMENTAL"
+
+    def _point_values(self, obj, variable):
+        """The frame shown of the 3-D variable, or why it cannot be animated."""
+        datastruct = self.BNC_datastructs[0]
+        data, dim, message = animated_field(datastruct, obj, variable)
+        if data is None:
+            return None, message
+        frame = animation_frame(data, dim, bpy.context.scene.frame_current)
+        return field_to_point_values(frame, mesh_grid_dims(obj.data)), ""
+
+    def write_frame(self, frame):
+        """Write frame ``frame`` of the variable onto the mesh, range untouched.
+
+        A variable the node has not written yet is first written in full by
+        :meth:`update`, which also stores its range; a refused one is skipped
+        silently, so playback never breaks.
+
+        Returns
+        -------
+        bool
+            ``True`` when the attribute was written.
+        """
+        obj = self.inputs["Object"].default_value
+        variable = self.inputs["Variable"].default_value
+        if obj is None or not variable:
+            return False
+        if self.written != variable:
+            self.update()
+            return self.written == variable
+        data, dim, _ = animated_field(self.BNC_datastructs[0], obj, variable)
+        if data is None:
+            return False
+        values = field_to_point_values(
+            animation_frame(data, dim, frame), mesh_grid_dims(obj.data)
+        )
+        write_point_attribute(obj.data, variable, values)
+        return True
+
+
+class DatacubeTexture(bpy.types.Node, PointTextureNode):
+    """Node that writes a 2-D variable onto an object as a point attribute.
+
+    The counterpart of :class:`DatacubeAnimateTexture` for fields without an
+    extra dimension: the attribute is written once, whenever the node
+    updates, and does not depend on the frame. A 3-D field is pointed to the
+    Datacube Animate Texture node and a 4-D field to the Datacube Select
+    node. See :class:`PointTextureNode` for what both nodes share.
+    """
+
+    bl_idname = "BlenderNCNodeTexture"  # Unique identifier for the node
+    bl_label = "Datacube Texture"  # Name that will appear on the node in the editor
+    bl_icon = "EXPERIMENTAL"
+
+    def _point_values(self, obj, variable):
+        """The 2-D variable, or why it cannot be written onto ``obj``."""
+        data, message = texture_field(self.BNC_datastructs[0], obj, variable)
+        if data is None:
+            return None, message
+        return field_to_point_values(data, mesh_grid_dims(obj.data)), ""
 
 
 def _apply_vertical_scale(node, context):

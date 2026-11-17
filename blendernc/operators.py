@@ -7,6 +7,7 @@ from .node_utils import UI_NODE_TREE, create_links, create_nodes
 from .shader_utils import texture_material, volume_material
 from .utils import (
     GRID_DIMS_PROPERTY,
+    TEXTURE_NODE_IDNAMES,
     UI_TEXTURE_NODE,
     add_attribute,
     assign_material,
@@ -273,15 +274,17 @@ def _apply_modifier(context, obj, modifier):
 
 
 class BlenderNCBakeFromAttribute(bpy.types.Operator):
-    """Colour the object of a Datacube Texture node from its variable.
+    """Colour the object of a Datacube Texture or Animate Texture node.
 
     The material (see :func:`blendernc.shader_utils.texture_material`) is
     named after the variable and goes into the object's first material slot,
-    so running the operator again reuses both.
+    so running the operator again reuses both. It maps the attribute through
+    the range the node stored on the mesh; for an animation, that of the
+    first frame it loaded.
 
     Called with no properties, from the 3D view panel, it acts on the
-    "Datacube Texture" node of the panel's tree. The button on a Datacube
-    Texture node passes that node and its tree.
+    "Datacube Texture" node of the panel's tree. The button on either node
+    passes that node and its tree.
     """
 
     bl_idname = "blendernc.bake_from_attribute"
@@ -312,9 +315,9 @@ class BlenderNCBakeFromAttribute(bpy.types.Operator):
         node_name = self.node_name or UI_TEXTURE_NODE
         node_tree = bpy.data.node_groups.get(tree_name)
         texture_node = node_tree.nodes.get(node_name) if node_tree else None
-        if texture_node is None or texture_node.bl_idname != "BlenderNCNodeTexture":
+        if texture_node is None or texture_node.bl_idname not in TEXTURE_NODE_IDNAMES:
             return report_error(
-                self, f"Datacube Texture node {node_name!r} not found in {tree_name!r}."
+                self, f"Texture node {node_name!r} not found in {tree_name!r}."
             )
 
         obj = texture_node.inputs["Object"].default_value

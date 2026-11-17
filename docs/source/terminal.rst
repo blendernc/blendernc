@@ -145,11 +145,15 @@ Each node in the editor is a Blender node type that you create with
        ``Variable``.
    * - Datacube Coords
      - ``BlenderNCNodeCoords``
-     - One string output per coordinate of the dataset.
+     - One string output per coordinate of the dataset, replaced when
+       another dataset is linked.
    * - Datacube Variable
      - ``BlenderNCNodeVariable``
-     - ``datacube_vars`` selects a variable; an output socket with that name
-       appears.
+     - One string output per data variable, named after it, up to
+       ``blendernc.utils.MAX_VARIABLE_OUTPUTS`` (10). With more,
+       ``drop_down`` is ``True``, ``datacube_vars`` selects the variable
+       and a single ``Variable`` output carries it. ``pick(name)`` returns
+       the output carrying a variable in either case.
    * - Datacube Select
      - ``BlenderNCNodeSelect``
      - ``datacube_coords`` picks the coordinate and ``index`` the position
@@ -184,8 +188,12 @@ Each node in the editor is a Blender node type that you create with
        gives the object a material showing the variable.
    * - Datacube Animate Texture
      - ``BlenderNCNodeAnimateTexture``
-     - Inputs ``Object`` and ``Variable``. On every frame change the
-       variable is written to a point attribute of the mesh named after it.
+     - Inputs ``Object`` and ``Variable``. A 3-D variable is written to a
+       point attribute of the mesh named after it as soon as it is linked,
+       the frame shown first, then on every frame change; its ``Min value``
+       and ``Max value`` come from that first frame and stay during
+       playback. ``written``, ``message`` and ``bake_from_attribute`` work as
+       on the Datacube Texture node; a 2-D or 4-D variable is refused.
 
 Three details matter when scripting:
 

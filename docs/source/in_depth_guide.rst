@@ -5,6 +5,36 @@ In-Depth Guide
 
 WIP
 
+.. _datacube_coords_and_variable:
+
+Datacube Coords and Datacube Variable
+=====================================
+
+Both nodes take the ``xarray datacube`` output of a **Datacube Import**
+node and list what the dataset holds as string outputs that you link to
+other nodes.
+
+* **Datacube Coords** has one output per coordinate.
+* **Datacube Variable** has one output per data variable, named after it,
+  as long as the dataset has at most 10 variables. With more, the node
+  shows a **Select Variable** drop-down and a single ``Variable`` output
+  carrying the variable picked. Picking another keeps that output and its
+  links, so the nodes after it switch to the new variable.
+
+Linking another dataset, or pointing the Import node at another file,
+replaces the outputs with the new dataset's names. An output whose name is
+in both datasets keeps its links; the others are removed with their links.
+A file that cannot be opened leaves the outputs as they were.
+
+.. TODO: screenshot of a Datacube Variable node with one output per
+   variable next to one with the drop-down and its single Variable output.
+   Save as docs/images/variable_node.png and uncomment:
+
+   .. image:: ../images/variable_node.png
+      :width: 60%
+      :alt: Datacube Variable node with one output per variable and with a
+            drop-down
+
 .. _datacube_slice:
 
 Datacube Slice
