@@ -14,14 +14,14 @@ from .blendernc import unregister as BNC_unregister
 ##############################################################################
 ##############################################################################
 
-__version__ = "0.10.0"
+__version__ = "0.10.1"
 
 bl_info = {
     "name": "BlenderNC",
     "author": "Oriol Tintó Prims & Josué Martínez-Moreno",
     "description": "Blender Add-On to visualize geo-scientific data",
     "blender": (5, 2, 0),
-    "version": (0, 10, 0),
+    "version": (0, 10, 1),
     "location": "View3D",
     "warning": "Early version",
     "category": "Science",

@@ -2,6 +2,28 @@
 
 <!--next-version-placeholder-->
 
+## v0.10.1 (2026-11-17)
+
+### Bug Fixes
+
+- Variable displays all variables in dataset, variable and coords update if datacube changes,
+  animation now applies materials
+  ([`d28af37`](https://github.com/blendernc/blendernc/commit/d28af3705096d0d80b4e1a05e159dd8895ab049a))
+
+- Volume node keeps user transformation
+  ([`606abfd`](https://github.com/blendernc/blendernc/commit/606abfd77e5fe3b91f6b1dae319a2c209314ad82))
+
+### Chores
+
+- Change cmapsNode to ShaderNodeValToCMAP and fix test
+  ([`f3f8032`](https://github.com/blendernc/blendernc/commit/f3f8032c243182b0965afa385705aceeea7c351d))
+
+### Continuous Integration
+
+- **pre-commit.ci**: Pre-commit autoupdate
+  ([`3a97893`](https://github.com/blendernc/blendernc/commit/3a97893dfe738d6a024c61aae4b1b4d05a2663c1))
+
+
 ## v0.10.0 (2026-11-16)
 
 ### Documentation
