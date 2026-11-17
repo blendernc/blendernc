@@ -12,6 +12,9 @@ Four datasets are generated on the fly with a random-noise variable:
 Variants of ``(X, Y, Z)`` check the placement: a descending, an unevenly
 spaced and a curvilinear horizontal axis, 2-D coordinates that are in fact
 rectilinear, a depth axis marked ``positive = "down"`` and uneven levels.
+A copy of ``(X, Y, Z)`` with a second variable checks that changing the
+variable only refreshes the values. Whatever the bake, a volume the user
+moved, rotated or scaled keeps that transform on top of its placement.
 
 The VDB files are read back with the ``openvdb`` module that ships with
 Blender and compared to the variable.
@@ -28,6 +31,7 @@ import bpy
 import numpy as np
 import openvdb
 import xarray as xr
+from mathutils import Vector
 
 from blendernc.handlers import bNC_update_volumes
 from blendernc.node_utils import create_blenderncnodetree
@@ -36,11 +40,13 @@ from blendernc.volume_utils import (
     UNSAVED_WARNING,
     get_animate_dims,
     nearest_positions,
+    placement_key,
     vdb_directory,
 )
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
+OTHER = "other"
 X_VALUES = np.linspace(0.0, 360.0, NX, endpoint=False)
 Y_VALUES = np.linspace(-80.0, 80.0, NY)
 Z_VALUES = np.linspace(0.0, 300.0, NZ)
@@ -94,9 +100,9 @@ def rotated_grid():
     return lon, lat
 
 
-def read_grid(path, shape):
-    """Read the variable's grid from a VDB file into an array of ``shape``."""
-    grid = openvdb.read(path, VARIABLE)
+def read_grid(path, shape, name=VARIABLE):
+    """Read the grid ``name`` from a VDB file into an array of ``shape``."""
+    grid = openvdb.read(path, name)
     array = np.zeros(shape, dtype=np.float32)
     grid.copyToArray(array)
     return array
@@ -133,6 +139,11 @@ class TestDatacubeVolume(unittest.TestCase):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_xyz_variant(path, **kwargs)
             cls.files[key] = path
+        path = os.path.join(cls.tmpdir, "two_vars.nc")
+        xyz = cls.datasets["xyz"]
+        cls.datasets["two_vars"] = xyz.assign({OTHER: 5.0 - 2.0 * xyz[VARIABLE]})
+        cls.datasets["two_vars"].to_netcdf(path)
+        cls.files["two_vars"] = path
 
     @classmethod
     def tearDownClass(cls):
@@ -161,7 +172,7 @@ class TestDatacubeVolume(unittest.TestCase):
         """Link Import -> Variable (-> Select) -> Volume; return the volume node."""
         tree = self.tree
         import_node = tree.nodes.new("BlenderNCNodeImport")
-        variable = tree.nodes.new("BlenderNCNodeVariable")
+        variable = self.variable = tree.nodes.new("BlenderNCNodeVariable")
         node = self.node = tree.nodes.new("BlenderNCNodeVolume")
         import_node.datacube_file = self.files[key]
         datacube = "xarray datacube"
@@ -196,9 +207,9 @@ class TestDatacubeVolume(unittest.TestCase):
         """VDB files written by the volume node, sorted by name."""
         return sorted(glob.glob(os.path.join(self.vdb_dir, "*", "*.vdb")))
 
-    def expected(self, key, vertical, **isel):
-        """The variable as an ``(X, Y, vertical)`` array, after ``isel``."""
-        data = self.datasets[key][VARIABLE].isel(isel)
+    def expected(self, key, vertical, variable=VARIABLE, **isel):
+        """``variable`` as an ``(X, Y, vertical)`` array, after ``isel``."""
+        data = self.datasets[key][variable].isel(isel)
         if vertical:
             return data.transpose("X", "Y", vertical).values
         return data.transpose("X", "Y").values[..., np.newaxis]
@@ -319,19 +330,181 @@ class TestDatacubeVolume(unittest.TestCase):
             rtol=1e-6,
         )
 
-    def test_select_change_rebakes(self):
-        """Selecting another level rebakes the volume with new file names."""
+    # -- following the tree -------------------------------------------------
+
+    def move(self, obj):
+        """Move and stretch ``obj`` as a user would; return its transform."""
+        obj.location = (5.0, 6.0, 7.0)
+        obj.scale = (1.0, 2.0, 3.0)
+        return self.transform(obj)
+
+    def transform(self, obj):
+        """``obj``'s location and scale as one tuple."""
+        return (*obj.location, *obj.scale)
+
+    def test_select_change_refreshes_values(self):
+        """Another level of a Select rewrites the values in place."""
         self.build("xyzt", select_z=0)
-        self.bake()
+        obj = self.bake()
         token = self.node.bake_token
+        moved = self.move(obj)
         self.select.index = 2  # (time, Y, X) -> space-time cube of level 2
-        self.assertGreater(self.node.bake_token, token)
+        self.assertEqual(self.node.bake_token, token + 1)
+        np.testing.assert_allclose(self.transform(obj), moved)
         files = self.vdb_files()
         self.assertEqual(len(files), 1)
         np.testing.assert_allclose(
             read_grid(files[0], (NX, NY, NT)),
             self.expected("xyzt", "time", Z=2),
             rtol=1e-6,
+        )
+
+    def test_variable_change_refreshes_values(self):
+        """Another variable keeps the placement, and so does the button."""
+        from blendernc import volume_utils
+
+        self.build("two_vars")
+        obj = self.bake()
+        moved = self.move(obj)
+        computed = []
+        original = volume_utils.volume_placement
+
+        def counting(*args):
+            computed.append(args)
+            return original(*args)
+
+        volume_utils.volume_placement = counting
+        try:
+            self.variable.datacube_vars = OTHER
+            self.tree.links.new(
+                self.variable.outputs[OTHER], self.node.inputs["Variable"]
+            )
+        finally:
+            volume_utils.volume_placement = original
+        self.assertEqual(computed, [])
+        np.testing.assert_allclose(self.transform(obj), moved)
+        self.assertEqual(obj.data.materials[0].name, f"{OTHER} volume")
+        self.assertEqual(len(obj.data.materials), 1)
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX, NY, NZ), OTHER),
+            self.expected("two_vars", "Z", OTHER),
+            rtol=1e-6,
+        )
+        self.bake()
+        self.assertEqual(self.transform(obj), moved)
+
+    def test_variable_change_without_lock_takes_its_range(self):
+        """With "Lock range" off the refreshed volume gets the new range."""
+        settings = bpy.context.scene.BlenderNC_Settings
+        locked = settings.lock_range
+        self.build("two_vars")
+        obj = self.bake()
+        try:
+            settings.lock_range = False
+            self.variable.datacube_vars = OTHER
+            self.tree.links.new(
+                self.variable.outputs[OTHER], self.node.inputs["Variable"]
+            )
+        finally:
+            settings.lock_range = locked
+        data = self.datasets["two_vars"][OTHER]
+        self.assertAlmostEqual(obj[RANGE_PROPERTIES[0]], float(data.min()), places=5)
+        self.assertAlmostEqual(obj[RANGE_PROPERTIES[1]], float(data.max()), places=5)
+
+    def insert(self, bl_idname, coord, **settings):
+        """Put a node on ``coord`` between the variable and the volume."""
+        node = self.tree.nodes.new(bl_idname)
+        self.tree.links.new(self.variable.outputs[VARIABLE], node.inputs["Variable"])
+        node.datacube_coords = coord
+        for name, value in settings.items():
+            setattr(node, name, value)
+        self.tree.links.new(node.outputs["Variable"], self.node.inputs["Variable"])
+        return node
+
+    def test_slice_keeps_user_transform(self):
+        """A Slice along X lands where that part of the moved volume was."""
+        self.build("xyz")
+        obj = self.bake()
+        self.move(obj)
+        obj.rotation_euler.z = np.pi / 2
+        third_column = obj.matrix_basis @ Vector((2.0, 0.0, 0.0))
+        self.insert("BlenderNCNodeSlice", "X", first=2, last=7)
+        np.testing.assert_allclose(obj.matrix_basis.translation, third_column)
+        np.testing.assert_allclose(obj.scale, (1.0, 2.0, 3.0))
+        self.assertAlmostEqual(obj.rotation_euler.z, np.pi / 2, places=6)
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (6, NY, NZ)),
+            self.expected("xyz", "Z", X=slice(2, 8)),
+            rtol=1e-6,
+        )
+
+    def test_subsample_keeps_user_scale(self):
+        """Twice the voxel size along X doubles the user's X scale."""
+        self.build("xyz")
+        obj = self.bake()
+        self.move(obj)
+        self.insert("BlenderNCNodeSubsample", "X", step=2)
+        np.testing.assert_allclose(obj.location, (5.0, 6.0, 7.0))
+        np.testing.assert_allclose(obj.scale, (2.0, 2.0, 3.0))
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX // 2, NY, NZ)),
+            self.expected("xyz", "Z", X=slice(0, None, 2)),
+            rtol=1e-6,
+        )
+
+    def test_adding_select_keeps_user_transform(self):
+        """Selecting one time step of an animated volume moves nothing."""
+        self.build("xyzt", frame_mode="LIVE")
+        obj = self.bake()
+        obj.scale = (0.014,) * 3
+        obj.location = (0.0, 0.0, 0.0)
+        moved = self.transform(obj)
+        select = self.insert("BlenderNCNodeSelect", "time")
+        self.assertEqual(self.transform(obj), moved)
+        select.index = 3
+        self.assertEqual(self.transform(obj), moved)
+        self.assertEqual(len(self.vdb_files()), 1)
+
+    def test_vertical_scale_keeps_user_transform(self):
+        """The vertical scale stretches about the coordinate's zero."""
+        self.build("depth")  # Z from 0 down to -300: zero is the top level
+        obj = self.bake()
+        self.move(obj)
+        top = obj.matrix_basis @ Vector((0.0, 0.0, NZ - 1.0))
+        self.node.vertical_scale = 0.25
+        np.testing.assert_allclose(obj.matrix_basis @ Vector((0, 0, NZ - 1)), top)
+        np.testing.assert_allclose(obj.scale, (1.0, 2.0, 3.0 * 0.25))
+
+    def test_volume_baked_before_placements_were_recorded(self):
+        """Without a recorded placement the object is placed afresh, once."""
+        self.build("xyz")
+        obj = self.bake()
+        self.move(obj)
+        self.node.placed_scale = (0.0, 0.0, 0.0)  # as in an older file
+        self.bake()
+        np.testing.assert_allclose(obj.location, (0.0, -80.0, 0.0), atol=1e-5)
+        np.testing.assert_allclose(obj.scale, (30.0, 160.0 / 7, 100.0), rtol=1e-5)
+        moved = self.move(obj)
+        self.bake()
+        self.assertEqual(self.transform(obj), moved)
+
+    def test_placement_key_follows_coordinates_only(self):
+        """Values, frames and a dropped dimension leave the key unchanged."""
+        data = self.datasets["xyzt"][VARIABLE]
+        layout = ("X", "Y", "Z", "time")
+        key = placement_key(data, layout)
+        self.assertEqual(key, placement_key(-data, layout))
+        self.assertEqual(key, placement_key(data.isel(time=slice(0, 2)), layout))
+        self.assertNotEqual(key, placement_key(data.isel(X=slice(0, 6)), layout))
+        moved = data.assign_coords(Z=data["Z"] * 2.0)
+        self.assertNotEqual(key, placement_key(moved, layout))
+        static = ("X", "Y", "Z", None)
+        self.assertEqual(
+            placement_key(data.isel(time=0), static),
+            placement_key(data.isel(time=3), static),
         )
 
     # -- placement ------------------------------------------------------------

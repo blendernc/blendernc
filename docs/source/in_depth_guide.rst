@@ -192,16 +192,32 @@ axis of a space-time cube) give one voxel per level, of height
 Rebaking
 --------
 
-Like the grid, the volume follows the node tree. Changing the slicing
-upstream (a different **Select** index, a new **Resolution** step), the
-variable, **Animate along** or **Frames** bakes it again automatically.
-Every bake uses new file names, because Blender keeps VDB grids in memory
-by file path and would otherwise keep showing the old data.
+The volume follows the node tree. Changing the slicing upstream, the
+variable, **Animate along** or **Frames** writes its files again
+automatically. Every bake uses new file names, because Blender keeps VDB
+grids in memory by file path and would otherwise keep showing the old data.
+
+Like the grid, the volume is only *placed* again when its coordinates
+change: a **Slice**, **Subsample** or **Resolution** node on one of its
+axes, or another **Animate along** that changes which dimensions form the
+volume. Picking another variable, or another index of a **Select** along a
+dimension the volume does not show (a time step, a level), only rewrites
+the values and swaps the material to the new variable's, and the notes
+are not reported again.
+
+Moving, rotating or scaling the Volume object is kept through every bake,
+including **Bake Volume** and a change of **Vertical scale**. BlenderNC
+remembers the placement it applied last and applies your transform on top
+of the new one. With the same coordinates nothing moves. After a **Slice**,
+the slice lands where that part of the volume was, and after a
+**Subsample** your scale along that axis grows with the voxel size. To put
+the volume back on its coordinates, delete the Volume object and bake
+again.
 
 Material
 --------
 
-The first bake assigns a material called ``<variable> volume``: an
+Each bake assigns a material called ``<variable> volume``: an
 *Attribute* node reads the grid, a *Map Range* node maps it from the
 object's ``Min value`` to ``Max value`` custom properties onto 0 to 1, and
 the result drives the density of a *Principled Volume*. Missing values and

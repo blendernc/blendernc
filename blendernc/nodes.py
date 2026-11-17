@@ -43,6 +43,7 @@ from .volume_utils import (
     FRAMES_SEQUENCE,
     get_animate_dims,
     release_vdb_directory,
+    stretch_vertically,
 )
 
 logger = logging.getLogger(__name__)
@@ -675,8 +676,7 @@ def _apply_vertical_scale(node, context):
     """Stretch the baked volume vertically; no files need rewriting."""
     obj = bpy.data.objects.get(node.baked_object) if node.baked_object else None
     if obj is not None and obj.type == "VOLUME":
-        obj.location.z = node.baked_z_origin * node.vertical_scale
-        obj.scale.z = node.baked_z_step * node.vertical_scale
+        stretch_vertically(obj, node)
 
 
 class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
@@ -694,9 +694,17 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
     Datacube Grid baked from the same coordinates; uneven or curvilinear
     coordinates are resampled onto a regular grid first, and the node says
     so. An evenly spaced vertical coordinate sets the voxel height too.
-    Like the grid, the volume is baked again when the slicing, variable,
-    animated dimension or frame mode changes. Deleting the node deletes its
-    VDB folder once no Volume reads from it.
+
+    The volume follows the tree: when the slicing, variable, animated
+    dimension or frame mode changes, the files are written again. Like the
+    grid, it is only placed again when its coordinates change (a Slice,
+    Subsample or Resolution on a volume axis, another layout); another
+    variable, or another index of a Select along a dimension the volume
+    does not show, only refreshes the values and swaps the material.
+    Whatever the bake, the user's move, rotation and scale of an existing
+    object are kept on top of the new placement
+    (:func:`blendernc.volume_utils.place_object`).
+    Deleting the node deletes its VDB folder once no Volume reads from it.
     """
 
     bl_idname = "BlenderNCNodeVolume"
@@ -773,6 +781,17 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
     baked_signature: bpy.props.StringProperty(
         description="Slicing, variable, animated dim and frame mode of the last bake",
     )
+    baked_placement: bpy.props.StringProperty(
+        description="Digest of the coordinates the last bake placed the voxels on",
+    )
+    placed_location: bpy.props.FloatVectorProperty(
+        size=3,
+        description="Location the node last placed the object at, under the user's",
+    )
+    placed_scale: bpy.props.FloatVectorProperty(
+        size=3,
+        description="Scale the node last gave the object; zero before the first",
+    )
     bake_token: bpy.props.IntProperty(
         description="Counter in the VDB file names; Blender caches grids by path",
         default=0,
@@ -816,12 +835,17 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
     @is_single_input_linked
     @has_datastructs
     def update(self):
-        """Expose the baked volume, rebaking first when the tree changed."""
+        """Expose the baked volume, rebaking first when the tree changed.
+
+        The rebake keeps the placement when the coordinates are unchanged.
+        """
         if self.is_stale():
             # The operator records the new signature and calls update() again.
             try:
                 bpy.ops.blendernc.create_volume(
-                    node_name=self.name, node_tree=self.id_data.name
+                    node_name=self.name,
+                    node_tree=self.id_data.name,
+                    keep_placement=True,
                 )
             except RuntimeError:
                 pass  # already reported, logged and shown on the node

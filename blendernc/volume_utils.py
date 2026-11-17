@@ -20,11 +20,17 @@ is rewritten in place is never read again. Every bake therefore writes its
 files under a new token (see :func:`vdb_stem`), and the current-frame mode
 writes one file per frame index instead of reusing a single path.
 
+When the tree changes but the coordinates do not (same
+:func:`placement_key`), a bake only refreshes the values and reuses the
+last placement. The user's move, rotation and scale of the object are kept
+on top of the placement, whatever the bake (see :func:`place_object`).
+
 Pure helpers raise ``ValueError`` with a two-line message (problem, then
 what to do); the operator turns it into a report.
 """
 
 import glob
+import hashlib
 import logging
 import os
 import re
@@ -33,6 +39,7 @@ from dataclasses import dataclass, field
 
 import bpy
 import numpy as np
+from mathutils import Vector
 
 from .utils import (
     RANGE_PROPERTIES,
@@ -656,20 +663,64 @@ def _rectilinear_placement(axes):
     return [list(column) for column in columns]
 
 
-# Placement of the last bake per node, reused by the current-frame mode so
-# a curvilinear grid is not matched again on every frame. Keyed by the
-# node's pointer; the bake token tells a stale entry.
+def placement_key(data, layout):
+    """Digest of everything that decides where the voxels of ``data`` go.
+
+    That is the layout, the length of the x, y and vertical dimensions, and
+    the values and ``positive`` attribute of every coordinate lying on those
+    dimensions. Two bakes with the same key place their voxels alike, whatever
+    the variable or the index picked along a dimension the volume does not
+    show. The animated dimension only sets the number of frames, so its
+    length is left out.
+    """
+    spatial = {dim for dim in layout[:3] if dim}
+    digest = hashlib.blake2b(digest_size=16)
+    digest.update(repr(layout).encode())
+    digest.update(repr(sorted((dim, data.sizes[dim]) for dim in spatial)).encode())
+    for name, coord in sorted(data.coords.items(), key=lambda item: str(item[0])):
+        if coord.dims and set(coord.dims) <= spatial:
+            positive = coord.attrs.get("positive", "")
+            digest.update(f"{name}|{coord.dims}|{positive}".encode())
+            digest.update(_value_bytes(coord.values))
+    return digest.hexdigest()
+
+
+def _value_bytes(values):
+    """The bytes of a coordinate's values, for :func:`placement_key`."""
+    values = np.ascontiguousarray(values)
+    if values.dtype.kind == "O":  # strings, cftime dates
+        return repr(values.tolist()).encode()
+    return values.tobytes()
+
+
+# Placement of the last bake per node, reused by the current-frame mode and
+# by a refresh of the values, so a curvilinear grid is not matched again on
+# every frame or variable. Keyed by the node's pointer; the node's
+# ``baked_placement`` key tells a stale entry.
 _PLACEMENTS = {}
 
 
 def _cached_placement(node, data, layout):
     """Placement of the node's last bake, computed again when it is stale."""
     cached = _PLACEMENTS.get(node.as_pointer())
-    if cached is not None and cached[0] == node.bake_token:
+    if cached is not None and cached[0] == node.baked_placement:
         return cached[1]
     placement = volume_placement(data, layout)
-    _PLACEMENTS[node.as_pointer()] = (node.bake_token, placement)
+    _PLACEMENTS[node.as_pointer()] = (node.baked_placement, placement)
     return placement
+
+
+def _keeps_placement(node, key):
+    """True when the node's last object is still its target and ``key`` matches.
+
+    The object must exist: a new one has no transform worth keeping.
+    """
+    baked = bpy.data.objects.get(node.baked_object) if node.baked_object else None
+    return (
+        baked is not None
+        and node.baked_object == node.volume_obj_name
+        and key == node.baked_placement
+    )
 
 
 # --------------------------------------------------------------------------
@@ -804,6 +855,58 @@ def look_up_volume_object(object_name):
     return obj
 
 
+def _placed_here(obj, node):
+    """True when ``node`` placed ``obj`` before, so it has a user transform."""
+    return obj.name == node.baked_object and min(node.placed_scale) > 0
+
+
+def place_object(obj, node, location, scale):
+    """Put ``obj`` on a placement, keeping the user's transform on top of it.
+
+    ``node.placed_location`` and ``node.placed_scale`` hold the placement
+    applied last; whatever the user did since (move, rotate, scale) is
+    their transform. It is kept: the object is shifted by the change of
+    origin, counted in voxels of the last placement along the object's own
+    axes, and its scale is multiplied by the change of voxel size. With the
+    same placement nothing moves; after a Slice, the slice lands where that
+    part of the volume was. An object this node never placed (new, or baked
+    before placements were recorded) gets the placement itself.
+
+    Parameters
+    ----------
+    obj : bpy.types.Object
+        The Volume object.
+    node : DatacubeVolume
+        The node baking it; its ``placed_*`` properties are updated.
+    location, scale : sequence of float
+        The new placement, vertical scale included.
+    """
+    # Compared in single precision, as stored: an unchanged placement is a
+    # shift of exactly zero and a ratio of exactly one.
+    location = np.asarray(location, dtype=np.float32)
+    scale = np.asarray(scale, dtype=np.float32)
+    if _placed_here(obj, node):
+        last_location = np.asarray(node.placed_location, dtype=np.float32)
+        last_scale = np.asarray(node.placed_scale, dtype=np.float32)
+        voxels = Vector((location - last_location) / last_scale)
+        obj.location += obj.matrix_basis.to_3x3() @ voxels
+        obj.scale = [old * ratio for old, ratio in zip(obj.scale, scale / last_scale)]
+    else:
+        obj.location, obj.scale = location.tolist(), scale.tolist()
+    node.placed_location, node.placed_scale = location.tolist(), scale.tolist()
+
+
+def stretch_vertically(obj, node):
+    """Apply the node's vertical scale to ``obj``, keeping the user's transform."""
+    if _placed_here(obj, node):
+        location, scale = list(node.placed_location), list(node.placed_scale)
+    else:  # baked before placements were recorded: only Z is known
+        location, scale = list(obj.location), list(obj.scale)
+    location[2] = node.baked_z_origin * node.vertical_scale
+    scale[2] = node.baked_z_step * node.vertical_scale
+    place_object(obj, node, location, scale)
+
+
 def point_volume_at(volume, path, frames=1):
     """Read ``volume`` from ``path``, as a sequence of ``frames`` files if > 1.
 
@@ -866,19 +969,25 @@ def _set_filepath(volume, path):
     volume.filepath = path
 
 
-def bake_volume(node, scene):
+def bake_volume(node, scene, keep_placement=False):
     """Write the VDB files of ``node`` and return the Volume object.
 
     Everything that can fail is checked before files or objects change.
     Every frame is written in sequence mode; in current-frame mode only the
     frame of ``scene`` is, and :func:`write_live_frame` follows playback.
 
+    With ``keep_placement``, a bake on the coordinates of the last one (same
+    :func:`placement_key`, same object) only refreshes the values and reuses
+    the last placement. Either way, :func:`place_object` keeps the user's
+    transform of an existing object on top of the placement.
+
     Returns
     -------
     tuple
-        ``(obj, notes)``: the Volume object and the messages for the user,
-        as ``{"INFO": [...], "WARNING": [...]}``. Info notes say what was
-        resampled; the warning says the files are temporary.
+        ``(obj, notes, refreshed)``: the Volume object, the messages for
+        the user as ``{"INFO": [...], "WARNING": [...]}``, and whether only
+        the values were refreshed. Info notes say what was resampled; the
+        warning says the files are temporary.
 
     Raises
     ------
@@ -886,13 +995,19 @@ def bake_volume(node, scene):
         With the message shown on the node.
     """
     variable, data, layout = volume_data(node)
-    placement = volume_placement(data, layout)
+    key = placement_key(data, layout)
+    refresh = keep_placement and _keeps_placement(node, key)
+    if refresh:
+        placement = _cached_placement(node, data, layout)
+    else:
+        placement = volume_placement(data, layout)
     frames = frame_count(data, layout)
     obj = look_up_volume_object(node.volume_obj_name)
     value_range = bake_range(obj, data)
 
     node.bake_token += 1  # new file names, so Blender's grid cache misses
-    _PLACEMENTS[node.as_pointer()] = (node.bake_token, placement)
+    node.baked_placement = key
+    _PLACEMENTS[node.as_pointer()] = (key, placement)
     directory = vdb_directory(node)
     stem = vdb_stem(variable, node.bake_token)
     remove_vdb_files(directory)
@@ -906,18 +1021,20 @@ def bake_volume(node, scene):
     point_volume_at(
         obj.data, frame_path(directory, stem, indices[0]), 1 if live else frames
     )
-    obj.location, obj.scale = placement.transform(node.vertical_scale)
+    place_object(obj, node, *placement.transform(node.vertical_scale))
     node.baked_z_origin, node.baked_z_step = placement.origin[2], placement.step[2]
     write_object_range(obj, value_range)
     logger.info(
         f"{node.name}: wrote {len(indices)} VDB file(s) of {variable} "
         f"({', '.join(filter(None, layout))}) to {directory}"
+        f"{', same placement' if refresh else ''}"
     )
     temporary = _vdb_base(node)[1]
-    return obj, {
+    notes = {
         "INFO": list(placement.notes),
         "WARNING": [UNSAVED_WARNING] if temporary else [],
     }
+    return obj, notes, refresh
 
 
 def _live_target(node):

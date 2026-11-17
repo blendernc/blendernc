@@ -31,17 +31,22 @@ after that work.
     they go to Blender's temporary folder, and the node only warns (the
     chosen behaviour); nothing moves them when the file is first saved.
   - Curvilinear resampling (`volume_utils.curvilinear_placement`,
-    `volume_utils.py:537`) is nearest neighbour at the source resolution,
+    `volume_utils.py:544`) is nearest neighbour at the source resolution,
     and it treats longitude as a plain number: a grid that crosses the
     dateline (179° to -179°) is resampled over the whole -180 to 180 range.
   - Unevenly spaced vertical levels stay one voxel per level
-    (`vertical_placement`, `volume_utils.py:470`), so such a volume does
+    (`vertical_placement`, `volume_utils.py:477`), so such a volume does
     not line up with a grid whose Z is that coordinate.
+  - "Lock range" (on by default) keeps the stored range when the
+    variable changes, for textures (`utils.write_field_range`) and
+    volumes (`volume_utils.bake_range`) alike, so a new variable is
+    coloured with the old one's range. The lock could store which
+    variable the range belongs to and only hold it for that variable.
   - Releasing "Lock range" recomputes the texture ranges
     (`utils.update_lock_range`, `utils.py:1480`) but not the volume
     ranges, which wait for the next bake.
   - A node's VDB sub-folder is named after its tree and itself
-    (`vdb_directory`, `volume_utils.py:693`); renaming either leaves the
+    (`vdb_directory`, `volume_utils.py:744`); renaming either leaves the
     old folder behind.
   - Add more property types, for example temperature, and velocities. In
     the case of velocities, we will need a supplementary node that merges
@@ -91,7 +96,7 @@ after that work.
   not the other raises. Put the location inside each entry.
 - **Grid and Volume nodes run operators from `update`.**
   `DatacubeGrid.update` and `DatacubeVolume.update` call `bpy.ops` to
-  rebake (`nodes.py:294, 811`); the operator creates objects, applies
+  rebake (`nodes.py:294, 845`); the operator creates objects, applies
   modifiers and calls `update()` again. `decorators.py:171-174` notes that
   Blender is still walking the tree during `update` and moves link edits
   to a timer for that reason. Rebakes could be deferred the same way.
@@ -168,7 +173,7 @@ after that work.
 - `register`/`unregister` return `{"FINISHED"}` (`blendernc.py:156,
   184`), which Blender ignores for registration functions.
 - `DatacubeResolution.draw_buttons` reads `datastruct.dict` directly
-  instead of calling `get_dataset` (`nodes.py:999`).
+  instead of calling `get_dataset` (`nodes.py:1023`).
 - `find_common_name` keeps the camelCase `commonName` and `S`
   (`utils.py:303-314`). `name_match` ends with a branch that only
   `pass`es (`utils.py:273-274`). `get_datacube_path` has a Google-style
@@ -231,6 +236,13 @@ after that work.
   UI screenshots.
 - Type hints are absent throughout; adding them to the pure helpers would
   let `autodoc_typehints = "description"` do useful work.
+
+
+## 8. CI
+
+- ci(pre-commit.ci) always fails the Lint Commit. Brainstorm a way to fix it,
+  either ignore it in the commitlint test, or change simplify the message of
+  pre-commit.ci.
 
 ## Resolved since the first pass
 
@@ -308,11 +320,26 @@ Resolved on 2026-11-17 (section 1, and what it touched):
   An unsaved file shows a warning on the node. "Lock range" keeps the
   stored range, and the range takes one pass over a lazy array instead of
   two. "Animate along" lists the dims left after slicing.
+- **The volume no longer rebakes on a variable change.** Like the grid, it
+  is placed again only when its coordinates change:
+  `volume_utils.placement_key` digests the layout, the sizes and the
+  coordinate values of the volume's axes, stored as `baked_placement`.
+  When the tree changes and the key is unchanged (another variable, another
+  index of a Select over time), `bake_volume(..., keep_placement=True)`
+  rewrites the values only: it reuses the cached placement, swaps the
+  material and reports no notes.
+- **The volume keeps the user's transform.** The node records the placement
+  it applied last (`placed_location`, `placed_scale`), and
+  `volume_utils.place_object` applies the user's move, rotation and scale
+  on top of the new one, for every bake, the "Bake Volume" button and
+  Vertical scale included. Volumes baked before have no recorded placement
+  and are placed afresh once.
 - **Dropped:** playing "Current frame" volumes without BlenderNC
   installed is not a supported setup.
 - `Material.use_nodes`, deprecated in Blender 5.2, is no longer set.
 - `DatacubeVariable.update` uses `NO_SELECTION` instead of `"No var"`.
 - Tests: Apply Material from the panel and from a node, the variable
   change without a rebake, a failed panel bake, eleven Slice tests
-  (`tests/slice.test.py`) and thirteen new Volume tests for placement,
-  range, dims and files.
+  (`tests/slice.test.py`) and twenty-one new Volume tests for placement,
+  range, dims, files, refreshing the values and keeping the user's
+  transform.

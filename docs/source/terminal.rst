@@ -171,7 +171,9 @@ Each node in the editor is a Blender node type that you create with
      - Input ``Variable`` takes a 3-D or 4-D variable; ``volume_obj_name``,
        ``animate_dim``, ``frame_mode``, ``vertical_scale`` and ``vdb_dir``
        are described in the :ref:`in_depth_guide`. Baked with
-       ``bpy.ops.blendernc.create_volume``. Output ``Object``.
+       ``bpy.ops.blendernc.create_volume``; ``keep_placement=True`` only
+       refreshes the values when the coordinates are those of the last
+       bake. Output ``Object``.
    * - Datacube Texture
      - ``BlenderNCNodeTexture``
      - Inputs ``Object`` and ``Variable``. A 2-D variable is written once to

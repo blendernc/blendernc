@@ -210,6 +210,12 @@ class Import_OT_CreateVolume(bpy.types.Operator):
 
     node_name: bpy.props.StringProperty(default="")
     node_tree: bpy.props.StringProperty(default="")
+    # Set by the node when the tree changes; the button always bakes fully.
+    keep_placement: bpy.props.BoolProperty(
+        default=False,
+        options={"SKIP_SAVE"},
+        description="Only refresh the values when the coordinates are unchanged",
+    )
 
     @report_errors
     @is_linked
@@ -217,10 +223,11 @@ class Import_OT_CreateVolume(bpy.types.Operator):
         """Bake the volume of a Datacube Volume node.
 
         The VDB files are written by :func:`blendernc.volume_utils.bake_volume`
-        and a density-only material is assigned once. A problem is shown on
-        the node as well as reported, since the node can rebake itself when
-        the tree changes and nobody sees the status bar then; so are the
-        notes about resampling and the warning about an unsaved file.
+        and the variable's density-only material is assigned. A problem is
+        shown on the node as well as reported, since the node can rebake
+        itself when the tree changes and nobody sees the status bar then; so
+        are the notes about resampling and the warning about an unsaved
+        file. A refresh of the values changes neither, so reports nothing.
 
         Returns
         -------
@@ -232,16 +239,17 @@ class Import_OT_CreateVolume(bpy.types.Operator):
         volume_node = node_tree.nodes.get(self.node_name)
         volume_node.warning = volume_node.note = ""
         try:
-            obj, notes = bake_volume(volume_node, context.scene)
+            obj, notes, refreshed = bake_volume(
+                volume_node, context.scene, self.keep_placement
+            )
         except (ValueError, OSError) as exc:
             volume_node.message = str(exc)
             raise
         volume_node.message = ""
         volume_node.warning = "\n".join(notes["WARNING"])
         volume_node.note = "\n".join(notes["INFO"])
-        for level, lines in notes.items():
-            for line in lines:
-                report_error(self, line.replace("\n", " "), level)
+        if not refreshed:
+            self._report_notes(notes)
 
         variable = volume_node.inputs["Variable"].default_value
         assign_material(obj.data, volume_material(variable))
@@ -250,6 +258,12 @@ class Import_OT_CreateVolume(bpy.types.Operator):
         volume_node.baked_signature = volume_node.signature()
         volume_node.update()
         return {"FINISHED"}
+
+    def _report_notes(self, notes):
+        """Report each note of a bake on one line, at its level."""
+        for level, lines in notes.items():
+            for line in lines:
+                report_error(self, line.replace("\n", " "), level)
 
 
 def _apply_modifier(context, obj, modifier):
