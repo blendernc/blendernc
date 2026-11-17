@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import bpy
-
 from .blendernc import register as BNC_register
 from .blendernc import unregister as BNC_unregister
 
@@ -32,17 +30,10 @@ bl_info = {
 
 
 def register():
-    """
-    register Register all BlenderNC functions into Blender
-    """
-    # Load blendernc only at launching blender.
+    """Register BlenderNC with Blender."""
     BNC_register()
-    # Add python path to sys.path specified in the add-on preferences.
-    bpy.context.preferences.addons.get("blendernc")
 
 
 def unregister():
-    """
-    unregister Unregister all BlenderNC functions into Blender
-    """
+    """Unregister BlenderNC from Blender."""
     BNC_unregister()

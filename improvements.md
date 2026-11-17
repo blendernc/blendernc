@@ -27,7 +27,7 @@ after that work.
     coloured with the old one's range. The lock could store which
     variable the range belongs to and only hold it for that variable.
   - Releasing "Lock range" recomputes the texture ranges
-    (`utils.update_lock_range`, `utils.py:1496`) but not the volume
+    (`utils.update_lock_range`, `utils.py:1500`) but not the volume
     ranges, which wait for the next bake.
   - A node's VDB sub-folder is named after its tree and itself
     (`vdb_directory`, `volume_utils.py:744`); renaming either leaves the
@@ -40,29 +40,25 @@ after that work.
 
 - **Shared mutable cache on a class attribute.** `BNC_data.dict`
   (`properties.py:26`) is one `defaultdict` for every node in every file;
-  `initialize_BNC_datastructs` (`decorators.py:287`) assigns `item.dict`
+  `initialize_BNC_datastructs` (`decorators.py:293`) assigns `item.dict`
   on a transient `PropertyGroup` wrapper, so the per-item assignment has no
   lasting effect. A small cache module (`get`, `put`, `drop`, keyed by the
   full path, with reference counts) would make the lifetime explicit.
-- **Read paths create data.** `_get_ui_node` (`utils.py:502-505`) and both
-  panel draw functions (`panels_draw.py:37, 83`) call
+- **Read paths create data.** `_get_ui_node` (`utils.py:506-509`) and both
+  panel draw functions (`panels_draw.py:37, 79`) call
   `create_blenderncnodetree`, so drawing a drop-down or the panel can
   create a node group. Look the tree up with `bpy.data.node_groups.get` in
   read paths.
 - **`create_blenderncnodetree` ignores the tree type.** It returns any
   group with the requested name (`node_utils.py:127-128`).
-  `assign_modifier_to_object` (`utils.py:1814`) asks for a geometry tree
+  `assign_modifier_to_object` (`utils.py:1818`) asks for a geometry tree
   named after the grid object, so a grid object called "BLENDERNC" (or
   after any other node group) gets the wrong kind of tree for its
   modifier, and the bake fails. Check `bl_idname`, and pick a new name
   when the existing group has another type.
-- **`panels_draw.draw_var_and_coords` assumes nodes exist.**
-  `panels_draw.py:41-45` dereferences the "Datacube Coords" node without
-  a `None` check, so deleting it raises on every redraw while the section
-  is appended.
-- **`get_grid_coords` has no missing-key handling.** `utils.py:1034`
+- **`get_grid_coords` has no missing-key handling.** `utils.py:1038`
   passes the socket value to `get_data_from_datastruct`, which indexes
-  `dataset[var_name]` (`utils.py:964`). A renamed coordinate raises
+  `dataset[var_name]` (`utils.py:968`). A renamed coordinate raises
   `KeyError`, and an unloaded dataset raises `TypeError`.
 - **`_clear_default_values` matches on `bl_label`.** `decorators.py:74`
   compares `input_socket.bl_label != "Object"`; `isinstance(socket,
@@ -91,11 +87,11 @@ after that work.
   coordinates). Volumes are unaffected: they read their coordinates from
   the sliced variable.
 - **`decorators.py` contains UI logic.** `_create_UI_nodes`
-  (`decorators.py:296-330`) builds the node tree, toggles panel draw
+  (`decorators.py:302-336`) builds the node tree, toggles panel draw
   functions and reads scene properties; it belongs with the operators or
   in a `ui.py` module.
 - **`check_if_node_tree_exists` does three unrelated things**
-  (`decorators.py:356-374`), depending on `bl_idname`. For the UI property
+  (`decorators.py:362-380`), depending on `bl_idname`. For the UI property
   group it builds nodes and never calls the wrapped function. For the
   import operator it resolves the node through `_use_import_node`. For
   nodes it only resolves names. `_use_import_node` and the Apply Material
@@ -104,7 +100,7 @@ after that work.
 - **`create_nodes` mutates its input.** It writes `"node"` into each
   entry and may add a `"NodeGroupOutput"` entry (`node_utils.py:185,
   194`). `_create_UI_nodes` passes the module constant `basic_nodes`
-  (`decorators.py:319`), so stale node references survive across trees
+  (`decorators.py:325`), so stale node references survive across trees
   and reloads. The material helpers build a fresh mapping on each call,
   and `colorbar_material` and `_new_colormap_group` copy theirs first
   (`shader_utils.py:297`, `shader_nodes.py:39`). Returning a new mapping
@@ -119,7 +115,7 @@ after that work.
   `axis_spacing`, `nearest_positions`, `axis_placement`,
   `curvilinear_placement`, `volume_layout` and `frame_array` in
   `volume_utils.py`. A `bpy`-free module would allow fast `pytest` unit
-  tests and shrink `utils.py`, which has grown to 1818 lines.
+  tests and shrink `utils.py`, which has grown to 1822 lines.
 - **`utils.py` imports `panels_draw`** (`utils.py:22`), while
   `properties.py` imports `utils` and `decorators.py` imports
   `panels_draw` and `node_utils`. The UI callbacks (`update_*_UI`,
@@ -130,48 +126,24 @@ after that work.
   "Datacube Coords" and "Datacube Resolution" (`panels_draw.py:37, 41,
   83-84`).
 - **`get_possible_coordinates_UI` depends on the layout of `get_dims`.**
-  `utils.py:557-559` drops the separator and overwrites the header; a
+  `utils.py:561-563` drops the separator and overwrites the header; a
   parameter on `get_dims` would remove the coupling.
 - **The datacube path lives in three places** (`datacube_file` on the
   node, `datacube_file` on the scene properties, `datafile` on the data
   item) and is synced by hand in `Import_OT_mfdataset.execute`
-  (`operators.py:83-89`), `_create_UI_nodes` (`decorators.py:327`) and
+  (`operators.py:83-89`), `_create_UI_nodes` (`decorators.py:333`) and
   `DatacubeImport.update` (`nodes.py:124-136`).
 - **Two step properties.** `BlenderNC_UI_Properties.step`
   (`properties.py:57`) mirrors `DatacubeResolution.step` through
-  `update_step_UI` (`utils.py:682-696`). The panel already draws the
-  node's `suggested_step` directly (`panels_draw.py:87`); drawing its
+  `update_step_UI` (`utils.py:686-700`). The panel already draws the
+  node's `suggested_step` directly (`panels_draw.py:83`); drawing its
   `step` the same way would remove the mirror.
 
 ## 4. Dead code and cleanup
 
-- `blendernc/__init__.py:41`: `bpy.context.preferences.addons.get(...)`
-  does nothing. The root `__init__.py:54-57` `__main__` block registers
-  and immediately unregisters.
-- `properties.py:36`: `datacube_file` is described as "Folder with assets
-  blend files".
-- `register`/`unregister` return `{"FINISHED"}` (`blendernc.py:156,
-  184`), which Blender ignores for registration functions.
-- `DatacubeResolution.draw_buttons` reads `datastruct.dict` directly
-  instead of calling `get_dataset` (`nodes.py:1128`).
-- `find_common_name` keeps the camelCase `commonName` and `S`
-  (`utils.py:317-328`). `name_match` ends with a branch that only
-  `pass`es (`utils.py:287-288`). `get_datacube_path` has a Google-style
-  docstring among numpydoc ones (`utils.py:66-72`).
-- `is_single_input_linked`'s docstring says the update runs only when an
-  input is linked, but it always runs it (`decorators.py:254-255`).
-- `draw_var_and_coords` builds a `coords` list only to count it
-  (`panels_draw.py:42-46`).
-- Public names kept for compatibility: `get_2D_coords`,
-  `bNC_update_attributes` (registered handler) and `BNC_datastructs`
-  (stored in .blend files). Rename only with a migration.
-- Repository hygiene: `.coveragerc` still omits the removed
-  `addon_updater`. `blender_manifest.toml:10` says
-  `blender_version_min = "4.2.0"`, but `bl_info` and the docs say 5.2,
-  the bundled wheels are built for Python 3.13 (`pyproject.toml` has
-  `requires-python >= 3.13`), and `handlers.py` uses the slotted-action
-  API. Set it to `5.2.0`. `docs/source/modules/blendernc.blendernc.rst`
-  is tracked although `.gitignore` lists it.
+- Public names kept on purpose: `get_2D_coords`, `bNC_update_attributes`
+  (registered handler) and `BNC_datastructs` (stored in .blend files).
+  Rename them only with a migration.
 
 ## 5. Blender API usage
 
@@ -336,6 +308,20 @@ Resolved on 2026-11-17 (section 1, and what it touched):
   dimension is found by `utils.animation_dim`, preferring the dims the grid
   was baked on. "Lock range", `grid_material` and the operator accept both
   node types (`TEXTURE_NODE_IDNAMES`).
+- **Section 4 cleanup.** The no-op `preferences.addons.get(...)` in
+  `blendernc/__init__.py` and the root `__main__` block (which registered
+  and unregistered at once) are gone. The panel path describes a datacube
+  file or pattern, not "Folder with assets blend files". `register` and
+  `unregister` return nothing. The Resolution node reads its dataset with
+  `get_dataset`. `find_common_name` uses snake_case and a `zip` over
+  consecutive names (same results), `name_match` lost its `pass` branch,
+  and `get_datacube_path` has a numpydoc docstring.
+  `is_single_input_linked` says what it does. `draw_var_and_coords`
+  counts the Coords outputs without building a list, and no longer fails
+  when the node is missing (was in section 2). The manifest asks for
+  Blender 5.2.0. The removed `addon_updater` is no longer excluded in
+  `.coveragerc`, `.pre-commit-config.yaml`, `.codeclimate.yml`, the lint
+  workflow or mocked in `docs/source/conf.py`.
 - **Dropped:** playing "Current frame" volumes without BlenderNC
   installed is not a supported setup.
 - `Material.use_nodes`, deprecated in Blender 5.2, is no longer set.

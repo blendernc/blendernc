@@ -252,7 +252,13 @@ def _queue_mismatched_links(node):
 
 
 def is_single_input_linked(update_function):
-    """Run an update only when the node has at least one linked input."""
+    """Sync the node's data item with its linked inputs, then run the update.
+
+    The data item takes the dataset and slicing of the linked inputs; with
+    no input linked, the inputs' values and the data item are cleared
+    instead. The update runs in both cases, and is skipped only while node
+    updates are disabled (see :func:`blendernc.node_utils.node_updates_enabled`).
+    """
 
     @wraps(update_function)
     def wrapper(self, *args, **kwargs):

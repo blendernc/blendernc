@@ -130,11 +130,6 @@ def register():
     Adds the frame-change and render handlers, registers every class in
     ``classes``, attaches the UI property group to ``bpy.types.Scene`` and
     extends the node editor "Add" menu.
-
-    Returns
-    -------
-    set
-        ``{"FINISHED"}`` once registration is complete.
     """
     logger.info("Registering handlers")
     register_handlers()
@@ -153,17 +148,10 @@ def register():
     bpy.types.NODE_MT_add.append(add_custom_node_to_menu)
     bpy.types.NODE_MT_shader_node_add_all.append(draw_shader_menu)
     enable_node_updates(True)
-    return {"FINISHED"}
 
 
 def unregister():
-    """Remove everything that :func:`register` added to Blender.
-
-    Returns
-    -------
-    set
-        ``{"FINISHED"}`` once every class, handler and menu entry is removed.
-    """
+    """Remove everything that :func:`register` added to Blender."""
     # Blender re-runs every node's update() while classes are unregistered;
     # at quit time Python's thread pools are already gone, so skip the work.
     enable_node_updates(False)
@@ -181,4 +169,3 @@ def unregister():
 
     bpy.types.NODE_MT_add.remove(add_custom_node_to_menu)
     bpy.types.NODE_MT_shader_node_add_all.remove(draw_shader_menu)
-    return {"FINISHED"}

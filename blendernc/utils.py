@@ -63,12 +63,20 @@ SURFACE_DIM_PATTERNS = (
 
 
 def get_datacube_path(directory, files):
-    """
-    Get the datacube path based on the provided directory and files.
+    """Return the path to load for the files picked in the file browser.
 
-    Parameters:
-        directory (str): The directory where the files are located.
-        files (list): A list of file names.
+    Parameters
+    ----------
+    directory : str
+        Folder holding the files.
+    files : bpy_prop_collection
+        Picked files, each with a ``name``.
+
+    Returns
+    -------
+    str
+        The file's path when one was picked, otherwise a glob pattern
+        matching all of them (see :func:`find_common_name`).
     """
     if len(files) == 1:
         datacube_path = os.path.join(directory, files[0].name)
@@ -284,8 +292,6 @@ def name_match(block, cfname, filename):
         if len(cfname) != 0 and len(cfname) != block.a:
             cfname += "*"
         cfname += filename[block.a : block.a + block.size]
-    elif cfname or block.a != block.b:
-        pass
     return cfname
 
 
@@ -311,21 +317,19 @@ def find_common_name(filenames):
     ValueError
         If the names share no wildcard-able pattern or differ in extension.
     """
-    cfname = []
-    fcounter = 0
-    while len(filenames) - 1 > fcounter:
-        S = difflib.SequenceMatcher(None, filenames[fcounter], filenames[fcounter + 1])
-        cname = ""
-        for block in S.get_matching_blocks():
-            cname = name_match(block, cname, filenames[fcounter])
-        cfname.append(cname)
-        fcounter += 1
-    commonName = min(cfname, key=len)
-    if "*" not in commonName:
+    patterns = []
+    for name, following in zip(filenames, filenames[1:]):
+        matcher = difflib.SequenceMatcher(None, name, following)
+        pattern = ""
+        for block in matcher.get_matching_blocks():
+            pattern = name_match(block, pattern, name)
+        patterns.append(pattern)
+    common_name = min(patterns, key=len)
+    if "*" not in common_name:
         raise ValueError("Filenames do not match")
-    if commonName[-1] == ".":
+    if common_name[-1] == ".":
         raise ValueError("Filenames formats do not match")
-    return commonName
+    return common_name
 
 
 # --------------------------------------------------------------------------

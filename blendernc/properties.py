@@ -33,7 +33,7 @@ class BlenderNC_UI_Properties(bpy.types.PropertyGroup):
 
     datacube_file: bpy.props.StringProperty(
         name="",
-        description="Folder with assets blend files",
+        description="Datacube file to import, or a glob pattern matching several",
         default="",
         maxlen=1024,
         update=create_datastruct,

@@ -39,11 +39,7 @@ def draw_var_and_coords(self, context):
 
     self.layout.label(text="Select coords:", icon="WORLD_DATA")
     coord_node = node_tree.nodes.get("Datacube Coords")
-    coords = [
-        (output_socket.name, output_socket.name, "", index)
-        for index, output_socket in enumerate(coord_node.outputs)
-    ]
-    expand = True if len(coords) <= 3 else False
+    expand = coord_node is not None and len(coord_node.outputs) <= 3
     split = self.layout.split(factor=0.05)
     row = split.row()
     row.label(text="X:")
