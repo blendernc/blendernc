@@ -36,7 +36,15 @@ def setup_wheels():
     """
     print("Exporting requirements from poetry...")
     result = run_command(
-        ["poetry", "export", "-f", "requirements.txt", "--output", "requirements.txt"]
+        [
+            "poetry",
+            "export",
+            "-f",
+            "requirements.txt",
+            "--output",
+            "requirements.txt",
+            "--without-hashes",
+        ]
     )
     if result.returncode != 0:
         print(f"Error exporting requirements: {result.stderr}")
@@ -73,10 +81,11 @@ def update_manifest_wheels():
 
     if not os.path.exists(manifest_file):
         print(f"{manifest_file} not found, setting up wheels first...")
-        setup_wheels()
         if not os.path.exists(manifest_file):
             print(f"Error: {manifest_file} still not found after wheel setup")
             sys.exit(1)
+
+    setup_wheels()
 
     # Read current manifest
     with open(manifest_file, "r", encoding="utf-8") as f:

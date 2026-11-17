@@ -9,8 +9,7 @@ website = "https://blendernc.readthedocs.io/"
 tags = [ "Animation", "Geometry Nodes", "Render",]
 blender_version_min = "5.2.0"
 license = [ "MIT License",]
-wheels = []
-platforms = [ "windows-x64", "macos-arm64", "linux-x64",]
+wheels = [ ]
 
 [build]
 paths_exclude_pattern = [ "__pycache__/", "/.*", "/docs/", "/tests/", "/release/", "/dist_ext/", "*.blend", "*.blend1", "*.zip", "/poetry.lock", "/pyproject.toml", "/requirements.txt", "/update_wheels.py", "/blendernc.code-workspace", "/improvements.md", "/potential_bugs.md", "/CHANGELOG.md",]
