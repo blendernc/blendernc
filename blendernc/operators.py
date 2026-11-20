@@ -1,26 +1,34 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from .decorators import check_if_node_tree_exists, is_linked
+from .core.dataset import get_datacube_path
+from .core.fields import GRID_DIMS_PROPERTY
+from .core.grid import (
+    extract_dimensions_of_grid,
+    get_2D_coords,
+    grid_dims,
+    stack_2D_coords,
+)
+from .decorators import is_linked
 from .messages import report_error, report_errors
-from .node_utils import UI_NODE_TREE, create_links, create_nodes
-from .shader_utils import texture_material, volume_material
-from .utils import (
-    GRID_DIMS_PROPERTY,
-    TEXTURE_NODE_IDNAMES,
+from .node_utils import (
+    UI_IMPORT_NODE,
+    UI_NODE_TREE,
     UI_TEXTURE_NODE,
+    create_links,
+    create_nodes,
+)
+from .shader_utils import texture_material, volume_material
+from .ui import use_import_node
+from .utils import (
+    TEXTURE_NODE_IDNAMES,
     add_attribute,
     assign_material,
     assign_modifier_to_object,
-    extract_dimensions_of_grid,
-    get_2D_coords,
-    get_datacube_path,
     get_dataset,
     get_grid_coords,
-    grid_dims,
     grid_material,
     look_up_object_and_mesh,
-    stack_2D_coords,
 )
 from .volume_utils import bake_volume
 
@@ -52,14 +60,16 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
     )
 
     @report_errors
-    @check_if_node_tree_exists
     def execute(self, context):
         """Store the chosen file path on the import node and load the dataset.
 
         Multiple selected files are collapsed into a single glob pattern.
+        The node is the one passed, or the import node of the 3D view
+        panel's tree when none is (see :func:`blendernc.ui.use_import_node`).
         Assigning the path to the node loads the dataset through the
-        property's update callback. When invoked from the 3D view, the path
-        is mirrored to the UI properties.
+        property's update callback. The panel's import node is only ever
+        given the panel's path, so for it the panel's path is set instead,
+        which passes it on.
 
         Parameters
         ----------
@@ -73,6 +83,7 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
             node is missing, the files share no pattern or the dataset cannot
             be opened.
         """
+        use_import_node(self, context)
         node_tree = bpy.data.node_groups.get(self.node_tree)
         import_node = node_tree.nodes.get(self.node_name) if node_tree else None
         if import_node is None:
@@ -81,14 +92,15 @@ class Import_OT_mfdataset(bpy.types.Operator, ImportHelper):
             )
 
         datacube_path = get_datacube_path(self.directory, self.files)
-        import_node.datacube_file = datacube_path
-        if get_dataset(import_node.BNC_datastructs[0]) is None:
-            return report_error(self, f"Could not open {datacube_path}.")
-
-        area = context.area
-        if not bpy.app.background and area is not None and area.type == "VIEW_3D":
+        if node_tree.name == UI_NODE_TREE and import_node.name == UI_IMPORT_NODE:
             context.scene.BlenderNC_UI_Properties.datacube_file = datacube_path
-
+        else:
+            import_node.datacube_file = datacube_path
+        datastruct = import_node.BNC_datastructs[0]
+        # A path the panel cannot match never reaches its import node, which
+        # then still holds the previous dataset.
+        if datastruct.datafile != datacube_path or get_dataset(datastruct) is None:
+            return report_error(self, f"Could not open {datacube_path}.")
         return {"FINISHED"}
 
 
@@ -144,7 +156,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         nodes = {
             "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
         }
-        create_nodes(grid_nodetree, nodes)
+        nodes = create_nodes(grid_nodetree, nodes)
         create_links(grid_nodetree, nodes)
         mesh_grid_node = nodes["GeometryNodeMeshGrid"]["node"]
         mesh_grid_node.inputs["Vertices X"].default_value = vertices_x
@@ -174,7 +186,7 @@ class Import_OT_CreateGrid(bpy.types.Operator):
                 "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
             },
         }
-        create_nodes(grid_nodetree, nodes)
+        nodes = create_nodes(grid_nodetree, nodes)
         create_links(grid_nodetree, nodes)
         named_attribute = nodes["GeometryNodeInputNamedAttribute"]["node"]
         named_attribute.data_type = "FLOAT_VECTOR"

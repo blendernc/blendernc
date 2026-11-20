@@ -36,8 +36,7 @@ def _new_colormap_group():
     group = bpy.data.node_groups.new(COLORMAP_GROUP, "ShaderNodeTree")
     group.interface.new_socket("Factor", in_out="INPUT", socket_type="NodeSocketFloat")
     group.interface.new_socket("Color", in_out="OUTPUT", socket_type="NodeSocketColor")
-    nodes = {key: dict(value) for key, value in _GROUP_NODES.items()}
-    create_nodes(group, nodes, [(-300, 0), (0, 0), (300, 0)])
+    nodes = create_nodes(group, _GROUP_NODES, [(-300, 0), (0, 0), (300, 0)])
     create_links(group, nodes)
     return group
 

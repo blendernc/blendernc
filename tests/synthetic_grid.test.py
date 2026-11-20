@@ -31,17 +31,14 @@ import xarray as xr
 from bpy_extras import anim_utils
 
 from blendernc.blendernc import register_handlers
+from blendernc.core.dataset import dataset_engine
+from blendernc.core.fields import GRID_DIMS_PROPERTY, RANGE_PROPERTIES
+from blendernc.core.grid import get_surface_dims
+from blendernc.core.slicing import MAX_VERTEX_SAMPLES
 from blendernc.decorators import flush_pending_unlinks
 from blendernc.handlers import bNC_update_attributes
 from blendernc.node_utils import create_blenderncnodetree
-from blendernc.utils import (
-    GRID_DIMS_PROPERTY,
-    MAX_VERTEX_SAMPLES,
-    RANGE_PROPERTIES,
-    dataset_engine,
-    get_dataset,
-    get_surface_dims,
-)
+from blendernc.utils import get_dataset
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
@@ -587,8 +584,8 @@ class TestSyntheticGrids(unittest.TestCase):
             bpy.data.objects.remove(empty)
 
     def test_enum_items_are_kept_alive(self):
-        """Enum callbacks keep their lists referenced; the panel copy is separate."""
-        from blendernc import utils
+        """Enum callbacks keep their lists referenced; the panel builds its own."""
+        from blendernc import ui, utils
 
         obj, dataset, var_name = self.build_pipeline("xy")
         variable = next(
@@ -602,7 +599,7 @@ class TestSyntheticGrids(unittest.TestCase):
             n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeCoords"
         )
         before = list(utils.get_possible_coordinates(coords, bpy.context))
-        utils.get_possible_coordinates_UI(None, bpy.context)  # edits its own copy
+        ui.get_possible_coordinates_UI(None, bpy.context)
         self.assertEqual(utils.get_possible_coordinates(coords, bpy.context), before)
 
     def build_resolution_texture_tree(self):

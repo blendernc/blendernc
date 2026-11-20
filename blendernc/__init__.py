@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from .blendernc import register as BNC_register
-from .blendernc import unregister as BNC_unregister
 
 ##############################################################################
 # .                                 IMPORTANT                                #
@@ -29,11 +27,19 @@ bl_info = {
 }
 
 
+# The add-on is imported when registered, not with the package, so that
+# ``blendernc.core`` can be imported, and unit-tested, without Blender.
+
+
 def register():
     """Register BlenderNC with Blender."""
-    BNC_register()
+    from .blendernc import register as bnc_register
+
+    bnc_register()
 
 
 def unregister():
     """Unregister BlenderNC from Blender."""
-    BNC_unregister()
+    from .blendernc import unregister as bnc_unregister
+
+    bnc_unregister()

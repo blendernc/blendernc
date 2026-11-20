@@ -17,7 +17,9 @@ Submodules
 .. toctree::
    :maxdepth: 2
 
+   blendernc.core
    blendernc.utils
+   blendernc.ui
    blendernc.blendernc
    blendernc.handlers
    blendernc.messages
