@@ -66,6 +66,17 @@ jobs:
         run: |
           python -m pip install toml
           python update_wheels.py
+          # --split-platforms needs `platforms` in the manifest, which tags
+          # up to v0.11.0 lack. Keep in sync with the wheel downloads above.
+          python - <<'EOF'
+          import toml
+          path = "blender_manifest.toml"
+          manifest = toml.load(path)
+          if "platforms" not in manifest:
+              manifest["platforms"] = ["windows-x64", "macos-arm64", "linux-x64"]
+              with open(path, "w", encoding="utf-8", newline="\n") as f:
+                  toml.dump(manifest, f)
+          EOF
 
       - name: Build per-platform zips with Blender
         run: |
