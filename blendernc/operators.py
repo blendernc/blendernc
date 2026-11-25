@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
@@ -9,6 +11,7 @@ from .core.grid import (
     grid_dims,
     stack_2D_coords,
 )
+from .core.points import scattered_mesh
 from .decorators import is_linked
 from .messages import report_error, report_errors
 from .node_utils import (
@@ -24,7 +27,7 @@ from .utils import (
     TEXTURE_NODE_IDNAMES,
     add_attribute,
     assign_material,
-    assign_modifier_to_object,
+    build_triangle_mesh,
     get_dataset,
     get_grid_coords,
     grid_material,
@@ -118,14 +121,15 @@ class Import_OT_CreateGrid(bpy.types.Operator):
     @report_errors
     @is_linked
     def execute(self, context):
-        """Bake a mesh grid from the coordinates linked to a grid node.
+        """Bake a mesh from the coordinates linked to a grid node.
 
-        A Mesh Grid geometry node sized from the coordinate dimensions is applied
-        to the target object, the 2-D coordinate arrays are written to a
-        ``Coordinates`` vector attribute, and a second geometry node modifier
-        moves the vertices to those positions before removing the attribute.
-        Finally the grid node is updated so its ``Object`` output exists and
-        downstream texture nodes are rewritten for the new mesh.
+        Coordinates over two dimensions give a grid (see
+        :func:`_bake_mesh_grid`); X and Y over one shared dimension, such as
+        the ``lon(ncells)`` and ``lat(ncells)`` of an unstructured model,
+        give one vertex per point joined in triangles (see
+        :func:`_bake_points`). Finally the grid node is updated so its
+        ``Object`` output exists and downstream texture nodes are rewritten
+        for the new mesh.
 
         Parameters
         ----------
@@ -136,58 +140,76 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         -------
         set
             ``{"FINISHED"}``, or ``{"CANCELLED"}`` with a report if no input
-            is linked or the coordinates cannot form a grid.
+            is linked or the coordinates cannot form a mesh.
         """
 
         node_tree = bpy.data.node_groups.get(self.node_tree)
         grid_node = node_tree.nodes.get(self.node_name)
 
-        # Work out the vertex layout before touching Blender data, so a
-        # dataset that cannot form a grid is reported without side effects.
         grid_coords = get_grid_coords(grid_node)
         dims = grid_dims(grid_coords)
-        grid_coords = get_2D_coords(grid_coords)
-        vertices_x, vertices_y = extract_dimensions_of_grid(grid_coords)
-        flattened_coords = stack_2D_coords(grid_coords)
+        if dims and len(dims) == 1:
+            obj, mesh = _bake_points(grid_node, grid_coords, dims[0])
+        else:
+            obj, mesh = _bake_mesh_grid(context, grid_node, grid_coords)
+        _record_bake(grid_node, obj, mesh, dims)
+        return {"FINISHED"}
 
-        obj, mesh = look_up_object_and_mesh(grid_node.grid_obj_name)
 
-        modifier, grid_nodetree = assign_modifier_to_object(obj, obj.name)
-        nodes = {
-            "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
-        }
-        nodes = create_nodes(grid_nodetree, nodes)
-        create_links(grid_nodetree, nodes)
+def _bake_points(grid_node, grid_coords, dim):
+    """Bake one vertex per point along ``dim``, joined in triangles.
+
+    The triangles are worked out before touching Blender data, so points
+    that cannot be triangulated are reported without side effects.
+
+    Returns
+    -------
+    tuple
+        ``(object, mesh)`` of the grid.
+    """
+    positions, triangles = scattered_mesh(grid_coords, dim, grid_node.max_edge)
+    obj, mesh = look_up_object_and_mesh(grid_node.grid_obj_name)
+    build_triangle_mesh(mesh, positions, triangles)
+    assign_material(mesh, grid_material(grid_node))
+    return obj, mesh
+
+
+def _bake_mesh_grid(context, grid_node, grid_coords):
+    """Bake a Mesh Grid moved onto the 2-D coordinate arrays.
+
+    A Mesh Grid geometry node sized from the coordinate dimensions is applied
+    to the target object, the 2-D coordinate arrays are written to a
+    ``Coordinates`` vector attribute, and a second geometry node modifier
+    moves the vertices to those positions before removing the attribute.
+    Both node groups only live for the bake (see
+    :func:`_applied_geometry_nodes`).
+
+    Returns
+    -------
+    tuple
+        ``(object, mesh)`` of the grid.
+    """
+    # Work out the vertex layout before touching Blender data, so a
+    # dataset that cannot form a grid is reported without side effects.
+    grid_coords = get_2D_coords(grid_coords)
+    vertices_x, vertices_y = extract_dimensions_of_grid(grid_coords)
+    flattened_coords = stack_2D_coords(grid_coords)
+
+    obj, mesh = look_up_object_and_mesh(grid_node.grid_obj_name)
+
+    with _applied_geometry_nodes(context, obj, "BlenderNC Mesh Grid") as tree:
+        nodes = create_nodes(tree, MESH_GRID_NODES)
+        create_links(tree, nodes)
         mesh_grid_node = nodes["GeometryNodeMeshGrid"]["node"]
         mesh_grid_node.inputs["Vertices X"].default_value = vertices_x
         mesh_grid_node.inputs["Vertices Y"].default_value = vertices_y
-        _apply_modifier(context, obj, modifier)
 
-        attr = add_attribute(
-            mesh, "Coordinates", attr_type="FLOAT_VECTOR", domain="POINT"
-        )
-        attr.data.foreach_set("vector", flattened_coords)
+    attr = add_attribute(mesh, "Coordinates", attr_type="FLOAT_VECTOR", domain="POINT")
+    attr.data.foreach_set("vector", flattened_coords)
 
-        modifier, grid_nodetree = assign_modifier_to_object(obj, "apply_grid_coords")
-        nodes = {
-            "NodeGroupInput": {
-                "links": {"Geometry": {"GeometryNodeSetPosition": "Geometry"}}
-            },
-            "GeometryNodeInputNamedAttribute": {
-                "links": {"Attribute": {"GeometryNodeSetPosition": "Position"}}
-            },
-            "GeometryNodeSetPosition": {
-                "links": {"Geometry": {"GeometryNodeRemoveAttribute": "Geometry"}}
-            },
-            "GeometryNodeRemoveAttribute": {
-                "links": {"Geometry": {"GeometryNodeSetMaterial": "Geometry"}}
-            },
-            "GeometryNodeSetMaterial": {
-                "links": {"Geometry": {"NodeGroupOutput": "Geometry"}}
-            },
-        }
-        nodes = create_nodes(grid_nodetree, nodes)
-        create_links(grid_nodetree, nodes)
+    with _applied_geometry_nodes(context, obj, "BlenderNC Grid Coords") as tree:
+        nodes = create_nodes(tree, GRID_COORDS_NODES)
+        create_links(tree, nodes)
         named_attribute = nodes["GeometryNodeInputNamedAttribute"]["node"]
         named_attribute.data_type = "FLOAT_VECTOR"
         named_attribute.inputs["Name"].default_value = "Coordinates"
@@ -195,22 +217,78 @@ class Import_OT_CreateGrid(bpy.types.Operator):
         remove_attribute.inputs["Name"].default_value = "Coordinates"
         set_material = nodes["GeometryNodeSetMaterial"]["node"]
         set_material.inputs["Material"].default_value = grid_material(grid_node)
-        _apply_modifier(context, obj, modifier)
+    return obj, mesh
 
-        # Texture nodes read the dims to orient fields the same way.
-        if dims:
-            mesh[GRID_DIMS_PROPERTY] = ",".join(dims)
-        else:
-            mesh.pop(GRID_DIMS_PROPERTY, None)
 
-        # Remember what was baked so the node can tell when it is stale, then
-        # let it expose the object and refresh the nodes reading from it.
-        grid_node.baked_object = obj.name
-        grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
-        grid_node.baked_coords = grid_node.coords_signature()
-        grid_node.update()
+# Geometry nodes of the two modifiers :func:`_bake_mesh_grid` applies, in
+# the format of :func:`blendernc.node_utils.create_nodes`.
+MESH_GRID_NODES = {
+    "GeometryNodeMeshGrid": {"links": {"Mesh": {"NodeGroupOutput": "Geometry"}}}
+}
 
-        return {"FINISHED"}
+
+GRID_COORDS_NODES = {
+    "NodeGroupInput": {"links": {"Geometry": {"GeometryNodeSetPosition": "Geometry"}}},
+    "GeometryNodeInputNamedAttribute": {
+        "links": {"Attribute": {"GeometryNodeSetPosition": "Position"}}
+    },
+    "GeometryNodeSetPosition": {
+        "links": {"Geometry": {"GeometryNodeRemoveAttribute": "Geometry"}}
+    },
+    "GeometryNodeRemoveAttribute": {
+        "links": {"Geometry": {"GeometryNodeSetMaterial": "Geometry"}}
+    },
+    "GeometryNodeSetMaterial": {"links": {"Geometry": {"NodeGroupOutput": "Geometry"}}},
+}
+
+
+@contextmanager
+def _applied_geometry_nodes(context, obj, name):
+    """Yield a new geometry node group run by a modifier of ``obj``, then apply it.
+
+    The group and the modifier are made for this bake alone and removed
+    afterwards, also when building or applying them fails. The file then
+    keeps no node group per grid, and node groups of the user's are never
+    reused or deleted, whatever their names.
+
+    Parameters
+    ----------
+    context : bpy.types.Context
+        Current Blender context.
+    obj : bpy.types.Object
+        Object receiving the modifier.
+    name : str
+        Name of the node group; Blender adds a suffix when it is taken.
+    """
+    tree = bpy.data.node_groups.new(name, "GeometryNodeTree")
+    modifier = obj.modifiers.new(name=tree.name, type="NODES")
+    modifier.node_group = tree
+    modifier_name = modifier.name  # applying frees the modifier
+    try:
+        yield tree
+        _apply_modifier(context, obj, modifier_name)
+    finally:
+        leftover = obj.modifiers.get(modifier_name)
+        if leftover is not None:
+            obj.modifiers.remove(leftover)
+        bpy.data.node_groups.remove(tree)
+
+
+def _record_bake(grid_node, obj, mesh, dims):
+    """Remember what was baked, then let the node expose the object.
+
+    The dims are stored on the mesh for the texture nodes, which read them
+    to orient fields the same way; the node keeps the object, slicing and
+    coordinates so it can tell when the mesh is stale.
+    """
+    if dims:
+        mesh[GRID_DIMS_PROPERTY] = ",".join(dims)
+    else:
+        mesh.pop(GRID_DIMS_PROPERTY, None)
+    grid_node.baked_object = obj.name
+    grid_node.baked_slicing = grid_node.BNC_datastructs[0].slicing
+    grid_node.baked_coords = grid_node.coords_signature()
+    grid_node.update()
 
 
 class Import_OT_CreateVolume(bpy.types.Operator):
@@ -279,10 +357,10 @@ class Import_OT_CreateVolume(bpy.types.Operator):
                 report_error(self, line.replace("\n", " "), level)
 
 
-def _apply_modifier(context, obj, modifier):
-    """Apply ``modifier`` on ``obj`` without changing the active object."""
+def _apply_modifier(context, obj, modifier_name):
+    """Apply the named modifier on ``obj`` without changing the active object."""
     with context.temp_override(object=obj, active_object=obj):
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        bpy.ops.object.modifier_apply(modifier=modifier_name)
 
 
 class BlenderNCBakeFromAttribute(bpy.types.Operator):

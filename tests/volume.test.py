@@ -12,6 +12,8 @@ Four datasets are generated on the fly with a random-noise variable:
 Variants of ``(X, Y, Z)`` check the placement: a descending, an unevenly
 spaced and a curvilinear horizontal axis, 2-D coordinates that are in fact
 rectilinear, a depth axis marked ``positive = "down"`` and uneven levels.
+A ``(time, Z, ncells)`` variable located by ``lon(ncells)`` and
+``lat(ncells)``, scattered points, is refused: voxels need a regular grid.
 A copy of ``(X, Y, Z)`` with a second variable checks that changing the
 variable only refreshes the values. Whatever the bake, a volume the user
 moved, rotated or scaled keeps that transform on top of its placement.
@@ -88,6 +90,22 @@ def make_xyz_variant(
     return dataset
 
 
+def make_scattered_dataset(path, cells=50):
+    """Write a ``(time, Z, ncells)`` noise variable at scattered lon/lat."""
+    rng = np.random.default_rng(5)
+    dataset = xr.Dataset(
+        {VARIABLE: (("time", "Z", "ncells"), rng.standard_normal((NT, NZ, cells)))},
+        coords={
+            "time": ("time", np.arange(float(NT))),
+            "Z": ("Z", Z_VALUES),
+            "lon": ("ncells", rng.uniform(-180.0, 180.0, cells)),
+            "lat": ("ncells", rng.uniform(-80.0, 80.0, cells)),
+        },
+    )
+    dataset.to_netcdf(path)
+    return dataset
+
+
 def rotated_grid():
     """Longitude and latitude of a grid rotated by ``ANGLE``, unit spacing."""
     j, i = np.meshgrid(np.arange(NY), np.arange(NX), indexing="ij")
@@ -135,6 +153,9 @@ class TestDatacubeVolume(unittest.TestCase):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_xyz_variant(path, **kwargs)
             cls.files[key] = path
+        path = os.path.join(cls.tmpdir, "cells.nc")
+        cls.datasets["cells"] = make_scattered_dataset(path)
+        cls.files["cells"] = path
         path = os.path.join(cls.tmpdir, "two_vars.nc")
         xyz = cls.datasets["xyz"]
         cls.datasets["two_vars"] = xyz.assign({OTHER: 5.0 - 2.0 * xyz[VARIABLE]})
@@ -675,6 +696,16 @@ class TestDatacubeVolume(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.bake()
         self.assertIn("Datacube Texture", self.node.message)
+        self.assertNotIn(self.obj_name, bpy.data.objects)
+        self.assertEqual(self.vdb_files(), [])
+
+    def test_scattered_points_refused(self):
+        """lon/lat(ncells) give no regular grid; the Grid node is suggested."""
+        self.build("cells")
+        with self.assertRaises(RuntimeError):
+            self.bake()
+        self.assertIn("ncells holds scattered points", self.node.message)
+        self.assertIn("Datacube Grid", self.node.message)
         self.assertNotIn(self.obj_name, bpy.data.objects)
         self.assertEqual(self.vdb_files(), [])
 

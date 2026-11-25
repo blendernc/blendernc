@@ -7,6 +7,7 @@ import numpy as np
 from .core.dataset import variable_names
 from .core.fields import animation_frame, field_to_point_values, mesh_grid_dims
 from .core.grid import get_surface_dims
+from .core.points import DEFAULT_MAX_EDGE
 from .core.slicing import (
     SLICING_ANY_VARIABLE,
     clamp_index_range,
@@ -289,8 +290,20 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
             output.default_value = selected
 
 
+def _rebake_grid(node, context):
+    """Bake the grid again with the new setting, once it has been baked."""
+    if node._baked() is not None:
+        node.bake()
+
+
 class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     """Node that bakes a mesh from coordinates linked to its X, Y and Z inputs.
+
+    Coordinates over two dimensions give a grid; X and Y over one shared
+    dimension, such as the ``lon(ncells)`` and ``lat(ncells)`` of an
+    unstructured model, give one vertex per point joined in triangles,
+    dropping those longer than ``max_edge`` times the local spacing (see
+    :mod:`blendernc.core.points`).
 
     The resulting object is exposed through an ``"Object"`` output socket.
     The slicing in force combines the records of every linked input (see
@@ -317,6 +330,18 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     baked_coords: bpy.props.StringProperty(
         description="Coordinates linked to X, Y and Z when the grid was last baked",
     )
+    max_edge: bpy.props.FloatProperty(
+        name="Max Edge",
+        description=(
+            "Scattered points only: drop triangles whose longest edge is more "
+            "than this many times the spacing of the points around them, such "
+            "as those bridging land. 0 keeps every triangle"
+        ),
+        default=DEFAULT_MAX_EDGE,
+        min=0.0,
+        soft_max=10.0,
+        update=_rebake_grid,
+    )
 
     @initialize_BNC_datastructs
     def init(self, context):
@@ -328,8 +353,10 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
             socket.hide_value = True
 
     def draw_buttons(self, context, layout):
-        """Draw the object name field and the "Bake Grid" button."""
+        """Draw the object name, "Max Edge" for scattered points, "Bake Grid"."""
         layout.prop(self, "grid_obj_name", text="")
+        if self.scattered_dim():
+            layout.prop(self, "max_edge")
         op = layout.operator("blendernc.create_grid_from_coords", text="Bake Grid")
         op.node_name = self.name
         op.node_tree = self.id_data.name
@@ -343,6 +370,25 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
         (:func:`blendernc.utils.merge_slicings`).
         """
         return merge_slicings(slicings)
+
+    def scattered_dim(self):
+        """The dimension linked X and Y share as 1-D coordinates, or ``""``."""
+        dataset = get_dataset(self.BNC_datastructs[0]) if self.BNC_datastructs else None
+        names = [socket.default_value for socket in self.inputs[:2] if socket.is_linked]
+        if dataset is None or len(names) < 2 or not all(n in dataset for n in names):
+            return ""
+        dims = {dataset[name].dims for name in names}
+        shared = dims.pop() if len(dims) == 1 else ()
+        return shared[0] if len(shared) == 1 else ""
+
+    def bake(self):
+        """Run the bake operator; a failure is already reported and logged."""
+        try:
+            bpy.ops.blendernc.create_grid_from_coords(
+                node_name=self.name, node_tree=self.id_data.name
+            )
+        except RuntimeError:
+            pass
 
     def _baked(self):
         """The object this node baked last, or ``None``."""
@@ -376,12 +422,7 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
         """Expose the baked object, rebaking first when the slicing changed."""
         if self.is_stale():
             # The operator records the new slicing and calls update() again.
-            try:
-                bpy.ops.blendernc.create_grid_from_coords(
-                    node_name=self.name, node_tree=self.id_data.name
-                )
-            except RuntimeError:
-                pass  # already reported and logged by the operator
+            self.bake()
             return
         obj = bpy.data.objects.get(self.grid_obj_name)
         if obj is None:
@@ -815,7 +856,10 @@ class PointTextureNode(bNCNodeDefault):
 
 
 class DatacubeAnimateTexture(bpy.types.Node, PointTextureNode):
-    """Node that animates a 3-D variable as a point attribute on a mesh.
+    """Node that animates a variable as a point attribute on a mesh.
+
+    The variable has one dimension more than the grid: 3-D over a grid, 2-D
+    over scattered points.
 
     The dimension that does not span the mesh is spread over frames, one
     step per frame. Like :class:`DatacubeTexture`, the node writes the
@@ -833,7 +877,7 @@ class DatacubeAnimateTexture(bpy.types.Node, PointTextureNode):
     bl_icon = "EXPERIMENTAL"
 
     def _point_values(self, obj, variable):
-        """The frame shown of the 3-D variable, or why it cannot be animated."""
+        """The frame shown of the variable, or why it cannot be animated."""
         datastruct = self.BNC_datastructs[0]
         data, dim, message = animated_field(datastruct, obj, variable)
         if data is None:
@@ -871,7 +915,10 @@ class DatacubeAnimateTexture(bpy.types.Node, PointTextureNode):
 
 
 class DatacubeTexture(bpy.types.Node, PointTextureNode):
-    """Node that writes a 2-D variable onto an object as a point attribute.
+    """Node that writes a variable onto an object as a point attribute.
+
+    The variable spans the dimensions of the grid: 2-D over a grid, 1-D
+    over scattered points.
 
     The counterpart of :class:`DatacubeAnimateTexture` for fields without an
     extra dimension: the attribute is written once, whenever the node
@@ -885,7 +932,7 @@ class DatacubeTexture(bpy.types.Node, PointTextureNode):
     bl_icon = "EXPERIMENTAL"
 
     def _point_values(self, obj, variable):
-        """The 2-D variable, or why it cannot be written onto ``obj``."""
+        """The variable, or why it cannot be written onto ``obj``."""
         data, message = texture_field(self.BNC_datastructs[0], obj, variable)
         if data is None:
             return None, message

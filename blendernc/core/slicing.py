@@ -37,10 +37,14 @@ def suggested_stride(sizes):
     Returns
     -------
     int
-        ``ceil(min(sizes) / MAX_VERTEX_SAMPLES)``, at least 1.
+        ``ceil(min(sizes) / MAX_VERTEX_SAMPLES)``, at least 1. A single
+        surface dimension, such as the ``ncells`` of scattered points, holds
+        the whole surface, so its budget is ``MAX_VERTEX_SAMPLES ** 2``.
     """
     if not sizes:
         return 1
+    if len(sizes) == 1:
+        return max(1, ceil(sizes[0] / MAX_VERTEX_SAMPLES**2))
     return max(1, ceil(min(sizes) / MAX_VERTEX_SAMPLES))
 
 

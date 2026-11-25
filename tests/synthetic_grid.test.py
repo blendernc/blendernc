@@ -23,6 +23,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from math import ceil
 from types import SimpleNamespace
 
 import bpy
@@ -34,6 +35,7 @@ from blendernc.blendernc import register_handlers
 from blendernc.core.dataset import dataset_engine
 from blendernc.core.fields import GRID_DIMS_PROPERTY, RANGE_PROPERTIES
 from blendernc.core.grid import get_surface_dims
+from blendernc.core.points import DEFAULT_MAX_EDGE
 from blendernc.core.slicing import MAX_VERTEX_SAMPLES
 from blendernc.decorators import flush_pending_unlinks
 from blendernc.handlers import bNC_update_attributes
@@ -42,6 +44,13 @@ from blendernc.utils import get_dataset
 
 NX, NY, NZ, NT = 12, 8, 4, 5
 VARIABLE = "noise"
+
+# Scattered points of the unstructured dataset, before the land box is cut.
+NCELLS = 3000
+
+# (lon_min, lon_max, lat_min, lat_max) of a box holding no point of the
+# unstructured dataset: triangles over it bridge "land".
+LAND = (-20.0, 40.0, -30.0, 60.0)
 
 
 # --------------------------------------------------------------------------
@@ -67,6 +76,48 @@ def make_dataset(path, with_time=False, with_level=False, seed=0):
         dims.insert(0, "time")
         shape.insert(0, NT)
     dataset = xr.Dataset({VARIABLE: (dims, rng.standard_normal(shape))}, coords=coords)
+    dataset.to_netcdf(path)
+    return dataset
+
+
+def in_land(lon, lat, margin=0.0):
+    """Mask of the points inside ``LAND`` shrunk by ``margin`` degrees."""
+    west, east, south, north = LAND
+    return (
+        (lon > west + margin)
+        & (lon < east - margin)
+        & (lat > south + margin)
+        & (lat < north - margin)
+    )
+
+
+def make_scattered_dataset(path):
+    """Write a FESOM-like ``(time, depth, ncells)`` variable; return it.
+
+    The points are spread evenly over the sphere, as an unstructured ocean
+    model's are, with ``LAND`` left empty, and located by ``lon(ncells)``
+    and ``lat(ncells)``, which the variable names in its ``coordinates``.
+    """
+    i = np.arange(NCELLS) + 0.5
+    lat = np.degrees(np.arcsin(1 - 2 * i / NCELLS))
+    lon = (np.degrees(np.pi * (1 + 5**0.5) * i) % 360.0) - 180.0
+    ocean = ~in_land(lon, lat)
+    rng = np.random.default_rng(4)
+    start = np.datetime64("2000-01-01")
+    dataset = xr.Dataset(
+        {
+            VARIABLE: (
+                ("time", "depth", "ncells"),
+                rng.standard_normal((NT, NZ, int(ocean.sum()))),
+            )
+        },
+        coords={
+            "time": ("time", start + np.arange(NT).astype("timedelta64[D]")),
+            "depth": ("depth", np.linspace(5.0, 300.0, NZ)),
+            "lon": ("ncells", lon[ocean], {"units": "degrees_east"}),
+            "lat": ("ncells", lat[ocean], {"units": "degrees_north"}),
+        },
+    )
     dataset.to_netcdf(path)
     return dataset
 
@@ -141,6 +192,17 @@ def point_attribute(obj, name):
     return values
 
 
+def mesh_triangles(obj):
+    """Vertex indices of the faces of a triangle mesh as an ``(m, 3)`` array."""
+    mesh = obj.data
+    sizes = np.empty(len(mesh.polygons), dtype=np.int32)
+    mesh.polygons.foreach_get("loop_total", sizes)
+    assert np.all(sizes == 3), "the mesh has faces that are not triangles"
+    corners = np.empty(len(mesh.loops), dtype=np.int32)
+    mesh.loops.foreach_get("vertex_index", corners)
+    return corners.reshape(-1, 3)
+
+
 def edge_steps(obj):
     """Absolute ``(dx, dy)`` of every edge of a mesh object."""
     positions = vertex_positions(obj)
@@ -173,6 +235,8 @@ class TestSyntheticGrids(unittest.TestCase):
             path = f"{cls.tmpdir}/{key}.nc"
             cls.datasets[key] = make_dataset(path, with_time, with_level)
             cls.files[key] = path
+        cls.files["cells"] = f"{cls.tmpdir}/cells.nc"
+        cls.datasets["cells"] = make_scattered_dataset(cls.files["cells"])
 
     @classmethod
     def tearDownClass(cls):
@@ -697,24 +761,45 @@ class TestSyntheticGrids(unittest.TestCase):
             settings.lock_range = False
 
     def test_grid_material_follows_linked_texture(self):
-        """Set Material gets the material named after the linked texture's variable."""
+        """A bake gives the grid the material named after the texture's variable."""
         obj, dataset, var_name = self.build_pipeline("xy", texture=True)
         grid = next(n for n in self.tree.nodes if n.bl_idname == "BlenderNCNodeGrid")
-        set_material = bpy.data.node_groups["apply_grid_coords"].nodes["Set Material"]
         rebake = {"node_name": grid.name, "node_tree": self.tree.name}
 
         bpy.ops.blendernc.create_grid_from_coords(**rebake)
-        self.assertIsNone(set_material.inputs["Material"].default_value)
+        self.assertEqual([m for m in obj.data.materials if m is not None], [])
 
         material = bpy.data.materials.new(var_name)
         try:
             bpy.ops.blendernc.create_grid_from_coords(**rebake)
-            self.assertIs(set_material.inputs["Material"].default_value, material)
             self.assertIn(material, list(obj.data.materials))
             used = {p.material_index for p in obj.data.polygons}
             self.assertEqual({obj.data.materials[i] for i in used}, {material})
         finally:
             bpy.data.materials.remove(material)
+
+    def test_bake_leaves_no_node_groups(self):
+        """The bake's geometry node groups go; groups of the user's stay as they are."""
+        users = {}
+        for name in (self.grid_name, "apply_grid_coords", "BlenderNC Mesh Grid"):
+            users[name] = bpy.data.node_groups.new(name, "GeometryNodeTree")
+            users[name].nodes.new("NodeGroupInput")
+        try:
+            before = set(bpy.data.node_groups.keys())
+            obj, _, _ = self.build_pipeline("xy")
+            bpy.ops.blendernc.create_grid_from_coords(
+                node_name=self.tree.nodes["Datacube Grid"].name,
+                node_tree=self.tree.name,
+            )
+            self.assertEqual(set(bpy.data.node_groups.keys()), before)
+            self.assertEqual(len(obj.modifiers), 0)
+            self.assertEqual(len(obj.data.vertices), NX * NY)
+            for name, group in users.items():
+                self.assertEqual(group.name, name)
+                self.assertEqual([n.bl_idname for n in group.nodes], ["NodeGroupInput"])
+        finally:
+            for group in users.values():
+                bpy.data.node_groups.remove(group)
 
     def test_apply_material_from_texture_node(self):
         """The node's Apply Material colours its object and reuses the slot."""
@@ -858,6 +943,140 @@ class TestSyntheticGrids(unittest.TestCase):
         resolution.step = 5
         records = [r for r in resolution.BNC_datastructs[0].slicing.split(",") if r]
         self.assertEqual(sorted(records), ["*|X|0::5", "*|Y|0::5"])
+
+    # -- scattered points (unstructured grids) ------------------------------
+
+    def build_scattered_tree(self, selects=(), animate=False, step=None):
+        """Bake lon/lat(ncells) and link the variable to a texture node.
+
+        Import (-> Resolution with ``step``) -> Coords, Variable; the
+        variable goes through one Select node per ``(dim, index)`` in
+        ``selects`` to a Datacube Texture, or Animate Texture, node kept as
+        ``self.texture_node``. The grid node is kept as ``self.grid_node``.
+        """
+        tree = self.tree
+        datacube = "xarray datacube"
+        import_node = tree.nodes.new("BlenderNCNodeImport")
+        import_node.datacube_file = self.files["cells"]
+        source = import_node.outputs[datacube]
+        if step:
+            resolution = tree.nodes.new("BlenderNCNodeResolution")
+            resolution.suggested_step = False
+            resolution.step = step
+            tree.links.new(source, resolution.inputs[datacube])
+            source = resolution.outputs[datacube]
+        coords = tree.nodes.new("BlenderNCNodeCoords")
+        variable = tree.nodes.new("BlenderNCNodeVariable")
+        tree.links.new(source, coords.inputs[datacube])
+        tree.links.new(source, variable.inputs[datacube])
+        variable.datacube_vars = VARIABLE
+        field = variable.outputs[VARIABLE]
+        for dim, index in selects:
+            select = tree.nodes.new("BlenderNCNodeSelect")
+            tree.links.new(field, select.inputs["Variable"])
+            select.datacube_coords = dim
+            select.index = index
+            field = select.outputs["Variable"]
+
+        grid = self.grid_node = tree.nodes.new("BlenderNCNodeGrid")
+        tree.links.new(coords.outputs["lon"], grid.inputs["X"])
+        tree.links.new(coords.outputs["lat"], grid.inputs["Y"])
+        grid.grid_obj_name = self.grid_name
+        bpy.ops.blendernc.create_grid_from_coords(
+            node_name=grid.name, node_tree=tree.name
+        )
+        obj = bpy.data.objects[self.grid_name]
+
+        idname = "BlenderNCNodeAnimateTexture" if animate else "BlenderNCNodeTexture"
+        texture = self.texture_node = tree.nodes.new(idname)
+        tree.links.new(grid.outputs["Object"], texture.inputs["Object"])
+        tree.links.new(field, texture.inputs["Variable"])
+        return obj
+
+    def test_scattered_points_bake_a_triangle_mesh(self):
+        """lon/lat(ncells): vertex i at point i, triangles over the ocean only."""
+        obj = self.build_scattered_tree(selects=(("time", 1), ("depth", 2)))
+        dataset = self.datasets["cells"]
+        lon, lat = dataset["lon"].values, dataset["lat"].values
+        self.assertEqual(self.grid_node.scattered_dim(), "ncells")
+        self.assertEqual(obj.data[GRID_DIMS_PROPERTY], "ncells")
+        self.assertEqual(len(obj.data.vertices), lon.size)
+        np.testing.assert_allclose(
+            vertex_positions(obj),
+            np.column_stack([lon, lat, np.zeros_like(lon)]),
+            atol=1e-4,
+        )
+
+        triangles = mesh_triangles(obj)
+        self.assertGreater(len(triangles), 1.8 * lon.size)
+        centroids = lon[triangles].mean(axis=1), lat[triangles].mean(axis=1)
+        self.assertFalse(in_land(*centroids, margin=6.0).any(), "a face bridges land")
+        self.assertLessEqual(np.ptp(lon[triangles], axis=1).max(), 180.0)
+        normals = np.empty(len(obj.data.polygons) * 3)
+        obj.data.polygons.foreach_get("normal", normals)
+        self.assertTrue(np.all(normals[2::3] > 0), "a face points down")
+
+        # The 1-D field lands on the vertices in cell order.
+        self.assertEqual(self.texture_node.message, "")
+        np.testing.assert_allclose(
+            point_attribute(obj, VARIABLE),
+            dataset[VARIABLE].isel(time=1, depth=2).values,
+            rtol=1e-6,
+            atol=1e-6,
+        )
+
+    def test_scattered_points_animate_over_time(self):
+        """(time, ncells) after a depth Select animates one step per frame."""
+        obj = self.build_scattered_tree(selects=(("depth", 0),), animate=True)
+        self.assertEqual(self.texture_node.message, "")
+        field = self.datasets["cells"][VARIABLE].isel(depth=0)
+        scene = bpy.context.scene
+        try:
+            for frame in (0, NT - 1):
+                scene.frame_set(frame)
+                bNC_update_attributes(scene)
+                np.testing.assert_allclose(
+                    point_attribute(obj, VARIABLE),
+                    field.isel(time=frame).values,
+                    rtol=1e-6,
+                    atol=1e-6,
+                )
+        finally:
+            scene.frame_set(0)
+
+    def test_scattered_points_texture_refuses_extra_dims(self):
+        """(time, depth, ncells) on scattered points asks for a Select node."""
+        obj = self.build_scattered_tree()
+        self.assertIn("Datacube Select", self.texture_node.message)
+        self.assertNotIn(VARIABLE, obj.data.attributes)
+
+    def test_scattered_points_resolution_strides_cells(self):
+        """The Resolution node keeps every n-th point and its value."""
+        step = 3
+        obj = self.build_scattered_tree(selects=(("time", 0), ("depth", 0)), step=step)
+        dataset = self.datasets["cells"]
+        self.assertEqual(len(obj.data.vertices), ceil(dataset.sizes["ncells"] / step))
+        np.testing.assert_allclose(
+            vertex_positions(obj)[:, 0], dataset["lon"].values[::step], atol=1e-4
+        )
+        self.assertEqual(self.texture_node.message, "")
+        np.testing.assert_allclose(
+            point_attribute(obj, VARIABLE),
+            dataset[VARIABLE].isel(time=0, depth=0, ncells=slice(None, None, step)),
+            rtol=1e-6,
+            atol=1e-6,
+        )
+
+    def test_scattered_points_max_edge_rebakes(self):
+        """Max Edge rebakes a baked grid; 0 keeps the triangles over land."""
+        obj = self.build_scattered_tree(selects=(("time", 0), ("depth", 0)))
+        filtered = len(obj.data.polygons)
+        self.grid_node.max_edge = 0.0
+        self.assertGreater(len(obj.data.polygons), filtered)
+        self.assertEqual(self.texture_node.message, "")
+        self.assertIn(VARIABLE, obj.data.attributes)  # rewritten on the new mesh
+        self.grid_node.max_edge = DEFAULT_MAX_EDGE
+        self.assertEqual(len(obj.data.polygons), filtered)
 
 
 suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestSyntheticGrids)

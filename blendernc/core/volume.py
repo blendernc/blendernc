@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .grid import get_surface_dims
+from .grid import LATITUDE_UNITS, LONGITUDE_UNITS, get_surface_dims, unstructured_dims
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +52,10 @@ _X_STANDARD_NAMES = {"longitude", "grid_longitude", "projection_x_coordinate"}
 _Y_STANDARD_NAMES = {"latitude", "grid_latitude", "projection_y_coordinate"}
 
 
-_X_UNITS = {"degrees_east", "degree_east", "degrees_e", "degree_e"}
+_X_UNITS = LONGITUDE_UNITS
 
 
-_Y_UNITS = {"degrees_north", "degree_north", "degrees_n", "degree_n"}
+_Y_UNITS = LATITUDE_UNITS
 
 
 def time_dims(data):
@@ -169,6 +169,21 @@ def _horizontal_pair(data, spatial):
     return second, first
 
 
+def _refuse_scattered_points(data, spatial):
+    """Raise when a spatial dimension of ``data`` holds scattered points.
+
+    Voxels need a regular grid; an ``ncells`` dimension located by
+    ``lon(ncells)`` and ``lat(ncells)`` would otherwise be taken for one
+    horizontal axis of it.
+    """
+    scattered = [dim for dim in unstructured_dims(data.to_dataset()) if dim in spatial]
+    if scattered:
+        raise ValueError(
+            f"{scattered[0]} holds scattered points; a volume needs a regular grid."
+            "\nUse a Datacube Grid and a Datacube Texture node."
+        )
+
+
 def volume_layout(data, animate_choice):
     """Assign the dimensions of ``data`` to the volume axes.
 
@@ -202,6 +217,7 @@ def volume_layout(data, animate_choice):
         )
     animate = resolve_animate_dim(data, animate_choice)
     spatial = [dim for dim in data.dims if dim != animate]
+    _refuse_scattered_points(data, spatial)
     if len(spatial) > 3:
         raise ValueError(
             problem + "\nPick a dimension in Animate along, or select a level first."

@@ -30,11 +30,78 @@ def is_surface_name(name):
     return any(pattern.search(lowered) for pattern in SURFACE_DIM_PATTERNS)
 
 
+# CF units and standard names of geographic coordinates.
+LONGITUDE_UNITS = {"degrees_east", "degree_east", "degrees_e", "degree_e"}
+
+
+LATITUDE_UNITS = {"degrees_north", "degree_north", "degrees_n", "degree_n"}
+
+
+_LONGITUDE_NAMES = {"longitude", "grid_longitude"}
+
+
+_LATITUDE_NAMES = {"latitude", "grid_latitude"}
+
+
+def _is_geographic(name, coord, word, standard_names, units):
+    """True when ``name`` contains ``word``, or the CF attrs of ``coord`` say so."""
+    attrs = getattr(coord, "attrs", {})
+    return (
+        word in str(name).lower()
+        or attrs.get("standard_name") in standard_names
+        or str(attrs.get("units", "")).lower() in units
+    )
+
+
+def is_longitude(name, coord):
+    """True when a coordinate is a longitude, by name, standard name or units."""
+    return _is_geographic(name, coord, "lon", _LONGITUDE_NAMES, LONGITUDE_UNITS)
+
+
+def is_latitude(name, coord):
+    """True when a coordinate is a latitude, by name, standard name or units."""
+    return _is_geographic(name, coord, "lat", _LATITUDE_NAMES, LATITUDE_UNITS)
+
+
+def unstructured_dims(dataset):
+    """Dimensions along which 1-D longitudes and latitudes place scattered points.
+
+    A dimension such as ``ncells`` qualifies when it has no coordinate of its
+    own but carries both a 1-D longitude and a 1-D latitude, as in FESOM or
+    ICON output, where ``lon(ncells)`` and ``lat(ncells)`` locate each value.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset to inspect.
+
+    Returns
+    -------
+    list of str
+        Dimension names in dataset order.
+    """
+    found = []
+    for dim in dataset.dims:
+        if dim in dataset.coords:
+            continue
+        on_dim = [
+            (name, coord)
+            for name, coord in dataset.coords.items()
+            if coord.dims == (dim,)
+        ]
+        if any(is_longitude(*item) for item in on_dim) and any(
+            is_latitude(*item) for item in on_dim
+        ):
+            found.append(dim)
+    return found
+
+
 def get_surface_dims(dataset):
     """Dimensions that span the horizontal surface of a dataset.
 
-    A dimension qualifies when its name matches ``SURFACE_DIM_PATTERNS`` or
-    when any 2-D coordinate is defined over it.
+    A dimension qualifies when its name matches ``SURFACE_DIM_PATTERNS``,
+    when any 2-D coordinate is defined over it, or when it places scattered
+    points (see :func:`unstructured_dims`).
 
     Parameters
     ----------
@@ -50,6 +117,7 @@ def get_surface_dims(dataset):
     for coord in dataset.coords.values():
         if coord.ndim == 2:
             surface.update(coord.dims)
+    surface.update(unstructured_dims(dataset))
     order = list(dataset.dims)
     return sorted(surface, key=order.index)
 
@@ -126,10 +194,13 @@ def _coords_by_ndim(coords):
 
 
 def grid_dims(coords):
-    """Return the ``(rows, columns)`` dimensions of the grid, or ``None``.
+    """Return the dimensions the grid is baked on, or ``None``.
 
-    Two 1-D coordinates give ``(y_dim, x_dim)``, the layout of their mesh
-    grid; otherwise the dimensions of the first 2-D coordinate are used.
+    Two 1-D coordinates over one dimension place scattered points and give
+    that dimension alone, ``(dim,)`` (see :mod:`blendernc.core.points`).
+    Two 1-D coordinates over different dimensions give ``(y_dim, x_dim)``,
+    the ``(rows, columns)`` layout of their mesh grid; otherwise the
+    dimensions of the first 2-D coordinate are used.
 
     Parameters
     ----------
@@ -142,6 +213,8 @@ def grid_dims(coords):
         return None
     first, second = arrays[:2]
     if first.ndim == 1 and second.ndim == 1:
+        if first.dims == second.dims:
+            return tuple(first.dims)
         return (second.dims[0], first.dims[0])
     return next((tuple(a.dims) for a in arrays if a.ndim == 2), None)
 
@@ -316,15 +389,18 @@ def stack_2D_coords(coords):
     Returns
     -------
     numpy.ndarray
-        1-D array of interleaved ``(x, y, z)`` triplets, one per vertex.
+        1-D ``float32`` array of interleaved ``(x, y, z)`` triplets, one per
+        vertex. Blender stores positions in single precision, and
+        ``foreach_set`` copies a contiguous ``float32`` buffer in one go
+        where other types are converted value by value (0.1 s for a
+        million vertices).
     """
     X = coords.get("X")["data"]
     Y = coords.get("Y")["data"]
     Z = coords.get("Z")["data"]
 
-    flatten_coords = np.stack([X, Y, Z], axis=0).transpose(2, 1, 0).flatten()
-
-    return flatten_coords
+    stacked = np.stack([X, Y, Z], axis=0).transpose(2, 1, 0)
+    return np.ascontiguousarray(stacked, dtype=np.float32).ravel()
 
 
 def extract_dimensions_of_grid(coords):
