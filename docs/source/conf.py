@@ -24,7 +24,7 @@ copyright = "2021, BlenderNC"
 author = "Josue Martinez-Moreno"
 
 # The full version, including alpha/beta/rc tags
-release = "0.10.1"
+release = "0.11.0"
 
 # -- General configuration ---------------------------------------------------
 

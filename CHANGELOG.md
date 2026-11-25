@@ -2,6 +2,33 @@
 
 <!--next-version-placeholder-->
 
+## v0.11.0 (2026-11-25)
+
+### Chores
+
+- Fix vulnerability with pillow
+  ([`37ce905`](https://github.com/blendernc/blendernc/commit/37ce9052cdfd56f3b3751e117030681053978ff3))
+
+- Update and remove dead code and clean up
+  ([`07a8aa3`](https://github.com/blendernc/blendernc/commit/07a8aa33b6742cc999059ff48c261e1f1dd1e67a))
+
+### Continuous Integration
+
+- **pre-commit.ci**: Pre-commit autoupdate
+  ([`d48870a`](https://github.com/blendernc/blendernc/commit/d48870acf35ef765466a847c6ef776119c10c63b))
+
+### Features
+
+- Datacube Slice accepts datacubes and variables, fix grid slicing
+  ([`130d64c`](https://github.com/blendernc/blendernc/commit/130d64c55fa7e3e594dcf417142c7deffc06e6c4))
+
+### Refactoring
+
+- Move UI logic to ui.py, make nodes and datacube simpler, as well as remove duplicated strings and
+  functions
+  ([`865c5dd`](https://github.com/blendernc/blendernc/commit/865c5ddb8bce2363d2fb0ced142414a9e735fcef))
+
+
 ## v0.10.1 (2026-11-17)
 
 ### Bug Fixes
