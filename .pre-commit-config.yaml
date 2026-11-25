@@ -35,7 +35,7 @@ repos:
       additional_dependencies: ["@commitlint/config-conventional"]
 
 -   repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.19.3
+    rev: v4.20.0
     hooks:
     - id: commitizen
       stages: [commit-msg]

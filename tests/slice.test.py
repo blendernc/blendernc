@@ -20,9 +20,10 @@ import bpy
 import numpy as np
 import xarray as xr
 
+from blendernc.core.slicing import merge_slicings
 from blendernc.decorators import flush_pending_unlinks
 from blendernc.node_utils import create_blenderncnodetree
-from blendernc.utils import get_data_from_datastruct, get_dataset, merge_slicings
+from blendernc.utils import get_data_from_datastruct, get_dataset
 
 NX, NY, NZ, NT = 6, 8, 4, 5
 VARIABLE = "noise"

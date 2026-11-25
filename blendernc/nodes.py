@@ -4,6 +4,18 @@ import os
 import bpy
 import numpy as np
 
+from .core.dataset import variable_names
+from .core.fields import animation_frame, field_to_point_values, mesh_grid_dims
+from .core.grid import get_surface_dims
+from .core.slicing import (
+    SLICING_ANY_VARIABLE,
+    clamp_index_range,
+    encode_slicing_record,
+    format_coord_value,
+    merge_slicings,
+    suggested_stride,
+    value_index_range,
+)
 from .decorators import (
     has_datastructs,
     initialize_BNC_datastructs,
@@ -14,31 +26,17 @@ from .properties import BNC_data
 from .utils import (
     MAX_VARIABLE_OUTPUTS,
     NO_SELECTION,
-    SLICING_ANY_VARIABLE,
     _record_stride,
     animated_field,
-    animation_frame,
-    clamp_index_range,
-    create_datastruct,
     delete_point_attribute,
-    encode_slicing_record,
-    field_to_point_values,
-    format_coord_value,
     get_dataset,
     get_possible_coordinates,
     get_possible_variables,
-    get_surface_dims,
-    merge_slicings,
-    mesh_grid_dims,
     range_locked,
     record_selector,
     release_dataset,
     store_dataset,
-    suggested_stride,
     texture_field,
-    update_suggested_step,
-    value_index_range,
-    variable_names,
     write_field_range,
     write_point_attribute,
 )
@@ -101,7 +99,7 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         description="Filepath used for importing the file",
         default="",
         maxlen=1024,
-        update=create_datastruct,
+        update=lambda self, context: self.load(),
     )
     """An instance of the original StringProperty."""
 
@@ -121,6 +119,21 @@ class DatacubeImport(bpy.types.Node, bNCNodeDefault):
         op = split.operator("blendernc.import_mfdataset", text="", icon="FILEBROWSER")
         op.node_name = self.name
         op.node_tree = self.id_data.name
+
+    def load(self):
+        """Load ``datacube_file``, then update the nodes after this one.
+
+        Called when the path is edited. A path that cannot be opened is
+        logged by :func:`blendernc.utils.store_dataset`; a property callback
+        has no way to report to the user. Only another dataset updates the
+        nodes after this one, so their outputs show it; a path that failed
+        leaves them, and their links, as they were.
+        """
+        datastruct = self.BNC_datastructs[0]
+        previous = datastruct.filename
+        store_dataset(datastruct, self.datacube_file)
+        if datastruct.filename and datastruct.filename != previous:
+            self.refresh_downstream()
 
     def update(self):
         """Load the dataset when the path changed or the cache lost it.
@@ -1210,7 +1223,7 @@ class DatacubeResolution(bpy.types.Node, bNCNodeDefault):
         name="Suggested Step",
         description="Use the suggested step based on the surface dimensions",
         default=True,
-        update=update_suggested_step,
+        update=lambda self, context: self.update(),
     )
 
     @initialize_BNC_datastructs

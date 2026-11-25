@@ -3,9 +3,10 @@
 The panel builds the ``BLENDERNC`` node tree from scene properties. These
 tests set those properties directly: choosing a variable before any axis
 must not raise, choosing it after X and Y bakes the grid and links the
-texture node, deselecting unlinks it again, and typing a step switches the
-resolution node to manual and rebakes a coarser grid. Picking another
-variable keeps the mesh and only swaps the texture and the material.
+texture node, deselecting unlinks it again, and a step typed on the
+resolution node, which the panel draws, rebakes a coarser grid. Picking
+another variable keeps the mesh and only swaps the texture and the
+material.
 """
 
 import shutil
@@ -100,25 +101,21 @@ class TestUIPanel(unittest.TestCase):
         self.assertFalse(self.section_shown())
 
     def test_3b_unticking_suggestion_keeps_suggested_step(self):
-        """Switching the suggestion off copies its step to the panel."""
+        """Switching the suggestion off keeps the suggested step on the node."""
         resolution = self.node("Datacube Resolution")
         resolution.step = 7  # stale value the suggestion replaces
         resolution.suggested_step = True
         suggested = resolution.step
-        self.props.step = suggested + 5  # stale panel value
-        resolution.suggested_step = True
         resolution.suggested_step = False
         self.assertEqual(resolution.step, suggested)
-        self.assertEqual(self.props.step, suggested)
         resolution.suggested_step = True  # later tests start from a suggestion
 
     def test_4_manual_step_rebakes_coarser_grid(self):
-        """Typing a step turns suggestions off and strides both axes."""
+        """With the suggestion off, the step the panel shows strides both axes."""
         resolution = self.node("Datacube Resolution")
         self.assertTrue(resolution.suggested_step)
-        self.props.step = 3
-        self.assertFalse(resolution.suggested_step)
-        self.assertEqual(resolution.step, 3)
+        resolution.suggested_step = False
+        resolution.step = 3
         obj = bpy.data.objects["Grid"]
         expected = len(range(0, NX, 3)) * len(range(0, NY, 3))
         self.assertEqual(len(obj.data.vertices), expected)
@@ -129,7 +126,7 @@ class TestUIPanel(unittest.TestCase):
         texture = self.node("Datacube Texture")
         self.assertEqual(texture.message, "")
 
-        self.props.step = 2
+        self.node("Datacube Resolution").step = 2
         obj = bpy.data.objects["Grid"]
         expected = len(range(0, NX, 2)) * len(range(0, NY, 2))
         self.assertEqual(len(obj.data.vertices), expected)
@@ -190,22 +187,26 @@ class TestUIPanel(unittest.TestCase):
             self.props.Z = NO_SELECTION
 
     def test_7_keyframed_panel_step_rebakes(self):
-        """A keyframed panel step rebakes the grid and texture on frame change."""
+        """A step keyed from the panel rebakes the grid and texture on frame change.
+
+        The panel draws the Resolution node's step, so the key lands on the
+        panel's node tree.
+        """
         scene = bpy.context.scene
         self.props.variable = VARIABLE
         scene.frame_set(1)
-        self.props.step = 1
+        resolution = self.node("Datacube Resolution")
+        resolution.step = 1
+        path = 'nodes["Datacube Resolution"].step'
         try:
-            scene.keyframe_insert("BlenderNC_UI_Properties.step", frame=1)
-            anim = scene.animation_data
+            self.tree.keyframe_insert(path, frame=1)
+            anim = self.tree.animation_data
             bag = anim_utils.action_get_channelbag_for_slot(
                 anim.action, anim.action_slot
             )
             # Insert on the F-curve: setting the value would rebake, and the
             # rebake re-evaluates the existing key before keyframe_insert runs.
-            bag.fcurves.find("BlenderNC_UI_Properties.step").keyframe_points.insert(
-                10, 3
-            )
+            bag.fcurves.find(path).keyframe_points.insert(10, 3)
             obj = bpy.data.objects["Grid"]
             for frame, step in ((10, 3), (1, 1)):
                 scene.frame_set(frame)
@@ -214,7 +215,7 @@ class TestUIPanel(unittest.TestCase):
                 self.assertEqual(len(obj.data.vertices), expected)
                 self.assertEqual(len(obj.data.attributes[VARIABLE].data), expected)
         finally:
-            scene.animation_data_clear()
+            self.tree.animation_data_clear()
             scene.frame_set(1)
 
 

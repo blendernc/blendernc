@@ -57,6 +57,24 @@ class test_add_and_remove_all_nodes(unittest.TestCase):
         )
         bpy.data.materials.remove(material)
 
+    def test_mapping_is_left_unchanged(self):
+        """The caller's mapping, a module constant for the panel, stays as given."""
+        tree = bpy.data.node_groups.new("bnc_geometry", "GeometryNodeTree")
+        mapping = {
+            "GeometryNodeMeshGrid": {
+                "links": {"Mesh": {"NodeGroupOutput": "Geometry"}},
+            },
+        }
+        before = repr(mapping)
+        created = create_nodes(tree, mapping)
+        self.assertEqual(repr(mapping), before)
+        self.assertIn("node", created["GeometryNodeMeshGrid"])
+        self.assertIn("NodeGroupOutput", created)  # added for geometry trees
+        create_links(tree, created)
+        output = created["NodeGroupOutput"]["node"]
+        self.assertTrue(output.inputs["Geometry"].is_linked)
+        bpy.data.node_groups.remove(tree)
+
     def test_delete_all_nodes(self):
         """All nodes can be removed from the ``BLENDERNC`` tree."""
         if "BLENDERNC" in bpy.data.node_groups.keys():
