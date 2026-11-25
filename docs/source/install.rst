@@ -9,16 +9,16 @@ Installing BlenderNC is really simple:
 
 - Go to the `BlenderNC releases page`_ and download the zip file for your operating system or click the links below:
 
-  - **Windows (64-bit):** `blendernc-0.10.1-windows_x64.zip`_
-  - **macOS (Apple Silicon, macOS 15 or newer):** `blendernc-0.10.1-macos_arm64.zip`_
-  - **Linux (64-bit):** `blendernc-0.10.1-linux_x64.zip`_
+  - **Windows (64-bit):** `blendernc-0.11.0-windows_x64.zip`_
+  - **macOS (Apple Silicon, macOS 15 or newer):** `blendernc-0.11.0-macos_arm64.zip`_
+  - **Linux (64-bit):** `blendernc-0.11.0-linux_x64.zip`_
 
   Each zip includes the Python libraries BlenderNC needs for that platform, so
   make sure you pick the one that matches your system.
 
-.. _blendernc-0.10.1-windows_x64.zip: https://github.com/blendernc/blendernc/releases/download/v0.10.1/blendernc-0.10.1-windows_x64.zip
-.. _blendernc-0.10.1-macos_arm64.zip: https://github.com/blendernc/blendernc/releases/download/v0.10.1/blendernc-0.10.1-macos_arm64.zip
-.. _blendernc-0.10.1-linux_x64.zip: https://github.com/blendernc/blendernc/releases/download/v0.10.1/blendernc-0.10.1-linux_x64.zip
+.. _blendernc-0.11.0-windows_x64.zip: https://github.com/blendernc/blendernc/releases/download/v0.11.0/blendernc-0.11.0-windows_x64.zip
+.. _blendernc-0.11.0-macos_arm64.zip: https://github.com/blendernc/blendernc/releases/download/v0.11.0/blendernc-0.11.0-macos_arm64.zip
+.. _blendernc-0.11.0-linux_x64.zip: https://github.com/blendernc/blendernc/releases/download/v0.11.0/blendernc-0.11.0-linux_x64.zip
 .. _BlenderNC releases page: https://github.com/blendernc/blendernc/releases
 
 - Drag and drop it into Blender:
