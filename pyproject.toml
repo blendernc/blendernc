@@ -43,6 +43,9 @@ addopts = "--import-mode=importlib"
 [tool.poetry.urls]
 "Changelog" = "https://github.com/blendernc/blendernc/blob/master/CHANGELOG.md"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [tool.semantic_release]
 # bl_info["version"] in blendernc/__init__.py is a tuple, which semantic-release
 # cannot write; .github/workflows/release.yml updates it before the release.
