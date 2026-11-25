@@ -41,12 +41,38 @@ Datacube Slice
 ==============
 
 The **Datacube Slice** node keeps a range of positions along one
-coordinate of a variable: a latitude band, the upper levels of the ocean,
-a few steps of a time series. You find it under
+coordinate of a variable or of a whole datacube: a latitude band, the upper
+levels of the ocean, a few steps of a time series. You find it under
 **Add > Selection > Slice Range** in the BlenderNC node editor.
 
-Link a variable output to its ``Variable`` input, pick the coordinate and
-choose how to give the range with **Slice by**:
+Its input takes either a variable or a datacube, and its output is of the
+same kind; the input's label and colour show which one is linked.
+
+**A variable**
+   Link a variable output, from a **Datacube Variable** node for example;
+   the ``Variable`` output carries the sliced variable to a **Datacube
+   Volume**, **Texture** or **Select** node. The coordinates are left whole,
+   so use it on dimensions the grid does not show, such as depth or time.
+
+   A coordinate output of a **Datacube Coords** node is sliced along
+   itself: the node picks that coordinate, starting from its full range,
+   and hides the coordinate drop-down. Linking a sliced ``X`` to the X
+   input of a **Datacube Grid** crops the grid along X.
+
+**A datacube**
+   Link the ``xarray datacube`` output of a **Datacube Import** or
+   **Resolution** node, then link the node's ``xarray datacube`` output to
+   **Datacube Coords** and **Datacube Variable** nodes. Every coordinate and
+   variable after the node is sliced, so a **Datacube Grid** baked from
+   those coordinates covers only the range kept, and a texture of a variable
+   from the same Slice node fits it. Use it to crop a region.
+
+The grid keeps a range from any of its inputs, so its other coordinates and
+its Z variable may come from nodes before the Slice node. Linking a datacube
+in place of a variable, or the other way round, replaces the output and
+removes its links; the coordinate and bounds are kept.
+
+Pick the coordinate and choose how to give the range with **Slice by**:
 
 **Index**
    **First** and **Last** are positions along the coordinate, counted from
@@ -75,6 +101,15 @@ coordinate subsampled by 2 keeps positions 2, 4 and 6.
    .. image:: ../images/slice_node.png
       :width: 60%
       :alt: Datacube Slice node
+
+.. TODO: screenshot of a Datacube Slice node fed a datacube, between a
+   Datacube Import node and Datacube Coords and Variable nodes, with the
+   grid baked from the sliced coordinates in the 3D view.
+   Save as docs/images/slice_node_datacube.png and uncomment:
+
+   .. image:: ../images/slice_node_datacube.png
+      :width: 100%
+      :alt: Datacube Slice node cropping a datacube before a Datacube Grid
 
 .. _datacube_volume:
 

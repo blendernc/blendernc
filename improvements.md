@@ -80,12 +80,13 @@ after that work.
 ## 3. Design and architecture
 
 - **Selections do not reach a grid baked from coordinates.** Select,
-  Slice and Subsample records travel down the Variable chain. A Datacube
-  Grid whose X and Y come from a Coords node only sees them through a
-  linked Z, so the texture of a sliced variable does not fit the grid
-  (the Texture node says to bake the grid from the variable's
-  coordinates). Volumes are unaffected: they read their coordinates from
-  the sliced variable.
+  Subsample, and a Slice of a data variable, record along the Variable
+  chain. A Datacube Grid whose X and Y come from a Coords node only sees
+  them through a linked Z, so the texture of a subsampled variable does not
+  fit the grid (the Texture node says to bake the grid from the variable's
+  coordinates). A Slice fed a datacube or a coordinate, and Resolution,
+  reach the grid; Subsample could take a datacube the same way. Volumes
+  are unaffected: they read their coordinates from the sliced variable.
 - **`decorators.py` contains UI logic.** `_create_UI_nodes`
   (`decorators.py:302-336`) builds the node tree, toggles panel draw
   functions and reads scene properties; it belongs with the operators or
@@ -331,3 +332,31 @@ Resolved on 2026-11-17 (section 1, and what it touched):
   (`tests/slice.test.py`) and twenty-one new Volume tests for placement,
   range, dims, files, refreshing the values and keeping the user's
   transform.
+
+Resolved on 2026-11-25:
+
+- **Datacube Slice slices a datacube too.** Its input
+  (`bNCVariableOrDatacubeSocket`, still named `"Variable"` for scripts)
+  takes a variable or a datacube, and the output is of the same type. The
+  node decides which links it keeps (`DatacubeSlice.accepts_link`, read by
+  `decorators._accepts_link`), so nodes saved with a string input take
+  datacubes too. The range is recorded the same way; after a datacube it
+  reaches the Coords and Variable nodes after the Slice, so a grid baked
+  from those coordinates is cropped like the variable and the texture fits
+  it. A linked 1-D coordinate is sliced along itself: the node stores it in
+  `datacube_coords`, starting from its full range, and hides the
+  drop-down. Tests in `tests/slice.test.py`: the output following the
+  input, other links removed, a node saved with a string input, a
+  coordinate sliced along itself, a grid cropped by a sliced coordinate,
+  the range reaching variables and coordinates, a cropped grid and texture
+  rebaked when the range widens, and Resolution combining in either order.
+- **The grid no longer drops the slicing of its first inputs.**
+  `is_single_input_linked` copied each linked input's data item in turn,
+  so the grid kept the last input's `slicing` only: a range on the X
+  coordinate was lost when Y came from a Coords node before the Slice, or
+  Z from a variable that never went through it. The decorator now hands
+  every input's `slicing` to `DatacubeGrid.merge_input_slicings`, which
+  uses `utils.merge_slicings`: records shared before a branch are kept
+  once, then what each input added after it, in socket order. Other
+  nodes keep the last input's, so a texture still reads its variable's
+  slicing. Two new tests in `tests/slice.test.py`.

@@ -50,7 +50,11 @@ from .shader_nodes import (
     BlenderNC_OT_select_colormap,
     draw_shader_menu,
 )
-from .sockets import bNCAnySocket, bNCdatacubeSocket
+from .sockets import (
+    bNCAnySocket,
+    bNCdatacubeSocket,
+    bNCVariableOrDatacubeSocket,
+)
 
 classes = [
     BlenderNCNodeTree,
@@ -76,6 +80,7 @@ classes = [
     DatacubeTexture,
     DatacubeAnimateTexture,
     bNCdatacubeSocket,
+    bNCVariableOrDatacubeSocket,
     bNCAnySocket,
     BlenderNCNodeImport,
     BlenderNCNodeSelection,

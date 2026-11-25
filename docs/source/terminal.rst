@@ -161,10 +161,14 @@ Each node in the editor is a Blender node type that you create with
        ``Variable``.
    * - Datacube Slice
      - ``BlenderNCNodeSlice``
-     - ``datacube_coords`` picks a 1-D coordinate, which resets the bounds
-       to its extent, so set them afterwards. ``slice_by = "INDEX"`` keeps
+     - Input ``Variable`` takes a variable or an ``xarray datacube``; the
+       output, ``Variable`` or ``xarray datacube``, follows it, so the
+       Coords and Variable nodes after a datacube are sliced too.
+       ``datacube_coords`` picks a 1-D coordinate, which resets the bounds
+       to its extent, so set them afterwards; a 1-D coordinate linked to
+       the input picks itself. ``slice_by = "INDEX"`` keeps
        positions ``first`` to ``last``; ``"VALUE"`` keeps the values from
-       ``minimum`` to ``maximum``. In and out ``Variable``.
+       ``minimum`` to ``maximum``.
    * - Datacube Grid
      - ``BlenderNCNodeGrid``
      - Inputs ``X``, ``Y``, ``Z`` take coordinate outputs; ``grid_obj_name``

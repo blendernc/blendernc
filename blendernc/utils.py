@@ -916,6 +916,63 @@ def parse_slicing(slicing, var_name):
     return indexers
 
 
+def _slicing_records(slicing):
+    """The records of a ``slicing`` string, in order, as a tuple of strings."""
+    return tuple(filter(None, slicing.split(SLICING_RECORD_SEP)))
+
+
+def _drop_upstream_chains(chains):
+    """Leave out duplicates and chains that another one starts with."""
+    chains = list(dict.fromkeys(chains))
+    return [
+        chain
+        for chain in chains
+        if not any(
+            len(chain) < len(other) and other[: len(chain)] == chain for other in chains
+        )
+    ]
+
+
+def _shared_length(chains):
+    """Number of leading records every chain has in common."""
+    length = 0
+    while all(len(chain) > length for chain in chains) and (
+        len({chain[length] for chain in chains}) == 1
+    ):
+        length += 1
+    return length
+
+
+def merge_slicings(slicings):
+    """One ``slicing`` string for a node fed by several inputs.
+
+    Every node appends its records to the ``slicing`` it received, so
+    inputs branching off one chain start with the same records. Those are
+    kept once, followed by what each input added after them, in input order.
+    An input taken upstream of another (before a Slice node, or straight
+    from the Import node) adds nothing, and a chain's own records keep their
+    order. On the same dimension, a later input wins.
+
+    Parameters
+    ----------
+    slicings : list of str
+        The ``slicing`` of each linked input, in socket order.
+
+    Returns
+    -------
+    str
+        The merged ``slicing``; empty when there is nothing to merge.
+    """
+    chains = _drop_upstream_chains([_slicing_records(s) for s in slicings])
+    if not chains:
+        return ""
+    shared = _shared_length(chains)
+    records = list(chains[0][:shared])
+    for chain in chains:
+        records.extend(chain[shared:])
+    return "".join(record + SLICING_RECORD_SEP for record in records)
+
+
 def _dims_for_key(dataset, key):
     """Dimensions a slicing key refers to: itself, or those of a coordinate."""
     if key in dataset.dims:

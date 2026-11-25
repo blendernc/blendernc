@@ -183,9 +183,12 @@ def _compatible(link):
 def _accepts_link(node, link):
     """True when ``node`` keeps ``link``.
 
-    Nodes with ``accepts_any_link`` set (the Debug node) keep every link;
-    the others only keep links between sockets of the same type.
+    Nodes with ``accepts_any_link`` set (the Debug node) keep every link,
+    and nodes with an ``accepts_link`` method (the Slice node) decide for
+    themselves; the others only keep links between sockets of the same type.
     """
+    if hasattr(node, "accepts_link"):
+        return node.accepts_link(link)
     return getattr(node, "accepts_any_link", False) or _compatible(link)
 
 
@@ -251,13 +254,30 @@ def _queue_mismatched_links(node):
         bpy.app.timers.register(flush_pending_unlinks, first_interval=0.0)
 
 
+def _sync_linked_inputs(node, datastruct, connected_inputs):
+    """Copy each linked input onto the node's data item, in socket order.
+
+    Each copy replaces the previous one, so the last input's dataset and
+    slicing are kept. A node with a ``merge_input_slicings`` method (the
+    grid, whose inputs all shape one mesh) gets the slicing that method
+    builds from every input's instead.
+    """
+    slicings = []
+    for input_socket in connected_inputs:
+        _update_data_in_link(node, datastruct, input_socket)
+        slicings.append(datastruct.slicing)
+    if hasattr(node, "merge_input_slicings"):
+        datastruct.slicing = node.merge_input_slicings(slicings)
+
+
 def is_single_input_linked(update_function):
     """Sync the node's data item with its linked inputs, then run the update.
 
-    The data item takes the dataset and slicing of the linked inputs; with
-    no input linked, the inputs' values and the data item are cleared
-    instead. The update runs in both cases, and is skipped only while node
-    updates are disabled (see :func:`blendernc.node_utils.node_updates_enabled`).
+    The data item takes the dataset and slicing of the linked inputs (see
+    :func:`_sync_linked_inputs`); with no input linked, the inputs' values
+    and the data item are cleared instead. The update runs in both cases,
+    and is skipped only while node updates are disabled (see
+    :func:`blendernc.node_utils.node_updates_enabled`).
     """
 
     @wraps(update_function)
@@ -268,8 +288,7 @@ def is_single_input_linked(update_function):
         _queue_mismatched_links(self)
         datastruct = self.BNC_datastructs[0]
         connected_inputs = _connected_inputs(self)
-        for input_socket in connected_inputs:
-            _update_data_in_link(self, datastruct, input_socket)
+        _sync_linked_inputs(self, datastruct, connected_inputs)
 
         if not connected_inputs:
             _clear_default_values(self.inputs)

@@ -28,6 +28,7 @@ from .utils import (
     get_possible_coordinates,
     get_possible_variables,
     get_surface_dims,
+    merge_slicings,
     mesh_grid_dims,
     range_locked,
     record_selector,
@@ -279,9 +280,12 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
     """Node that bakes a mesh from coordinates linked to its X, Y and Z inputs.
 
     The resulting object is exposed through an ``"Object"`` output socket.
-    Once baked, the grid follows the tree: when the slicing in force differs
-    from the one used for the last bake (a resolution or subsample node
-    changed), ``update`` bakes again so the mesh keeps one vertex per sample.
+    The slicing in force combines the records of every linked input (see
+    :meth:`merge_input_slicings`), so a range sliced upstream of one
+    coordinate reaches the others too. Once baked, the grid follows the
+    tree: when that slicing differs from the one used for the last bake (a
+    slice, resolution or subsample node changed), ``update`` bakes again so
+    the mesh keeps one vertex per sample.
     """
 
     bl_idname = "BlenderNCNodeGrid"  # Unique identifier for the node
@@ -316,6 +320,16 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
         op = layout.operator("blendernc.create_grid_from_coords", text="Bake Grid")
         op.node_name = self.name
         op.node_tree = self.id_data.name
+
+    def merge_input_slicings(self, slicings):
+        """Slicing of the grid, from the slicing of each linked input.
+
+        Called by :func:`blendernc.decorators.is_single_input_linked`. The
+        X, Y and Z values all lie on one mesh, so the grid keeps the records
+        of every input instead of the last one's
+        (:func:`blendernc.utils.merge_slicings`).
+        """
+        return merge_slicings(slicings)
 
     def _baked(self):
         """The object this node baked last, or ``None``."""
@@ -370,26 +384,44 @@ class DatacubeGrid(bpy.types.Node, bNCNodeDefault):
 SLICE_BY_INDEX = "INDEX"
 SLICE_BY_VALUE = "VALUE"
 
+# Output the Slice node gives for each type of linked output: one of the
+# same type, so a variable stays a variable and a datacube a datacube.
+SLICE_OUTPUTS = {
+    "NodeSocketString": "Variable",
+    "bNCdatacubeSocket": "xarray datacube",
+}
+
 
 # Nodes whose bounds are being reset; their property callbacks wait, so
 # the node slices, and rebakes downstream grids and volumes, only once.
 _RESETTING = set()
 
 
+def _is_1d_coordinate(dataset, name):
+    """True when ``name`` is a 1-D coordinate of ``dataset``."""
+    return bool(name) and name in dataset.coords and dataset[name].ndim == 1
+
+
+def _reset_bounds(node, values):
+    """Set the node's bounds to the whole of ``values``; callbacks wait."""
+    _RESETTING.add(node.as_pointer())
+    try:
+        node.first, node.last = 0, values.size - 1
+        if np.issubdtype(values.dtype, np.number) and np.isfinite(values).any():
+            node.minimum = float(np.nanmin(values))
+            node.maximum = float(np.nanmax(values))
+    finally:
+        _RESETTING.discard(node.as_pointer())
+
+
 def _reset_slice_range(node, context):
     """Give a newly picked coordinate its full range, then update once."""
+    if node.as_pointer() in _RESETTING:
+        return  # picked by the node itself, which resets and updates
     dataset = get_dataset(node.BNC_datastructs[0])
     coord = node.datacube_coords
-    if dataset is not None and coord in dataset.coords and dataset[coord].ndim == 1:
-        values = dataset[coord].values
-        _RESETTING.add(node.as_pointer())
-        try:
-            node.first, node.last = 0, values.size - 1
-            if np.issubdtype(values.dtype, np.number) and np.isfinite(values).any():
-                node.minimum = float(np.nanmin(values))
-                node.maximum = float(np.nanmax(values))
-        finally:
-            _RESETTING.discard(node.as_pointer())
+    if dataset is not None and _is_1d_coordinate(dataset, coord):
+        _reset_bounds(node, dataset[coord].values)
     node.update()
 
 
@@ -401,6 +433,15 @@ def _update_node(node, context):
 
 class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
     """Node that keeps a range of positions along one coordinate.
+
+    The input takes a variable or a datacube, and the output is of the same
+    type: ``"Variable"`` or ``"xarray datacube"``. The range is recorded the
+    same way for both, and only the nodes after the Slice node see it; after
+    a datacube that includes Coords and Variable nodes, so a grid baked from
+    those coordinates covers the range kept. A variable that is a 1-D
+    coordinate is sliced along itself: the node picks that coordinate and
+    hides the drop-down. Nodes saved with a ``"Variable"`` string input
+    accept both kinds of link too (:meth:`accepts_link`).
 
     "Slice by" chooses how the range is given: by index ("First" and
     "Last", both kept, clamped to the coordinate size) or by value
@@ -467,42 +508,103 @@ class DatacubeSlice(bpy.types.Node, bNCNodeDefault):
 
     @initialize_BNC_datastructs
     def init(self, context):
-        """Create the ``"Variable"`` input and output sockets."""
-        self.inputs.new("NodeSocketString", "Variable")
-        self.outputs.new("NodeSocketString", "Variable")
-        for socket in self.inputs:
-            socket.hide_value = True
+        """Create the input; the output follows what gets linked to it.
+
+        The input is named ``"Variable"``, like on nodes saved before it took
+        datacubes, so scripts find it either way; its label shows what is
+        linked.
+        """
+        self.inputs.new("bNCVariableOrDatacubeSocket", "Variable")
         self.width = 220
 
-    def draw_buttons(self, context, layout):
-        """Draw the coordinate, the mode and its bounds once a variable is linked."""
-        if not self.inputs.get("Variable").default_value:
+    def accepts_link(self, link):
+        """Keep links from variable and datacube outputs only.
+
+        Read by :func:`blendernc.decorators._accepts_link`; other links are
+        removed with a warning.
+        """
+        return link.from_socket.bl_idname in SLICE_OUTPUTS
+
+    def _linked_output(self):
+        """The variable or datacube output linked to the input, or ``None``."""
+        socket = self.inputs[0] if self.inputs else None
+        if socket is None or not socket.is_linked:
+            return None
+        from_socket = socket.links[0].from_socket
+        return from_socket if from_socket.bl_idname in SLICE_OUTPUTS else None
+
+    def _variable(self):
+        """Name of the linked variable; empty for a datacube or no link."""
+        linked = self._linked_output()
+        return getattr(linked, "default_value", "") if linked else ""
+
+    def _match_output(self, linked):
+        """Give the node one output of the linked output's type and value."""
+        bl_idname = linked.bl_idname
+        for socket in [s for s in self.outputs if s.bl_idname != bl_idname]:
+            self.outputs.remove(socket)
+        name = SLICE_OUTPUTS[bl_idname]
+        output = self.outputs.get(name) or self.outputs.new(bl_idname, name)
+        shape = "CIRCLE"
+        if hasattr(linked, "default_value"):
+            output.default_value = linked.default_value
+        else:
+            shape = "SQUARE"  # a datacube
+        output.display_shape = self.inputs[0].display_shape = shape
+
+    def _follow_input_coordinate(self, dataset):
+        """Slice a linked 1-D coordinate along itself.
+
+        A coordinate not sliced before starts with its full range; linking
+        the coordinate already picked keeps the bounds.
+        """
+        variable = self._variable()
+        if not _is_1d_coordinate(dataset, variable):
             return
-        layout.prop(self, "datacube_coords", text="")
+        if self.datacube_coords != variable:
+            _RESETTING.add(self.as_pointer())
+            try:
+                self.datacube_coords = variable
+            finally:
+                _RESETTING.discard(self.as_pointer())
+            _reset_bounds(self, dataset[variable].values)
+
+    def draw_buttons(self, context, layout):
+        """Draw the coordinate, the mode and its bounds once something is linked.
+
+        A linked 1-D coordinate is the one sliced, so the drop-down is left
+        out.
+        """
+        dataset = get_dataset(self.BNC_datastructs[0])
+        if dataset is None:
+            return
+        if not _is_1d_coordinate(dataset, self._variable()):
+            layout.prop(self, "datacube_coords", text="")
         layout.prop(self, "slice_by", expand=True)
-        bounds = ("minimum", "maximum")
-        if self.slice_by == SLICE_BY_INDEX:
-            bounds = ("first", "last")
-        column = layout.column(align=True)
-        for bound in bounds:
-            column.prop(self, bound)
+        self._draw_bounds(layout.column(align=True))
         if self.summary:
             layout.label(text=self.summary)
         draw_message(layout, self.message)
 
+    def _draw_bounds(self, column):
+        """Draw First and Last, or Minimum and Maximum, after ``slice_by``."""
+        bounds = ("minimum", "maximum")
+        if self.slice_by == SLICE_BY_INDEX:
+            bounds = ("first", "last")
+        for bound in bounds:
+            column.prop(self, bound)
+
     @is_single_input_linked
     @has_datastructs
     def update(self):
-        """Forward the variable and append the range to ``slicing``."""
-        if "Variable" not in [socket.name for socket in self.outputs]:
-            self.outputs.new("NodeSocketString", "Variable")
-        variable = self.inputs[0].default_value
-        self.outputs["Variable"].default_value = variable
-
+        """Forward the variable or datacube and append the range to ``slicing``."""
+        linked = self._linked_output()
         datastruct = self.BNC_datastructs[0]
         dataset = get_dataset(datastruct)
-        if dataset is None:
+        if linked is None or dataset is None:
             return
+        self._match_output(linked)
+        self._follow_input_coordinate(dataset)
         bounds = self._bounds(dataset)
         if bounds is not None:
             first, last = bounds
