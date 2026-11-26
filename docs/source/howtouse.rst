@@ -18,5 +18,6 @@ Once you are confident with the basics, then follow the quickstart guide and the
   :maxdepth: 2
 
   quickstart_guide
+  nodetree_guide
   in_depth_guide
   terminal

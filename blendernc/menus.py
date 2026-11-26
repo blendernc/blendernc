@@ -27,7 +27,7 @@ class BlenderNCNodeImport(bpy.types.Menu):
         self.layout.operator("node.add_node", text="Datacube Import").type = (
             DatacubeImport.bl_idname
         )
-        self.layout.operator("node.add_node", text="Datacube Variables").type = (
+        self.layout.operator("node.add_node", text="Datacube Variable").type = (
             DatacubeVariable.bl_idname
         )
 
