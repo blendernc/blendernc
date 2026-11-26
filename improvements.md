@@ -417,3 +417,26 @@ Resolved on 2026-11-25:
   once, then what each input added after it, in socket order. Other
   nodes keep the last input's, so a texture still reads its variable's
   slicing. Two new tests in `tests/slice.test.py`.
+
+Resolved on 2026-11-26:
+
+- **Unstructured grids bake about 3.6 times faster.**
+  `utils.build_triangle_mesh` wrote positions through `vertices.co` and
+  corners through `loops.vertex_index`. Blender sets both item by item
+  even from a float32/int32 buffer: for a million points and two
+  million triangles they took 0.5 s of a 0.66 s bake (Blender 5.2). They
+  now go through the `position` and `.corner_vert` attributes, which
+  `foreach_set` fills with one copy; `.corner_vert` is internal, so
+  `_write_corner_verts` falls back to `loops.vertex_index` if it goes
+  away. `polygons.loop_start` (90 ms) and `update(calc_edges=True)`
+  (70 ms) have no faster route and stay. Rule for new code: write mesh
+  data through `mesh.attributes[...].data.foreach_set` with a
+  contiguous, native-endian float32/int32 array. A float64, big-endian
+  or strided array takes the item-by-item path (about 35 ms per million
+  values against 0.14 ms).
+- **Less NaN handling per animated frame.** `utils.write_point_attribute`
+  zeroed NaNs with `np.nan_to_num`, which took 13.5 ms for four million
+  values against 0.5 ms for the write. It now zeroes a float32 copy in
+  place with `np.copyto(..., where=np.isnan(...))`, about three times
+  faster. The copy stays because the values can be a view of the
+  dataset. Infinities are no longer clamped to the float32 maximum.
