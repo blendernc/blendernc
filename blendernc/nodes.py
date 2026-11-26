@@ -263,7 +263,7 @@ class DatacubeVariable(bpy.types.Node, bNCNodeDefault):
     def draw_label(self):
         """Show the loaded filename as the node label, or a placeholder."""
         if not self.BNC_datastructs[0].filename:
-            return "datacube Input"
+            return "Datacube Variable"
         else:
             return os.path.basename(self.BNC_datastructs[0].filename)
 

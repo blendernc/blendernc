@@ -3,8 +3,6 @@
 In-Depth Guide
 ##############
 
-WIP
-
 .. _datacube_coords_and_variable:
 
 Datacube Coords and Datacube Variable
