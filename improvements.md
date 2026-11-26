@@ -398,13 +398,21 @@ Resolved on 2026-11-26:
   are part of its signature and of `placement_key`, so changing them
   rebakes and places the volume again. Tests in `tests/unit/test_core.py`
   and `tests/volume.test.py`.
-- **Volume grids have a zero background** (`volume_utils.BACKGROUND`), not
-  the field minimum. Missing data is still written as inactive voxels, but
-  Blender's render-time interpolation blended the voxels next to it towards
-  the minimum, which gave values inside the colour range that are not in
-  the data (a fringe along land and the sea floor). With zero, the blend
-  of a variable that stays above zero drops below the minimum and the
-  clamped Map Range gives it no density. Known limit: for a variable that
-  crosses zero, empty space gets the density of zero (a filled bounding box
-  in EEVEE, a skin in Cycles); documented in the in-depth guide. Test
-  `test_missing_data_is_empty_at_zero`.
+- **Volume files hold a mask grid, on a zero background.** Missing data
+  is written as inactive voxels, but Blender's render-time interpolation
+  blended the voxels next to it with the background (the field minimum),
+  which gave values inside the colour range that are not in the data (a
+  fringe along land and the sea floor). Now each file holds
+  `<variable>_mask` too (`core.volume.mask_grid_name`), 1 where there is
+  data, and the material's Principled Volume uses it as Density Attribute,
+  so missing data has no density for any variable range. The values bleed
+  two voxels into missing data (`core.volume.bleed_missing`, mean of valid
+  face neighbours, `BLEED_VOXELS`), so the edges blend real values only;
+  beyond, voxels are empty at zero (`volume_utils.BACKGROUND`). Infinite
+  values count as missing, and curvilinear columns outside the data are
+  NaN before the fill. Setting the Density Attribute also stops a variable
+  called `density` from multiplying its own density. `write_vdb` takes a
+  dict of named grids, ready for a vector grid. Checked with Cycles and
+  EEVEE renders of a coastline: the density ends where the data does.
+  Tests `test_missing_data_is_masked`, `test_density_material` and the
+  unit tests for `frame_grids` and `bleed_missing`.

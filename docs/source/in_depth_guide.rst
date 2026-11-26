@@ -323,26 +323,30 @@ again.
 Material
 --------
 
-Each bake assigns a material called ``<variable> volume``: an
-*Attribute* node reads the grid, a *Map Range* node maps it from the
-object's ``Min value`` to ``Max value`` custom properties onto 0 to 1, and
-the result drives the density of a *Principled Volume*. Colour, emission
-and the density multiplier are left for you to set.
+Each VDB file holds two grids: ``<variable>``, the values, and
+``<variable>_mask``, which is 1 where the variable has data and 0 where it
+is missing (land, the sea floor, outside a curvilinear grid).
 
-Missing values are written as empty voxels holding zero, the grid's
-*background*. When Blender renders, it blends each sample from the voxels
-around it, so next to missing data (land, the sea floor) real values blend
-towards zero. For a variable that stays above zero, such as salinity or a
-temperature in kelvin, that blend soon falls below **Min value**. The Map
-Range clamps it, so it gets no density and the edge stays sharp.
+Each bake assigns a material called ``<variable> volume``: an
+*Attribute* node reads the values, a *Map Range* node maps them from the
+object's ``Min value`` to ``Max value`` custom properties onto 0 to 1, and
+the result drives the density of a *Principled Volume*. Its **Density
+Attribute** is the mask grid, and the density is multiplied by it, so
+missing data has no density whatever the variable's range. Colour, emission
+and the density multiplier are left for you to set. Take colours from the
+*Map Range* result or the *Attribute* node, which hold the values.
+
+When Blender renders, it blends each sample from the voxels around it. So
+that the values at the edge of the data never blend with empty voxels, each
+missing voxel next to data takes the mean of its valid neighbours, two
+voxels deep. The mask fades the density out across the last voxel, while
+the colours there stay those of the data. Further into missing data the
+voxels are empty and hold zero, the grids' *background*.
 
 .. note::
-   For a variable that crosses zero, such as a velocity or an anomaly,
-   zero lies inside the range, so empty space gets the density of a zero
-   value. EEVEE then fills the volume's whole bounding box with it, land
-   included, and Cycles shows a thin skin around missing data. Offset the
-   variable before baking, or lower the density where the value is near
-   zero in the material.
+   If you build your own volume shader, multiply its density by the mask:
+   an *Attribute* node reading ``<variable>_mask``. Otherwise the two
+   voxels of values around missing data become visible.
 
 The range is computed over the whole variable at bake time. With the
 scene's **Lock range** setting on (node editor sidebar, *BlenderNC* tab,
