@@ -111,6 +111,89 @@ coordinate subsampled by 2 keeps positions 2, 4 and 6.
       :width: 100%
       :alt: Datacube Slice node cropping a datacube before a Datacube Grid
 
+.. _unstructured_grids:
+
+Unstructured grids
+==================
+
+Some models store their values at scattered points rather than on a grid
+of rows and columns. FESOM and ICON ocean output, for example, has a single
+horizontal dimension, often ``ncells`` or ``nod2``, and locates each value
+with two 1D coordinates over it:
+
+.. code-block:: text
+
+   float thetao(time, depth, ncells) ;
+       thetao:coordinates = "lat lon" ;
+   double lat(ncells) ;
+   double lon(ncells) ;
+
+The **Datacube Grid** node recognises this layout when the coordinates
+linked to **X** and **Y** are 1D and share their dimension. Instead of a
+grid of rows and columns, it bakes one vertex per point, in the order of
+the points, so vertex ``i`` is cell ``i``, and joins the vertices with
+triangles.
+
+Baking the points
+-----------------
+
+1. Link a **Datacube Import** node to a **Datacube Coords** node.
+2. Link ``lon`` to **X** and ``lat`` to **Y** of a **Datacube Grid** node.
+   **Z** is optional; any coordinate or variable linked to it must span the
+   points only, such as a bathymetry ``depth(ncells)``.
+3. Press **Bake Grid**.
+
+Longitudes and latitudes are recognised by their name (containing ``lon``
+or ``lat``), their ``standard_name`` or their units (``degrees_east``,
+``degrees_north``). They are triangulated on the sphere, so evenly spread
+points stay evenly spread up to the poles. The mesh is still laid out
+flat, longitude along X and latitude along Y. Other coordinates, such as
+``x`` and ``y`` in metres, are triangulated in their own plane.
+
+A triangulation covers the whole area around the points, so it would also
+bridge continents, islands and the outside of a regional domain. The
+node drops every triangle whose longest edge is more than **Max Edge**
+times the spacing of the points around it, measured to their 6 nearest
+neighbours. **Max Edge** appears on the node once X and Y share a
+dimension, and changing it bakes the grid again. Raise it if gaps open
+in the ocean; lower it if triangles still cross land. 0 keeps every
+triangle.
+
+.. TODO: screenshot of the node tree (Import, Coords, Variable, two
+   Select nodes, Grid with Max Edge, Datacube Texture) next to the baked
+   FESOM ocean mesh in the 3D view, continents open.
+   Save as docs/images/unstructured_grid.png and uncomment:
+
+   .. image:: ../images/unstructured_grid.png
+      :width: 100%
+      :alt: Datacube Grid baked from lon(ncells) and lat(ncells)
+
+Colouring the points
+--------------------
+
+A texture on scattered points has one dimension, the points':
+
+* **Datacube Texture** writes a field over ``ncells``. Pick the time and
+  the depth first with **Datacube Select** nodes, e.g. ``thetao`` at
+  ``time = 0`` and ``depth = 0`` for the surface temperature.
+* **Datacube Animate Texture** animates a field with one more dimension,
+  e.g. ``thetao`` at ``depth = 0``, which is ``(time, ncells)``.
+* **Datacube Resolution** strides the points too: a step of 3 keeps every
+  third point, and the grid is triangulated again.
+
+Then press **Apply Material** to colour the mesh. Values are stored on
+the vertices, so colours blend smoothly across each triangle.
+
+Limitations
+-----------
+
+* Laid out flat, the mesh has a thin gap along the antimeridian (±180°)
+  and a small hole at the poles, where triangles would wrap around.
+* Cell bounds (``lon_bnds``, ``lat_bnds``) and UGRID connectivity are not
+  used: the triangles join the points themselves.
+* **Datacube Volume** refuses scattered points, since voxels need a
+  regular grid. Use a Datacube Grid and a Datacube Texture node instead.
+
 .. _datacube_volume:
 
 Datacube Volume

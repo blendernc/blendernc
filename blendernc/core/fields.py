@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 # Advice given when a variable has too many dimensions to be written onto a
-# mesh as a static texture, keyed by its number of dimensions. Anything
-# above four falls back to the four-dimensional hint.
+# mesh as a static texture, keyed by how many more dimensions it has than
+# the grid. Anything above two falls back to the two-dimension hint.
 TEXTURE_DIM_HINTS = {
-    3: (
+    1: (
         "Use a Datacube Animate Texture node to animate the extra dimension,"
         " or a Datacube Volume node."
     ),
-    4: "Use a Datacube Select node to pick a slice first.",
+    2: "Use a Datacube Select node to pick a slice first.",
 }
 
 
@@ -30,23 +30,37 @@ GRID_DIMS_PROPERTY = "BlenderNC grid dims"
 
 
 def mesh_grid_dims(mesh):
-    """Return the ``(rows, columns)`` dims ``mesh`` was baked on, or ``None``."""
+    """Return the dims ``mesh`` was baked on, or ``None``.
+
+    ``(rows, columns)`` for a grid, ``(dim,)`` for scattered points.
+    """
     value = mesh.get(GRID_DIMS_PROPERTY) if mesh is not None else None
     return tuple(value.split(",")) if value else None
 
 
+def mesh_field_ndim(mesh):
+    """Number of dimensions a texture over ``mesh`` has.
+
+    That of the dims the mesh was baked on: one for scattered points, two
+    for a grid. A mesh BlenderNC did not bake takes 2-D fields.
+    """
+    baked = mesh_grid_dims(mesh)
+    return len(baked) if baked else 2
+
+
 def field_to_point_values(data, dims=None):
-    """Flatten a 2-D field into the vertex order of a baked grid.
+    """Flatten a field into the vertex order of a baked grid.
 
     Parameters
     ----------
     data : xarray.DataArray
-        Two-dimensional array whose dimensions span the mesh.
+        Array whose dimensions span the mesh: two for a grid, one for
+        scattered points.
     dims : tuple of str, optional
-        ``(rows, columns)`` dimensions the grid was baked with (see
-        :func:`mesh_grid_dims`). When ``data`` has the same dimensions in
-        another order it is transposed first, so ``(x, y)`` and ``(y, x)``
-        fields land on the same vertices.
+        Dimensions the grid was baked with (see :func:`mesh_grid_dims`).
+        When ``data`` has the same dimensions in another order it is
+        transposed first, so ``(x, y)`` and ``(y, x)`` fields land on the
+        same vertices.
 
     Returns
     -------
@@ -56,7 +70,10 @@ def field_to_point_values(data, dims=None):
     """
     if dims and set(dims) == set(data.dims):
         data = data.transpose(*dims)
-    return np.ascontiguousarray(data.values.transpose(1, 0).ravel(), dtype=np.float32)
+    values = data.values
+    if values.ndim == 2:
+        values = values.transpose(1, 0)  # Mesh Grid runs column by column
+    return np.ascontiguousarray(values.ravel(), dtype=np.float32)
 
 
 # Custom properties on the mesh that hold the range of the written field.
@@ -75,16 +92,19 @@ def field_range(values):
     return float(finite.min()), float(finite.max())
 
 
-# Advice for a variable an animate texture node cannot animate, keyed by its
-# number of dimensions, four and more sharing one entry.
+# Advice for a variable an animate texture node cannot animate, keyed by how
+# many more dimensions it has than the grid, two and more sharing one entry.
 ANIMATED_DIM_HINTS = {
-    2: "Use a Datacube Texture node for a 2D field.",
-    4: "Use a Datacube Select node to pick a slice first.",
+    0: "Use a Datacube Texture node for a {grid}D field.",
+    2: "Use a Datacube Select node to pick a slice first.",
 }
 
 
 def animated_field_error(data, mesh):
     """Find the dimension of ``data`` to animate over ``mesh``, or say why not.
+
+    The field needs one dimension more than the grid: 3-D over a grid,
+    2-D over scattered points.
 
     Returns
     -------
@@ -92,42 +112,50 @@ def animated_field_error(data, mesh):
         ``(dim, "")``, or ``(None, message)`` with two lines: what is wrong,
         then what to do about it.
     """
-    ndim = len(data.dims)
+    ndim, grid = len(data.dims), mesh_field_ndim(mesh)
     dims = ", ".join(str(dim) for dim in data.dims)
-    if ndim != 3:
-        hint = ANIMATED_DIM_HINTS.get(min(ndim, 4), "An animation needs a 3D field.")
+    if ndim != grid + 1:
+        hint = ANIMATED_DIM_HINTS.get(
+            min(max(ndim - grid, -1), 2), "An animation needs a {frames}D field."
+        )
+        hint = hint.format(grid=grid, frames=grid + 1)
         return None, f"{data.name} is {ndim}D ({dims}).\n{hint}"
     dim = animation_dim(data, mesh)
     if dim is None:
         return None, (
-            f"No two dimensions of {data.name} ({dims}) match the mesh's "
+            f"No {_dims_word(grid)} of {data.name} ({dims}) match the mesh's "
             f"{len(mesh.vertices)} vertices.\n"
             "Bake the grid from the coordinates of this variable."
         )
     return dim, ""
 
 
-def animation_dim(data, mesh):
-    """The dimension of a 3-D ``data`` to spread over frames on ``mesh``.
+def _dims_word(count):
+    """``"dimension"`` for one, ``"two dimensions"`` for two."""
+    return "dimension" if count == 1 else "two dimensions"
 
-    The other two must span the mesh: the dimensions the grid was baked on
-    when it recorded them, otherwise the first pair whose sizes multiply to
-    the vertex count. ``None`` when no pair does.
+
+def animation_dim(data, mesh):
+    """The dimension of ``data`` to spread over frames on ``mesh``.
+
+    The others must span the mesh: the dimensions the grid was baked on
+    when it recorded them, otherwise the first combination whose sizes
+    multiply to the vertex count. ``None`` when none does.
     """
-    pairs = [
-        set(pair)
-        for pair in combinations(data.dims, 2)
-        if prod(data.sizes[dim] for dim in pair) == len(mesh.vertices)
+    spans = [
+        set(span)
+        for span in combinations(data.dims, mesh_field_ndim(mesh))
+        if prod(data.sizes[dim] for dim in span) == len(mesh.vertices)
     ]
     baked = set(mesh_grid_dims(mesh) or ())
-    grid = baked if baked in pairs else next(iter(pairs), None)
+    grid = baked if baked in spans else next(iter(spans), None)
     if grid is None:
         return None
     return next(dim for dim in data.dims if dim not in grid)
 
 
 def animation_frame(data, dim, frame):
-    """The 2-D field of ``data`` shown at scene frame ``frame``.
+    """The field of ``data`` shown at scene frame ``frame``.
 
     Frame 0 shows the first step along ``dim``; frames past the last step
     hold it, and negative frames hold the first.
@@ -136,11 +164,12 @@ def animation_frame(data, dim, frame):
 
 
 def texture_field_error(data, mesh):
-    """Explain why ``data`` cannot be written onto ``mesh`` as a 2-D texture.
+    """Explain why ``data`` cannot be written onto ``mesh`` as a texture.
 
-    Only dimensions are counted, so an index picked with a Datacube Select
-    node, which xarray keeps as a scalar coordinate, does not add to the
-    total.
+    The field needs the dimensions of the grid: two for a grid, one for
+    scattered points (see :func:`mesh_field_ndim`). Only dimensions are
+    counted, so an index picked with a Datacube Select node, which xarray
+    keeps as a scalar coordinate, does not add to the total.
 
     Parameters
     ----------
@@ -152,13 +181,13 @@ def texture_field_error(data, mesh):
     Returns
     -------
     str
-        Empty when the field is 2-D and has one value per vertex. Otherwise
-        two lines: what is wrong, then what to do about it.
+        Empty when the field has the grid's dimensions and one value per
+        vertex. Otherwise two lines: what is wrong, then what to do about it.
     """
-    ndim = len(data.dims)
+    ndim, grid = len(data.dims), mesh_field_ndim(mesh)
     dims = ", ".join(str(dim) for dim in data.dims)
     problem = f"{data.name} is {ndim}D ({dims})."
-    if ndim == 2:
+    if ndim == grid:
         size, vertices = prod(data.shape), len(mesh.vertices)
         if size != vertices:
             return (
@@ -172,7 +201,6 @@ def texture_field_error(data, mesh):
                 "\nBake the grid from the coordinates of this variable."
             )
         return ""
-    if ndim < 2:
-        return problem + "\nA texture needs a 2D field."
-    hint = TEXTURE_DIM_HINTS.get(ndim, TEXTURE_DIM_HINTS[4])
-    return problem + "\n" + hint
+    if ndim < grid:
+        return problem + f"\nA texture on this mesh needs a {grid}D field."
+    return problem + "\n" + TEXTURE_DIM_HINTS[min(ndim - grid, 2)]

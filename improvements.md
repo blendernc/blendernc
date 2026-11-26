@@ -36,6 +36,30 @@ after that work.
     the case of velocities, we will need a supplementary node that merges
     u,v, and w velocities to then pass it as a vector.
 
+- **Unstructured grid follow-ups** (left after the 2026-11-25 work that
+  bakes `lon(ncells)`/`lat(ncells)` into Delaunay triangles,
+  `core/points.py`).
+  - The Datacube Volume node refuses scattered points
+    (`volume._refuse_scattered_points`). They could be resampled onto a
+    regular lon/lat grid by nearest neighbour, as
+    `curvilinear_placement` already does for 2-D coordinates.
+  - Laid out flat, a geographic mesh has a one-triangle gap along the
+    antimeridian, and a small hole at a pole, because the triangles that
+    cross it are dropped (`MAX_LONGITUDE_SPAN`). Closing it would take
+    duplicated seam vertices, which breaks "vertex `i` is cell `i`", so
+    the texture nodes would need to write the duplicates too.
+  - CF cell bounds (`lon_bnds`/`lat_bnds`, e.g. 18 vertices per cell in
+    FESOM 1.4) are ignored. They could give one polygon per cell with
+    values on the face domain, for a flat colour per cell.
+  - A UGRID file's own connectivity (`face_node_connectivity`) is ignored
+    too; using it would skip the triangulation and keep the model's mesh.
+  - The long-edge filter (`max_edge`, 2.5 times the mean distance to the
+    6 nearest points) was tuned on evenly spread synthetic points; a
+    strongly refined mesh may need another default.
+  - Only the Datacube Grid knows points are scattered: the 3D view panel
+    just bakes what is picked for X and Y, and does not suggest the
+    longitude and latitude.
+
 ## 2. Robustness
 
 - **Shared mutable cache on a class attribute.** `BNC_data.dict`
@@ -50,12 +74,11 @@ after that work.
   create a node group. Look the tree up with `bpy.data.node_groups.get` in
   read paths.
 - **`create_blenderncnodetree` ignores the tree type.** It returns any
-  group with the requested name (`node_utils.py:136-137`).
-  `assign_modifier_to_object` (`utils.py:681`) asks for a geometry tree
-  named after the grid object, so a grid object called "BLENDERNC" (or
-  after any other node group) gets the wrong kind of tree for its
-  modifier, and the bake fails. Check `bl_idname`, and pick a new name
-  when the existing group has another type.
+  group with the requested name (`node_utils.py:136-137`). Only the 3D
+  view panel still looks its tree up this way (`ui.py`, `panels_draw.py`),
+  so a geometry node group called like `UI_NODE_TREE` would be taken for
+  the panel's tree. Check `bl_idname`, and pick a new name when the
+  existing group has another type.
 - **`get_grid_coords` has no missing-key handling.** `utils.py:398`
   passes the socket value to `get_data_from_datastruct`, which indexes
   `dataset[var_name]` (`utils.py:358`). A renamed coordinate raises
@@ -169,7 +192,7 @@ after that work.
 - `tests/build-test.sh:24-27, 59` still runs a `test_nolib` pass that
   matches no files; drop it or add the tests it was meant to run.
 - `tests/unit/test_core.py` runs `blendernc.core` under `pytest`
-  without Blender (35 tests). `get_2D_coords`, `stack_2D_coords`,
+  without Blender (46 tests). `get_2D_coords`, `stack_2D_coords`,
   `extract_dimensions_of_grid`, `vertical_placement`,
   `curvilinear_placement` and `frame_array` still have no direct unit
   tests; the Blender tests cover them through the nodes.
@@ -217,6 +240,15 @@ Kept for traceability; all verified against the tree on 2026-11-17.
 - `docs/source/modules/` no longer references removed modules.
 - Dead code, commented-out blocks, shadowed builtins and camelCase locals
   were cleaned up in `4ba59ea` and `7cbb0ea`.
+
+Resolved on 2026-11-25:
+
+- A grid bake no longer leaves geometry node groups in the file, and no
+  longer reuses a group by name: `operators._applied_geometry_nodes`
+  makes a new group and modifier for each of the two steps, applies them
+  and removes both, also on failure. A grid object named after an existing
+  node group bakes normally, and that group is left alone.
+  `utils.assign_modifier_to_object` is gone.
 
 Resolved between 2026-11-13 and 2026-11-17:
 
@@ -385,3 +417,26 @@ Resolved on 2026-11-25:
   once, then what each input added after it, in socket order. Other
   nodes keep the last input's, so a texture still reads its variable's
   slicing. Two new tests in `tests/slice.test.py`.
+
+Resolved on 2026-11-26:
+
+- **Unstructured grids bake about 3.6 times faster.**
+  `utils.build_triangle_mesh` wrote positions through `vertices.co` and
+  corners through `loops.vertex_index`. Blender sets both item by item
+  even from a float32/int32 buffer: for a million points and two
+  million triangles they took 0.5 s of a 0.66 s bake (Blender 5.2). They
+  now go through the `position` and `.corner_vert` attributes, which
+  `foreach_set` fills with one copy; `.corner_vert` is internal, so
+  `_write_corner_verts` falls back to `loops.vertex_index` if it goes
+  away. `polygons.loop_start` (90 ms) and `update(calc_edges=True)`
+  (70 ms) have no faster route and stay. Rule for new code: write mesh
+  data through `mesh.attributes[...].data.foreach_set` with a
+  contiguous, native-endian float32/int32 array. A float64, big-endian
+  or strided array takes the item-by-item path (about 35 ms per million
+  values against 0.14 ms).
+- **Less NaN handling per animated frame.** `utils.write_point_attribute`
+  zeroed NaNs with `np.nan_to_num`, which took 13.5 ms for four million
+  values against 0.5 ms for the write. It now zeroes a float32 copy in
+  place with `np.copyto(..., where=np.isnan(...))`, about three times
+  faster. The copy stays because the values can be a view of the
+  dataset. Infinities are no longer clamped to the float32 maximum.
