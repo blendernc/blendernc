@@ -5,7 +5,9 @@ voxel x and y axes, the remaining spatial dimension the vertical axis, and an
 optional "animate" dimension is spread over frames. Voxels sit on the
 coordinates (see :class:`Placement`): evenly spaced ones set the voxel size
 directly, descending ones are flipped, and unevenly spaced or curvilinear
-ones are resampled onto a regular grid by nearest neighbour.
+horizontal ones are resampled onto a regular grid by nearest neighbour.
+Unevenly spaced vertical levels are interpolated onto even steps at their
+true height (see :func:`vertical_placement`), or kept one voxel per level.
 
 Nothing here imports Blender (see :mod:`blendernc.core`).
 """
@@ -27,6 +29,19 @@ ANIMATE_AUTO = "AUTO"
 
 
 ANIMATE_NONE = "NONE"
+
+
+# Values of the node's ``vertical_mode`` enum: unevenly spaced levels are
+# interpolated onto even steps at their height, or stacked one voxel each.
+VERTICAL_DEPTH = "DEPTH"
+
+
+VERTICAL_LEVELS = "LEVELS"
+
+
+# Unevenly spaced levels are resampled onto at most this many times as many
+# even steps, unless the node asks for a number of voxels.
+MAX_LEVEL_FACTOR = 2
 
 
 # Relative spacing error tolerated before a coordinate counts as uneven.
@@ -232,6 +247,8 @@ def frame_array(data, layout, index=None, background=0.0, placement=None):
         Value given to missing data, so it becomes inactive voxels.
     placement : Placement, optional
         Resampling applied to the frame (see :func:`volume_placement`).
+        Missing data is filled after it, so interpolated levels never blend
+        real values with the background.
     """
     x_dim, y_dim, vertical, animate = layout
     if animate:
@@ -240,10 +257,10 @@ def frame_array(data, layout, index=None, background=0.0, placement=None):
         values = data.transpose(x_dim, y_dim, vertical).values
     else:
         values = data.transpose(x_dim, y_dim).values[..., np.newaxis]
-    values = np.nan_to_num(values.astype(np.float32), nan=background)
+    values = values.astype(np.float32)
     if placement is not None:
         values = placement.apply(values, background)
-    return np.ascontiguousarray(values)
+    return np.ascontiguousarray(np.nan_to_num(values, nan=background))
 
 
 def finite_range(data):
@@ -274,7 +291,9 @@ class Placement:
     descending coordinate is reversed, an uneven one resampled), or ``None``
     to keep the axis as it is. For curvilinear coordinates ``flat`` gives
     the source column of every voxel column and ``outside`` marks columns
-    with no data near them. ``notes`` tell the user what was resampled.
+    with no data near them. Uneven levels placed at their height have
+    ``vertical``, the levels and weights of :func:`depth_interpolation`.
+    ``notes`` tell the user what was resampled.
     """
 
     origin: list
@@ -282,10 +301,14 @@ class Placement:
     take: list
     flat: np.ndarray = None
     outside: np.ndarray = None
+    vertical: tuple = None
     notes: list = field(default_factory=list)
 
     def apply(self, array, background=0.0):
-        """Resample a ``(x, y, vertical)`` frame onto the voxel grid."""
+        """Resample a ``(x, y, vertical)`` frame onto the voxel grid.
+
+        Missing values may be NaN (see :func:`interpolate_levels`).
+        """
         if self.flat is not None:
             nx, ny, nz = array.shape
             columns = array.reshape(nx * ny, nz)[self.flat]
@@ -294,6 +317,8 @@ class Placement:
         for axis, take in enumerate(self.take):
             if take is not None:
                 array = np.take(array, take, axis=axis)
+        if self.vertical is not None:
+            array = interpolate_levels(array, *self.vertical)
         return array
 
     def transform(self, vertical_scale=1.0):
@@ -394,29 +419,114 @@ def axis_placement(name, values):
     return low, (high - low) / (count - 1), take, note
 
 
-def vertical_placement(data, vertical):
-    """Place the vertical axis on its coordinate, if evenly spaced.
+def vertical_voxel_count(values, requested=0):
+    """Number of even steps that uneven, distinct levels are resampled onto.
 
-    A CF ``positive = "down"`` coordinate (depth, pressure) is negated
-    first, so deeper levels sit lower. An evenly spaced numeric coordinate
-    sets the origin and the voxel height; anything else (dates for a
-    space-time cube, uneven levels) gives one voxel per level, ordered
-    bottom-up, and uneven levels get a note.
+    A positive ``requested`` count wins (at least 2). Otherwise the finest
+    spacing between levels sets the step over their extent, capped at
+    :data:`MAX_LEVEL_FACTOR` times the number of levels, so a frame holds
+    at most that many times the voxels of the data.
+    """
+    if requested > 0:
+        return max(int(requested), 2)
+    levels = np.sort(values)
+    ratio = (levels[-1] - levels[0]) / np.diff(levels).min()
+    wanted = int(np.ceil(ratio - SPACING_RTOL)) + 1  # 11.000000000000004 is 11
+    return min(wanted, MAX_LEVEL_FACTOR * values.size)
+
+
+def depth_interpolation(values, count):
+    """Levels and weights resampling distinct ``values`` onto ``count`` steps.
+
+    The steps are evenly spaced from the lowest to the highest value, which
+    may come in any order.
 
     Returns
     -------
     tuple
-        ``(origin, step, take, note)``, all before the vertical scale.
+        ``(lower, upper, weight)``: per step, the positions in ``values`` of
+        the levels below and above it, and how far it lies from the first
+        towards the second, from 0 to 1 (float32).
+    """
+    order = np.argsort(values, kind="stable")
+    ordered = values[order]
+    targets = np.linspace(ordered[0], ordered[-1], count)
+    position = np.interp(targets, ordered, np.arange(ordered.size))
+    below = np.minimum(np.floor(position).astype(int), ordered.size - 2)
+    weight = (position - below).astype(np.float32)
+    return order[below], order[below + 1], weight
+
+
+def interpolate_levels(array, lower, upper, weight):
+    """Blend the levels of a ``(x, y, vertical)`` array onto new levels.
+
+    New level ``k`` is ``array[..., lower[k]]`` moved by ``weight[k]``
+    towards ``array[..., upper[k]]``. Where either one is missing (NaN),
+    the nearer one is used instead, so data next to a missing level, such
+    as the sea floor, reaches half way to it.
+    """
+    below, above = array[..., lower], array[..., upper]
+    blended = below + (above - below) * weight
+    missing = np.isnan(blended)
+    if missing.any():
+        nearest = np.where(weight <= 0.5, below, above)
+        blended[missing] = nearest[missing]
+    return blended
+
+
+def vertical_placement(data, vertical, mode=VERTICAL_DEPTH, voxels=0):
+    """Place the vertical axis on its coordinate.
+
+    A CF ``positive = "down"`` coordinate (depth, pressure) is negated
+    first, so deeper levels sit lower. An evenly spaced numeric coordinate
+    sets the origin and the voxel height. Unevenly spaced levels are
+    interpolated onto even steps at their height in :data:`VERTICAL_DEPTH`
+    mode (see :func:`vertical_voxel_count`); in :data:`VERTICAL_LEVELS`
+    mode, or when a level repeats, they give one voxel per level, ordered
+    bottom-up. Uneven levels get a note either way. Anything else (dates
+    for a space-time cube) gives one voxel per level.
+
+    Parameters
+    ----------
+    data : xarray.DataArray
+        Variable with its slicing applied.
+    vertical : str
+        Vertical dimension, or ``""``.
+    mode : str, optional
+        Value of the node's ``vertical_mode`` enum.
+    voxels : int, optional
+        Number of steps for uneven levels in depth mode; 0 picks one.
+
+    Returns
+    -------
+    tuple
+        ``(origin, step, take, interp, note)``, origin and step before the
+        vertical scale; ``interp`` is ``None`` unless the levels are
+        interpolated (see :func:`depth_interpolation`).
     """
     values = _vertical_values(data, vertical)
     if values is None:
-        return 0.0, 1.0, None, ""
+        return 0.0, 1.0, None, None, ""
     even = _even_placement(values)
     if even is not None:
-        return (*even, "")
+        return (*even, None, "")
+    if mode == VERTICAL_DEPTH and np.unique(values).size == values.size:
+        return _depth_placement(vertical, values, voxels)
     take = _reversed(values.size) if values[-1] < values[0] else None
     note = f"{vertical} is unevenly spaced:\none voxel per level."
-    return 0.0, 1.0, take, note
+    return 0.0, 1.0, take, None, note
+
+
+def _depth_placement(name, values, voxels):
+    """:func:`vertical_placement` of uneven, distinct levels, at their height."""
+    count = vertical_voxel_count(values, voxels)
+    low, high = float(values.min()), float(values.max())
+    step = (high - low) / (count - 1)
+    note = (
+        f"{name} is unevenly spaced:"
+        f"\nresampled onto {count} even steps of {step:.3g}."
+    )
+    return low, step, None, depth_interpolation(values, count), note
 
 
 def _vertical_values(data, vertical):
@@ -521,7 +631,7 @@ def _rectilinear(x_values, y_values):
     return None
 
 
-def volume_placement(data, layout):
+def volume_placement(data, layout, vertical_mode=VERTICAL_DEPTH, vertical_voxels=0):
     """Work out where the voxels of ``data`` go (see :class:`Placement`).
 
     Horizontal axes use the 2-D longitude/latitude of ``data`` when it has
@@ -535,9 +645,14 @@ def volume_placement(data, layout):
         Variable with its slicing applied.
     layout : tuple
         As returned by :func:`volume_layout`.
+    vertical_mode, vertical_voxels : optional
+        The node's settings for uneven levels (see
+        :func:`vertical_placement`).
     """
     x_dim, y_dim, vertical, _ = layout
-    z_origin, z_step, z_take, z_note = vertical_placement(data, vertical)
+    z_origin, z_step, z_take, z_interp, z_note = vertical_placement(
+        data, vertical, vertical_mode, vertical_voxels
+    )
     axes, pair = _horizontal_axes(data, x_dim, y_dim)
     curvilinear = curvilinear_placement(*pair) if pair is not None else None
     if curvilinear is not None:
@@ -550,9 +665,10 @@ def volume_placement(data, layout):
         origin + [z_origin],
         step + [z_step],
         take + [z_take],
-        flat,
-        outside,
-        [text for text in notes + [z_note] if text],
+        flat=flat,
+        outside=outside,
+        vertical=z_interp,
+        notes=[text for text in notes + [z_note] if text],
     )
 
 
@@ -583,19 +699,20 @@ def _rectilinear_placement(axes):
     return [list(column) for column in columns]
 
 
-def placement_key(data, layout):
+def placement_key(data, layout, vertical_mode=VERTICAL_DEPTH, vertical_voxels=0):
     """Digest of everything that decides where the voxels of ``data`` go.
 
-    That is the layout, the length of the x, y and vertical dimensions, and
-    the values and ``positive`` attribute of every coordinate lying on those
-    dimensions. Two bakes with the same key place their voxels alike, whatever
-    the variable or the index picked along a dimension the volume does not
-    show. The animated dimension only sets the number of frames, so its
-    length is left out.
+    That is the layout, the node's settings for uneven levels, the length
+    of the x, y and vertical dimensions, and the values and ``positive``
+    attribute of every coordinate lying on those dimensions. Two bakes with
+    the same key place their voxels alike, whatever the variable or the
+    index picked along a dimension the volume does not show. The animated
+    dimension only sets the number of frames, so its length is left out.
     """
     spatial = {dim for dim in layout[:3] if dim}
     digest = hashlib.blake2b(digest_size=16)
     digest.update(repr(layout).encode())
+    digest.update(f"{vertical_mode}|{int(vertical_voxels)}".encode())
     digest.update(repr(sorted((dim, data.sizes[dim]) for dim in spatial)).encode())
     for name, coord in sorted(data.coords.items(), key=lambda item: str(item[0])):
         if coord.dims and set(coord.dims) <= spatial:

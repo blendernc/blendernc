@@ -18,9 +18,6 @@ after that work.
     `volume_utils.py:544`) is nearest neighbour at the source resolution,
     and it treats longitude as a plain number: a grid that crosses the
     dateline (179° to -179°) is resampled over the whole -180 to 180 range.
-  - Unevenly spaced vertical levels stay one voxel per level
-    (`vertical_placement`, `volume_utils.py:477`), so such a volume does
-    not line up with a grid whose Z is that coordinate.
   - "Lock range" (on by default) keeps the stored range when the
     variable changes, for textures (`utils.write_field_range`) and
     volumes (`volume_utils.bake_range`) alike, so a new variable is
@@ -385,3 +382,19 @@ Resolved on 2026-11-25:
   once, then what each input added after it, in socket order. Other
   nodes keep the last input's, so a texture still reads its variable's
   slicing. Two new tests in `tests/slice.test.py`.
+
+Resolved on 2026-11-26:
+
+- **Uneven vertical levels sit at their true depth.** OpenVDB voxels share
+  one height, so `core.volume.vertical_placement` interpolates uneven,
+  distinct levels linearly onto even steps between the top and bottom
+  levels (`depth_interpolation`, applied by `Placement.apply` through
+  `interpolate_levels`). Next to a missing level the nearer level is used,
+  and `frame_array` now fills missing data after the placement, so
+  background values are never blended in. The count follows the finest
+  spacing, capped at twice the levels (`vertical_voxel_count`,
+  `MAX_LEVEL_FACTOR`). The node's new "Vertical" (True depth, the default,
+  or One voxel per level) and "Vertical voxels" (0 = automatic) settings
+  are part of its signature and of `placement_key`, so changing them
+  rebakes and places the volume again. Tests in `tests/unit/test_core.py`
+  and `tests/volume.test.py`.

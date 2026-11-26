@@ -195,10 +195,28 @@ Settings
      the frame changes. It uses little disk space, but BlenderNC must be
      installed wherever the scene is played or rendered.
 
+**Vertical**
+   How unevenly spaced vertical levels, such as the stretched depth levels
+   of an ocean model, become voxels (see `Placement`_).
+
+   * *True depth* (the default) places each level at its height, so a
+     layer of 10 m looks ten times thinner than a layer of 100 m.
+   * *One voxel per level* stacks the levels one voxel each, whatever
+     their spacing, so thin surface layers stay as visible as the deep
+     ones.
+
+**Vertical voxels**
+   Only shown in *True depth* mode, and only used when the levels are
+   unevenly spaced: the number of voxels along the vertical axis. At *0*,
+   the finest spacing between levels sets the voxel height, up to twice as
+   many voxels as levels. Ask for more when thin layers matter; each voxel
+   adds a full horizontal layer to every file.
+
 **Vertical scale**
-   Multiplies the vertical coordinate when it is evenly spaced (see
-   `Placement`_); otherwise it is the height of one voxel. Changing it
-   moves and stretches the object without writing the files again.
+   Multiplies the numeric vertical coordinate (see `Placement`_); without
+   one, such as the time axis of a space-time cube, it is the height of one
+   voxel. Changing it moves and stretches the object without writing the
+   files again.
 
 **VDB folder**
    Where the files are written. The default, ``//blendernc_vdb/``, is a
@@ -238,16 +256,39 @@ The voxels are placed on the coordinates, so the volume lines up with a
   the nearest original column, and columns outside the data stay empty.
   2D coordinates that only change along their own axis are used directly.
 
-Resampling picks values; it never averages them. The node lists what was
-resampled below its button, and the same note goes to the status bar and
-the log.
+Horizontal resampling picks values; it never averages them. The node lists
+what was resampled below its button, and the same note goes to the status
+bar and the log.
 
 An evenly spaced numeric vertical coordinate places the voxels the same
 way, multiplied by **Vertical scale**. A coordinate marked
 ``positive = "down"`` (CF depth or pressure) is turned around, so deeper
-levels sit lower, below zero. Unevenly spaced levels and dates (the time
-axis of a space-time cube) give one voxel per level, of height
-**Vertical scale**; uneven levels get a note on the node.
+levels sit lower, below zero.
+
+OpenVDB voxels all have the same height, so unevenly spaced levels cannot
+be used as they are. In *True depth* mode (see **Vertical** above) they are
+resampled onto evenly spaced heights between the top and bottom levels,
+each voxel blending linearly the two levels around it. Next to missing
+data, such as the sea floor, a voxel takes the nearer level instead, so
+the data reaches half way to the first missing level. The note on the node
+gives the number of voxels and their height. For example, levels at 0, 10,
+50 and 300 m give 8 voxels, about 43 m high; set **Vertical voxels** to 31
+for 10 m voxels. In *One voxel per level* mode, and for levels that repeat
+a value, each level is one voxel of height **Vertical scale**. Dates (the
+time axis of a space-time cube) always give one voxel per step.
+
+.. TODO: two screenshots of the same ocean volume with stretched depth
+   levels, one in True depth mode and one in One voxel per level mode.
+   Save as docs/images/volume_true_depth.png and
+   docs/images/volume_one_voxel_per_level.png and uncomment:
+
+   .. image:: ../images/volume_true_depth.png
+      :width: 49%
+      :alt: Volume at true depth
+
+   .. image:: ../images/volume_one_voxel_per_level.png
+      :width: 49%
+      :alt: Volume with one voxel per level
 
 .. note::
    With depths in metres and horizontal coordinates in degrees, the volume
@@ -258,14 +299,14 @@ Rebaking
 --------
 
 The volume follows the node tree. Changing the slicing upstream, the
-variable, **Animate along** or **Frames** writes its files again
-automatically. Every bake uses new file names, because Blender keeps VDB
+variable, **Animate along**, **Frames**, **Vertical** or **Vertical voxels**
+writes its files again automatically. Every bake uses new file names, because Blender keeps VDB
 grids in memory by file path and would otherwise keep showing the old data.
 
 Like the grid, the volume is only *placed* again when its coordinates
 change: a **Slice**, **Subsample** or **Resolution** node on one of its
-axes, or another **Animate along** that changes which dimensions form the
-volume. Picking another variable, or another index of a **Select** along a
+axes, another **Animate along** that changes which dimensions form the
+volume, or another **Vertical** or **Vertical voxels**. Picking another variable, or another index of a **Select** along a
 dimension the volume does not show (a time step, a level), only rewrites
 the values and swaps the material to the new variable's, and the notes
 are not reported again.

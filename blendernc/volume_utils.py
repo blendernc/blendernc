@@ -12,8 +12,10 @@ spread over frames:
 
 Voxels sit on the coordinates (see :class:`Placement`): evenly spaced ones
 set the voxel size directly, descending ones are flipped, and unevenly
-spaced or curvilinear ones are resampled onto a regular grid by nearest
-neighbour, which the node tells the user about.
+spaced or curvilinear horizontal ones are resampled onto a regular grid by
+nearest neighbour. Unevenly spaced levels are interpolated onto even steps
+at their true height, or kept one voxel per level, as the node's
+"Vertical" setting says. The node tells the user what was resampled.
 
 Blender caches VDB grids by file path for the whole session, so a file that
 is rewritten in place is never read again. Every bake therefore writes its
@@ -128,12 +130,24 @@ def bake_range(obj, data):
 _PLACEMENTS = {}
 
 
+def vertical_options(node):
+    """The node's settings for uneven levels, as keyword arguments.
+
+    For :func:`blendernc.core.volume.volume_placement` and
+    :func:`blendernc.core.volume.placement_key`.
+    """
+    return {
+        "vertical_mode": node.vertical_mode,
+        "vertical_voxels": node.vertical_voxels,
+    }
+
+
 def _cached_placement(node, data, layout):
     """Placement of the node's last bake, computed again when it is stale."""
     cached = _PLACEMENTS.get(node.as_pointer())
     if cached is not None and cached[0] == node.baked_placement:
         return cached[1]
-    placement = volume_placement(data, layout)
+    placement = volume_placement(data, layout, **vertical_options(node))
     _PLACEMENTS[node.as_pointer()] = (node.baked_placement, placement)
     return placement
 
@@ -418,12 +432,13 @@ def bake_volume(node, scene, keep_placement=False):
         With the message shown on the node.
     """
     variable, data, layout = volume_data(node)
-    key = placement_key(data, layout)
+    options = vertical_options(node)
+    key = placement_key(data, layout, **options)
     refresh = keep_placement and _keeps_placement(node, key)
     if refresh:
         placement = _cached_placement(node, data, layout)
     else:
-        placement = volume_placement(data, layout)
+        placement = volume_placement(data, layout, **options)
     frames = frame_count(data, layout)
     obj = look_up_volume_object(node.volume_obj_name)
     value_range = bake_range(obj, data)

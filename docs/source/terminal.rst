@@ -177,8 +177,9 @@ Each node in the editor is a Blender node type that you create with
    * - Datacube Volume
      - ``BlenderNCNodeVolume``
      - Input ``Variable`` takes a 3-D or 4-D variable; ``volume_obj_name``,
-       ``animate_dim``, ``frame_mode``, ``vertical_scale`` and ``vdb_dir``
-       are described in the :ref:`in_depth_guide`. Baked with
+       ``animate_dim``, ``frame_mode``, ``vertical_mode`` (``"DEPTH"`` or
+       ``"LEVELS"``), ``vertical_voxels``, ``vertical_scale`` and
+       ``vdb_dir`` are described in the :ref:`in_depth_guide`. Baked with
        ``bpy.ops.blendernc.create_volume``; ``keep_placement=True`` only
        refreshes the values when the coordinates are those of the last
        bake. Output ``Object``.

@@ -11,7 +11,8 @@ Four datasets are generated on the fly with a random-noise variable:
 
 Variants of ``(X, Y, Z)`` check the placement: a descending, an unevenly
 spaced and a curvilinear horizontal axis, 2-D coordinates that are in fact
-rectilinear, a depth axis marked ``positive = "down"`` and uneven levels.
+rectilinear, a depth axis marked ``positive = "down"`` and uneven levels,
+placed at their true depth or one voxel per level.
 A copy of ``(X, Y, Z)`` with a second variable checks that changing the
 variable only refreshes the values. Whatever the bake, a volume the user
 moved, rotated or scaled keeps that transform on top of its placement.
@@ -365,9 +366,9 @@ class TestDatacubeVolume(unittest.TestCase):
         computed = []
         original = volume_utils.volume_placement
 
-        def counting(*args):
+        def counting(*args, **kwargs):
             computed.append(args)
-            return original(*args)
+            return original(*args, **kwargs)
 
         volume_utils.volume_placement = counting
         try:
@@ -505,13 +506,23 @@ class TestDatacubeVolume(unittest.TestCase):
 
     # -- placement ------------------------------------------------------------
 
-    def read_single(self, key):
-        """Bake dataset ``key`` and read its only VDB file back."""
+    def read_single(self, key, nz=NZ):
+        """Bake dataset ``key`` and read its only VDB file, ``nz`` voxels high."""
         self.build(key)
         obj = self.bake()
         files = self.vdb_files()
         self.assertEqual(len(files), 1)
-        return obj, read_grid(files[0], (NX, NY, NZ))
+        return obj, read_grid(files[0], (NX, NY, nz))
+
+    def uneven_levels(self, nz):
+        """The ``uneven_z`` field interpolated onto ``nz`` even heights."""
+        z = self.datasets["uneven_z"]["Z"].values
+        targets = np.linspace(z.min(), z.max(), nz)
+        return np.apply_along_axis(
+            lambda column: np.interp(targets, z, column),
+            2,
+            self.expected("uneven_z", "Z"),
+        )
 
     def test_descending_y_is_flipped(self):
         """A descending Y keeps a positive scale: the voxels are reversed."""
@@ -580,12 +591,38 @@ class TestDatacubeVolume(unittest.TestCase):
         self.assertAlmostEqual(obj.location.z, -300.0, places=4)
         self.assertAlmostEqual(obj.scale.z, 100.0, places=4)
 
-    def test_uneven_levels_keep_one_voxel_per_level(self):
-        """Uneven Z levels stay one voxel each, with a note on the node."""
-        obj, grid = self.read_single("uneven_z")
-        np.testing.assert_allclose(grid, self.expected("uneven_z", "Z"), rtol=1e-6)
-        self.assertAlmostEqual(obj.scale.z, 1.0)
+    def test_uneven_levels_at_true_depth(self):
+        """Uneven Z levels are interpolated onto at most twice as many steps."""
+        obj, grid = self.read_single("uneven_z", nz=2 * NZ)
+        expected = self.uneven_levels(2 * NZ)
+        np.testing.assert_allclose(grid, expected, rtol=1e-5, atol=1e-5)
+        self.assertAlmostEqual(obj.location.z, 0.0)
+        self.assertAlmostEqual(obj.scale.z, 300.0 / 7, places=4)
         self.assertIn("Z is unevenly spaced", self.node.note)
+        self.assertIn("8 even steps", self.node.note)
+
+    def test_vertical_voxels_set_the_steps(self):
+        """Vertical voxels sets the number of steps; the node rebakes itself."""
+        obj, _ = self.read_single("uneven_z", nz=2 * NZ)
+        self.node.vertical_voxels = 31
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX, NY, 31)), self.uneven_levels(31), rtol=1e-5, atol=1e-5
+        )
+        self.assertAlmostEqual(obj.scale.z, 10.0, places=4)
+        self.assertIn("31 even steps", self.node.note)
+
+    def test_uneven_levels_one_voxel_per_level(self):
+        """ "One voxel per level" stacks uneven Z levels, with a note on the node."""
+        obj, _ = self.read_single("uneven_z", nz=2 * NZ)
+        self.node.vertical_mode = "LEVELS"  # rebakes
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX, NY, NZ)), self.expected("uneven_z", "Z"), rtol=1e-6
+        )
+        self.assertAlmostEqual(obj.location.z, 0.0)
+        self.assertAlmostEqual(obj.scale.z, 1.0)
+        self.assertIn("one voxel per level", self.node.note)
 
     def test_live_frames_reuse_the_curvilinear_resampling(self):
         """Current-frame files match the frames of a full sequence bake."""
