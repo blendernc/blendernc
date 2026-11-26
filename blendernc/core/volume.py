@@ -44,6 +44,13 @@ VERTICAL_LEVELS = "LEVELS"
 MAX_LEVEL_FACTOR = 2
 
 
+# Missing voxels next to data take the mean of their valid neighbours this
+# many voxels deep, so Blender's render-time interpolation (linear reads one
+# voxel around a sample, cubic two) blends real values only. The mask grid
+# keeps those voxels out of the density.
+BLEED_VOXELS = 2
+
+
 # Relative spacing error tolerated before a coordinate counts as uneven.
 SPACING_RTOL = 1e-3
 
@@ -232,8 +239,15 @@ def frame_count(data, layout):
     return data.sizes[animate] if animate else 1
 
 
-def frame_array(data, layout, index=None, background=0.0, placement=None):
+def mask_grid_name(variable):
+    """Name of the grid marking where ``variable`` has data (1) or not (0)."""
+    return f"{variable}_mask"
+
+
+def frame_values(data, layout, index=None, placement=None):
     """Return one frame of ``data`` as a ``(x, y, vertical)`` float32 array.
+
+    Missing values, infinite ones included, are NaN.
 
     Parameters
     ----------
@@ -243,12 +257,8 @@ def frame_array(data, layout, index=None, background=0.0, placement=None):
         As returned by :func:`volume_layout`.
     index : int, optional
         Position along the animate dimension; ignored when static.
-    background : float, optional
-        Value given to missing data, so it becomes inactive voxels.
     placement : Placement, optional
         Resampling applied to the frame (see :func:`volume_placement`).
-        Missing data is filled after it, so interpolated levels never blend
-        real values with the background.
     """
     x_dim, y_dim, vertical, animate = layout
     if animate:
@@ -257,10 +267,86 @@ def frame_array(data, layout, index=None, background=0.0, placement=None):
         values = data.transpose(x_dim, y_dim, vertical).values
     else:
         values = data.transpose(x_dim, y_dim).values[..., np.newaxis]
-    values = values.astype(np.float32)
+    values = values.astype(np.float32)  # a copy, changed in place below
+    values[np.isinf(values)] = np.nan
     if placement is not None:
-        values = placement.apply(values, background)
-    return np.ascontiguousarray(np.nan_to_num(values, nan=background))
+        values = placement.apply(values)
+    return values
+
+
+def frame_grids(
+    data, layout, index=None, placement=None, background=0.0, bleed=BLEED_VOXELS
+):
+    """Return the value and mask arrays of one frame, for its two VDB grids.
+
+    The mask is 1 where the frame has data and 0 where it is missing. The
+    values are the frame's, with missing voxels next to data filled from
+    their neighbours ``bleed`` voxels deep (see :func:`bleed_missing`) and
+    ``background`` beyond. Missing data is filled after the placement, so
+    interpolated levels never blend real values with the background.
+
+    Parameters
+    ----------
+    data, layout, index, placement
+        As for :func:`frame_values`.
+    background : float, optional
+        Value of missing voxels beyond the bleed, which become inactive.
+    bleed : int, optional
+        How many voxels deep data reaches into missing voxels.
+
+    Returns
+    -------
+    tuple
+        ``(values, mask)``, contiguous ``(x, y, vertical)`` float32 arrays.
+    """
+    values = frame_values(data, layout, index, placement)
+    mask = np.isfinite(values).astype(np.float32)
+    values = np.nan_to_num(bleed_missing(values, bleed), nan=background)
+    return np.ascontiguousarray(values), mask
+
+
+def bleed_missing(values, depth=BLEED_VOXELS):
+    """Fill the missing (NaN) voxels next to data, ``depth`` voxels deep.
+
+    Each pass gives every missing voxel that has a valid face neighbour the
+    mean of those neighbours, so data reaches one voxel further; voxels
+    further away stay NaN. ``values`` is changed in place and returned.
+    """
+    for _ in range(depth):
+        missing = np.isnan(values)
+        if not missing.any() or missing.all():
+            break
+        total = np.zeros_like(values)
+        count = np.zeros(values.shape, dtype=np.uint8)
+        for target, source in _face_neighbours(values.ndim):
+            neighbour, into = values[source], total[target]
+            valid = ~np.isnan(neighbour)
+            np.add(into, neighbour, out=into, where=valid)
+            count[target] += valid
+        fill = missing & (count > 0)
+        values[fill] = total[fill] / count[fill]
+    return values
+
+
+def _face_neighbours(ndim):
+    """``(target, source)`` index pairs: each voxel and one face neighbour.
+
+    One pair per axis and direction; ``values[source]`` lines up with
+    ``values[target]`` shifted by one voxel.
+    """
+    pairs = []
+    for axis in range(ndim):
+        for target, source in (
+            (slice(1, None), slice(None, -1)),
+            (slice(None, -1), slice(1, None)),
+        ):
+            pairs.append((_along(axis, ndim, target), _along(axis, ndim, source)))
+    return pairs
+
+
+def _along(axis, ndim, part):
+    """Index taking ``part`` along ``axis`` and everything along the others."""
+    return tuple(part if dim == axis else slice(None) for dim in range(ndim))
 
 
 def finite_range(data):
@@ -304,15 +390,16 @@ class Placement:
     vertical: tuple = None
     notes: list = field(default_factory=list)
 
-    def apply(self, array, background=0.0):
-        """Resample a ``(x, y, vertical)`` frame onto the voxel grid.
+    def apply(self, array):
+        """Resample a ``(x, y, vertical)`` float frame onto the voxel grid.
 
-        Missing values may be NaN (see :func:`interpolate_levels`).
+        Missing values may be NaN (see :func:`interpolate_levels`); columns
+        outside a curvilinear grid's data become NaN too.
         """
         if self.flat is not None:
             nx, ny, nz = array.shape
             columns = array.reshape(nx * ny, nz)[self.flat]
-            columns[self.outside] = background
+            columns[self.outside] = np.nan
             array = columns.reshape(nx, ny, nz)
         for axis, take in enumerate(self.take):
             if take is not None:

@@ -398,3 +398,13 @@ Resolved on 2026-11-26:
   are part of its signature and of `placement_key`, so changing them
   rebakes and places the volume again. Tests in `tests/unit/test_core.py`
   and `tests/volume.test.py`.
+- **Volume grids have a zero background** (`volume_utils.BACKGROUND`), not
+  the field minimum. Missing data is still written as inactive voxels, but
+  Blender's render-time interpolation blended the voxels next to it towards
+  the minimum, which gave values inside the colour range that are not in
+  the data (a fringe along land and the sea floor). With zero, the blend
+  of a variable that stays above zero drops below the minimum and the
+  clamped Map Range gives it no density. Known limit: for a variable that
+  crosses zero, empty space gets the density of zero (a filled bounding box
+  in EEVEE, a skin in Cycles); documented in the in-depth guide. Test
+  `test_missing_data_is_empty_at_zero`.

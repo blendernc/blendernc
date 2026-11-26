@@ -10,6 +10,13 @@ spread over frames:
 * ``(x, y, time)`` gives a static space-time cube, time running upwards;
 * ``(x, y, z, time)`` gives a volume animated along time.
 
+Each file holds two float grids: the variable's values, named after it,
+and a mask (:func:`mask_grid_name`) that is 1 where there is data and 0
+where it is missing. The material takes its density from the values times
+the mask, and the values reach a couple of voxels into missing data (see
+:func:`blendernc.core.volume.frame_grids`), so the edges of the data fade
+out without Blender blending its values with the empty voxels.
+
 Voxels sit on the coordinates (see :class:`Placement`): evenly spaced ones
 set the voxel size directly, descending ones are flipped, and unevenly
 spaced or curvilinear horizontal ones are resampled onto a regular grid by
@@ -46,8 +53,9 @@ from .core.volume import (
     ANIMATE_NONE,
     clamp_frame,
     finite_range,
-    frame_array,
     frame_count,
+    frame_grids,
+    mask_grid_name,
     placement_key,
     volume_layout,
     volume_placement,
@@ -63,6 +71,12 @@ FRAMES_LIVE = "LIVE"
 
 # Default directory for the VDB files, relative to the .blend file.
 DEFAULT_VDB_DIR = "//blendernc_vdb/"
+
+
+# Background value of every grid: missing data beyond the values' bleed is
+# written as inactive voxels holding it. The mask grid is 0 there, so the
+# density is too, whatever the variable's range.
+BACKGROUND = 0.0
 
 
 # Shown on the node when the files are written to Blender's temporary folder.
@@ -253,19 +267,37 @@ def release_vdb_directory(node):
     return True
 
 
-def write_vdb(path, array, grid_name, background=0.0):
-    """Write a 3-D array to ``path`` as a float grid called ``grid_name``.
+def write_vdb(path, grids, background=BACKGROUND):
+    """Write 3-D arrays to ``path``, as float grids named by ``grids``' keys.
 
-    Voxels equal to ``background`` stay inactive, which keeps the file small
-    and lets missing data (filled with the same value) render as empty.
+    Voxels equal to ``background`` stay inactive, which keeps the file small.
+    A real value equal to it is inactive too, and reads back the same.
+
+    Parameters
+    ----------
+    path : str
+        File to write.
+    grids : dict
+        Grid name to ``(x, y, z)`` float32 array.
+    background : float, optional
+        Background value of every grid.
     """
     import openvdb
 
-    grid = openvdb.FloatGrid()
-    grid.background = float(background)
-    grid.copyFromArray(array)
-    grid.name = grid_name
-    openvdb.write(path, grids=[grid])
+    written = []
+    for name, array in grids.items():
+        grid = openvdb.FloatGrid()
+        grid.background = float(background)
+        grid.copyFromArray(array)
+        grid.name = name
+        written.append(grid)
+    openvdb.write(path, grids=written)
+
+
+def write_volume_frame(path, variable, data, layout, index, placement):
+    """Write frame ``index`` of ``data`` as the variable's value and mask grids."""
+    values, mask = frame_grids(data, layout, index, placement, BACKGROUND)
+    write_vdb(path, {variable: values, mask_grid_name(variable): mask})
 
 
 # --------------------------------------------------------------------------
@@ -451,10 +483,10 @@ def bake_volume(node, scene, keep_placement=False):
     remove_vdb_files(directory)
     live = node.frame_mode == FRAMES_LIVE and frames > 1
     indices = [clamp_frame(scene.frame_current, frames)] if live else range(frames)
-    background = value_range[0]
     for index in indices:
-        array = frame_array(data, layout, index, background, placement)
-        write_vdb(frame_path(directory, stem, index), array, variable, background)
+        write_volume_frame(
+            frame_path(directory, stem, index), variable, data, layout, index, placement
+        )
 
     point_volume_at(
         obj.data, frame_path(directory, stem, indices[0]), 1 if live else frames
@@ -511,10 +543,8 @@ def write_live_frame(node, frame):
     if bpy.path.abspath(obj.data.filepath) == path and os.path.exists(path):
         return False
     if not os.path.exists(path):
-        background = obj.get(RANGE_PROPERTIES[0], 0.0)
         placement = _cached_placement(node, data, layout)
-        array = frame_array(data, layout, index, background, placement)
-        write_vdb(path, array, variable, background)
+        write_volume_frame(path, variable, data, layout, index, placement)
     remove_vdb_files(directory, keep=(path,))
     _set_filepath(obj.data, path)
     return True

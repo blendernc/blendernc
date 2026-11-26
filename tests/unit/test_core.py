@@ -39,10 +39,12 @@ from blendernc.core.volume import (
     VERTICAL_DEPTH,
     VERTICAL_LEVELS,
     axis_placement,
+    bleed_missing,
     clamp_frame,
     depth_interpolation,
-    frame_array,
+    frame_grids,
     interpolate_levels,
+    mask_grid_name,
     nearest_positions,
     placement_key,
     vertical_voxel_count,
@@ -329,8 +331,9 @@ def test_true_depth_interpolates_levels():
     assert placement.step[2] == pytest.approx(300.0 / 7)
     assert "resampled onto 8 even steps" in placement.notes[0]
     expected = interpolated(data, np.linspace(0.0, 300.0, 8))
-    frame = frame_array(data, XYZ, placement=placement)
+    frame, mask = frame_grids(data, XYZ, placement=placement)
     np.testing.assert_allclose(frame, expected, rtol=1e-5)
+    np.testing.assert_array_equal(mask, 1.0)
 
 
 def test_true_depth_turns_depth_around():
@@ -338,7 +341,7 @@ def test_true_depth_turns_depth_around():
     placement = volume_placement(data, XYZ, VERTICAL_DEPTH, vertical_voxels=31)
     assert (placement.origin[2], placement.step[2]) == (-300.0, 10.0)
     expected = interpolated(data, np.linspace(0.0, 300.0, 31))[..., ::-1]
-    frame = frame_array(data, XYZ, placement=placement)
+    frame, _ = frame_grids(data, XYZ, placement=placement)
     np.testing.assert_allclose(frame, expected, rtol=1e-5)
 
 
@@ -357,10 +360,42 @@ def test_missing_levels_are_not_blended():
     data = levels_field()
     data[..., 3] = np.nan
     placement = volume_placement(data, XYZ, vertical_voxels=31)
-    frame = frame_array(data, XYZ, background=-1.0, placement=placement)
+    frame, mask = frame_grids(data, XYZ, None, placement, background=-1.0, bleed=0)
     column = frame[0, 0]
     np.testing.assert_allclose(column[5:18], data.values[0, 0, 2], rtol=1e-6)
     np.testing.assert_array_equal(column[18:], -1.0)  # above 175 m: past half way
+    np.testing.assert_array_equal(mask[0, 0], (column != -1.0).astype(np.float32))
+
+
+def test_frame_grids_mask_missing_data_and_bleed_values():
+    """The mask marks the data; values reach two voxels into missing data."""
+    data = levels_field(np.arange(4.0))  # evenly spaced: one voxel per level
+    data[:, :, 1:] = np.nan
+    data[0, 0, 1:] = np.inf  # infinite values count as missing
+    frame, mask = frame_grids(data, XYZ, background=0.0)
+    np.testing.assert_array_equal(mask[..., 0], 1.0)
+    np.testing.assert_array_equal(mask[..., 1:], 0.0)
+    bottom = frame[..., 0]
+    np.testing.assert_allclose(frame[..., 1], bottom, rtol=1e-6)  # bled, 1 deep
+    np.testing.assert_allclose(frame[..., 2], bottom, rtol=1e-6)  # 2 deep
+    np.testing.assert_array_equal(frame[..., 3], 0.0)  # beyond: the background
+
+
+def test_bleed_missing_takes_the_mean_of_valid_neighbours():
+    values = np.full((3, 3, 1), np.nan, dtype=np.float32)
+    values[0, 1, 0], values[1, 0, 0] = 1.0, 3.0
+    bleed_missing(values, depth=1)
+    assert values[1, 1, 0] == 2.0  # between both
+    assert values[0, 0, 0] == 2.0  # touches both too
+    assert values[2, 0, 0] == 3.0  # touches one
+    assert np.isnan(values[2, 2, 0])  # two voxels away
+    empty = np.full((2, 2, 2), np.nan, dtype=np.float32)
+    assert np.isnan(bleed_missing(empty)).all()
+
+
+def test_mask_grid_name_never_clashes_with_the_variable():
+    assert mask_grid_name("mask") == "mask_mask"
+    assert mask_grid_name("density") != "density"
 
 
 def test_interpolate_levels_uses_the_nearer_level_next_to_nan():

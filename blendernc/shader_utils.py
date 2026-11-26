@@ -14,6 +14,7 @@ import bpy
 import numpy as np
 
 from .core.fields import RANGE_PROPERTIES
+from .core.volume import mask_grid_name
 from .node_utils import create_links, create_nodes
 
 # --------------------------------------------------------------------------
@@ -314,7 +315,10 @@ def volume_material(grid_name):
     The material is called ``"<grid_name> volume"``. An Attribute node reads
     the grid, a Map Range node maps it from the object's ``"Min value"`` to
     ``"Max value"`` custom properties onto 0-1, and the result drives the
-    density of a Principled Volume. Colour is left to the user.
+    density of a Principled Volume. Its "Density Attribute" is the mask grid
+    (:func:`blendernc.core.volume.mask_grid_name`), which the density is
+    multiplied by, so missing data has none and the Map Range result stays
+    the value for colours. Colour is left to the user.
 
     Parameters
     ----------
@@ -334,7 +338,14 @@ def volume_material(grid_name):
     }
     nodes["ShaderNodeOutputMaterial"] = {}
     locations = RANGE_NODE_LOCATIONS + [(0, 0), (300, 0)]
-    return _attribute_material(name, nodes, locations, grid_name)
+    material = _attribute_material(name, nodes, locations, grid_name)
+    principled = next(
+        node
+        for node in material.node_tree.nodes
+        if node.bl_idname == "ShaderNodeVolumePrincipled"
+    )
+    principled.inputs["Density Attribute"].default_value = mask_grid_name(grid_name)
+    return material
 
 
 def _text_object(name, parent, size):

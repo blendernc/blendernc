@@ -326,9 +326,23 @@ Material
 Each bake assigns a material called ``<variable> volume``: an
 *Attribute* node reads the grid, a *Map Range* node maps it from the
 object's ``Min value`` to ``Max value`` custom properties onto 0 to 1, and
-the result drives the density of a *Principled Volume*. Missing values and
-the field minimum render as empty space. Colour, emission and the density
-multiplier are left for you to set.
+the result drives the density of a *Principled Volume*. Colour, emission
+and the density multiplier are left for you to set.
+
+Missing values are written as empty voxels holding zero, the grid's
+*background*. When Blender renders, it blends each sample from the voxels
+around it, so next to missing data (land, the sea floor) real values blend
+towards zero. For a variable that stays above zero, such as salinity or a
+temperature in kelvin, that blend soon falls below **Min value**. The Map
+Range clamps it, so it gets no density and the edge stays sharp.
+
+.. note::
+   For a variable that crosses zero, such as a velocity or an anomaly,
+   zero lies inside the range, so empty space gets the density of a zero
+   value. EEVEE then fills the volume's whole bounding box with it, land
+   included, and Cycles shows a thin skin around missing data. Offset the
+   variable before baking, or lower the density where the value is near
+   zero in the material.
 
 The range is computed over the whole variable at bake time. With the
 scene's **Lock range** setting on (node editor sidebar, *BlenderNC* tab,

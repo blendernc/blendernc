@@ -35,7 +35,7 @@ import xarray as xr
 from mathutils import Vector
 
 from blendernc.core.fields import RANGE_PROPERTIES
-from blendernc.core.volume import nearest_positions, placement_key
+from blendernc.core.volume import mask_grid_name, nearest_positions, placement_key
 from blendernc.handlers import bNC_update_volumes
 from blendernc.node_utils import create_blenderncnodetree
 from blendernc.utils import get_dataset
@@ -72,20 +72,22 @@ def make_dataset(path, with_level=False, with_time=False, seed=0):
 
 
 def make_xyz_variant(
-    path, x=X_VALUES, y=Y_VALUES, z=Z_VALUES, z_attrs=None, coords_2d=None
+    path, x=X_VALUES, y=Y_VALUES, z=Z_VALUES, z_attrs=None, coords_2d=None, land=0
 ):
     """Write an ``(X, Y, Z)`` noise dataset with the given axes; return it.
 
     ``coords_2d`` maps extra coordinate names to ``(Y, X)`` arrays, such as
-    a curvilinear longitude and latitude.
+    a curvilinear longitude and latitude. The first ``land`` X columns are
+    missing, written as the netCDF fill value.
     """
     rng = np.random.default_rng(3)
     coords = {"X": ("X", x), "Y": ("Y", y), "Z": ("Z", z, z_attrs or {})}
     for name, values in (coords_2d or {}).items():
         coords[name] = (("Y", "X"), values)
     values = rng.standard_normal((len(z), len(y), len(x)))
+    values[:, :, :land] = np.nan
     dataset = xr.Dataset({VARIABLE: (("Z", "Y", "X"), values)}, coords=coords)
-    dataset.to_netcdf(path)
+    dataset.to_netcdf(path, encoding={VARIABLE: {"_FillValue": -999.0}})
     return dataset
 
 
@@ -132,6 +134,7 @@ class TestDatacubeVolume(unittest.TestCase):
             ("rect_2d", {"coords_2d": {"lon": rect_lon, "lat": rect_lat}}),
             ("depth", {"z_attrs": {"positive": "down", "units": "m"}}),
             ("uneven_z", {"z": np.array([0.0, 10.0, 50.0, 300.0])}),
+            ("land", {"land": 3}),
         ):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_xyz_variant(path, **kwargs)
@@ -261,9 +264,12 @@ class TestDatacubeVolume(unittest.TestCase):
         material = obj.data.materials[0]
         nodes = material.node_tree.nodes
         self.assertEqual(nodes["Attribute"].attribute_name, VARIABLE)
-        density = nodes["Principled Volume"].inputs["Density"]
+        principled = nodes["Principled Volume"]
+        density = principled.inputs["Density"]
         self.assertTrue(density.is_linked)
         self.assertEqual(density.links[0].from_node.bl_idname, "ShaderNodeMapRange")
+        mask = principled.inputs["Density Attribute"].default_value
+        self.assertEqual(mask, mask_grid_name(VARIABLE))
         output = nodes["Material Output"].inputs["Volume"]
         self.assertEqual(output.links[0].from_node, nodes["Principled Volume"])
         for key in ("Attribute", "Attribute.001", "Attribute.002"):
@@ -562,9 +568,11 @@ class TestDatacubeVolume(unittest.TestCase):
         step_x = (lon.max() - lon.min()) / (NX - 1)
         self.assertAlmostEqual(obj.scale.x, step_x, places=4)
 
-        background = float(dataset[VARIABLE].min())
         # The bounding box corner at (min lon, min lat) lies outside the data.
-        np.testing.assert_allclose(grid[0, 0], background, rtol=1e-6)
+        (path,) = self.vdb_files()
+        mask = read_grid(path, (NX, NY, NZ), mask_grid_name(VARIABLE))
+        np.testing.assert_array_equal(mask[0, 0], 0.0)
+        np.testing.assert_array_equal(mask[NX // 2, NY // 2], 1.0)
         # Inside, each voxel column is the nearest source column.
         values = dataset[VARIABLE].transpose("X", "Y", "Z").values
         tx = np.linspace(lon.min(), lon.max(), NX)
@@ -590,6 +598,32 @@ class TestDatacubeVolume(unittest.TestCase):
         np.testing.assert_allclose(grid, expected, rtol=1e-6)
         self.assertAlmostEqual(obj.location.z, -300.0, places=4)
         self.assertAlmostEqual(obj.scale.z, 100.0, places=4)
+
+    def test_missing_data_is_masked(self):
+        """The mask marks the data; values reach two voxels into missing data.
+
+        The first three X columns are missing: the mask is 0 there, columns
+        2 and 1 copy column 3 (their only valid neighbour), and column 0
+        stays empty, at the zero background.
+        """
+        self.build("land")
+        self.bake()
+        (path,) = self.vdb_files()
+        values = self.expected("land", "Z")
+        mask_name = mask_grid_name(VARIABLE)
+        for name in (VARIABLE, mask_name):
+            self.assertEqual(openvdb.read(path, name).background, 0.0, name)
+        mask = read_grid(path, (NX, NY, NZ), mask_name)
+        np.testing.assert_array_equal(mask, np.isfinite(values))
+        array = read_grid(path, (NX, NY, NZ))
+        np.testing.assert_allclose(array[3:], values[3:], rtol=1e-6)
+        for column in (2, 1):
+            np.testing.assert_allclose(array[column], values[3], rtol=1e-6)
+        np.testing.assert_array_equal(array[0], 0.0)
+        grid = openvdb.read(path, VARIABLE)
+        self.assertEqual(grid.activeVoxelCount(), (NX - 1) * NY * NZ)
+        lowest = np.unravel_index(np.nanargmin(values), values.shape)
+        self.assertTrue(grid.getConstAccessor().isValueOn(tuple(map(int, lowest))))
 
     def test_uneven_levels_at_true_depth(self):
         """Uneven Z levels are interpolated onto at most twice as many steps."""
