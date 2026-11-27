@@ -2,6 +2,47 @@
 
 <!--next-version-placeholder-->
 
+## v0.12.0 (2026-11-27)
+
+### Bug Fixes
+
+- Background voxel value is zero instead of variable min value
+  ([`36071c1`](https://github.com/blendernc/blendernc/commit/36071c1c31f9d7609515108efce83754babe9fd8))
+
+- Grid has now variable_mask attribute
+  ([`3edd6e4`](https://github.com/blendernc/blendernc/commit/3edd6e46b3bf766ec80c1a5ed13ef64f1e0bdbc2))
+
+- Order the variable mask following C code
+  ([`c474bbe`](https://github.com/blendernc/blendernc/commit/c474bbeefbf4d6912ee5b02c4d327276f9e66346))
+
+### Chores
+
+- Add plataforms in manifest
+  ([`d435672`](https://github.com/blendernc/blendernc/commit/d435672df019dad30f659f07194b261680347508))
+
+- Update poetry.lock to fix build issue
+  ([`11c8165`](https://github.com/blendernc/blendernc/commit/11c81653acc2f447749d4d7d1db8c51af6891808))
+
+### Continuous Integration
+
+- Export poetry plugin for poetry > 2
+  ([`db25f88`](https://github.com/blendernc/blendernc/commit/db25f8898bdbee21d9f0338839983906b1baf436))
+
+- Force install of plugin export
+  ([`fcd43df`](https://github.com/blendernc/blendernc/commit/fcd43df72863e07b702447e565aad733e02cb2af))
+
+- Install poetry to build extension
+  ([`c980a60`](https://github.com/blendernc/blendernc/commit/c980a6001c80a40010aa93737b8a52016844bac1))
+
+### Features
+
+- Add mask to voxels for nan values
+  ([`a2949f8`](https://github.com/blendernc/blendernc/commit/a2949f8572f2c55828c20cb916e58651fca19c42))
+
+- Volume interpolates vertical coordinates instead of fixing them to a constant thickness
+  ([`57bae7f`](https://github.com/blendernc/blendernc/commit/57bae7f6405448f83b92b66fe2273d6a37f361c7))
+
+
 ## v0.11.0 (2026-11-25)
 
 ### Chores

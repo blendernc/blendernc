@@ -10,14 +10,14 @@
 ##############################################################################
 ##############################################################################
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 
 bl_info = {
     "name": "BlenderNC",
     "author": "Oriol Tintó Prims & Josué Martínez-Moreno",
     "description": "Blender Add-On to visualize geo-scientific data",
     "blender": (5, 2, 0),
-    "version": (0, 11, 0),
+    "version": (0, 12, 0),
     "location": "View3D",
     "warning": "Early version",
     "category": "Science",

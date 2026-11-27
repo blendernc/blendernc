@@ -1,6 +1,6 @@
 [project]
 name = "blendernc"
-version = "0.11.0"
+version = "0.12.0"
 description = "Extension to load and manipulate geocubes in blender"
 authors = [
     {name = "josuemtzmo",email = "josue.mtzmo@gmail.com"}
