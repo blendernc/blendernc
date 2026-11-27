@@ -11,7 +11,8 @@ Four datasets are generated on the fly with a random-noise variable:
 
 Variants of ``(X, Y, Z)`` check the placement: a descending, an unevenly
 spaced and a curvilinear horizontal axis, 2-D coordinates that are in fact
-rectilinear, a depth axis marked ``positive = "down"`` and uneven levels.
+rectilinear, a depth axis marked ``positive = "down"`` and uneven levels,
+placed at their true depth or one voxel per level.
 A copy of ``(X, Y, Z)`` with a second variable checks that changing the
 variable only refreshes the values. Whatever the bake, a volume the user
 moved, rotated or scaled keeps that transform on top of its placement.
@@ -34,7 +35,7 @@ import xarray as xr
 from mathutils import Vector
 
 from blendernc.core.fields import RANGE_PROPERTIES
-from blendernc.core.volume import nearest_positions, placement_key
+from blendernc.core.volume import mask_grid_name, nearest_positions, placement_key
 from blendernc.handlers import bNC_update_volumes
 from blendernc.node_utils import create_blenderncnodetree
 from blendernc.utils import get_dataset
@@ -71,20 +72,22 @@ def make_dataset(path, with_level=False, with_time=False, seed=0):
 
 
 def make_xyz_variant(
-    path, x=X_VALUES, y=Y_VALUES, z=Z_VALUES, z_attrs=None, coords_2d=None
+    path, x=X_VALUES, y=Y_VALUES, z=Z_VALUES, z_attrs=None, coords_2d=None, land=0
 ):
     """Write an ``(X, Y, Z)`` noise dataset with the given axes; return it.
 
     ``coords_2d`` maps extra coordinate names to ``(Y, X)`` arrays, such as
-    a curvilinear longitude and latitude.
+    a curvilinear longitude and latitude. The first ``land`` X columns are
+    missing, written as the netCDF fill value.
     """
     rng = np.random.default_rng(3)
     coords = {"X": ("X", x), "Y": ("Y", y), "Z": ("Z", z, z_attrs or {})}
     for name, values in (coords_2d or {}).items():
         coords[name] = (("Y", "X"), values)
     values = rng.standard_normal((len(z), len(y), len(x)))
+    values[:, :, :land] = np.nan
     dataset = xr.Dataset({VARIABLE: (("Z", "Y", "X"), values)}, coords=coords)
-    dataset.to_netcdf(path)
+    dataset.to_netcdf(path, encoding={VARIABLE: {"_FillValue": -999.0}})
     return dataset
 
 
@@ -131,6 +134,8 @@ class TestDatacubeVolume(unittest.TestCase):
             ("rect_2d", {"coords_2d": {"lon": rect_lon, "lat": rect_lat}}),
             ("depth", {"z_attrs": {"positive": "down", "units": "m"}}),
             ("uneven_z", {"z": np.array([0.0, 10.0, 50.0, 300.0])}),
+            ("land", {"land": 3}),
+            ("uneven_land", {"z": np.array([0.0, 10.0, 50.0, 300.0]), "land": 3}),
         ):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_xyz_variant(path, **kwargs)
@@ -260,9 +265,13 @@ class TestDatacubeVolume(unittest.TestCase):
         material = obj.data.materials[0]
         nodes = material.node_tree.nodes
         self.assertEqual(nodes["Attribute"].attribute_name, VARIABLE)
-        density = nodes["Principled Volume"].inputs["Density"]
+        principled = nodes["Principled Volume"]
+        density = principled.inputs["Density"]
         self.assertTrue(density.is_linked)
         self.assertEqual(density.links[0].from_node.bl_idname, "ShaderNodeMapRange")
+        # The mask grid is left to the user: Blender's default stays.
+        attribute = principled.inputs["Density Attribute"].default_value
+        self.assertEqual(attribute, "density")
         output = nodes["Material Output"].inputs["Volume"]
         self.assertEqual(output.links[0].from_node, nodes["Principled Volume"])
         for key in ("Attribute", "Attribute.001", "Attribute.002"):
@@ -365,9 +374,9 @@ class TestDatacubeVolume(unittest.TestCase):
         computed = []
         original = volume_utils.volume_placement
 
-        def counting(*args):
+        def counting(*args, **kwargs):
             computed.append(args)
-            return original(*args)
+            return original(*args, **kwargs)
 
         volume_utils.volume_placement = counting
         try:
@@ -505,13 +514,23 @@ class TestDatacubeVolume(unittest.TestCase):
 
     # -- placement ------------------------------------------------------------
 
-    def read_single(self, key):
-        """Bake dataset ``key`` and read its only VDB file back."""
+    def read_single(self, key, nz=NZ):
+        """Bake dataset ``key`` and read its only VDB file, ``nz`` voxels high."""
         self.build(key)
         obj = self.bake()
         files = self.vdb_files()
         self.assertEqual(len(files), 1)
-        return obj, read_grid(files[0], (NX, NY, NZ))
+        return obj, read_grid(files[0], (NX, NY, nz))
+
+    def uneven_levels(self, nz):
+        """The ``uneven_z`` field interpolated onto ``nz`` even heights."""
+        z = self.datasets["uneven_z"]["Z"].values
+        targets = np.linspace(z.min(), z.max(), nz)
+        return np.apply_along_axis(
+            lambda column: np.interp(targets, z, column),
+            2,
+            self.expected("uneven_z", "Z"),
+        )
 
     def test_descending_y_is_flipped(self):
         """A descending Y keeps a positive scale: the voxels are reversed."""
@@ -551,9 +570,11 @@ class TestDatacubeVolume(unittest.TestCase):
         step_x = (lon.max() - lon.min()) / (NX - 1)
         self.assertAlmostEqual(obj.scale.x, step_x, places=4)
 
-        background = float(dataset[VARIABLE].min())
         # The bounding box corner at (min lon, min lat) lies outside the data.
-        np.testing.assert_allclose(grid[0, 0], background, rtol=1e-6)
+        (path,) = self.vdb_files()
+        mask = read_grid(path, (NX, NY, NZ), mask_grid_name(VARIABLE))
+        np.testing.assert_array_equal(mask[0, 0], 0.0)
+        np.testing.assert_array_equal(mask[NX // 2, NY // 2], 1.0)
         # Inside, each voxel column is the nearest source column.
         values = dataset[VARIABLE].transpose("X", "Y", "Z").values
         tx = np.linspace(lon.min(), lon.max(), NX)
@@ -580,12 +601,73 @@ class TestDatacubeVolume(unittest.TestCase):
         self.assertAlmostEqual(obj.location.z, -300.0, places=4)
         self.assertAlmostEqual(obj.scale.z, 100.0, places=4)
 
-    def test_uneven_levels_keep_one_voxel_per_level(self):
-        """Uneven Z levels stay one voxel each, with a note on the node."""
-        obj, grid = self.read_single("uneven_z")
-        np.testing.assert_allclose(grid, self.expected("uneven_z", "Z"), rtol=1e-6)
-        self.assertAlmostEqual(obj.scale.z, 1.0)
+    def test_missing_data_is_masked(self):
+        """The mask marks the data; missing voxels are empty, at zero.
+
+        The first three X columns are missing: the mask is 0 there and the
+        values are the zero background. The field minimum stays active.
+        """
+        self.build("land")
+        self.bake()
+        (path,) = self.vdb_files()
+        values = self.expected("land", "Z")
+        mask_name = mask_grid_name(VARIABLE)
+        for name in (VARIABLE, mask_name):
+            self.assertEqual(openvdb.read(path, name).background, 0.0, name)
+        mask = read_grid(path, (NX, NY, NZ), mask_name)
+        np.testing.assert_array_equal(mask, np.isfinite(values))
+        array = read_grid(path, (NX, NY, NZ))
+        np.testing.assert_allclose(array[3:], values[3:], rtol=1e-6)
+        np.testing.assert_array_equal(array[:3], 0.0)
+        grid = openvdb.read(path, VARIABLE)
+        self.assertEqual(grid.activeVoxelCount(), np.isfinite(values).sum())
+        lowest = np.unravel_index(np.nanargmin(values), values.shape)
+        self.assertTrue(grid.getConstAccessor().isValueOn(tuple(map(int, lowest))))
+
+    def test_mask_lines_up_after_true_depth(self):
+        """Interpolated levels keep the mask on the data, not scrambled."""
+        self.build("uneven_land")
+        self.bake()
+        (path,) = self.vdb_files()
+        mask = read_grid(path, (NX, NY, 2 * NZ), mask_grid_name(VARIABLE))
+        np.testing.assert_array_equal(mask[:3], 0.0)
+        np.testing.assert_array_equal(mask[3:], 1.0)
+        values = openvdb.read(path, VARIABLE).evalActiveVoxelBoundingBox()
+        masked = openvdb.read(path, mask_grid_name(VARIABLE))
+        self.assertEqual(masked.evalActiveVoxelBoundingBox(), values)
+
+    def test_uneven_levels_at_true_depth(self):
+        """Uneven Z levels are interpolated onto at most twice as many steps."""
+        obj, grid = self.read_single("uneven_z", nz=2 * NZ)
+        expected = self.uneven_levels(2 * NZ)
+        np.testing.assert_allclose(grid, expected, rtol=1e-5, atol=1e-5)
+        self.assertAlmostEqual(obj.location.z, 0.0)
+        self.assertAlmostEqual(obj.scale.z, 300.0 / 7, places=4)
         self.assertIn("Z is unevenly spaced", self.node.note)
+        self.assertIn("8 even steps", self.node.note)
+
+    def test_vertical_voxels_set_the_steps(self):
+        """Vertical voxels sets the number of steps; the node rebakes itself."""
+        obj, _ = self.read_single("uneven_z", nz=2 * NZ)
+        self.node.vertical_voxels = 31
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX, NY, 31)), self.uneven_levels(31), rtol=1e-5, atol=1e-5
+        )
+        self.assertAlmostEqual(obj.scale.z, 10.0, places=4)
+        self.assertIn("31 even steps", self.node.note)
+
+    def test_uneven_levels_one_voxel_per_level(self):
+        """ "One voxel per level" stacks uneven Z levels, with a note on the node."""
+        obj, _ = self.read_single("uneven_z", nz=2 * NZ)
+        self.node.vertical_mode = "LEVELS"  # rebakes
+        (path,) = self.vdb_files()
+        np.testing.assert_allclose(
+            read_grid(path, (NX, NY, NZ)), self.expected("uneven_z", "Z"), rtol=1e-6
+        )
+        self.assertAlmostEqual(obj.location.z, 0.0)
+        self.assertAlmostEqual(obj.scale.z, 1.0)
+        self.assertIn("one voxel per level", self.node.note)
 
     def test_live_frames_reuse_the_curvilinear_resampling(self):
         """Current-frame files match the frames of a full sequence bake."""

@@ -10,10 +10,17 @@ spread over frames:
 * ``(x, y, time)`` gives a static space-time cube, time running upwards;
 * ``(x, y, z, time)`` gives a volume animated along time.
 
+Each file holds two float grids: the variable's values, named after it,
+and a mask (:func:`mask_grid_name`) that is 1 where there is data and 0
+where it is missing. The mask is there for the user's own shaders and
+modifiers; the material BlenderNC assigns does not read it.
+
 Voxels sit on the coordinates (see :class:`Placement`): evenly spaced ones
 set the voxel size directly, descending ones are flipped, and unevenly
-spaced or curvilinear ones are resampled onto a regular grid by nearest
-neighbour, which the node tells the user about.
+spaced or curvilinear horizontal ones are resampled onto a regular grid by
+nearest neighbour. Unevenly spaced levels are interpolated onto even steps
+at their true height, or kept one voxel per level, as the node's
+"Vertical" setting says. The node tells the user what was resampled.
 
 Blender caches VDB grids by file path for the whole session, so a file that
 is rewritten in place is never read again. Every bake therefore writes its
@@ -44,8 +51,9 @@ from .core.volume import (
     ANIMATE_NONE,
     clamp_frame,
     finite_range,
-    frame_array,
     frame_count,
+    frame_grids,
+    mask_grid_name,
     placement_key,
     volume_layout,
     volume_placement,
@@ -61,6 +69,14 @@ FRAMES_LIVE = "LIVE"
 
 # Default directory for the VDB files, relative to the .blend file.
 DEFAULT_VDB_DIR = "//blendernc_vdb/"
+
+
+# Background value of every grid: missing data is written as inactive voxels
+# holding it, and Blender's interpolation blends the voxels next to them
+# towards it. Zero, not the field minimum, so that blend leaves the range of
+# a variable that stays above zero and the clamped Map Range of the material
+# gives it no density.
+BACKGROUND = 0.0
 
 
 # Shown on the node when the files are written to Blender's temporary folder.
@@ -128,12 +144,24 @@ def bake_range(obj, data):
 _PLACEMENTS = {}
 
 
+def vertical_options(node):
+    """The node's settings for uneven levels, as keyword arguments.
+
+    For :func:`blendernc.core.volume.volume_placement` and
+    :func:`blendernc.core.volume.placement_key`.
+    """
+    return {
+        "vertical_mode": node.vertical_mode,
+        "vertical_voxels": node.vertical_voxels,
+    }
+
+
 def _cached_placement(node, data, layout):
     """Placement of the node's last bake, computed again when it is stale."""
     cached = _PLACEMENTS.get(node.as_pointer())
     if cached is not None and cached[0] == node.baked_placement:
         return cached[1]
-    placement = volume_placement(data, layout)
+    placement = volume_placement(data, layout, **vertical_options(node))
     _PLACEMENTS[node.as_pointer()] = (node.baked_placement, placement)
     return placement
 
@@ -239,19 +267,40 @@ def release_vdb_directory(node):
     return True
 
 
-def write_vdb(path, array, grid_name, background=0.0):
-    """Write a 3-D array to ``path`` as a float grid called ``grid_name``.
+def write_vdb(path, grids, background=BACKGROUND):
+    """Write 3-D arrays to ``path``, as float grids named by ``grids``' keys.
 
-    Voxels equal to ``background`` stay inactive, which keeps the file small
-    and lets missing data (filled with the same value) render as empty.
+    Voxels equal to ``background`` stay inactive, which keeps the file small.
+    A real value equal to it is inactive too, and reads back the same. Each
+    array is made C-contiguous first: ``copyFromArray`` reads the buffer in
+    C order whatever the array's strides, so a strided array (as interpolated
+    levels leave it) would be written scrambled.
+
+    Parameters
+    ----------
+    path : str
+        File to write.
+    grids : dict
+        Grid name to ``(x, y, z)`` float32 array.
+    background : float, optional
+        Background value of every grid.
     """
     import openvdb
 
-    grid = openvdb.FloatGrid()
-    grid.background = float(background)
-    grid.copyFromArray(array)
-    grid.name = grid_name
-    openvdb.write(path, grids=[grid])
+    written = []
+    for name, array in grids.items():
+        grid = openvdb.FloatGrid()
+        grid.background = float(background)
+        grid.copyFromArray(np.ascontiguousarray(array, dtype=np.float32))
+        grid.name = name
+        written.append(grid)
+    openvdb.write(path, grids=written)
+
+
+def write_volume_frame(path, variable, data, layout, index, placement):
+    """Write frame ``index`` of ``data`` as the variable's value and mask grids."""
+    values, mask = frame_grids(data, layout, index, placement, BACKGROUND)
+    write_vdb(path, {variable: values, mask_grid_name(variable): mask})
 
 
 # --------------------------------------------------------------------------
@@ -418,12 +467,13 @@ def bake_volume(node, scene, keep_placement=False):
         With the message shown on the node.
     """
     variable, data, layout = volume_data(node)
-    key = placement_key(data, layout)
+    options = vertical_options(node)
+    key = placement_key(data, layout, **options)
     refresh = keep_placement and _keeps_placement(node, key)
     if refresh:
         placement = _cached_placement(node, data, layout)
     else:
-        placement = volume_placement(data, layout)
+        placement = volume_placement(data, layout, **options)
     frames = frame_count(data, layout)
     obj = look_up_volume_object(node.volume_obj_name)
     value_range = bake_range(obj, data)
@@ -436,10 +486,10 @@ def bake_volume(node, scene, keep_placement=False):
     remove_vdb_files(directory)
     live = node.frame_mode == FRAMES_LIVE and frames > 1
     indices = [clamp_frame(scene.frame_current, frames)] if live else range(frames)
-    background = value_range[0]
     for index in indices:
-        array = frame_array(data, layout, index, background, placement)
-        write_vdb(frame_path(directory, stem, index), array, variable, background)
+        write_volume_frame(
+            frame_path(directory, stem, index), variable, data, layout, index, placement
+        )
 
     point_volume_at(
         obj.data, frame_path(directory, stem, indices[0]), 1 if live else frames
@@ -496,10 +546,8 @@ def write_live_frame(node, frame):
     if bpy.path.abspath(obj.data.filepath) == path and os.path.exists(path):
         return False
     if not os.path.exists(path):
-        background = obj.get(RANGE_PROPERTIES[0], 0.0)
         placement = _cached_placement(node, data, layout)
-        array = frame_array(data, layout, index, background, placement)
-        write_vdb(path, array, variable, background)
+        write_volume_frame(path, variable, data, layout, index, placement)
     remove_vdb_files(directory, keep=(path,))
     _set_filepath(obj.data, path)
     return True

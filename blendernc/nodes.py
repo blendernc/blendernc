@@ -16,6 +16,7 @@ from .core.slicing import (
     suggested_stride,
     value_index_range,
 )
+from .core.volume import VERTICAL_DEPTH, VERTICAL_LEVELS
 from .decorators import (
     has_datastructs,
     initialize_BNC_datastructs,
@@ -913,10 +914,13 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
     Voxels are placed on the x/y coordinates, so the volume lines up with a
     Datacube Grid baked from the same coordinates; uneven or curvilinear
     coordinates are resampled onto a regular grid first, and the node says
-    so. An evenly spaced vertical coordinate sets the voxel height too.
+    so. An evenly spaced vertical coordinate sets the voxel height too;
+    uneven levels are interpolated onto even steps at their true height,
+    or stacked one voxel each, as "Vertical" says.
 
     The volume follows the tree: when the slicing, variable, animated
-    dimension or frame mode changes, the files are written again. Like the
+    dimension, frame mode or vertical settings change, the files are
+    written again. Like the
     grid, it is only placed again when its coordinates change (a Slice,
     Subsample or Resolution on a volume axis, another layout); another
     variable, or another index of a Select along a dimension the volume
@@ -959,10 +963,40 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
         default=FRAMES_SEQUENCE,
         update=lambda self, context: self.update(),
     )
+    vertical_mode: bpy.props.EnumProperty(
+        items=[
+            (
+                VERTICAL_DEPTH,
+                "True depth",
+                "Place unevenly spaced levels at their height, interpolated "
+                "onto evenly spaced voxels",
+            ),
+            (
+                VERTICAL_LEVELS,
+                "One voxel per level",
+                "Stack the levels one voxel each, whatever their spacing",
+            ),
+        ],
+        name="Vertical",
+        description="How unevenly spaced vertical levels become voxels",
+        default=VERTICAL_DEPTH,
+        update=lambda self, context: self.update(),
+    )
+    vertical_voxels: bpy.props.IntProperty(
+        name="Vertical voxels",
+        description=(
+            "Voxels along unevenly spaced levels in True depth mode; 0 follows "
+            "the finest spacing, up to twice the number of levels"
+        ),
+        default=0,
+        min=0,
+        soft_max=2048,
+        update=lambda self, context: self.update(),
+    )
     vertical_scale: bpy.props.FloatProperty(
         name="Vertical scale",
         description=(
-            "Multiplies the evenly spaced vertical coordinate; without one, "
+            "Multiplies the numeric vertical coordinate; without one, "
             "the height of one voxel"
         ),
         default=1.0,
@@ -999,7 +1033,7 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
         description="Object this node baked last; only that object is rebaked",
     )
     baked_signature: bpy.props.StringProperty(
-        description="Slicing, variable, animated dim and frame mode of the last bake",
+        description="Slicing, variable and node settings of the last bake",
     )
     baked_placement: bpy.props.StringProperty(
         description="Digest of the coordinates the last bake placed the voxels on",
@@ -1028,6 +1062,9 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
         layout.prop(self, "volume_obj_name", text="")
         layout.prop(self, "animate_dim")
         layout.prop(self, "frame_mode", text="")
+        layout.prop(self, "vertical_mode", text="")
+        if self.vertical_mode == VERTICAL_DEPTH:
+            layout.prop(self, "vertical_voxels")
         layout.prop(self, "vertical_scale")
         layout.prop(self, "vdb_dir", text="")
         op = layout.operator("blendernc.create_volume", text="Bake Volume")
@@ -1045,7 +1082,8 @@ class DatacubeVolume(bpy.types.Node, bNCNodeDefault):
         """Everything that decides which files a bake writes."""
         variable = self.inputs["Variable"].default_value
         slicing = self.BNC_datastructs[0].slicing
-        return f"{slicing}|{variable}|{self.animate_dim}|{self.frame_mode}"
+        settings = (self.animate_dim, self.frame_mode, self.vertical_mode)
+        return f"{slicing}|{variable}|{'|'.join(settings)}|{self.vertical_voxels}"
 
     def is_stale(self):
         """True when the object this node baked no longer matches the tree."""

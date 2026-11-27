@@ -195,10 +195,28 @@ Settings
      the frame changes. It uses little disk space, but BlenderNC must be
      installed wherever the scene is played or rendered.
 
+**Vertical**
+   How unevenly spaced vertical levels, such as the stretched depth levels
+   of an ocean model, become voxels (see `Placement`_).
+
+   * *True depth* (the default) places each level at its height, so a
+     layer of 10 m looks ten times thinner than a layer of 100 m.
+   * *One voxel per level* stacks the levels one voxel each, whatever
+     their spacing, so thin surface layers stay as visible as the deep
+     ones.
+
+**Vertical voxels**
+   Only shown in *True depth* mode, and only used when the levels are
+   unevenly spaced: the number of voxels along the vertical axis. At *0*,
+   the finest spacing between levels sets the voxel height, up to twice as
+   many voxels as levels. Ask for more when thin layers matter; each voxel
+   adds a full horizontal layer to every file.
+
 **Vertical scale**
-   Multiplies the vertical coordinate when it is evenly spaced (see
-   `Placement`_); otherwise it is the height of one voxel. Changing it
-   moves and stretches the object without writing the files again.
+   Multiplies the numeric vertical coordinate (see `Placement`_); without
+   one, such as the time axis of a space-time cube, it is the height of one
+   voxel. Changing it moves and stretches the object without writing the
+   files again.
 
 **VDB folder**
    Where the files are written. The default, ``//blendernc_vdb/``, is a
@@ -238,16 +256,39 @@ The voxels are placed on the coordinates, so the volume lines up with a
   the nearest original column, and columns outside the data stay empty.
   2D coordinates that only change along their own axis are used directly.
 
-Resampling picks values; it never averages them. The node lists what was
-resampled below its button, and the same note goes to the status bar and
-the log.
+Horizontal resampling picks values; it never averages them. The node lists
+what was resampled below its button, and the same note goes to the status
+bar and the log.
 
 An evenly spaced numeric vertical coordinate places the voxels the same
 way, multiplied by **Vertical scale**. A coordinate marked
 ``positive = "down"`` (CF depth or pressure) is turned around, so deeper
-levels sit lower, below zero. Unevenly spaced levels and dates (the time
-axis of a space-time cube) give one voxel per level, of height
-**Vertical scale**; uneven levels get a note on the node.
+levels sit lower, below zero.
+
+OpenVDB voxels all have the same height, so unevenly spaced levels cannot
+be used as they are. In *True depth* mode (see **Vertical** above) they are
+resampled onto evenly spaced heights between the top and bottom levels,
+each voxel blending linearly the two levels around it. Next to missing
+data, such as the sea floor, a voxel takes the nearer level instead, so
+the data reaches half way to the first missing level. The note on the node
+gives the number of voxels and their height. For example, levels at 0, 10,
+50 and 300 m give 8 voxels, about 43 m high; set **Vertical voxels** to 31
+for 10 m voxels. In *One voxel per level* mode, and for levels that repeat
+a value, each level is one voxel of height **Vertical scale**. Dates (the
+time axis of a space-time cube) always give one voxel per step.
+
+.. TODO: two screenshots of the same ocean volume with stretched depth
+   levels, one in True depth mode and one in One voxel per level mode.
+   Save as docs/images/volume_true_depth.png and
+   docs/images/volume_one_voxel_per_level.png and uncomment:
+
+   .. image:: ../images/volume_true_depth.png
+      :width: 49%
+      :alt: Volume at true depth
+
+   .. image:: ../images/volume_one_voxel_per_level.png
+      :width: 49%
+      :alt: Volume with one voxel per level
 
 .. note::
    With depths in metres and horizontal coordinates in degrees, the volume
@@ -258,14 +299,14 @@ Rebaking
 --------
 
 The volume follows the node tree. Changing the slicing upstream, the
-variable, **Animate along** or **Frames** writes its files again
-automatically. Every bake uses new file names, because Blender keeps VDB
+variable, **Animate along**, **Frames**, **Vertical** or **Vertical voxels**
+writes its files again automatically. Every bake uses new file names, because Blender keeps VDB
 grids in memory by file path and would otherwise keep showing the old data.
 
 Like the grid, the volume is only *placed* again when its coordinates
 change: a **Slice**, **Subsample** or **Resolution** node on one of its
-axes, or another **Animate along** that changes which dimensions form the
-volume. Picking another variable, or another index of a **Select** along a
+axes, another **Animate along** that changes which dimensions form the
+volume, or another **Vertical** or **Vertical voxels**. Picking another variable, or another index of a **Select** along a
 dimension the volume does not show (a time step, a level), only rewrites
 the values and swaps the material to the new variable's, and the notes
 are not reported again.
@@ -282,12 +323,40 @@ again.
 Material
 --------
 
+Each VDB file holds two grids: ``<variable>``, the values, and
+``<variable>_mask``, which is 1 where the variable has data and 0 where it
+is missing (land, the sea floor, outside a curvilinear grid). Both are
+listed in the **Grids** panel of the Volume object's data properties, and
+an *Attribute* node, a **Volume to Mesh** modifier or Geometry Nodes can
+read either one by name.
+
 Each bake assigns a material called ``<variable> volume``: an
-*Attribute* node reads the grid, a *Map Range* node maps it from the
+*Attribute* node reads the values, a *Map Range* node maps them from the
 object's ``Min value`` to ``Max value`` custom properties onto 0 to 1, and
-the result drives the density of a *Principled Volume*. Missing values and
-the field minimum render as empty space. Colour, emission and the density
-multiplier are left for you to set.
+the result drives the density of a *Principled Volume*. Colour, emission,
+the density multiplier and the mask are left for you to set.
+
+Missing values are written as empty voxels holding zero, the grids'
+*background*. When Blender renders, it blends each sample from the voxels
+around it, so next to missing data real values blend towards zero. For a
+variable that stays above zero, such as salinity or a temperature in
+kelvin, that blend soon falls below **Min value**. The Map Range clamps it,
+so it gets no density and the edge stays sharp.
+
+.. note::
+   For a variable that crosses zero, such as a velocity or an anomaly, zero
+   lies inside the range, so missing data gets the density of a zero value.
+   Land surrounded by data, such as an island or everything below the sea
+   floor, then renders as solid in Cycles and EEVEE. To keep it empty,
+   multiply the density by the mask: add an *Attribute* node reading
+   ``<variable>_mask`` and a *Math* node set to *Multiply* between the
+   *Map Range* and the *Principled Volume*.
+
+.. note::
+   The *Principled Volume* also multiplies its density by the grid named in
+   its **Density Attribute** field, ``density`` by default. If your variable
+   is called ``density``, clear that field, or the density is multiplied by
+   the variable's raw values.
 
 The range is computed over the whole variable at bake time. With the
 scene's **Lock range** setting on (node editor sidebar, *BlenderNC* tab,

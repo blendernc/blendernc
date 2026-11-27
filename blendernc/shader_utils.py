@@ -314,7 +314,8 @@ def volume_material(grid_name):
     The material is called ``"<grid_name> volume"``. An Attribute node reads
     the grid, a Map Range node maps it from the object's ``"Min value"`` to
     ``"Max value"`` custom properties onto 0-1, and the result drives the
-    density of a Principled Volume. Colour is left to the user.
+    density of a Principled Volume. Colour is left to the user, and so is
+    the mask grid (:func:`blendernc.core.volume.mask_grid_name`).
 
     Parameters
     ----------

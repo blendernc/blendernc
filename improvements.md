@@ -18,9 +18,6 @@ after that work.
     `volume_utils.py:544`) is nearest neighbour at the source resolution,
     and it treats longitude as a plain number: a grid that crosses the
     dateline (179° to -179°) is resampled over the whole -180 to 180 range.
-  - Unevenly spaced vertical levels stay one voxel per level
-    (`vertical_placement`, `volume_utils.py:477`), so such a volume does
-    not line up with a grid whose Z is that coordinate.
   - "Lock range" (on by default) keeps the stored range when the
     variable changes, for textures (`utils.write_field_range`) and
     volumes (`volume_utils.bake_range`) alike, so a new variable is
@@ -385,3 +382,45 @@ Resolved on 2026-11-25:
   once, then what each input added after it, in socket order. Other
   nodes keep the last input's, so a texture still reads its variable's
   slicing. Two new tests in `tests/slice.test.py`.
+
+Resolved on 2026-11-26:
+
+- **Uneven vertical levels sit at their true depth.** OpenVDB voxels share
+  one height, so `core.volume.vertical_placement` interpolates uneven,
+  distinct levels linearly onto even steps between the top and bottom
+  levels (`depth_interpolation`, applied by `Placement.apply` through
+  `interpolate_levels`). Next to a missing level the nearer level is used,
+  and `frame_array` now fills missing data after the placement, so
+  background values are never blended in. The count follows the finest
+  spacing, capped at twice the levels (`vertical_voxel_count`,
+  `MAX_LEVEL_FACTOR`). The node's new "Vertical" (True depth, the default,
+  or One voxel per level) and "Vertical voxels" (0 = automatic) settings
+  are part of its signature and of `placement_key`, so changing them
+  rebakes and places the volume again. Tests in `tests/unit/test_core.py`
+  and `tests/volume.test.py`.
+- **Volume grids have a zero background** (`volume_utils.BACKGROUND`), not
+  the field minimum. Missing data is still written as inactive voxels, but
+  Blender's render-time interpolation blended the voxels next to it towards
+  the minimum, which gave values inside the colour range that are not in
+  the data (a fringe along land and the sea floor). With zero, the blend
+  of a variable that stays above zero drops below the minimum and the
+  clamped Map Range gives it no density.
+- **Volume files hold a mask grid**, `<variable>_mask`
+  (`core.volume.mask_grid_name`): 1 where there is data, 0 where it is
+  missing (infinite values and curvilinear columns outside the data
+  included). It is left to the user; the assigned material does not read
+  it. `write_vdb` takes a dict of named grids, ready for a vector grid.
+  Known limit, checked with Cycles and EEVEE renders: for a variable that
+  crosses zero, land surrounded by data (islands, below the sea floor)
+  renders as solid with the default material, since zero maps to a
+  density; the docs show the Attribute and Multiply nodes that remove it.
+  Tests `test_missing_data_is_masked` and `test_frame_grids_mask_missing_data`.
+- **The mask grid was scrambled after true-depth interpolation.**
+  `interpolate_levels` leaves the frame with odd strides (neither C nor
+  Fortran order), `astype` kept them for the mask, and openvdb's
+  `copyFromArray` reads the buffer in C order whatever the strides: same
+  voxel count as the values, but in the wrong places, with a different
+  extent and more leaves. `frame_grids` now returns a C-order mask and
+  `write_vdb` makes every array C-contiguous float32 before writing. Tests
+  `test_mask_lines_up_after_true_depth` and
+  `test_frame_grids_are_c_contiguous_after_true_depth`.

@@ -36,11 +36,19 @@ from blendernc.core.slicing import (
     value_index_range,
 )
 from blendernc.core.volume import (
+    VERTICAL_DEPTH,
+    VERTICAL_LEVELS,
     axis_placement,
     clamp_frame,
+    depth_interpolation,
+    frame_grids,
+    interpolate_levels,
+    mask_grid_name,
     nearest_positions,
     placement_key,
+    vertical_voxel_count,
     volume_layout,
+    volume_placement,
 )
 
 NX, NY, NT = 4, 3, 5
@@ -268,6 +276,137 @@ def test_volume_layout_and_placement_key(cube):
     assert key != placement_key(data.isel(x=slice(0, 2)), layout)
     with pytest.raises(ValueError):
         volume_layout(data.isel(time=0), "AUTO")
+
+
+UNEVEN_Z = np.array([0.0, 10.0, 50.0, 300.0])
+
+
+XYZ = ("x", "y", "z", "")
+
+
+def levels_field(z=UNEVEN_Z, **z_attrs):
+    """A random ``(x, y, z)`` field on levels ``z``."""
+    rng = np.random.default_rng(1)
+    z_coord = xr.Variable("z", z, attrs=z_attrs)
+    return xr.DataArray(
+        rng.random((NX, NY, z.size)),
+        dims=("x", "y", "z"),
+        coords={"x": np.arange(float(NX)), "y": np.arange(float(NY)), "z": z_coord},
+        name="temp",
+    )
+
+
+def interpolated(data, targets):
+    """``data`` interpolated column by column onto heights ``targets``."""
+    z = data["z"].values
+    columns = data.values.reshape(-1, z.size)
+    out = [np.interp(targets, z, column) for column in columns]
+    return np.array(out).reshape(NX, NY, targets.size)
+
+
+def test_vertical_voxel_count():
+    assert vertical_voxel_count(UNEVEN_Z) == 8  # 31 at 10 m, capped at 2 x 4
+    assert vertical_voxel_count(np.array([0.0, 1.0, 3.0])) == 4  # finest spacing
+    tenths = np.array([0.0, 0.1, 0.2, 0.3, 0.6, 0.8, 1.1])  # 11.000000000000004
+    assert vertical_voxel_count(tenths) == 12  # steps, not rounded up to 12
+    assert vertical_voxel_count(UNEVEN_Z, requested=31) == 31  # above the cap
+    assert vertical_voxel_count(UNEVEN_Z, requested=1) == 2
+
+
+def test_depth_interpolation_in_any_order():
+    lower, upper, weight = depth_interpolation(UNEVEN_Z, 31)  # steps of 10
+    np.testing.assert_array_equal(lower[:7], [0, 1, 1, 1, 1, 2, 2])
+    np.testing.assert_array_equal(upper[:7], [1, 2, 2, 2, 2, 3, 3])
+    np.testing.assert_allclose(weight[:7], [0, 0, 0.25, 0.5, 0.75, 0, 0.04])
+    assert (lower[-1], upper[-1], weight[-1]) == (2, 3, 1.0)
+    lower, upper, weight = depth_interpolation(UNEVEN_Z[::-1].copy(), 31)
+    np.testing.assert_array_equal(lower[:2], [3, 2])
+
+
+def test_true_depth_interpolates_levels():
+    data = levels_field()
+    placement = volume_placement(data, XYZ)
+    assert placement.origin[2] == 0.0
+    assert placement.step[2] == pytest.approx(300.0 / 7)
+    assert "resampled onto 8 even steps" in placement.notes[0]
+    expected = interpolated(data, np.linspace(0.0, 300.0, 8))
+    frame, mask = frame_grids(data, XYZ, placement=placement)
+    np.testing.assert_allclose(frame, expected, rtol=1e-5)
+    np.testing.assert_array_equal(mask, 1.0)
+
+
+def test_true_depth_turns_depth_around():
+    data = levels_field(positive="down")
+    placement = volume_placement(data, XYZ, VERTICAL_DEPTH, vertical_voxels=31)
+    assert (placement.origin[2], placement.step[2]) == (-300.0, 10.0)
+    expected = interpolated(data, np.linspace(0.0, 300.0, 31))[..., ::-1]
+    frame, _ = frame_grids(data, XYZ, placement=placement)
+    np.testing.assert_allclose(frame, expected, rtol=1e-5)
+
+
+def test_one_voxel_per_level():
+    data = levels_field()
+    placement = volume_placement(data, XYZ, VERTICAL_LEVELS)
+    assert (placement.origin[2], placement.step[2]) == (0.0, 1.0)
+    assert placement.vertical is None
+    assert "one voxel per level" in placement.notes[0]
+    repeated = levels_field(np.array([0.0, 10.0, 10.0, 300.0]))
+    assert volume_placement(repeated, XYZ).vertical is None  # cannot interpolate
+
+
+def test_missing_levels_are_not_blended():
+    """A missing level is filled after interpolating: the data stops half way."""
+    data = levels_field()
+    data[..., 3] = np.nan
+    placement = volume_placement(data, XYZ, vertical_voxels=31)
+    frame, mask = frame_grids(data, XYZ, None, placement, background=-1.0)
+    column = frame[0, 0]
+    np.testing.assert_allclose(column[5:18], data.values[0, 0, 2], rtol=1e-6)
+    np.testing.assert_array_equal(column[18:], -1.0)  # above 175 m: past half way
+    np.testing.assert_array_equal(mask[0, 0], (column != -1.0).astype(np.float32))
+
+
+def test_frame_grids_are_c_contiguous_after_true_depth():
+    """openvdb's copyFromArray reads the buffer in C order, whatever the strides."""
+    data = levels_field().transpose("z", "y", "x")  # as read from a CF file
+    data[..., :2] = np.nan
+    placement = volume_placement(data, XYZ)
+    assert placement.vertical is not None
+    for array in frame_grids(data, XYZ, placement=placement):
+        assert array.flags.c_contiguous
+
+
+def test_frame_grids_mask_missing_data():
+    """The mask marks the data; missing values, infinite ones too, are empty."""
+    data = levels_field(np.arange(4.0))  # evenly spaced: one voxel per level
+    data[:, :, 1:] = np.nan
+    data[0, 0, 1:] = np.inf  # infinite values count as missing
+    frame, mask = frame_grids(data, XYZ, background=0.0)
+    np.testing.assert_array_equal(mask[..., 0], 1.0)
+    np.testing.assert_array_equal(mask[..., 1:], 0.0)
+    np.testing.assert_allclose(frame[..., 0], data.values[..., 0], rtol=1e-6)
+    np.testing.assert_array_equal(frame[..., 1:], 0.0)  # the background
+
+
+def test_mask_grid_name_never_clashes_with_the_variable():
+    assert mask_grid_name("mask") == "mask_mask"
+    assert mask_grid_name("density") != "density"
+
+
+def test_interpolate_levels_uses_the_nearer_level_next_to_nan():
+    array = np.array([[[1.0, np.nan]]], dtype=np.float32)
+    lower, upper = np.array([0, 0, 0]), np.array([1, 1, 1])
+    weight = np.array([0.25, 0.5, 0.75], dtype=np.float32)
+    result = interpolate_levels(array, lower, upper, weight)
+    np.testing.assert_array_equal(result[0, 0], [1.0, 1.0, np.nan])
+
+
+def test_placement_key_follows_vertical_settings():
+    data = levels_field()
+    key = placement_key(data, XYZ)
+    assert key == placement_key(data, XYZ, VERTICAL_DEPTH, 0)
+    assert key != placement_key(data, XYZ, VERTICAL_LEVELS, 0)
+    assert key != placement_key(data, XYZ, VERTICAL_DEPTH, 31)
 
 
 def test_clamp_frame():
