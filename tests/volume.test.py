@@ -268,8 +268,9 @@ class TestDatacubeVolume(unittest.TestCase):
         density = principled.inputs["Density"]
         self.assertTrue(density.is_linked)
         self.assertEqual(density.links[0].from_node.bl_idname, "ShaderNodeMapRange")
-        mask = principled.inputs["Density Attribute"].default_value
-        self.assertEqual(mask, mask_grid_name(VARIABLE))
+        # The mask grid is left to the user: Blender's default stays.
+        attribute = principled.inputs["Density Attribute"].default_value
+        self.assertEqual(attribute, "density")
         output = nodes["Material Output"].inputs["Volume"]
         self.assertEqual(output.links[0].from_node, nodes["Principled Volume"])
         for key in ("Attribute", "Attribute.001", "Attribute.002"):
@@ -600,11 +601,10 @@ class TestDatacubeVolume(unittest.TestCase):
         self.assertAlmostEqual(obj.scale.z, 100.0, places=4)
 
     def test_missing_data_is_masked(self):
-        """The mask marks the data; values reach two voxels into missing data.
+        """The mask marks the data; missing voxels are empty, at zero.
 
-        The first three X columns are missing: the mask is 0 there, columns
-        2 and 1 copy column 3 (their only valid neighbour), and column 0
-        stays empty, at the zero background.
+        The first three X columns are missing: the mask is 0 there and the
+        values are the zero background. The field minimum stays active.
         """
         self.build("land")
         self.bake()
@@ -617,11 +617,9 @@ class TestDatacubeVolume(unittest.TestCase):
         np.testing.assert_array_equal(mask, np.isfinite(values))
         array = read_grid(path, (NX, NY, NZ))
         np.testing.assert_allclose(array[3:], values[3:], rtol=1e-6)
-        for column in (2, 1):
-            np.testing.assert_allclose(array[column], values[3], rtol=1e-6)
-        np.testing.assert_array_equal(array[0], 0.0)
+        np.testing.assert_array_equal(array[:3], 0.0)
         grid = openvdb.read(path, VARIABLE)
-        self.assertEqual(grid.activeVoxelCount(), (NX - 1) * NY * NZ)
+        self.assertEqual(grid.activeVoxelCount(), np.isfinite(values).sum())
         lowest = np.unravel_index(np.nanargmin(values), values.shape)
         self.assertTrue(grid.getConstAccessor().isValueOn(tuple(map(int, lowest))))
 

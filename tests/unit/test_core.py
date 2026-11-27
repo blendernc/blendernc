@@ -39,7 +39,6 @@ from blendernc.core.volume import (
     VERTICAL_DEPTH,
     VERTICAL_LEVELS,
     axis_placement,
-    bleed_missing,
     clamp_frame,
     depth_interpolation,
     frame_grids,
@@ -360,37 +359,23 @@ def test_missing_levels_are_not_blended():
     data = levels_field()
     data[..., 3] = np.nan
     placement = volume_placement(data, XYZ, vertical_voxels=31)
-    frame, mask = frame_grids(data, XYZ, None, placement, background=-1.0, bleed=0)
+    frame, mask = frame_grids(data, XYZ, None, placement, background=-1.0)
     column = frame[0, 0]
     np.testing.assert_allclose(column[5:18], data.values[0, 0, 2], rtol=1e-6)
     np.testing.assert_array_equal(column[18:], -1.0)  # above 175 m: past half way
     np.testing.assert_array_equal(mask[0, 0], (column != -1.0).astype(np.float32))
 
 
-def test_frame_grids_mask_missing_data_and_bleed_values():
-    """The mask marks the data; values reach two voxels into missing data."""
+def test_frame_grids_mask_missing_data():
+    """The mask marks the data; missing values, infinite ones too, are empty."""
     data = levels_field(np.arange(4.0))  # evenly spaced: one voxel per level
     data[:, :, 1:] = np.nan
     data[0, 0, 1:] = np.inf  # infinite values count as missing
     frame, mask = frame_grids(data, XYZ, background=0.0)
     np.testing.assert_array_equal(mask[..., 0], 1.0)
     np.testing.assert_array_equal(mask[..., 1:], 0.0)
-    bottom = frame[..., 0]
-    np.testing.assert_allclose(frame[..., 1], bottom, rtol=1e-6)  # bled, 1 deep
-    np.testing.assert_allclose(frame[..., 2], bottom, rtol=1e-6)  # 2 deep
-    np.testing.assert_array_equal(frame[..., 3], 0.0)  # beyond: the background
-
-
-def test_bleed_missing_takes_the_mean_of_valid_neighbours():
-    values = np.full((3, 3, 1), np.nan, dtype=np.float32)
-    values[0, 1, 0], values[1, 0, 0] = 1.0, 3.0
-    bleed_missing(values, depth=1)
-    assert values[1, 1, 0] == 2.0  # between both
-    assert values[0, 0, 0] == 2.0  # touches both too
-    assert values[2, 0, 0] == 3.0  # touches one
-    assert np.isnan(values[2, 2, 0])  # two voxels away
-    empty = np.full((2, 2, 2), np.nan, dtype=np.float32)
-    assert np.isnan(bleed_missing(empty)).all()
+    np.testing.assert_allclose(frame[..., 0], data.values[..., 0], rtol=1e-6)
+    np.testing.assert_array_equal(frame[..., 1:], 0.0)  # the background
 
 
 def test_mask_grid_name_never_clashes_with_the_variable():

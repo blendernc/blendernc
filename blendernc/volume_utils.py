@@ -12,10 +12,8 @@ spread over frames:
 
 Each file holds two float grids: the variable's values, named after it,
 and a mask (:func:`mask_grid_name`) that is 1 where there is data and 0
-where it is missing. The material takes its density from the values times
-the mask, and the values reach a couple of voxels into missing data (see
-:func:`blendernc.core.volume.frame_grids`), so the edges of the data fade
-out without Blender blending its values with the empty voxels.
+where it is missing. The mask is there for the user's own shaders and
+modifiers; the material BlenderNC assigns does not read it.
 
 Voxels sit on the coordinates (see :class:`Placement`): evenly spaced ones
 set the voxel size directly, descending ones are flipped, and unevenly
@@ -73,9 +71,11 @@ FRAMES_LIVE = "LIVE"
 DEFAULT_VDB_DIR = "//blendernc_vdb/"
 
 
-# Background value of every grid: missing data beyond the values' bleed is
-# written as inactive voxels holding it. The mask grid is 0 there, so the
-# density is too, whatever the variable's range.
+# Background value of every grid: missing data is written as inactive voxels
+# holding it, and Blender's interpolation blends the voxels next to them
+# towards it. Zero, not the field minimum, so that blend leaves the range of
+# a variable that stays above zero and the clamped Map Range of the material
+# gives it no density.
 BACKGROUND = 0.0
 
 

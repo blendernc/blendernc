@@ -44,13 +44,6 @@ VERTICAL_LEVELS = "LEVELS"
 MAX_LEVEL_FACTOR = 2
 
 
-# Missing voxels next to data take the mean of their valid neighbours this
-# many voxels deep, so Blender's render-time interpolation (linear reads one
-# voxel around a sample, cubic two) blends real values only. The mask grid
-# keeps those voxels out of the density.
-BLEED_VOXELS = 2
-
-
 # Relative spacing error tolerated before a coordinate counts as uneven.
 SPACING_RTOL = 1e-3
 
@@ -274,25 +267,20 @@ def frame_values(data, layout, index=None, placement=None):
     return values
 
 
-def frame_grids(
-    data, layout, index=None, placement=None, background=0.0, bleed=BLEED_VOXELS
-):
+def frame_grids(data, layout, index=None, placement=None, background=0.0):
     """Return the value and mask arrays of one frame, for its two VDB grids.
 
     The mask is 1 where the frame has data and 0 where it is missing. The
-    values are the frame's, with missing voxels next to data filled from
-    their neighbours ``bleed`` voxels deep (see :func:`bleed_missing`) and
-    ``background`` beyond. Missing data is filled after the placement, so
-    interpolated levels never blend real values with the background.
+    values are the frame's, with ``background`` where data is missing.
+    Missing data is filled after the placement, so interpolated levels never
+    blend real values with the background.
 
     Parameters
     ----------
     data, layout, index, placement
         As for :func:`frame_values`.
     background : float, optional
-        Value of missing voxels beyond the bleed, which become inactive.
-    bleed : int, optional
-        How many voxels deep data reaches into missing voxels.
+        Value of missing voxels, which become inactive.
 
     Returns
     -------
@@ -301,52 +289,8 @@ def frame_grids(
     """
     values = frame_values(data, layout, index, placement)
     mask = np.isfinite(values).astype(np.float32)
-    values = np.nan_to_num(bleed_missing(values, bleed), nan=background)
+    values = np.nan_to_num(values, nan=background)
     return np.ascontiguousarray(values), mask
-
-
-def bleed_missing(values, depth=BLEED_VOXELS):
-    """Fill the missing (NaN) voxels next to data, ``depth`` voxels deep.
-
-    Each pass gives every missing voxel that has a valid face neighbour the
-    mean of those neighbours, so data reaches one voxel further; voxels
-    further away stay NaN. ``values`` is changed in place and returned.
-    """
-    for _ in range(depth):
-        missing = np.isnan(values)
-        if not missing.any() or missing.all():
-            break
-        total = np.zeros_like(values)
-        count = np.zeros(values.shape, dtype=np.uint8)
-        for target, source in _face_neighbours(values.ndim):
-            neighbour, into = values[source], total[target]
-            valid = ~np.isnan(neighbour)
-            np.add(into, neighbour, out=into, where=valid)
-            count[target] += valid
-        fill = missing & (count > 0)
-        values[fill] = total[fill] / count[fill]
-    return values
-
-
-def _face_neighbours(ndim):
-    """``(target, source)`` index pairs: each voxel and one face neighbour.
-
-    One pair per axis and direction; ``values[source]`` lines up with
-    ``values[target]`` shifted by one voxel.
-    """
-    pairs = []
-    for axis in range(ndim):
-        for target, source in (
-            (slice(1, None), slice(None, -1)),
-            (slice(None, -1), slice(1, None)),
-        ):
-            pairs.append((_along(axis, ndim, target), _along(axis, ndim, source)))
-    return pairs
-
-
-def _along(axis, ndim, part):
-    """Index taking ``part`` along ``axis`` and everything along the others."""
-    return tuple(part if dim == axis else slice(None) for dim in range(ndim))
 
 
 def finite_range(data):
