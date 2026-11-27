@@ -271,7 +271,10 @@ def write_vdb(path, grids, background=BACKGROUND):
     """Write 3-D arrays to ``path``, as float grids named by ``grids``' keys.
 
     Voxels equal to ``background`` stay inactive, which keeps the file small.
-    A real value equal to it is inactive too, and reads back the same.
+    A real value equal to it is inactive too, and reads back the same. Each
+    array is made C-contiguous first: ``copyFromArray`` reads the buffer in
+    C order whatever the array's strides, so a strided array (as interpolated
+    levels leave it) would be written scrambled.
 
     Parameters
     ----------
@@ -288,7 +291,7 @@ def write_vdb(path, grids, background=BACKGROUND):
     for name, array in grids.items():
         grid = openvdb.FloatGrid()
         grid.background = float(background)
-        grid.copyFromArray(array)
+        grid.copyFromArray(np.ascontiguousarray(array, dtype=np.float32))
         grid.name = name
         written.append(grid)
     openvdb.write(path, grids=written)

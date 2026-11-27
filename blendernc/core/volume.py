@@ -288,7 +288,9 @@ def frame_grids(data, layout, index=None, placement=None, background=0.0):
         ``(values, mask)``, contiguous ``(x, y, vertical)`` float32 arrays.
     """
     values = frame_values(data, layout, index, placement)
-    mask = np.isfinite(values).astype(np.float32)
+    # C order, whatever the strides the placement left: copyFromArray reads
+    # the buffer in C order.
+    mask = np.isfinite(values).astype(np.float32, order="C")
     values = np.nan_to_num(values, nan=background)
     return np.ascontiguousarray(values), mask
 

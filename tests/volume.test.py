@@ -135,6 +135,7 @@ class TestDatacubeVolume(unittest.TestCase):
             ("depth", {"z_attrs": {"positive": "down", "units": "m"}}),
             ("uneven_z", {"z": np.array([0.0, 10.0, 50.0, 300.0])}),
             ("land", {"land": 3}),
+            ("uneven_land", {"z": np.array([0.0, 10.0, 50.0, 300.0]), "land": 3}),
         ):
             path = os.path.join(cls.tmpdir, f"{key}.nc")
             cls.datasets[key] = make_xyz_variant(path, **kwargs)
@@ -622,6 +623,18 @@ class TestDatacubeVolume(unittest.TestCase):
         self.assertEqual(grid.activeVoxelCount(), np.isfinite(values).sum())
         lowest = np.unravel_index(np.nanargmin(values), values.shape)
         self.assertTrue(grid.getConstAccessor().isValueOn(tuple(map(int, lowest))))
+
+    def test_mask_lines_up_after_true_depth(self):
+        """Interpolated levels keep the mask on the data, not scrambled."""
+        self.build("uneven_land")
+        self.bake()
+        (path,) = self.vdb_files()
+        mask = read_grid(path, (NX, NY, 2 * NZ), mask_grid_name(VARIABLE))
+        np.testing.assert_array_equal(mask[:3], 0.0)
+        np.testing.assert_array_equal(mask[3:], 1.0)
+        values = openvdb.read(path, VARIABLE).evalActiveVoxelBoundingBox()
+        masked = openvdb.read(path, mask_grid_name(VARIABLE))
+        self.assertEqual(masked.evalActiveVoxelBoundingBox(), values)
 
     def test_uneven_levels_at_true_depth(self):
         """Uneven Z levels are interpolated onto at most twice as many steps."""

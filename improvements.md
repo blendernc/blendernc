@@ -415,3 +415,12 @@ Resolved on 2026-11-26:
   renders as solid with the default material, since zero maps to a
   density; the docs show the Attribute and Multiply nodes that remove it.
   Tests `test_missing_data_is_masked` and `test_frame_grids_mask_missing_data`.
+- **The mask grid was scrambled after true-depth interpolation.**
+  `interpolate_levels` leaves the frame with odd strides (neither C nor
+  Fortran order), `astype` kept them for the mask, and openvdb's
+  `copyFromArray` reads the buffer in C order whatever the strides: same
+  voxel count as the values, but in the wrong places, with a different
+  extent and more leaves. `frame_grids` now returns a C-order mask and
+  `write_vdb` makes every array C-contiguous float32 before writing. Tests
+  `test_mask_lines_up_after_true_depth` and
+  `test_frame_grids_are_c_contiguous_after_true_depth`.

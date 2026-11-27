@@ -366,6 +366,16 @@ def test_missing_levels_are_not_blended():
     np.testing.assert_array_equal(mask[0, 0], (column != -1.0).astype(np.float32))
 
 
+def test_frame_grids_are_c_contiguous_after_true_depth():
+    """openvdb's copyFromArray reads the buffer in C order, whatever the strides."""
+    data = levels_field().transpose("z", "y", "x")  # as read from a CF file
+    data[..., :2] = np.nan
+    placement = volume_placement(data, XYZ)
+    assert placement.vertical is not None
+    for array in frame_grids(data, XYZ, placement=placement):
+        assert array.flags.c_contiguous
+
+
 def test_frame_grids_mask_missing_data():
     """The mask marks the data; missing values, infinite ones too, are empty."""
     data = levels_field(np.arange(4.0))  # evenly spaced: one voxel per level
